@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="224" viewBox="0 0 160 224" role="img" aria-label="Blue and red bridge card back">
+  <defs>
+    <linearGradient id="back" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#245b7c"/>
+      <stop offset="0.52" stop-color="#3f6677"/>
+      <stop offset="1" stop-color="#7f3f61"/>
+    </linearGradient>
+    <pattern id="triangles" width="28" height="28" patternUnits="userSpaceOnUse">
+      <path d="M0 28h28L14 4z" fill="#f8f3df" opacity=".18"/>
+      <path d="M0 0h28L14 24z" fill="#101614" opacity=".18"/>
+    </pattern>
+  </defs>
+  <rect width="160" height="224" rx="16" fill="url(#back)"/>
+  <rect x="8" y="8" width="144" height="208" rx="12" fill="url(#triangles)"/>
+  <rect x="22" y="22" width="116" height="180" rx="10" fill="none" stroke="#f8f3df" stroke-width="5" opacity=".34"/>
+  <path d="M80 62c18 16 33 30 33 49 0 21-16 35-33 48-17-13-33-27-33-48 0-19 15-33 33-49z" fill="#f8f3df" opacity=".2"/>
+</svg>

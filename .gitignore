@@ -1,0 +1,11 @@
+.netlify/
+node_modules/
+coverage/
+dist/
+
+*.log
+*.tmp
+*.zip
+
+.DS_Store
+Thumbs.db

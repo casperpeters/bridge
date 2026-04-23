@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bridgetafel</title>
+    <link rel="icon" type="image/png" href="logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="Spelinstellingen">
+        <div class="brand-lockup">
+          <img class="app-logo" src="logo.png" alt="" aria-hidden="true" />
+          <div class="brand-copy">
+            <p id="app-title" class="eyebrow">Bridgetafel</p>
+            <h1 id="app-heading">Speel Vijfkaart Hoog met een AI-partner</h1>
+            <p id="play-mode" class="play-mode">Je speelt de kaarten van Zuid.</p>
+          </div>
+        </div>
+        <div class="setup-controls">
+          <details class="settings-menu">
+            <summary id="settings-summary" aria-label="Instellingen" title="Instellingen">
+              <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2.05 2.05 0 0 1-2.9 2.9l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2.05 2.05 0 0 1-4.1 0v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2.05 2.05 0 0 1-2.9-2.9l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2.05 2.05 0 0 1 0-4.1h.1A1.7 1.7 0 0 0 4.66 8.8a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2.05 2.05 0 0 1 2.9-2.9l.06.06a1.7 1.7 0 0 0 1.88.34h.01A1.7 1.7 0 0 0 10.13 2.8V2.7a2.05 2.05 0 0 1 4.1 0v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2.05 2.05 0 0 1 2.9 2.9l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.02h.1a2.05 2.05 0 0 1 0 4.1h-.1A1.7 1.7 0 0 0 19.4 15Z" />
+              </svg>
+              <span class="sr-only">Instellingen</span>
+            </summary>
+            <div class="settings-panel">
+              <div class="setting-field">
+                <label id="scoring-mode-label" for="scoring-mode">Score</label>
+                <select id="scoring-mode">
+                  <option value="duplicate" selected>Duplicate</option>
+                  <option value="matchpoints">Actiever bieden</option>
+                  <option value="casual">Oefenen</option>
+                </select>
+                <p id="scoring-mode-description" class="setting-description"></p>
+              </div>
+              <label for="developer-mode" class="developer-toggle">
+                <input id="developer-mode" type="checkbox" />
+                <span id="developer-mode-label">Developermodus</span>
+              </label>
+              <p id="developer-mode-description" class="setting-description"></p>
+              <label for="guidance-mode" class="developer-toggle">
+                <input id="guidance-mode" type="checkbox" />
+                <span id="guidance-mode-label">AI-suggesties</span>
+              </label>
+              <p id="guidance-mode-description" class="setting-description"></p>
+              <label for="play-history-mode" class="developer-toggle">
+                <input id="play-history-mode" type="checkbox" />
+                <span id="play-history-mode-label">Speelgeschiedenis</span>
+              </label>
+              <p id="play-history-mode-description" class="setting-description"></p>
+              <div class="setting-field">
+                <label id="seed-label" for="seed-input">Handseed</label>
+                <input id="seed-input" type="text" autocomplete="off" spellcheck="false" />
+                <div class="seed-actions">
+                  <button id="load-seed" type="button">Laad seed</button>
+                  <button id="copy-seed" type="button">Kopieer seed</button>
+                </div>
+                <p id="seed-description" class="setting-description"></p>
+              </div>
+            </div>
+          </details>
+          <button id="new-hand" type="button">Nieuwe hand</button>
+          <button id="same-hand" type="button">Zelfde hand</button>
+          <button id="quick-review" type="button">Test slagenoverzicht</button>
+        </div>
+      </section>
+
+      <section class="table-area" aria-label="Bridgetafel">
+        <div class="opponent north">
+          <div id="north-label" class="seat-label">Noord &bull; Partner</div>
+          <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
+        </div>
+
+        <div class="middle-row">
+          <div class="opponent west">
+            <div id="west-label" class="seat-label">West</div>
+            <div id="west-hand" class="hand vertical" aria-label="West hand"></div>
+          </div>
+
+          <div class="felt">
+            <div id="contract" class="contract">Deel een hand om te starten</div>
+            <div id="trick-area" class="trick-area" aria-live="polite">
+              <div class="trick-slot trick-north" data-seat="Noord"></div>
+              <div class="trick-slot trick-west" data-seat="West"></div>
+              <div class="trick-slot trick-east" data-seat="Oost"></div>
+              <div class="trick-slot trick-south" data-seat="Zuid"></div>
+            </div>
+            <div class="status-row">
+              <div id="status" class="status">Deel een nieuwe hand om te starten.</div>
+              <button id="hint-button" class="hint-button" type="button" aria-label="Hint" data-hint="Deel een nieuwe hand om te starten.">i</button>
+            </div>
+            <div id="guidance-panel" class="guidance-panel" hidden></div>
+            <div id="trick-advance-hint" class="trick-advance-hint" hidden>Klik ergens of druk op Enter voor de volgende slag.</div>
+            <div id="scoreline" class="scoreline"></div>
+          </div>
+
+          <div class="opponent east">
+            <div id="east-label" class="seat-label">Oost</div>
+            <div id="east-hand" class="hand vertical" aria-label="Oost hand"></div>
+          </div>
+        </div>
+
+        <div class="player-zone">
+          <div id="south-label" class="seat-label">Zuid &bull; Jij</div>
+          <div id="south-hand" class="hand horizontal playable" aria-label="Jouw hand"></div>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="auction-panel" aria-label="Bieden">
+          <div class="panel-head">
+            <h2 id="bidding-title">Bieden</h2>
+            <span id="dealer-badge">Deler: Zuid</span>
+          </div>
+          <div id="auction-log" class="auction-log"></div>
+          <div id="bid-explanations" class="bid-explanations" hidden></div>
+          <div id="bid-controls" class="bid-controls"></div>
+        </section>
+
+        <section id="history-panel" class="history-panel" aria-label="Speelgeschiedenis" hidden>
+          <div class="panel-head">
+            <h2 id="history-title">Speelgeschiedenis</h2>
+            <span id="trick-count">0 slagen</span>
+          </div>
+          <div id="history" class="history"></div>
+          <div id="play-explanations" class="play-explanations" hidden></div>
+        </section>
+
+        <section id="review-panel" class="review-panel" aria-label="Handoverzicht" hidden>
+          <div class="panel-head">
+            <h2 id="review-title">Handoverzicht</h2>
+            <span id="review-result"></span>
+          </div>
+          <div id="review-summary" class="review-summary"></div>
+          <div id="review-tricks" class="review-section"></div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="bridge-rules.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
