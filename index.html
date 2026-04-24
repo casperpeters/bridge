@@ -28,15 +28,6 @@
               <span class="sr-only">Instellingen</span>
             </summary>
             <div class="settings-panel">
-              <div class="setting-field">
-                <label id="scoring-mode-label" for="scoring-mode">Score</label>
-                <select id="scoring-mode">
-                  <option value="duplicate" selected>Duplicate</option>
-                  <option value="matchpoints">Actiever bieden</option>
-                  <option value="casual">Oefenen</option>
-                </select>
-                <p id="scoring-mode-description" class="setting-description"></p>
-              </div>
               <label for="developer-mode" class="developer-toggle">
                 <input id="developer-mode" type="checkbox" />
                 <span id="developer-mode-label">Developermodus</span>
@@ -63,6 +54,7 @@
               </div>
             </div>
           </details>
+          <button id="open-feedback" type="button">Feedback</button>
           <button id="new-hand" type="button">Nieuwe hand</button>
           <button id="same-hand" type="button">Zelfde hand</button>
           <button id="quick-review" type="button">Test slagenoverzicht</button>
@@ -70,6 +62,10 @@
       </section>
 
       <section class="table-area" aria-label="Bridgetafel">
+        <div class="turn-glow turn-glow-north" aria-hidden="true"></div>
+        <div class="turn-glow turn-glow-east" aria-hidden="true"></div>
+        <div class="turn-glow turn-glow-south" aria-hidden="true"></div>
+        <div class="turn-glow turn-glow-west" aria-hidden="true"></div>
         <div class="opponent north">
           <div id="north-label" class="seat-label">Noord &bull; Partner</div>
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
@@ -82,7 +78,6 @@
           </div>
 
           <div class="felt">
-            <div id="contract" class="contract">Deel een hand om te starten</div>
             <div id="trick-area" class="trick-area" aria-live="polite">
               <div class="trick-slot trick-north" data-seat="Noord"></div>
               <div class="trick-slot trick-west" data-seat="West"></div>
@@ -90,12 +85,12 @@
               <div class="trick-slot trick-south" data-seat="Zuid"></div>
             </div>
             <div class="status-row">
-              <div id="status" class="status">Deel een nieuwe hand om te starten.</div>
+              <div id="status" class="status sr-only" aria-live="polite">Deel een nieuwe hand om te starten.</div>
               <button id="hint-button" class="hint-button" type="button" aria-label="Hint" data-hint="Deel een nieuwe hand om te starten.">i</button>
             </div>
+            <div id="dummy-notice" class="table-note" aria-live="polite" hidden></div>
             <div id="guidance-panel" class="guidance-panel" hidden></div>
             <div id="trick-advance-hint" class="trick-advance-hint" hidden>Klik ergens of druk op Enter voor de volgende slag.</div>
-            <div id="scoreline" class="scoreline"></div>
           </div>
 
           <div class="opponent east">
@@ -119,6 +114,11 @@
           <div id="auction-log" class="auction-log"></div>
           <div id="bid-explanations" class="bid-explanations" hidden></div>
           <div id="bid-controls" class="bid-controls"></div>
+          <div class="game-summary" aria-label="Spelstatus">
+            <div id="contract" class="contract">Deel een hand om te starten</div>
+            <div id="scoreline" class="scoreline"></div>
+          </div>
+          <div id="play-plan-panel" class="play-plan-panel" hidden></div>
         </section>
 
         <section id="history-panel" class="history-panel" aria-label="Speelgeschiedenis" hidden>
@@ -141,7 +141,50 @@
       </aside>
     </main>
 
+    <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title">
+      <section id="feedback-panel" class="feedback-panel" aria-label="Feedback">
+        <div class="feedback-head">
+          <h2 id="feedback-title" class="review-section-title">Feedback</h2>
+          <div class="feedback-head-actions">
+            <span id="feedback-state" class="feedback-state" aria-live="polite"></span>
+            <button id="close-feedback" class="feedback-close" type="button" aria-label="Sluiten">x</button>
+          </div>
+        </div>
+        <div class="feedback-field">
+          <label id="feedback-type-label" for="feedback-type">Type feedback</label>
+          <select id="feedback-type">
+            <option value="confusion">Verwarring</option>
+            <option value="bug">Bug</option>
+            <option value="rules">Regel of score klopt niet</option>
+            <option value="suggestion">Suggestie</option>
+          </select>
+        </div>
+        <div class="feedback-field">
+          <label id="feedback-message-label" for="feedback-message">Bericht van tester</label>
+          <textarea id="feedback-message" rows="4" spellcheck="true"></textarea>
+        </div>
+        <label for="feedback-include-context" class="developer-toggle feedback-context-toggle">
+          <input id="feedback-include-context" type="checkbox" checked />
+          <span id="feedback-context-label">Handgegevens toevoegen</span>
+        </label>
+        <div class="feedback-actions">
+          <button id="copy-feedback" type="button">Kopieer feedback</button>
+          <a id="mail-feedback" class="button-link" href="mailto:casper.peters@gmail.com">Mail feedback</a>
+        </div>
+        <p id="feedback-description" class="setting-description"></p>
+      </section>
+    </dialog>
+
     <script src="bridge-rules.js"></script>
-    <script src="app.js"></script>
+    <script src="scripts/text-nl.js"></script>
+    <script src="scripts/settings.js"></script>
+    <script src="scripts/seed.js"></script>
+    <script src="scripts/play-plan.js"></script>
+    <script src="scripts/render-hands.js"></script>
+    <script src="scripts/render-auction.js"></script>
+    <script src="scripts/render-review.js"></script>
+    <script src="scripts/auction-flow.js"></script>
+    <script src="scripts/play-flow.js"></script>
+    <script src="scripts/app.js"></script>
   </body>
 </html>

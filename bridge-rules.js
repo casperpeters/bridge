@@ -10,6 +10,8 @@
   const handSuitOrder = ["S", "H", "C", "D"];
   const bidStrains = ["C", "D", "H", "S", "NT"];
   const rankOrder = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
+  const descendingRanks = [...rankOrder].reverse();
+  const leadHonorRanks = ["A", "K", "Q", "J", "T"];
   const hcpValue = { A: 4, K: 3, Q: 2, J: 1 };
   const vulnerabilityCycle = [
     "none", "NS", "EW", "both",
@@ -187,23 +189,37 @@
     return penalty * (multiplier === 4 ? 2 : 1);
   }
 
-  function calculatePassOutScore(scoringMode) {
+  function calculatePassOutScore() {
     return {
       declarerTeam: null,
       score: 0,
       scoreText: "NS 0 / EW 0",
       vulnerable: false,
-      mode: scoringMode,
       passOut: true,
-      passedOut: true
+      passedOut: true,
+      needed: 0,
+      tricksMade: 0,
+      contractMade: true,
+      multiplier: 1,
+      contractPoints: 0,
+      contractScore: 0,
+      overtricks: 0,
+      undertricks: 0,
+      overtrickScore: 0,
+      undertrickPenalty: 0,
+      gameBonus: 0,
+      partscoreBonus: 0,
+      slamBonus: 0,
+      insultBonus: 0,
+      bonusScore: 0
     };
   }
 
-  function calculateBridgeScore({ contract, declarer, tricksMade, vulnerability, scoringMode }) {
-    if (!contract) return calculatePassOutScore(scoringMode);
+  function calculateBridgeScore({ contract, declarer, tricksMade, vulnerability }) {
+    if (!contract) return calculatePassOutScore();
 
     const declarerTeam = teamOf(declarer);
-    const vulnerable = scoringMode === "casual" ? false : isTeamVulnerable(declarerTeam, vulnerability);
+    const vulnerable = isTeamVulnerable(declarerTeam, vulnerability);
     const needed = contract.level + 6;
     const made = tricksMade >= needed;
     const multiplier = contract.redoubled ? 4 : contract.doubled ? 2 : 1;
@@ -217,23 +233,54 @@
         score: -penalty,
         scoreText: `${declarerTeam} -${penalty}`,
         vulnerable,
-        mode: scoringMode
+        needed,
+        tricksMade,
+        contractMade: false,
+        multiplier,
+        contractPoints: contractTrickPoints(contract),
+        contractScore: 0,
+        overtricks,
+        undertricks,
+        overtrickScore: 0,
+        undertrickPenalty: penalty,
+        gameBonus: 0,
+        partscoreBonus: 0,
+        slamBonus: 0,
+        insultBonus: 0,
+        bonusScore: 0
       };
     }
 
-    const base = contractTrickPoints(contract) * multiplier;
-    const gameBonus = base >= 100 ? (vulnerable ? 500 : 300) : 50;
+    const contractPoints = contractTrickPoints(contract);
+    const base = contractPoints * multiplier;
+    const gameBonus = base >= 100 ? (vulnerable ? 500 : 300) : 0;
+    const partscoreBonus = base >= 100 ? 0 : 50;
     const overtrickScore = overtrickPoints(contract, overtricks, vulnerable, multiplier);
     const slamBonus = contract.level === 6 ? (vulnerable ? 750 : 500) : contract.level === 7 ? (vulnerable ? 1500 : 1000) : 0;
     const insultBonus = contract.redoubled ? 100 : contract.doubled ? 50 : 0;
-    const score = base + gameBonus + overtrickScore + slamBonus + insultBonus;
+    const bonusScore = gameBonus + partscoreBonus + slamBonus + insultBonus;
+    const score = base + bonusScore + overtrickScore;
 
     return {
       declarerTeam,
       score,
       scoreText: `${declarerTeam} +${score}`,
       vulnerable,
-      mode: scoringMode
+      needed,
+      tricksMade,
+      contractMade: true,
+      multiplier,
+      contractPoints,
+      contractScore: base,
+      overtricks,
+      undertricks,
+      overtrickScore,
+      undertrickPenalty: 0,
+      gameBonus,
+      partscoreBonus,
+      slamBonus,
+      insultBonus,
+      bonusScore
     };
   }
 
@@ -263,6 +310,19 @@
       counts[suit] = hand.filter((card) => card.suit === suit).length;
       return counts;
     }, {});
+  }
+
+  function longestSuitForLead(hand) {
+    const suitCounts = countSuits(hand);
+    return suits.reduce((best, suit) => suitCounts[suit] > suitCounts[best] ? suit : best, "C");
+  }
+
+  function isLeadHonorRank(rank) {
+    return leadHonorRanks.includes(rank);
+  }
+
+  function isLowLeadCard(card) {
+    return Boolean(card && !isLeadHonorRank(card.rank));
   }
 
   function partnerOf(seat) {
@@ -890,6 +950,582 @@
     return ranks.has("A") || (ranks.has("K") && cards.length >= 2) || (ranks.has("Q") && cards.length >= 3) || (ranks.has("J") && cards.length >= 4);
   }
 
+  function createPlayPlan({
+    declarerHand = [],
+    dummyHand = [],
+    contract = null,
+    declarer = null,
+    dummy = null,
+    trickHistory = []
+  } = {}) {
+    if (!contract || !declarer || !dummy || !declarerHand.length || !dummyHand.length) return null;
+    if (contract.strain === "NT") {
+      return createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory });
+    }
+    return createSuitPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy });
+  }
+
+  function createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory }) {
+    const playedCards = playedCardsFrom(trickHistory, []);
+    const neededTricks = contract.level + 6;
+    const sureWinners = countSureWinners(declarerHand, dummyHand, playedCards, declarer, dummy);
+    const developmentPriorities = notrumpDevelopmentPriorities({ declarerHand, dummyHand, declarer, dummy, playedCards });
+    const finessePriorities = notrumpFinessePriorities({ declarerHand, dummyHand, declarer, dummy, playedCards });
+    const cashPriorities = notrumpCashPriorities(sureWinners, neededTricks);
+    const priorities = [
+      ...cashPriorities,
+      ...developmentPriorities,
+      ...finessePriorities
+    ].sort((a, b) => b.score - a.score);
+    const selectedPriorities = uniquePlanPriorities(priorities).slice(0, 3);
+    const warnings = notrumpPlanWarnings(selectedPriorities, { declarerHand, dummyHand, declarer, dummy, sureWinners });
+
+    if (!selectedPriorities.length && sureWinners.total >= neededTricks) {
+      selectedPriorities.push({
+        kind: "cashSureWinners",
+        confidence: "basic",
+        score: 1
+      });
+    }
+
+    return {
+      type: "notrump",
+      confidence: selectedPriorities.some((priority) => priority.confidence === "uncertain") || warnings.length ? "uncertain" : "basic",
+      neededTricks,
+      sureWinners,
+      losers: null,
+      needToDevelop: Math.max(0, neededTricks - sureWinners.total),
+      priorities: selectedPriorities,
+      warnings,
+      declarer,
+      dummy
+    };
+  }
+
+  function countSureWinners(declarerHand, dummyHand, playedCards, declarer, dummy) {
+    const bySuit = {};
+    const detailsBySuit = {};
+    for (const suit of suits) {
+      const detail = notrumpSuitWinnerDetail({
+        declarerHand,
+        dummyHand,
+        playedCards,
+        declarer,
+        dummy,
+        suit
+      });
+      detailsBySuit[suit] = detail;
+      bySuit[suit] = detail.cashableWinners;
+    }
+    return {
+      total: Object.values(bySuit).reduce((total, count) => total + count, 0),
+      bySuit,
+      detailsBySuit
+    };
+  }
+
+  function notrumpSuitWinnerDetail({ declarerHand, dummyHand, playedCards, declarer, dummy, suit }) {
+    const declarerSuitCards = cardsInSuit(declarerHand, suit);
+    const dummySuitCards = cardsInSuit(dummyHand, suit);
+    const playedSuitCards = cardsInSuit(playedCards, suit);
+    const combinedCards = [...declarerSuitCards, ...dummySuitCards];
+    const winnerRanks = visibleTopWinnerRanks(combinedCards, playedSuitCards);
+    const blockage = blockedSuitInfo({
+      declarerHand,
+      dummyHand,
+      declarerSuitCards,
+      dummySuitCards,
+      declarer,
+      dummy,
+      suit,
+      winnerRanks
+    });
+    const cashableRanks = blockage && !blockage.entryCard ? blockage.cashFirstRanks : winnerRanks;
+
+    return {
+      suit,
+      winners: winnerRanks.length,
+      cashableWinners: cashableRanks.length,
+      winnerRanks,
+      cashableRanks,
+      blocked: Boolean(blockage),
+      blockedSeat: blockage?.blockedSeat || null,
+      longSeat: blockage?.longSeat || null,
+      cashFirstRanks: blockage?.cashFirstRanks || [],
+      strandedRanks: blockage?.strandedRanks || [],
+      entryCard: blockage?.entryCard || null,
+      entryTiming: blockage ? (blockage.entryCard ? "unblockBeforeEntry" : "blockedNoEntry") : "free"
+    };
+  }
+
+  function visibleTopWinnerRanks(combinedCards, playedSuitCards = []) {
+    const visibleRanks = new Set(combinedCards.map((card) => card.rank));
+    const playedRanks = new Set(playedSuitCards.map((card) => card.rank));
+    const winners = [];
+    for (const rank of [...rankOrder].reverse()) {
+      if (visibleRanks.has(rank)) {
+        winners.push(rank);
+      } else if (!playedRanks.has(rank)) {
+        break;
+      }
+    }
+    return winners;
+  }
+
+  function seatForSuitRank(rank, declarerSuitCards, dummySuitCards, declarer, dummy) {
+    if (declarerSuitCards.some((card) => card.rank === rank)) return declarer;
+    if (dummySuitCards.some((card) => card.rank === rank)) return dummy;
+    return null;
+  }
+
+  function blockedSuitInfo({
+    declarerHand,
+    dummyHand,
+    declarerSuitCards,
+    dummySuitCards,
+    declarer,
+    dummy,
+    suit,
+    winnerRanks
+  }) {
+    if (winnerRanks.length < 2 || !declarer || !dummy) return null;
+    const sides = [
+      { seat: declarer, hand: declarerHand, suitCards: declarerSuitCards },
+      { seat: dummy, hand: dummyHand, suitCards: dummySuitCards }
+    ].sort((a, b) => b.suitCards.length - a.suitCards.length);
+    const longSide = sides[0];
+    const shortSide = sides[1];
+    if (longSide.suitCards.length < 3 || !shortSide.suitCards.length) return null;
+
+    const cashFirstRanks = [];
+    for (const rank of winnerRanks) {
+      if (seatForSuitRank(rank, declarerSuitCards, dummySuitCards, declarer, dummy) !== shortSide.seat) break;
+      cashFirstRanks.push(rank);
+    }
+    if (!cashFirstRanks.length || cashFirstRanks.length < shortSide.suitCards.length) return null;
+
+    const strandedRanks = winnerRanks
+      .slice(cashFirstRanks.length)
+      .filter((rank) => seatForSuitRank(rank, declarerSuitCards, dummySuitCards, declarer, dummy) === longSide.seat);
+    if (!strandedRanks.length) return null;
+
+    return {
+      blockedSeat: shortSide.seat,
+      longSeat: longSide.seat,
+      cashFirstRanks,
+      strandedRanks,
+      entryCard: clearOutsideEntryCard(longSide.hand, suit)
+    };
+  }
+
+  function clearOutsideEntryCard(hand, excludedSuit) {
+    return [...hand]
+      .filter((card) => card.suit !== excludedSuit && card.rank === "A")
+      .sort(compareCards)[0] || null;
+  }
+
+  function entryPlanForHand(hand, excludedSuit) {
+    const entryCard = clearOutsideEntryCard(hand, excludedSuit);
+    if (!entryCard) {
+      return {
+        entryType: "none",
+        entrySuit: null,
+        entryRank: null,
+        entryTiming: "noClearEntry",
+        entryCount: 0
+      };
+    }
+    return {
+      entryType: "outsideAce",
+      entrySuit: entryCard.suit,
+      entryRank: entryCard.rank,
+      entryTiming: "outsideEntry",
+      entryCount: clearOutsideEntries(hand, excludedSuit)
+    };
+  }
+
+  function notrumpCashPriorities(sureWinners, neededTricks) {
+    const enoughToCash = sureWinners.total >= neededTricks;
+    return suits
+      .map((suit) => sureWinners.detailsBySuit[suit])
+      .filter((detail) => detail?.cashableWinners > 0)
+      .filter((detail) => enoughToCash || (detail.blocked && detail.entryCard))
+      .map((detail) => {
+        const unblockFirst = detail.blocked && detail.entryCard;
+        return {
+          kind: "cashWinners",
+          confidence: unblockFirst || enoughToCash ? "basic" : "uncertain",
+          suit: detail.suit,
+          winnerCount: detail.winners,
+          cashableWinners: detail.cashableWinners,
+          cashRanks: unblockFirst ? detail.cashFirstRanks : detail.cashableRanks,
+          blocked: detail.blocked,
+          firstSeat: unblockFirst ? detail.blockedSeat : null,
+          targetSeat: unblockFirst ? detail.longSeat : null,
+          entrySuit: detail.entryCard?.suit || null,
+          entryRank: detail.entryCard?.rank || null,
+          timing: unblockFirst ? "unblockBeforeEntry" : "cashNow",
+          score: (unblockFirst ? 120 : 20) + detail.cashableWinners * 4
+        };
+      });
+  }
+
+  function notrumpDevelopmentPriorities({ declarerHand, dummyHand, declarer, dummy, playedCards }) {
+    const candidates = [];
+    for (const suit of suits) {
+      const declarerSuitCards = cardsInSuit(declarerHand, suit);
+      const dummySuitCards = cardsInSuit(dummyHand, suit);
+      const playedSuitCards = cardsInSuit(playedCards, suit);
+      const combinedCards = [...declarerSuitCards, ...dummySuitCards];
+      if (combinedCards.length < 6) continue;
+
+      [
+        { seat: declarer, cards: declarerSuitCards, hand: declarerHand },
+        { seat: dummy, cards: dummySuitCards, hand: dummyHand }
+      ].forEach((source) => {
+        if (source.cards.length < 4) return;
+        const run = topTouchingHonorRun(source.cards);
+        if (!run) return;
+        const missingHigher = missingHigherRanks(run, combinedCards, playedSuitCards);
+        if (missingHigher.length !== 1) return;
+        const entryPlan = entryPlanForHand(source.hand, suit);
+        candidates.push({
+          kind: "developLongSuit",
+          confidence: "uncertain",
+          suit,
+          suitLength: combinedCards.length,
+          sourceSeat: source.seat,
+          sourceLength: source.cards.length,
+          sequence: run.ranks.join(""),
+          missingStopper: missingHigher[0],
+          entryType: entryPlan.entryType,
+          entrySuit: entryPlan.entrySuit,
+          entryRank: entryPlan.entryRank,
+          entryTiming: entryPlan.entryTiming,
+          entryCount: entryPlan.entryCount,
+          score: combinedCards.length * 4 + source.cards.length * 3 + run.ranks.length * 8 + (entryPlan.entryCount ? 8 : -8)
+        });
+      });
+    }
+    return candidates;
+  }
+
+  function notrumpFinessePriorities({ declarerHand, dummyHand, declarer, dummy, playedCards }) {
+    const candidates = [];
+    for (const suit of suits) {
+      const declarerSuitCards = cardsInSuit(declarerHand, suit);
+      const dummySuitCards = cardsInSuit(dummyHand, suit);
+      const playedSuitCards = cardsInSuit(playedCards, suit);
+      [
+        {
+          currentSuitCards: declarerSuitCards,
+          partnerSuitCards: dummySuitCards,
+          partnerHand: dummyHand,
+          targetSeat: dummy
+        },
+        {
+          currentSuitCards: dummySuitCards,
+          partnerSuitCards: declarerSuitCards,
+          partnerHand: declarerHand,
+          targetSeat: declarer
+        }
+      ].forEach((direction) => {
+        const candidate = finesseCandidate({
+          suit,
+          partnerHand: direction.partnerHand,
+          currentSuitCards: direction.currentSuitCards,
+          partnerSuitCards: direction.partnerSuitCards,
+          playedSuitCards,
+          partnerSeat: direction.targetSeat
+        });
+        if (!candidate) return;
+        candidates.push({
+          kind: candidate.ruleId === "doubleFinesseTowardHonor" ? "doubleFinesse" : "finesse",
+          confidence: "uncertain",
+          suit,
+          targetSeat: candidate.targetSeat,
+          finesseRank: candidate.finesseRank,
+          missingHonor: candidate.missingHonor,
+          missingHonors: candidate.missingHonors,
+          score: candidate.score - 20
+        });
+      });
+    }
+    return candidates;
+  }
+
+  function uniquePlanPriorities(priorities) {
+    const seen = new Set();
+    return priorities.filter((priority) => {
+      const key = `${priority.kind}:${priority.suit || ""}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function notrumpPlanWarnings(priorities, { declarerHand, dummyHand, declarer, dummy, sureWinners }) {
+    const warnings = [];
+    priorities
+      .filter((priority) => priority.kind === "developLongSuit")
+      .forEach((priority) => {
+        if (priority.entryTiming !== "noClearEntry") return;
+        warnings.push({
+          kind: "entryRisk",
+          suit: priority.suit,
+          sourceSeat: priority.sourceSeat === declarer ? declarer : dummy
+        });
+      });
+    for (const suit of suits) {
+      const detail = sureWinners?.detailsBySuit?.[suit];
+      if (!detail?.blocked || detail.entryCard) continue;
+      warnings.push({
+        kind: "blockedSuit",
+        suit,
+        blockedSeat: detail.blockedSeat,
+        longSeat: detail.longSeat,
+        cashFirstRanks: detail.cashFirstRanks,
+        strandedRanks: detail.strandedRanks
+      });
+    }
+    return warnings;
+  }
+
+  function clearOutsideEntries(hand, excludedSuit) {
+    return hand.filter((card) => card.suit !== excludedSuit && card.rank === "A").length;
+  }
+
+  function createSuitPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy }) {
+    const neededTricks = contract.level + 6;
+    const trump = contract.strain;
+    const losers = countSuitContractLosers(declarerHand, dummyHand, trump, neededTricks);
+    const priorities = [];
+    const ruffPriorities = shortSuitRuffPriorities(declarerHand, dummyHand, trump, dummy, losers.detailsBySuit);
+    const cashPriorities = suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy);
+    const trumpPriority = drawTrumpPriority(declarerHand, dummyHand, trump, trumpDelayPlan(ruffPriorities, cashPriorities));
+
+    if (trumpPriority?.timing === "early") {
+      if (trumpPriority) priorities.push(trumpPriority);
+      priorities.push(...cashPriorities.slice(0, 2));
+    } else {
+      priorities.push(...ruffPriorities.slice(0, 2));
+      priorities.push(...cashPriorities.filter((priority) => priority.timing === "unblockBeforeEntry").slice(0, 1));
+      if (trumpPriority) priorities.push(trumpPriority);
+      priorities.push(...cashPriorities.filter((priority) => priority.timing !== "unblockBeforeEntry").slice(0, 1));
+    }
+    if (!priorities.length) {
+      priorities.push({
+        kind: "cashSureWinners",
+        confidence: "basic",
+        score: 1
+      });
+    }
+
+    const warnings = [];
+    if (losers.total > losers.allowed) {
+      warnings.push({
+        kind: "tooManyLosers",
+        losers: losers.total,
+        allowed: losers.allowed
+      });
+    }
+    cashPriorities
+      .filter((priority) => priority.timing === "blockedNoEntry")
+      .forEach((priority) => {
+        warnings.push({
+          kind: "blockedSuit",
+          suit: priority.suit,
+          blockedSeat: priority.firstSeat,
+          longSeat: priority.targetSeat,
+          cashFirstRanks: priority.cashRanks,
+          strandedRanks: priority.strandedRanks
+        });
+      });
+
+    return {
+      type: "suit",
+      confidence: warnings.length ? "uncertain" : "basic",
+      neededTricks,
+      sureWinners: null,
+      losers,
+      needToDevelop: 0,
+      priorities: priorities.slice(0, 3),
+      warnings,
+      declarer,
+      dummy
+    };
+  }
+
+  function countSuitContractLosers(declarerHand, dummyHand, trump, neededTricks) {
+    const bySuit = {};
+    const rawBySuit = {};
+    const detailsBySuit = {};
+    const dummyTrumpLength = cardsInSuit(dummyHand, trump).length;
+    for (const suit of suits) {
+      const detail = suitLoserEstimate(
+        cardsInSuit(declarerHand, suit),
+        cardsInSuit(dummyHand, suit),
+        {
+          isTrump: suit === trump,
+          dummyTrumpLength
+        }
+      );
+      detailsBySuit[suit] = detail;
+      bySuit[suit] = detail.losers;
+      rawBySuit[suit] = detail.rawLosers;
+    }
+    return {
+      total: Object.values(bySuit).reduce((total, count) => total + count, 0),
+      bySuit,
+      rawBySuit,
+      detailsBySuit,
+      allowed: 13 - neededTricks
+    };
+  }
+
+  function suitLoserEstimate(declarerSuitCards, dummySuitCards, { isTrump, dummyTrumpLength }) {
+    if (!declarerSuitCards.length) {
+      return {
+        losers: 0,
+        rawLosers: 0,
+        topLosers: [],
+        missingTopHonors: [],
+        coverCards: [],
+        ruffReduction: 0,
+        trumpLengthCredit: 0,
+        declarerLength: 0,
+        dummyLength: dummySuitCards.length,
+        combinedLength: dummySuitCards.length
+      };
+    }
+    const checks = ["A", "K", "Q"].slice(0, Math.min(3, declarerSuitCards.length));
+    const declarerRanks = new Set(declarerSuitCards.map((card) => card.rank));
+    const dummyRanks = new Set(dummySuitCards.map((card) => card.rank));
+    const visibleRanks = new Set([...declarerRanks, ...dummyRanks]);
+    const missingTopHonors = checks.filter((rank) => !visibleRanks.has(rank));
+    const coverCards = checks.filter((rank) => !declarerRanks.has(rank) && dummyRanks.has(rank));
+    const rawLosers = missingTopHonors.length;
+    const combinedLength = declarerSuitCards.length + dummySuitCards.length;
+    const trumpLengthCredit = isTrump && combinedLength >= 9 && rawLosers > 0 ? 1 : 0;
+    const ruffReduction = !isTrump && dummySuitCards.length <= 1 && dummyTrumpLength >= 2
+      ? Math.min(rawLosers, Math.max(0, declarerSuitCards.length - dummySuitCards.length), 1)
+      : 0;
+    return {
+      losers: Math.max(0, rawLosers - trumpLengthCredit - ruffReduction),
+      rawLosers,
+      topLosers: missingTopHonors,
+      missingTopHonors,
+      coverCards,
+      ruffReduction,
+      trumpLengthCredit,
+      declarerLength: declarerSuitCards.length,
+      dummyLength: dummySuitCards.length,
+      combinedLength
+    };
+  }
+
+  function shortSuitRuffPriorities(declarerHand, dummyHand, trump, dummy, detailsBySuit) {
+    const dummyTrumps = cardsInSuit(dummyHand, trump);
+    if (dummyTrumps.length < 2) return [];
+    return suits
+      .filter((suit) => suit !== trump)
+      .map((suit) => ({
+        kind: "ruffShortSuit",
+        confidence: "basic",
+        suit,
+        shortSeat: dummy,
+        shortLength: cardsInSuit(dummyHand, suit).length,
+        declarerLength: cardsInSuit(declarerHand, suit).length,
+        losers: detailsBySuit[suit]?.rawLosers || 0,
+        ruffReduction: detailsBySuit[suit]?.ruffReduction || 0,
+        score: (detailsBySuit[suit]?.rawLosers || 0) * 20 - cardsInSuit(dummyHand, suit).length * 3
+      }))
+      .filter((priority) => priority.shortLength <= 1 && priority.declarerLength >= 2 && priority.losers > 0)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  function suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy) {
+    return suits
+      .filter((suit) => suit !== trump)
+      .map((suit) => {
+        const declarerSuitCards = cardsInSuit(declarerHand, suit);
+        const dummySuitCards = cardsInSuit(dummyHand, suit);
+        const winnerRanks = visibleTopWinnerRanks([...declarerSuitCards, ...dummySuitCards], []);
+        if (!winnerRanks.length) return null;
+        const blockage = blockedSuitInfo({
+          declarerHand,
+          dummyHand,
+          declarerSuitCards,
+          dummySuitCards,
+          declarer,
+          dummy,
+          suit,
+          winnerRanks
+        });
+        const hasBlockage = Boolean(blockage);
+        const unblockFirst = Boolean(blockage?.entryCard);
+        const cashRanks = hasBlockage && !unblockFirst ? blockage.cashFirstRanks : unblockFirst ? blockage.cashFirstRanks : winnerRanks;
+        return {
+          kind: "cashWinners",
+          confidence: hasBlockage && !unblockFirst ? "uncertain" : "basic",
+          suit,
+          winnerCount: winnerRanks.length,
+          cashableWinners: cashRanks.length,
+          cashRanks,
+          blocked: hasBlockage,
+          firstSeat: hasBlockage ? blockage.blockedSeat : null,
+          targetSeat: hasBlockage ? blockage.longSeat : null,
+          entrySuit: blockage?.entryCard?.suit || null,
+          entryRank: blockage?.entryCard?.rank || null,
+          strandedRanks: hasBlockage ? blockage.strandedRanks : [],
+          timing: unblockFirst ? "unblockBeforeEntry" : hasBlockage ? "blockedNoEntry" : "afterTrumps",
+          score: (unblockFirst ? 70 : hasBlockage ? 2 : 6) + cashRanks.length * 3
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score);
+  }
+
+  function trumpDelayPlan(ruffPriorities, cashPriorities) {
+    if (ruffPriorities.length) {
+      return {
+        timing: "afterRuff",
+        reason: "shortSuitRuff",
+        suit: ruffPriorities[0].suit
+      };
+    }
+    const unblock = cashPriorities.find((priority) => priority.timing === "unblockBeforeEntry");
+    if (unblock) {
+      return {
+        timing: "afterUnblock",
+        reason: "blockedSideSuit",
+        suit: unblock.suit
+      };
+    }
+    return {
+      timing: "early",
+      reason: "stableTrumpControl"
+    };
+  }
+
+  function drawTrumpPriority(declarerHand, dummyHand, trump, delayPlan) {
+    const trumpLength = cardsInSuit(declarerHand, trump).length + cardsInSuit(dummyHand, trump).length;
+    if (trumpLength < 7) return null;
+    const combinedRanks = new Set([...cardsInSuit(declarerHand, trump), ...cardsInSuit(dummyHand, trump)].map((card) => card.rank));
+    const missingHonors = ["A", "K", "Q"].filter((rank) => !combinedRanks.has(rank));
+    return {
+      kind: "drawTrumps",
+      confidence: missingHonors.length >= 2 ? "uncertain" : "basic",
+      suit: trump,
+      trumpLength,
+      missingHonors,
+      timing: delayPlan?.timing || "early",
+      delayReason: delayPlan?.reason || "stableTrumpControl",
+      delaySuit: delayPlan?.suit || null,
+      score: (delayPlan?.timing === "early" ? 30 : 12) + trumpLength - missingHonors.length * 3
+    };
+  }
+
   const developmentRanks = ["A", "K", "Q", "J", "T"];
   const finessePatterns = [
     {
@@ -1239,6 +1875,278 @@
     );
   }
 
+  function chooseCardFromPlayPlan({
+    hand,
+    partnerHand,
+    currentTrick,
+    trickHistory,
+    seat,
+    declarer,
+    dummy,
+    contract,
+    trump,
+    playPlan,
+    legal
+  }) {
+    if (currentTrick.length || !playPlan?.priorities?.length) return null;
+    if (!partnerHand?.length || !declarer || !dummy) return null;
+    if (seat !== declarer && seat !== dummy) return null;
+
+    for (const priority of playPlan.priorities) {
+      const result = chooseCardForPlanPriority({
+        priority,
+        hand,
+        partnerHand,
+        trickHistory,
+        seat,
+        contract,
+        trump,
+        legal
+      });
+      if (result) return result;
+    }
+
+    return null;
+  }
+
+  function chooseCardForPlanPriority({
+    priority,
+    hand,
+    partnerHand,
+    trickHistory,
+    seat,
+    contract,
+    trump,
+    legal
+  }) {
+    if (priority.kind === "developLongSuit") {
+      return choosePlanDevelopmentPlay({ priority, hand, partnerHand, seat, legal });
+    }
+    if (priority.kind === "finesse" || priority.kind === "doubleFinesse") {
+      return choosePlanFinessePlay({ priority, hand, partnerHand, trickHistory, seat, legal });
+    }
+    if (priority.kind === "ruffShortSuit") {
+      return choosePlanRuffPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal });
+    }
+    if (priority.kind === "drawTrumps") {
+      return choosePlanDrawTrumpsPlay({ priority, contract, legal });
+    }
+    if (priority.kind === "cashWinners" || priority.kind === "cashSureWinners") {
+      return choosePlanCashWinnerPlay({ priority, hand, seat, legal });
+    }
+    return null;
+  }
+
+  function legalPlanCard(card, legal) {
+    if (!card) return null;
+    return legal.find((item) => item.id === card.id) || null;
+  }
+
+  function choosePlanDevelopmentPlay({ priority, hand, partnerHand, seat, legal }) {
+    const suitCards = cardsInSuit(hand, priority.suit);
+    if (!suitCards.length) return null;
+
+    const sourceIsCurrentHand = priority.sourceSeat === seat;
+    const card = sourceIsCurrentHand
+      ? legalPlanCard(suitCards.find((item) => priority.sequence?.startsWith(item.rank)) || highestCard(suitCards), legal)
+      : legalPlanCard(lowestCard(suitCards), legal);
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      "playPlan.developLongSuit",
+      priority.confidence || "uncertain",
+      "Follow the visible play plan by developing the long notrump suit.",
+      {
+        planPriority: priority,
+        suit: priority.suit,
+        suitLength: priority.suitLength,
+        sourceSeat: priority.sourceSeat,
+        sourceLength: priority.sourceLength,
+        sequence: priority.sequence,
+        missingStopper: priority.missingStopper,
+        action: sourceIsCurrentHand ? "forceMissingHighCard" : "leadTowardLongSuit",
+        targetSeat: sourceIsCurrentHand ? seat : partnerOf(seat),
+        targetLength: sourceIsCurrentHand ? suitCards.length : cardsInSuit(partnerHand, priority.suit).length
+      }
+    );
+  }
+
+  function choosePlanFinessePlay({ priority, hand, partnerHand, trickHistory, seat, legal }) {
+    const partnerSeat = partnerOf(seat);
+    if (priority.targetSeat && priority.targetSeat !== partnerSeat) return null;
+
+    const currentSuitCards = cardsInSuit(hand, priority.suit);
+    const partnerSuitCards = cardsInSuit(partnerHand, priority.suit);
+    const candidate = finesseCandidate({
+      suit: priority.suit,
+      partnerHand,
+      currentSuitCards,
+      partnerSuitCards,
+      playedSuitCards: cardsInSuit(playedCardsFrom(trickHistory, []), priority.suit),
+      partnerSeat
+    });
+    if (!candidate) return null;
+
+    const expectedKind = candidate.ruleId === "doubleFinesseTowardHonor" ? "doubleFinesse" : "finesse";
+    if (expectedKind !== priority.kind) return null;
+    const card = legalPlanCard(candidate.card, legal);
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      `playPlan.${candidate.ruleId}`,
+      priority.confidence || "uncertain",
+      candidate.reason,
+      {
+        planPriority: priority,
+        suit: candidate.suit,
+        targetSeat: candidate.targetSeat,
+        targetLength: candidate.targetLength,
+        finesseRank: candidate.finesseRank,
+        missingHonor: candidate.missingHonor,
+        missingHonors: candidate.missingHonors,
+        guardRanks: candidate.guardRanks,
+        entryType: candidate.entryType,
+        entrySuit: candidate.entrySuit,
+        entryRank: candidate.entryRank,
+        action: candidate.action
+      }
+    );
+  }
+
+  function choosePlanRuffPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal }) {
+    if (!trump) return null;
+    if (priority.shortSeat === seat) {
+      return choosePlanRuffEntryPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal });
+    }
+    if (cardsInSuit(partnerHand, priority.suit).length !== 0) return null;
+    if (!cardsInSuit(partnerHand, trump).length) return null;
+    const card = legalPlanCard(lowestCard(cardsInSuit(hand, priority.suit)), legal);
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      "playPlan.ruffShortSuit",
+      priority.confidence || "basic",
+      "Follow the visible play plan by leading a side suit that dummy can ruff.",
+      {
+        planPriority: priority,
+        suit: priority.suit,
+        shortSeat: priority.shortSeat,
+        trump,
+        action: "leadToShortHandRuff"
+      }
+    );
+  }
+
+  function choosePlanRuffEntryPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal }) {
+    if (cardsInSuit(hand, priority.suit).length) return null;
+    if (!cardsInSuit(partnerHand, priority.suit).length) return null;
+
+    const candidate = ruffEntryCandidates({
+      hand,
+      partnerHand,
+      playedCards: playedCardsFrom(trickHistory, []),
+      trump,
+      ruffSuit: priority.suit,
+      legal
+    })
+      .sort((a, b) => b.score - a.score)[0];
+    if (!candidate) return null;
+
+    return cardPlayResult(
+      candidate.card,
+      "playPlan.enterLongTrumpHand",
+      priority.confidence || "basic",
+      "Follow the visible play plan by leading an entry to the hand that can lead the ruffing suit.",
+      {
+        planPriority: priority,
+        suit: priority.suit,
+        shortSeat: priority.shortSeat,
+        trump,
+        entrySuit: candidate.suit,
+        entryRank: candidate.entryRank,
+        targetSeat: partnerOf(seat),
+        action: "leadEntryToLongTrumpHand"
+      }
+    );
+  }
+
+  function ruffEntryCandidates({ hand, partnerHand, playedCards, trump, ruffSuit, legal }) {
+    return suits
+      .filter((suit) => suit !== trump && suit !== ruffSuit)
+      .map((suit) => ruffEntryCandidate({ suit, hand, partnerHand, playedCards, legal }))
+      .filter(Boolean);
+  }
+
+  function ruffEntryCandidate({ suit, hand, partnerHand, playedCards, legal }) {
+    const leadCards = cardsInSuit(legal, suit);
+    const partnerSuitCards = cardsInSuit(partnerHand, suit);
+    if (!leadCards.length || !partnerSuitCards.length) return null;
+
+    const winnerRanks = visibleTopWinnerRanks([...cardsInSuit(hand, suit), ...partnerSuitCards], cardsInSuit(playedCards, suit));
+    const partnerWinnerRanks = winnerRanks.filter((rank) => hasRank(partnerSuitCards, rank));
+    if (!partnerWinnerRanks.length) return null;
+
+    const entryRank = partnerWinnerRanks[0];
+    const lowerLeadCards = leadCards.filter((card) => rankOrder.indexOf(card.rank) < rankOrder.indexOf(entryRank));
+    const card = lowestCard(lowerLeadCards);
+    if (!card) return null;
+
+    return {
+      card,
+      suit,
+      entryRank,
+      score: partnerWinnerRanks.length * 20 + winnerRanks.length * 8 + leadCards.length + partnerSuitCards.length
+    };
+  }
+
+  function choosePlanDrawTrumpsPlay({ priority, contract, legal }) {
+    const trump = contract?.strain === "NT" ? null : contract?.strain;
+    if (!trump || priority.suit !== trump) return null;
+    const card = legalPlanCard(highestCard(cardsInSuit(legal, trump)), legal);
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      "playPlan.drawTrumps",
+      priority.confidence || "basic",
+      "Follow the visible play plan by drawing trumps.",
+      {
+        planPriority: priority,
+        suit: trump,
+        trumpLength: priority.trumpLength,
+        missingHonors: priority.missingHonors,
+        timing: priority.timing,
+        action: "drawTrumps"
+      }
+    );
+  }
+
+  function choosePlanCashWinnerPlay({ priority, hand, seat, legal }) {
+    if (priority.firstSeat && priority.firstSeat !== seat) return null;
+    const suitedLegal = priority.suit ? cardsInSuit(legal, priority.suit) : legal;
+    const card = priority.cashRanks?.length
+      ? priority.cashRanks.map((rank) => suitedLegal.find((item) => item.rank === rank)).find(Boolean)
+      : highestCard(suitedLegal);
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      priority.kind === "cashWinners" ? "playPlan.cashWinners" : "playPlan.cashSureWinners",
+      priority.confidence || "basic",
+      "Follow the visible play plan by cashing a sure winner.",
+      {
+        planPriority: priority,
+        suit: priority.suit || card.suit,
+        cashRanks: priority.cashRanks,
+        timing: priority.timing,
+        action: priority.timing === "unblockBeforeEntry" ? "unblockSuit" : "cashSureWinner"
+      }
+    );
+  }
+
   function cardPlayResult(card, ruleName, confidence, reason, extra = {}) {
     return {
       card,
@@ -1249,9 +2157,122 @@
     };
   }
 
-  function chooseLeadCardPlay(hand, legal) {
-    const suitCounts = countSuits(hand);
-    const longestSuit = suits.reduce((best, suit) => suitCounts[suit] > suitCounts[best] ? suit : best, "C");
+  function cardFromRank(cards, rank) {
+    return cards.find((card) => card.rank === rank) || null;
+  }
+
+  function notrumpLeadPattern(cards) {
+    const ranks = new Set(cards.map((card) => card.rank));
+    const candidates = [];
+
+    for (let i = 0; i < descendingRanks.length; i++) {
+      const topRank = descendingRanks[i];
+      if (!isLeadHonorRank(topRank) || !ranks.has(topRank)) continue;
+
+      const run = [];
+      for (let j = i; j < descendingRanks.length; j++) {
+        if (!ranks.has(descendingRanks[j])) break;
+        run.push(descendingRanks[j]);
+      }
+      if (run.length >= 3) {
+        candidates.push({ type: "sequence", ranks: run, topRank, score: 300 - i });
+      }
+
+      const nextRank = descendingRanks[i + 1];
+      const gapRank = descendingRanks[i + 2];
+      const fourthRank = descendingRanks[i + 3];
+      if (nextRank && fourthRank && ranks.has(nextRank) && !ranks.has(gapRank) && ranks.has(fourthRank)) {
+        candidates.push({
+          type: "brokenSequence",
+          ranks: [topRank, nextRank, fourthRank],
+          topRank,
+          missingRank: gapRank,
+          score: 200 - i
+        });
+      }
+      if (gapRank && fourthRank && !ranks.has(nextRank) && ranks.has(gapRank) && ranks.has(fourthRank)) {
+        candidates.push({
+          type: "brokenSequence",
+          ranks: [topRank, gapRank, fourthRank],
+          topRank,
+          missingRank: nextRank,
+          score: 200 - i
+        });
+      }
+    }
+
+    const best = candidates.sort((a, b) => {
+      const topDiff = rankOrder.indexOf(b.topRank) - rankOrder.indexOf(a.topRank);
+      if (topDiff) return topDiff;
+      return b.score - a.score;
+    })[0];
+    if (!best) return null;
+
+    return {
+      ...best,
+      card: cardFromRank(cards, best.topRank)
+    };
+  }
+
+  function highCardRanks(cards) {
+    return descendingRanks.filter((rank) => hcpValue[rank] && cards.some((card) => card.rank === rank));
+  }
+
+  function chooseNotrumpLeadCardPlay(hand, legal) {
+    const longestSuit = longestSuitForLead(hand);
+    const longestSuitCards = legal.filter((card) => card.suit === longestSuit);
+    if (!longestSuitCards.length) return null;
+
+    const pattern = notrumpLeadPattern(longestSuitCards);
+    if (pattern?.card) {
+      return cardPlayResult(
+        pattern.card,
+        pattern.type === "brokenSequence" ? "notrumpBrokenSequenceLead" : "notrumpSequenceLead",
+        "basic",
+        "Lead the highest card from a notrump sequence or broken sequence.",
+        {
+          suit: longestSuit,
+          suitLength: longestSuitCards.length,
+          sequence: pattern.ranks.join(""),
+          missingRank: pattern.missingRank || null,
+          action: pattern.type
+        }
+      );
+    }
+
+    const honors = highCardRanks(longestSuitCards);
+    if (honors.length) {
+      const smallCard = lowestCard(longestSuitCards.filter(isLowLeadCard));
+      if (smallCard) {
+        return cardPlayResult(
+          smallCard,
+          "notrumpLowPromisesHonor",
+          "basic",
+          "Lead low from the longest notrump suit to promise at least one high card.",
+          {
+            suit: longestSuit,
+            suitLength: longestSuitCards.length,
+            honorRanks: honors,
+            action: "lowPromisesHonor"
+          }
+        );
+      }
+    }
+
+    return null;
+  }
+
+  function canUseDefensiveLeadAgreement(seat, declarer) {
+    return !seat || !declarer || teamOf(seat) !== teamOf(declarer);
+  }
+
+  function chooseLeadCardPlay(hand, legal, { contract = null, seat = null, declarer = null } = {}) {
+    if (contract?.strain === "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
+      const notrumpLead = chooseNotrumpLeadCardPlay(hand, legal);
+      if (notrumpLead) return notrumpLead;
+    }
+
+    const longestSuit = longestSuitForLead(hand);
     const longestSuitCards = legal.filter((card) => card.suit === longestSuit);
     if (longestSuitCards.length) {
       return cardPlayResult(
@@ -1259,7 +2280,7 @@
         "longestSuitLead",
         "uncertain",
         "Lead the highest card from the longest available suit.",
-        { suit: longestSuit, suitLength: suitCounts[longestSuit] }
+        { suit: longestSuit, suitLength: longestSuitCards.length }
       );
     }
 
@@ -1272,6 +2293,36 @@
     );
   }
 
+  function isLowPromisesHonorLead(play) {
+    if (!play?.card) return false;
+    if (play.ruleId) return play.ruleId === "notrumpLowPromisesHonor";
+    return isLowLeadCard(play.card);
+  }
+
+  function chooseThirdHandHighOverLowLead({ legal, currentTrick, seat, declarer, contract, trump, winning }) {
+    if (contract?.strain !== "NT" || trump || !seat || currentTrick.length !== 2) return null;
+    if (!canUseDefensiveLeadAgreement(seat, declarer)) return null;
+    const leadPlay = currentTrick[0];
+    if (leadPlay.seat !== partnerOf(seat) || !isLowPromisesHonorLead(leadPlay)) return null;
+
+    const leadSuit = leadPlay.card.suit;
+    const suitedLegal = cardsInSuit(legal, leadSuit);
+    if (!suitedLegal.length) return null;
+
+    return cardPlayResult(
+      highestCard(suitedLegal),
+      "thirdHandHighOverLowLead",
+      "basic",
+      "Partner led low to promise a high card in notrump, so third hand plays high.",
+      {
+        leadSuit,
+        leadCard: leadPlay.card,
+        winningSeat: winning?.seat || null,
+        action: "thirdHandHigh"
+      }
+    );
+  }
+
   function chooseCardPlay({
     hand = [],
     partnerHand = null,
@@ -1281,12 +2332,27 @@
     declarer = null,
     dummy = null,
     contract = null,
-    trump = null
+    trump = null,
+    playPlan = null
   } = {}) {
     const legal = legalCards(hand, currentTrick);
     if (!legal.length) return null;
 
     if (!currentTrick.length) {
+      const planned = chooseCardFromPlayPlan({
+        hand,
+        partnerHand,
+        currentTrick,
+        trickHistory,
+        seat,
+        declarer,
+        dummy,
+        contract,
+        trump,
+        playPlan,
+        legal
+      });
+      if (planned) return planned;
       const finesse = chooseDeclarerFinessePlay({
         hand,
         partnerHand,
@@ -1309,12 +2375,23 @@
         contract
       });
       if (development) return development;
-      return chooseLeadCardPlay(hand, legal);
+      return chooseLeadCardPlay(hand, legal, { contract, seat, declarer });
     }
 
     const leadSuit = currentTrick[0].card.suit;
     const winning = currentWinningPlay(currentTrick, trump);
     const partnerWinning = Boolean(winning && seat && teamOf(winning.seat) === teamOf(seat));
+
+    const thirdHandHigh = chooseThirdHandHighOverLowLead({
+      legal,
+      currentTrick,
+      seat,
+      declarer,
+      contract,
+      trump,
+      winning
+    });
+    if (thirdHandHigh) return thirdHandHigh;
 
     if (partnerWinning) {
       const harmlessCards = legal.filter((card) => !beats(card, winning.card, leadSuit, trump));
@@ -1417,6 +2494,7 @@
     calculatePassOutScore,
     calculateBridgeScore,
     legalCards,
+    createPlayPlan,
     chooseCardPlay,
     beats,
     currentWinningPlay

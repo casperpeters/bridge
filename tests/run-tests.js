@@ -22,8 +22,7 @@ function chooseFiveCardHigh(ids, auction = [], seat = "South") {
     hand: hand(...ids),
     auction,
     seat,
-    vulnerability: "none",
-    scoringMode: "duplicate"
+    vulnerability: "none"
   });
 }
 
@@ -81,41 +80,82 @@ test("bridge scoring handles common made contracts and undertricks", () => {
     contract: { level: 4, strain: "S" },
     declarer: "South",
     tricksMade: 10,
-    vulnerability: "none",
-    scoringMode: "duplicate"
+    vulnerability: "none"
   }).score, 420);
 
   assert.equal(rules.calculateBridgeScore({
     contract: { level: 3, strain: "NT" },
     declarer: "North",
     tricksMade: 9,
-    vulnerability: "NS",
-    scoringMode: "duplicate"
+    vulnerability: "NS"
   }).score, 600);
 
   assert.equal(rules.calculateBridgeScore({
     contract: { level: 2, strain: "H" },
     declarer: "East",
     tricksMade: 9,
-    vulnerability: "none",
-    scoringMode: "duplicate"
+    vulnerability: "none"
   }).score, 140);
 
   assert.equal(rules.calculateBridgeScore({
     contract: { level: 4, strain: "S" },
     declarer: "South",
     tricksMade: 8,
-    vulnerability: "NS",
-    scoringMode: "duplicate"
+    vulnerability: "NS"
   }).score, -200);
 
   assert.equal(rules.calculateBridgeScore({
     contract: { level: 2, strain: "H", doubled: true },
     declarer: "South",
     tricksMade: 8,
-    vulnerability: "NS",
-    scoringMode: "duplicate"
+    vulnerability: "NS"
   }).score, 670);
+});
+
+test("bridge scoring exposes beginner-friendly score breakdowns", () => {
+  const game = rules.calculateBridgeScore({
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    tricksMade: 10,
+    vulnerability: "none"
+  });
+
+  assert.equal(game.needed, 10);
+  assert.equal(game.tricksMade, 10);
+  assert.equal(game.contractMade, true);
+  assert.equal(game.contractPoints, 120);
+  assert.equal(game.contractScore, 120);
+  assert.equal(game.gameBonus, 300);
+  assert.equal(game.partscoreBonus, 0);
+  assert.equal(game.bonusScore, 300);
+  assert.equal(game.overtrickScore, 0);
+
+  const doubled = rules.calculateBridgeScore({
+    contract: { level: 2, strain: "H", doubled: true },
+    declarer: "South",
+    tricksMade: 8,
+    vulnerability: "NS"
+  });
+
+  assert.equal(doubled.multiplier, 2);
+  assert.equal(doubled.contractPoints, 60);
+  assert.equal(doubled.contractScore, 120);
+  assert.equal(doubled.gameBonus, 500);
+  assert.equal(doubled.insultBonus, 50);
+  assert.equal(doubled.bonusScore, 550);
+
+  const down = rules.calculateBridgeScore({
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    tricksMade: 8,
+    vulnerability: "NS"
+  });
+
+  assert.equal(down.contractMade, false);
+  assert.equal(down.needed, 10);
+  assert.equal(down.undertricks, 2);
+  assert.equal(down.undertrickPenalty, 200);
+  assert.equal(down.score, -200);
 });
 
 test("bridge scoring matches NBB Article 77 trick points and game bonuses", () => {
@@ -123,8 +163,7 @@ test("bridge scoring matches NBB Article 77 trick points and game bonuses", () =
     contract,
     declarer: "South",
     tricksMade,
-    vulnerability,
-    scoringMode: "duplicate"
+    vulnerability
   }).score;
 
   assert.equal(score({ level: 1, strain: "C" }, 7), 70);
@@ -144,8 +183,7 @@ test("bridge scoring matches NBB Article 77 overtricks and slam bonuses", () => 
     contract,
     declarer: "South",
     tricksMade,
-    vulnerability,
-    scoringMode: "duplicate"
+    vulnerability
   }).score;
 
   assert.equal(score({ level: 3, strain: "C" }, 10), 130);
@@ -179,15 +217,13 @@ test("bridge scoring matches NBB Article 77 undertrick penalties", () => {
     contract: { level: 5, strain: "D", doubled: true, redoubled: true },
     declarer: "South",
     tricksMade: 7,
-    vulnerability: "none",
-    scoringMode: "duplicate"
+    vulnerability: "none"
   }).score, -1600);
 });
 
 test("bridge scoring matches NBB Article 77 four-pass zero score", () => {
   const result = rules.calculateBridgeScore({
-    contract: null,
-    scoringMode: "duplicate"
+    contract: null
   });
 
   assert.equal(result.score, 0);
@@ -413,6 +449,436 @@ test("currentWinningPlay handles lead suit and trump", () => {
   assert.equal(rules.currentWinningPlay(trick, "S").seat, "East");
 });
 
+test("createPlayPlan returns null until contract and dummy hand are known", () => {
+  assert.equal(rules.createPlayPlan({
+    declarerHand: hand("AS", "KS"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  }), null);
+
+  assert.equal(rules.createPlayPlan({
+    declarerHand: hand("AS", "KS"),
+    dummyHand: hand("AH", "KH"),
+    declarer: "South",
+    dummy: "North"
+  }), null);
+});
+
+test("createPlayPlan counts notrump winners and chooses long-suit development", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "AD", "2C", "2D"),
+    dummyHand: hand("KC", "QC", "JC", "4C", "3C", "AH"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  assert.equal(plan.type, "notrump");
+  assert.equal(plan.neededTricks, 9);
+  assert.equal(plan.sureWinners.total, 4);
+  const priority = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "C");
+  assert.ok(priority);
+  assert.equal(priority.missingStopper, "A");
+  assert.equal(priority.entryTiming, "outsideEntry");
+  assert.equal(priority.entrySuit, "H");
+  assert.equal(priority.entryRank, "A");
+  assert.equal(plan.needToDevelop, 5);
+});
+
+test("createPlayPlan warns when a notrump long suit has no outside entry", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "AD", "2C"),
+    dummyHand: hand("KC", "QC", "JC", "4C", "3C", "7D"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  assert.ok(plan.priorities.some((item) => item.kind === "developLongSuit" && item.suit === "C"));
+  assert.ok(plan.warnings.some((item) => item.kind === "entryRisk" && item.suit === "C" && item.sourceSeat === "North"));
+});
+
+test("createPlayPlan marks blocked notrump winners as stranded without an entry", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AC", "AS", "AD", "2D"),
+    dummyHand: hand("KC", "QC", "JC", "TC", "4C", "3C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  assert.equal(plan.sureWinners.bySuit.C, 1);
+  assert.equal(plan.sureWinners.detailsBySuit.C.winners, 5);
+  assert.equal(plan.sureWinners.detailsBySuit.C.cashableWinners, 1);
+  assert.equal(plan.sureWinners.detailsBySuit.C.entryTiming, "blockedNoEntry");
+  assert.ok(plan.warnings.some((item) => item.kind === "blockedSuit" && item.suit === "C" && item.longSeat === "North"));
+});
+
+test("createPlayPlan orders notrump cashing to unblock a long suit before using its entry", () => {
+  const declarerHand = hand("AC", "AS", "AH");
+  const dummyHand = hand("KC", "QC", "JC", "2C", "AD");
+  const contract = { level: 1, strain: "NT" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const priority = playPlan.priorities[0];
+  assert.equal(priority.kind, "cashWinners");
+  assert.equal(priority.suit, "C");
+  assert.equal(priority.timing, "unblockBeforeEntry");
+  assert.deepEqual(priority.cashRanks, ["A"]);
+  assert.equal(priority.entrySuit, "D");
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(result.card.id, "AC");
+  assert.equal(result.ruleId, "playPlan.cashWinners");
+  assert.equal(result.action, "unblockSuit");
+});
+
+test("createPlayPlan prioritizes drawing trumps in a stable suit contract", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "QS", "2S", "AH", "KH", "AD", "KD", "AC", "KC"),
+    dummyHand: hand("JS", "TS", "9S", "8S", "QH", "JH", "QD", "JD", "QC", "JC"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const priority = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(priority);
+  assert.equal(priority.suit, "S");
+  assert.equal(priority.timing, "early");
+});
+
+test("createPlayPlan finds a dummy ruff before drawing all trumps", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "QS", "2S", "JH", "TH", "8H", "3H", "AD", "KD", "AC", "KC"),
+    dummyHand: hand("JS", "TS", "9S", "8S", "7S", "2D", "3D", "4D", "QC", "JC", "TC", "9C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const ruff = plan.priorities.find((item) => item.kind === "ruffShortSuit");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(ruff);
+  assert.equal(ruff.suit, "H");
+  assert.equal(trumps.timing, "afterRuff");
+});
+
+test("createPlayPlan exposes richer loser details for cover cards and ruffs", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "QS", "2S", "KH", "3H", "2H", "JC", "3C", "2C"),
+    dummyHand: hand("JS", "TS", "9S", "8S", "AH", "4H", "AD", "KD"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const clubDetails = plan.losers.detailsBySuit.C;
+  assert.equal(clubDetails.rawLosers, 3);
+  assert.equal(clubDetails.ruffReduction, 1);
+  assert.equal(plan.losers.bySuit.C, 2);
+
+  const heartDetails = plan.losers.detailsBySuit.H;
+  assert.deepEqual(heartDetails.coverCards, ["A"]);
+  assert.deepEqual(heartDetails.missingTopHonors, ["Q"]);
+});
+
+test("createPlayPlan delays drawing trumps to unblock a side suit first", () => {
+  const declarerHand = hand("AS", "KS", "QS", "2S", "AC", "2H", "3H", "4D");
+  const dummyHand = hand("JS", "TS", "9S", "8S", "KC", "QC", "JC", "AD", "4H", "5H");
+  const contract = { level: 4, strain: "S" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const cash = playPlan.priorities[0];
+  const trumps = playPlan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.equal(cash.kind, "cashWinners");
+  assert.equal(cash.timing, "unblockBeforeEntry");
+  assert.equal(trumps.timing, "afterUnblock");
+  assert.equal(trumps.delaySuit, "C");
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "AC");
+  assert.equal(result.ruleId, "playPlan.cashWinners");
+});
+
+test("chooseCardPlay follows the play-plan long-suit priority", () => {
+  const declarerHand = hand("AS", "KS", "AD", "2C", "2D");
+  const dummyHand = hand("KC", "QC", "JC", "4C", "3C", "AH");
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(result.card.id, "2C");
+  assert.equal(result.ruleId, "playPlan.developLongSuit");
+  assert.equal(result.planPriority.kind, "developLongSuit");
+});
+
+test("chooseCardPlay follows the play-plan finesse priority", () => {
+  const declarerHand = hand("2H", "3H", "AD");
+  const dummyHand = hand("AH", "QH", "7H", "AC");
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "playPlan.finesseTowardHonor");
+  assert.equal(result.planPriority.kind, "finesse");
+});
+
+test("chooseCardPlay follows the play-plan draw-trumps priority", () => {
+  const declarerHand = hand("AS", "KS", "QS", "2S", "AH", "KH", "AD", "KD", "AC", "KC");
+  const dummyHand = hand("JS", "TS", "9S", "8S", "QH", "JH", "QD", "JD", "QC", "JC");
+  const contract = { level: 4, strain: "S" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "AS");
+  assert.equal(result.ruleId, "playPlan.drawTrumps");
+  assert.equal(result.planPriority.kind, "drawTrumps");
+});
+
+test("chooseCardPlay takes the play-plan dummy ruff before delayed trump drawing", () => {
+  const declarerHand = hand("AS", "KS", "QS", "2S", "JH", "TH", "8H", "3H", "AD", "KD", "AC", "KC");
+  const dummyHand = hand("JS", "TS", "9S", "8S", "7S", "2D", "3D", "4D", "QC", "JC", "TC", "9C");
+  const contract = { level: 4, strain: "S" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "3H");
+  assert.equal(result.ruleId, "playPlan.ruffShortSuit");
+  assert.equal(result.planPriority.kind, "ruffShortSuit");
+});
+
+test("chooseCardPlay enters the long trump hand before repeated dummy ruffs", () => {
+  const declarerHand = hand("AS", "KS", "JS", "TS", "2S", "8H", "5H", "4H", "3H", "AD", "JD", "5D", "AC");
+  const dummyHand = hand("QS", "8S", "5S", "AH", "KD", "QD", "7D", "6D", "7C", "6C", "5C", "3C", "2C");
+  const contract = { level: 7, strain: "S" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const ruff = playPlan.priorities.find((item) => item.kind === "ruffShortSuit");
+  const trumps = playPlan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.equal(ruff.suit, "H");
+  assert.equal(trumps.timing, "afterRuff");
+
+  const openingTrick = {
+    number: 1,
+    winner: "North",
+    cards: [
+      { seat: "West", card: card("KH") },
+      { seat: "North", card: card("AH") },
+      { seat: "East", card: card("2H") },
+      { seat: "South", card: card("3H") }
+    ]
+  };
+
+  const firstEntry = rules.chooseCardPlay({
+    hand: hand("QS", "8S", "5S", "KD", "QD", "7D", "6D", "7C", "6C", "5C", "3C", "2C"),
+    partnerHand: hand("AS", "KS", "JS", "TS", "2S", "8H", "5H", "4H", "AD", "JD", "5D", "AC"),
+    currentTrick: [],
+    trickHistory: [openingTrick],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(firstEntry.card.id, "6D");
+  assert.equal(firstEntry.ruleId, "playPlan.enterLongTrumpHand");
+  assert.equal(firstEntry.entryRank, "A");
+  assert.equal(firstEntry.targetSeat, "South");
+  assert.equal(firstEntry.planPriority.kind, "ruffShortSuit");
+
+  const firstRuffHistory = [
+    openingTrick,
+    {
+      number: 2,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("6D") },
+        { seat: "East", card: card("2D") },
+        { seat: "South", card: card("AD") },
+        { seat: "West", card: card("3D") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "North",
+      cards: [
+        { seat: "South", card: card("4H") },
+        { seat: "West", card: card("6H") },
+        { seat: "North", card: card("5S") },
+        { seat: "East", card: card("7H") }
+      ]
+    }
+  ];
+  const secondEntry = rules.chooseCardPlay({
+    hand: hand("QS", "8S", "KD", "QD", "7D", "7C", "6C", "5C", "3C", "2C"),
+    partnerHand: hand("AS", "KS", "JS", "TS", "2S", "8H", "5H", "JD", "5D", "AC"),
+    currentTrick: [],
+    trickHistory: firstRuffHistory,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(secondEntry.card.id, "7D");
+  assert.equal(secondEntry.ruleId, "playPlan.enterLongTrumpHand");
+  assert.equal(secondEntry.entryRank, "J");
+
+  const secondRuffHistory = [
+    ...firstRuffHistory,
+    {
+      number: 4,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("7D") },
+        { seat: "East", card: card("4D") },
+        { seat: "South", card: card("JD") },
+        { seat: "West", card: card("8D") }
+      ]
+    },
+    {
+      number: 5,
+      winner: "North",
+      cards: [
+        { seat: "South", card: card("5H") },
+        { seat: "West", card: card("9H") },
+        { seat: "North", card: card("8S") },
+        { seat: "East", card: card("TH") }
+      ]
+    }
+  ];
+  const thirdEntry = rules.chooseCardPlay({
+    hand: hand("QS", "KD", "QD", "7C", "6C", "5C", "3C", "2C"),
+    partnerHand: hand("AS", "KS", "JS", "TS", "2S", "8H", "5D", "AC"),
+    currentTrick: [],
+    trickHistory: secondRuffHistory,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(thirdEntry.card.id, "2C");
+  assert.equal(thirdEntry.ruleId, "playPlan.enterLongTrumpHand");
+  assert.equal(thirdEntry.entrySuit, "C");
+  assert.equal(thirdEntry.entryRank, "A");
+});
+
 test("chooseCardPlay uses the strongest named lead heuristic by default", () => {
   const result = rules.chooseCardPlay({
     hand: [card("AC"), card("2S"), card("3C")],
@@ -425,6 +891,97 @@ test("chooseCardPlay uses the strongest named lead heuristic by default", () => 
   assert.equal(result.ruleId, "longestSuitLead");
   assert.equal(result.confidence, "uncertain");
   assert.ok(result.reason);
+});
+
+test("chooseCardPlay leads the highest card from a notrump sequence", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KC", "QC", "JC", "7C", "2C", "AH", "3D"),
+    currentTrick: [],
+    seat: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KC");
+  assert.equal(result.ruleId, "notrumpSequenceLead");
+  assert.equal(result.sequence, "KQJ");
+});
+
+test("chooseCardPlay leads the highest card from a notrump broken sequence", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "JH", "TH", "6H", "2H", "AC", "3D"),
+    currentTrick: [],
+    seat: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "notrumpBrokenSequenceLead");
+  assert.equal(result.sequence, "KJT");
+  assert.equal(result.missingRank, "Q");
+});
+
+test("chooseCardPlay leads low from the longest notrump suit with honors but no sequence", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AC", "8C", "5C", "2C", "KH", "3D", "2S"),
+    currentTrick: [],
+    seat: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "2C");
+  assert.equal(result.ruleId, "notrumpLowPromisesHonor");
+  assert.deepEqual(result.honorRanks, ["A"]);
+});
+
+test("chooseCardPlay plays third hand high after partner's low-promises-honor notrump lead", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QH", "8H", "3H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("2H"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.equal(result.ruleId, "thirdHandHighOverLowLead");
+  assert.equal(result.leadSuit, "H");
+});
+
+test("chooseCardPlay keeps low-promises-honor as a defensive notrump agreement", () => {
+  const lead = rules.chooseCardPlay({
+    hand: hand("AC", "8C", "5C", "2C", "KH", "3D", "2S"),
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(lead.card.id, "AC");
+  assert.equal(lead.ruleId, "longestSuitLead");
+
+  const thirdHand = rules.chooseCardPlay({
+    hand: hand("QH", "8H", "3H", "AC"),
+    currentTrick: [
+      { seat: "South", card: card("2H"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "West", card: card("4H") }
+    ],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(thirdHand.card.id, "8H");
+  assert.equal(thirdHand.ruleId, "cheapestWinner");
 });
 
 test("chooseCardPlay plays low when partner is already winning", () => {
@@ -564,7 +1121,7 @@ test("chooseCardPlay does not apply long-suit development in trump contracts yet
   assert.equal(result.ruleId, "longestSuitLead");
 });
 
-test("chooseCardPlay falls back without declarer-side partner context", () => {
+test("chooseCardPlay uses notrump lead rules without declarer-side partner context", () => {
   const result = rules.chooseCardPlay({
     hand: hand("KC", "QC", "JC", "4C", "2C", "AS"),
     currentTrick: [],
@@ -574,7 +1131,7 @@ test("chooseCardPlay falls back without declarer-side partner context", () => {
   });
 
   assert.equal(result.card.id, "KC");
-  assert.equal(result.ruleId, "longestSuitLead");
+  assert.equal(result.ruleId, "notrumpSequenceLead");
 });
 
 test("chooseCardPlay leads low toward an AQ notrump finesse", () => {
