@@ -39,9 +39,71 @@ test("loads the live table and lets South make an auction call", async ({ page }
   await expect(page.locator(".game-summary #scoreline")).toContainText("Kwetsbaarheid");
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
 
+  await page.evaluate(() => {
+    state.guidanceMode = true;
+    renderAll();
+  });
+  await expect(page.locator("#guidance-panel")).toContainText("AI-suggestie bod");
+  await expect(page.locator("#guidance-panel")).toContainText("Regel:");
+  await expect(page.locator("#guidance-panel")).not.toContainText("Dit is heuristisch advies op basis van de huidige Vijfkaart-Hoog-regels.");
+
   await page.locator("#bid-controls button.pass").click();
   await expect(page.locator("#auction-log")).toContainText("Pas");
   expect(pageErrors).toEqual([]);
+});
+
+test("developer bid explanations use rule references without the old source line", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    state.developerMode = true;
+    state.guidanceMode = true;
+    renderAll();
+  });
+  const suggestedAction = await page.locator("#guidance-panel strong").textContent();
+  const suggestedBid = suggestedAction.split(": ").pop();
+
+  await page.locator(".bid-controls .recommended-action").click();
+  await expect(page.locator("#bid-explanations")).toContainText(suggestedBid);
+  await expect(page.locator("#bid-explanations")).toContainText("Regel:");
+  await expect(page.locator("#bid-explanations")).not.toContainText("Bron: huidige Vijfkaart-Hoog-heuristiek; nog geen volledige systeemkaart.");
+});
+
+test("developer bid explanations describe opener rebids after notrump responses", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const southHand = [
+      "AS", "KS", "QS", "2S", "3S",
+      "AH", "KH", "QH", "2H",
+      "2D", "3D",
+      "2C", "3C"
+    ].map(makeCard);
+    state.developerMode = true;
+    state.guidanceMode = false;
+    state.phase = "bidding";
+    state.hands.South = southHand;
+    state.auction = [
+      { seat: "South", bid: bridgeRules.Bid(1, "S"), bidResult: bridgeRules.chooseFiveCardHighBidResult({ hand: southHand, auction: [], seat: "South", vulnerability: state.vulnerability }) },
+      { seat: "West", bid: bridgeRules.Pass() },
+      { seat: "North", bid: bridgeRules.Bid(1, "NT") },
+      { seat: "East", bid: bridgeRules.Pass() }
+    ];
+    const bidResult = bridgeRules.chooseFiveCardHighBidResult({
+      hand: southHand,
+      auction: state.auction,
+      seat: "South",
+      vulnerability: state.vulnerability
+    });
+    state.auction.push({ seat: "South", bid: bidResult.bid, bidResult });
+    renderAll();
+  });
+
+  await expect(page.locator("#bid-explanations")).toContainText("herbieding na partners 1SA");
+  await expect(page.locator("#bid-explanations")).toContainText("tweekleurenspel");
+  await expect(page.locator("#bid-explanations")).toContainText("18-19 HCP");
+  await expect(page.locator("#bid-explanations")).toContainText("Regel: continuation.openerAfterOneNtTwoSuiterHigh");
 });
 
 test("keeps dummy and the play plan hidden until after the opening lead", async ({ page }) => {

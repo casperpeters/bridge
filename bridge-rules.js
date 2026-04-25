@@ -13,6 +13,24 @@
   const descendingRanks = [...rankOrder].reverse();
   const leadHonorRanks = ["A", "K", "Q", "J", "T"];
   const hcpValue = { A: 4, K: 3, Q: 2, J: 1 };
+  const callTypes = {
+    pass: "Pass",
+    bid: "Bid",
+    double: "Double",
+    redouble: "Redouble"
+  };
+  const biddingSystems = {
+    fiveCardHigh: {
+      id: "fiveCardHigh",
+      name: "Vijfkaart Hoog",
+      conventionDefaults: {
+        stayman: true,
+        transfers: true,
+        negativeDoubles: true,
+        weakTwoOpenings: true
+      }
+    }
+  };
   const vulnerabilityCycle = [
     "none", "NS", "EW", "both",
     "NS", "EW", "both", "none",
@@ -89,20 +107,65 @@
     return hands;
   }
 
+  function Pass() {
+    return { type: callTypes.pass };
+  }
+
+  function Bid(level, strain) {
+    return { type: callTypes.bid, level, strain };
+  }
+
+  function Double() {
+    return { type: callTypes.double };
+  }
+
+  function Redouble() {
+    return { type: callTypes.redouble };
+  }
+
+  function callBid(callOrBid) {
+    if (callOrBid && typeof callOrBid === "object" && Object.prototype.hasOwnProperty.call(callOrBid, "bid")) return callOrBid.bid;
+    return callOrBid;
+  }
+
+  function callType(callOrBid) {
+    const bid = callBid(callOrBid);
+    if (typeof bid === "string") return bid;
+    if (bid?.type) return bid.type;
+    if (isContractBid(bid)) return callTypes.bid;
+    return null;
+  }
+
+  function normalizeBid(callOrBid) {
+    const bid = callBid(callOrBid);
+    if (isPass(bid)) return Pass();
+    if (isDouble(bid)) return Double();
+    if (isRedouble(bid)) return Redouble();
+    if (isContractBid(bid)) return Bid(bid.level, bid.strain);
+    return null;
+  }
+
   function isPass(callOrBid) {
-    return callOrBid === "Pass" || callOrBid?.bid === "Pass";
+    return callType(callOrBid) === callTypes.pass;
   }
 
   function isDouble(callOrBid) {
-    return callOrBid === "Double" || callOrBid?.bid === "Double";
+    return callType(callOrBid) === callTypes.double;
   }
 
   function isRedouble(callOrBid) {
-    return callOrBid === "Redouble" || callOrBid?.bid === "Redouble";
+    return callType(callOrBid) === callTypes.redouble;
   }
 
   function isContractBid(bid) {
-    return Boolean(bid && typeof bid === "object" && Number.isInteger(bid.level) && bid.strain);
+    const candidate = callBid(bid);
+    return Boolean(
+      candidate &&
+      typeof candidate === "object" &&
+      (candidate.type === callTypes.bid || !candidate.type) &&
+      Number.isInteger(candidate.level) &&
+      candidate.strain
+    );
   }
 
   function isContractCall(call) {
@@ -117,7 +180,7 @@
     const contractCall = highestBidCall(auction);
     if (!contractCall) return null;
     const contractIndex = auction.lastIndexOf(contractCall);
-    const contract = { ...contractCall.bid };
+    const contract = { level: contractCall.bid.level, strain: contractCall.bid.strain };
     for (const call of auction.slice(contractIndex + 1)) {
       if (isDouble(call)) {
         contract.doubled = true;
@@ -354,7 +417,7 @@
   }
 
   function bid(level, strain) {
-    return { level, strain };
+    return Bid(level, strain);
   }
 
   function bidEquals(candidate, level, strain) {
@@ -385,12 +448,13 @@
   }
 
   function legalizeFiveCardHighBidTarget(target, lastBid, seat, auction) {
-    if (!target || isPass(target)) return "Pass";
-    if (isDouble(target)) return canDoubleFromAuction(auction, seat) ? "Double" : "Pass";
-    if (isRedouble(target)) return canRedoubleFromAuction(auction, seat) ? "Redouble" : "Pass";
-    if (!isContractBid(target)) return "Pass";
-    if (target.level < 1 || target.level > 7) return "Pass";
-    return isBidHigher(target, lastBid) ? target : "Pass";
+    const call = normalizeBid(target);
+    if (!call || isPass(call)) return Pass();
+    if (isDouble(call)) return canDoubleFromAuction(auction, seat) ? Double() : Pass();
+    if (isRedouble(call)) return canRedoubleFromAuction(auction, seat) ? Redouble() : Pass();
+    if (!isContractBid(call)) return Pass();
+    if (call.level < 1 || call.level > 7) return Pass();
+    return isBidHigher(call, lastBid) ? call : Pass();
   }
 
   function canDoubleFromAuction(auction, seat) {
@@ -420,16 +484,412 @@
   }
 
   function chooseFiveCardHighBid(options = {}) {
+    return chooseFiveCardHighBidResult(options).bid;
+  }
+
+  function chooseFiveCardHighBidResult(options = {}) {
     const auction = options.auction || [];
     const seat = options.seat;
     const target = chooseFiveCardHighBidTarget(options);
-    return legalizeFiveCardHighBidTarget(target, highestBid(auction), seat, auction);
+    const chosenBid = legalizeFiveCardHighBidTarget(target, highestBid(auction), seat, auction);
+    return describeFiveCardHighBidChoice({ ...options, auction, seat, target, bid: chosenBid });
+  }
+
+  function bidChoiceResult(system, bid, ruleName, confidence, reason, extra = {}) {
+    const systemId = typeof system === "string" ? system : system?.id;
+    return {
+      bid,
+      ruleId: `${systemId}.${ruleName}`,
+      confidence,
+      reason,
+      system: systemId,
+      ...extra
+    };
+  }
+
+  function fiveCardHighBidChoiceResult(bid, ruleName, confidence, reason, extra = {}) {
+    return bidChoiceResult(biddingSystems.fiveCardHigh, bid, ruleName, confidence, reason, extra);
+  }
+
+  function describeFiveCardHighBidChoice({ hand = [], auction = [], seat, target, bid: chosenBid } = {}) {
+    const shape = handShape(hand);
+    const base = {
+      hcp: shape.hcp,
+      points: shape.points,
+      balanced: shape.balanced,
+      counts: { ...shape.counts }
+    };
+
+    if (!seat) {
+      return fiveCardHighBidChoiceResult(chosenBid, "pass.noSeat", "basic", "No seat was available for the bidding engine.", base);
+    }
+    if (!sameCall(chosenBid, target)) {
+      return fiveCardHighBidChoiceResult(chosenBid, "legalize.pass", "basic", "The preferred target was not legal in the current auction, so the engine passes.", {
+        ...base,
+        targetBid: target
+      });
+    }
+    if (isRedouble(chosenBid)) {
+      return fiveCardHighBidChoiceResult(chosenBid, "competitive.redouble", "basic", "Redouble with extra values after the opponents doubled partner's side.", base);
+    }
+    if (isDouble(chosenBid)) {
+      return describeDoubleBidChoice(chosenBid, shape, auction, seat, base);
+    }
+    if (isPass(chosenBid)) {
+      return describePassBidChoice(shape, auction, seat, base);
+    }
+    if (!isContractBid(chosenBid)) {
+      return fiveCardHighBidChoiceResult(chosenBid, "pass.unknownCall", "basic", "The bidding engine did not recognize a contract action.", base);
+    }
+    if (isUncontestedAuctionForSeat(auction, seat)) {
+      return describeUncontestedFiveCardHighBidChoice(chosenBid, shape, hand, auction, seat, base);
+    }
+    return describeCompetitiveFiveCardHighBidChoice(chosenBid, shape, hand, auction, seat, base);
+  }
+
+  function sameCall(left, right) {
+    const leftBid = normalizeBid(left);
+    const rightBid = normalizeBid(right);
+    if (!leftBid || !rightBid) return leftBid === rightBid;
+    if (leftBid.type !== rightBid.type) return false;
+    if (leftBid.type !== callTypes.bid) return true;
+    return leftBid.level === rightBid.level && leftBid.strain === rightBid.strain;
+  }
+
+  function describeDoubleBidChoice(chosenBid, shape, auction, seat, base) {
+    const lastBid = highestBid(auction);
+    const lastPartnerCall = lastPartnerContractCall(auction, seat);
+    if (lastPartnerCall && shouldMakeNegativeDoubleFiveCardHigh(shape, lastPartnerCall.bid, lastBid)) {
+      return fiveCardHighBidChoiceResult(chosenBid, "competitive.negativeDouble", "basic", "Negative double with values and an unbid four-card major after interference.", base);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "competitive.takeoutDouble", "basic", "Takeout double with opening strength, shortness in their suit, and tolerance for the unbid suits.", base);
+  }
+
+  function describePassBidChoice(shape, auction, seat, base) {
+    if (!isUncontestedAuctionForSeat(auction, seat)) {
+      return fiveCardHighBidChoiceResult(Pass(), "pass.competitiveNoAction", "basic", "Pass because there is no responsible overcall, raise, notrump action, or double in the current competitive auction.", {
+        ...base,
+        category: "competitive"
+      });
+    }
+
+    const partnershipCalls = partnershipContractCalls(auction, seat);
+    if (!partnershipCalls.length) {
+      return fiveCardHighBidChoiceResult(Pass(), "pass.openingNoAction", "basic", "Pass because the hand lacks normal opening strength and has no suitable weak two or preempt.", {
+        ...base,
+        category: "opening"
+      });
+    }
+
+    const lastPartnerCall = lastPartnerContractCall(auction, seat);
+    if (partnershipCalls.length === 1) {
+      return fiveCardHighBidChoiceResult(Pass(), "pass.responseNoAction", "basic", "Pass because there are not enough values or no suitable action opposite partner's opening.", {
+        ...base,
+        category: "response",
+        partnerSuit: lastPartnerCall?.bid?.strain || partnershipCalls[0]?.bid?.strain || null,
+        support: lastPartnerCall?.bid?.strain && lastPartnerCall.bid.strain !== "NT" ? shape.counts[lastPartnerCall.bid.strain] : 0
+      });
+    }
+
+    const openingCall = partnershipCalls[0];
+    const responseCall = partnershipCalls[1];
+    const notrumpResponseContext = majorOpeningNotrumpResponseContext(shape, openingCall?.bid, responseCall?.bid);
+    if (openingCall?.seat === seat && notrumpResponseContext) {
+      const prefix = responseCall.bid.level === 1 ? "OneNt" : "TwoNt";
+      const suffix = notrumpResponseContext.handType === "balanced" ? "BalancedMinimum" : "NoAction";
+      return fiveCardHighBidChoiceResult(Pass(), `pass.openerAfter${prefix}${suffix}`, "basic", "Pass after partner's notrump response according to opener's hand type and range.", {
+        ...base,
+        ...notrumpResponseContext,
+        category: "continuation",
+        suit: openingCall.bid.strain,
+        length: shape.counts[openingCall.bid.strain] || 0
+      });
+    }
+
+    if (
+      openingCall?.seat === seat &&
+      isMajorSingleRaiseFiveCardHigh(openingCall.bid, responseCall?.bid)
+    ) {
+      return fiveCardHighBidChoiceResult(Pass(), "pass.openerMajorRaiseMinimum", "basic", "Pass after partner's single major raise with 12-15 total points.", {
+        ...base,
+        category: "continuation",
+        suit: openingCall.bid.strain,
+        length: shape.counts[openingCall.bid.strain] || 0
+      });
+    }
+
+    const openerRebidCall = partnershipCalls[2];
+    if (
+      openingCall?.seat === partnerOf(seat) &&
+      isSingleRaiseInviteFiveCardHigh(responseCall?.bid, openerRebidCall?.bid)
+    ) {
+      return fiveCardHighBidChoiceResult(Pass(), "pass.declineMajorInvite", "basic", "Pass after partner's invitational raise with the lower range for the single raise.", {
+        ...base,
+        category: "continuation",
+        partnerSuit: openerRebidCall.bid.strain,
+        support: shape.counts[openerRebidCall.bid.strain] || 0
+      });
+    }
+
+    return fiveCardHighBidChoiceResult(Pass(), "pass.continuationNoAction", "basic", "Pass because there is no useful continuation in the current Five-card Major heuristic.", {
+      ...base,
+      category: "continuation",
+      partnerSuit: lastPartnerCall?.bid?.strain || null,
+      support: lastPartnerCall?.bid?.strain && lastPartnerCall.bid.strain !== "NT" ? shape.counts[lastPartnerCall.bid.strain] : 0
+    });
+  }
+
+  function describeUncontestedFiveCardHighBidChoice(chosenBid, shape, hand, auction, seat, base) {
+    const partnershipCalls = partnershipContractCalls(auction, seat);
+    if (!partnershipCalls.length) return describeOpeningBidChoice(chosenBid, shape, hand, base);
+
+    const openingCall = partnershipCalls[0];
+    const lastPartnerCall = lastPartnerContractCall(auction, seat);
+    if (!lastPartnerCall) {
+      return fiveCardHighBidChoiceResult(chosenBid, "pass.noPartnerBid", "basic", "No partner bid was available to answer.", base);
+    }
+    if (partnershipCalls.length === 1) {
+      return describeResponseBidChoice(chosenBid, shape, hand, openingCall.bid, base);
+    }
+    if (partnershipCalls.length === 2 && openingCall.seat === seat) {
+      return describeOpenerRebidChoice(chosenBid, shape, openingCall.bid, lastPartnerCall.bid, base);
+    }
+    if (partnershipCalls.length === 3 && openingCall.seat === partnerOf(seat)) {
+      return describeResponderRebidChoice(chosenBid, shape, partnershipCalls[1].bid, lastPartnerCall.bid, base);
+    }
+    return describeNaturalContinuationChoice(chosenBid, shape, lastPartnerCall.bid, base);
+  }
+
+  function describeOpeningBidChoice(chosenBid, shape, hand, base) {
+    const extra = { ...base, category: "opening", suit: chosenBid.strain, length: shape.counts[chosenBid.strain] || 0 };
+    if (bidEquals(chosenBid, 1, "NT")) {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.oneNotrump", "basic", "Open 1NT with 15-17 HCP and a balanced hand.", extra);
+    }
+    if (bidEquals(chosenBid, 2, "NT")) {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.twoNotrump", "basic", "Open 2NT with 20-22 HCP and a balanced hand.", extra);
+    }
+    if (bidEquals(chosenBid, 2, "C")) {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.strongTwoClubs", "basic", "Open a strong artificial 2C with a very strong hand.", extra);
+    }
+    if (chosenBid.level === 2 && ["D", "H", "S"].includes(chosenBid.strain)) {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.weakTwo", "basic", "Open a weak two with 6-10 HCP and a good six-card suit.", extra);
+    }
+    if (chosenBid.level >= 3 && chosenBid.strain !== "NT") {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.preempt", "basic", "Preempt with a long suit and limited strength.", extra);
+    }
+    if (chosenBid.level === 1 && (chosenBid.strain === "H" || chosenBid.strain === "S")) {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.oneMajor", "basic", "Open the longest available five-card major with opening strength.", extra);
+    }
+    if (chosenBid.level === 1 && (chosenBid.strain === "C" || chosenBid.strain === "D")) {
+      return fiveCardHighBidChoiceResult(chosenBid, "opening.oneMinor", "basic", "Open the preferred minor because there is no five-card major or notrump opening.", extra);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "opening.natural", "basic", "Open naturally in the selected strain.", extra);
+  }
+
+  function describeResponseBidChoice(chosenBid, shape, hand, partnerBid, base) {
+    const support = partnerBid?.strain && partnerBid.strain !== "NT" ? shape.counts[partnerBid.strain] : 0;
+    const extra = {
+      ...base,
+      category: "response",
+      suit: chosenBid.strain,
+      length: shape.counts[chosenBid.strain] || 0,
+      partnerSuit: partnerBid?.strain || null,
+      support
+    };
+
+    if (bidEquals(partnerBid, 1, "NT") || bidEquals(partnerBid, 2, "NT")) {
+      if (chosenBid.strain === "C" && chosenBid.level === partnerBid.level + 1) {
+        return fiveCardHighBidChoiceResult(chosenBid, "response.stayman", "basic", "Use Stayman to ask opener for a four-card major.", extra);
+      }
+      const transferSuit = notrumpTransferSuit(partnerBid, chosenBid);
+      if (transferSuit) {
+        return fiveCardHighBidChoiceResult(chosenBid, `response.transferTo${transferSuit}`, "basic", "Use a transfer to show a five-card major.", {
+          ...extra,
+          transferSuit,
+          length: shape.counts[transferSuit] || 0
+        });
+      }
+      if (chosenBid.strain === "NT") {
+        const invite = chosenBid.level === partnerBid.level + 1 && chosenBid.level < 3;
+        return fiveCardHighBidChoiceResult(chosenBid, invite ? "response.notrumpInvite" : "response.notrumpGame", "basic", "Invite or bid game in notrump with balanced values.", extra);
+      }
+    }
+
+    if (bidEquals(partnerBid, 2, "C")) {
+      if (bidEquals(chosenBid, 2, "D")) {
+        return fiveCardHighBidChoiceResult(chosenBid, "response.strongTwoClubsWaiting", "basic", "Make the waiting response to partner's strong 2C opening.", extra);
+      }
+      return fiveCardHighBidChoiceResult(chosenBid, "response.strongTwoClubsPositive", "basic", "Show a positive response to partner's strong 2C opening.", extra);
+    }
+
+    if (isWeakTwoOpeningFiveCardHigh(partnerBid) || (partnerBid?.level >= 3 && partnerBid.strain !== "NT")) {
+      if (chosenBid.strain === partnerBid.strain) {
+        return fiveCardHighBidChoiceResult(chosenBid, "response.raisePreempt", "basic", "Raise partner's long suit with support and enough strength.", extra);
+      }
+      if (chosenBid.strain === "NT") {
+        return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpOverPreempt", "basic", "Choose notrump with extra balanced strength opposite partner's preempt.", extra);
+      }
+      return fiveCardHighBidChoiceResult(chosenBid, "response.newSuitOverPreempt", "basic", "Show a strong new suit opposite partner's preempt.", extra);
+    }
+
+    if (partnerBid?.strain !== "NT" && chosenBid.strain === partnerBid?.strain) {
+      return fiveCardHighBidChoiceResult(chosenBid, "response.raise", "basic", "Raise partner's suit with enough support.", extra);
+    }
+    if (chosenBid.strain === "NT") {
+      return fiveCardHighBidChoiceResult(chosenBid, "response.notrump", "basic", "Answer in notrump with balanced values and no better fit or new suit.", extra);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "response.newSuit", "basic", "Bid the cheapest suitable new suit with responding values.", extra);
+  }
+
+  function notrumpTransferSuit(partnerBid, chosenBid) {
+    if (bidEquals(partnerBid, 1, "NT")) {
+      if (bidEquals(chosenBid, 2, "D")) return "H";
+      if (bidEquals(chosenBid, 2, "H")) return "S";
+    }
+    if (bidEquals(partnerBid, 2, "NT")) {
+      if (bidEquals(chosenBid, 3, "D")) return "H";
+      if (bidEquals(chosenBid, 3, "H")) return "S";
+    }
+    return null;
+  }
+
+  function describeOpenerRebidChoice(chosenBid, shape, openingBid, responseBid, base) {
+    let extra = {
+      ...base,
+      category: "continuation",
+      suit: chosenBid.strain,
+      length: shape.counts[chosenBid.strain] || 0,
+      openingSuit: openingBid?.strain || null,
+      responseSuit: responseBid?.strain || null
+    };
+    const notrumpResponseContext = majorOpeningNotrumpResponseContext(shape, openingBid, responseBid);
+    if (notrumpResponseContext) extra = { ...extra, ...notrumpResponseContext };
+
+    if ((bidEquals(openingBid, 1, "NT") || bidEquals(openingBid, 2, "NT")) && responseBid?.strain === "C") {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.staymanAnswer", "basic", "Answer Stayman by showing a four-card major or denying one.", extra);
+    }
+    const transferSuit = notrumpTransferSuit(openingBid, responseBid);
+    if (transferSuit && chosenBid.strain === transferSuit) {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.acceptTransfer", "basic", "Accept partner's transfer by bidding the requested major.", {
+        ...extra,
+        transferSuit
+      });
+    }
+    if (responseBid?.strain !== "NT" && chosenBid.strain === responseBid?.strain) {
+      if (isMajorSingleRaiseFiveCardHigh(openingBid, responseBid)) {
+        const acceptedGame = chosenBid.level === gameLevel(openingBid.strain);
+        return fiveCardHighBidChoiceResult(
+          chosenBid,
+          acceptedGame ? "continuation.openerMajorRaiseGame" : "continuation.openerMajorRaiseInvite",
+          "basic",
+          acceptedGame
+            ? "Bid game after partner's single major raise with 18-19 total points."
+            : "Invite after partner's single major raise with 16-17 total points.",
+          extra
+        );
+      }
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.raisePartner", "basic", "Raise responder's suit with support.", extra);
+    }
+    if (notrumpResponseContext) {
+      const ruleName = openerAfterNotrumpResponseRuleName(chosenBid, openingBid, responseBid, notrumpResponseContext);
+      if (ruleName) {
+        return fiveCardHighBidChoiceResult(chosenBid, ruleName, "basic", "Rebid after partner's notrump response according to opener's hand type and range.", extra);
+      }
+    }
+    if (chosenBid.strain === "NT") {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.notrumpRebid", "basic", "Rebid notrump with balanced extra values.", extra);
+    }
+    if (chosenBid.strain === openingBid?.strain) {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.rebidOwnSuit", "basic", "Rebid opener's own long suit.", extra);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "continuation.newSuit", "basic", "Show a second suit as opener's rebid.", extra);
+  }
+
+  function describeResponderRebidChoice(chosenBid, shape, responseBid, openerRebid, base) {
+    const extra = {
+      ...base,
+      category: "continuation",
+      suit: chosenBid.strain,
+      length: shape.counts[chosenBid.strain] || 0,
+      responseSuit: responseBid?.strain || null,
+      openerRebidSuit: openerRebid?.strain || null,
+      partnerSuit: openerRebid?.strain || null,
+      support: openerRebid?.strain && openerRebid.strain !== "NT" ? shape.counts[openerRebid.strain] : 0
+    };
+    if (
+      isSingleRaiseInviteFiveCardHigh(responseBid, openerRebid) &&
+      chosenBid.strain === openerRebid.strain &&
+      chosenBid.level === gameLevel(openerRebid.strain)
+    ) {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.acceptMajorInvite", "basic", "Accept partner's invitational raise with the upper range for the single raise.", extra);
+    }
+    if (openerRebid?.strain !== "NT" && chosenBid.strain === openerRebid?.strain) {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.raisePartner", "basic", "Raise opener's shown suit with a fit.", extra);
+    }
+    if (chosenBid.strain === "NT") {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.notrumpRebid", "basic", "Place the contract in notrump with balanced values.", extra);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "continuation.newSuit", "basic", "Continue naturally with the best available suit.", extra);
+  }
+
+  function describeNaturalContinuationChoice(chosenBid, shape, partnerBid, base) {
+    const support = partnerBid?.strain && partnerBid.strain !== "NT" ? shape.counts[partnerBid.strain] : 0;
+    const extra = {
+      ...base,
+      category: "continuation",
+      suit: chosenBid.strain,
+      length: shape.counts[chosenBid.strain] || 0,
+      partnerSuit: partnerBid?.strain || null,
+      support
+    };
+    if (partnerBid?.strain !== "NT" && chosenBid.strain === partnerBid?.strain) {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.raisePartner", "basic", "Support partner's suit in the ongoing auction.", extra);
+    }
+    if (chosenBid.strain === "NT") {
+      return fiveCardHighBidChoiceResult(chosenBid, "continuation.notrumpRebid", "basic", "Continue in notrump with balanced strength.", extra);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "continuation.newSuit", "basic", "Continue naturally in the best available suit.", extra);
+  }
+
+  function describeCompetitiveFiveCardHighBidChoice(chosenBid, shape, hand, auction, seat, base) {
+    const partnershipCalls = partnershipContractCalls(auction, seat);
+    const lastBid = highestBid(auction);
+    const lastPartnerCall = lastPartnerContractCall(auction, seat);
+    const extra = {
+      ...base,
+      category: "competitive",
+      suit: chosenBid.strain,
+      length: shape.counts[chosenBid.strain] || 0,
+      opponentSuit: lastBid?.strain || null,
+      partnerSuit: lastPartnerCall?.bid?.strain || null
+    };
+
+    if (!partnershipCalls.length) {
+      if (chosenBid.strain === "NT") {
+        return fiveCardHighBidChoiceResult(chosenBid, "competitive.oneNotrumpOvercall", "basic", "Overcall in notrump with 15-17 HCP, balanced shape, and a stopper.", extra);
+      }
+      const jumpLevel = lastBid ? cheapestLevelForStrain(chosenBid.strain, lastBid) + 1 : chosenBid.level;
+      if (chosenBid.level >= jumpLevel && shape.hcp <= 10) {
+        return fiveCardHighBidChoiceResult(chosenBid, "competitive.jumpOvercall", "basic", "Jump overcall with a good six-card suit and limited strength.", extra);
+      }
+      return fiveCardHighBidChoiceResult(chosenBid, "competitive.simpleOvercall", "basic", "Make a natural overcall with a good five-card suit and competitive values.", extra);
+    }
+
+    if (lastPartnerCall?.bid?.strain !== "NT" && chosenBid.strain === lastPartnerCall?.bid?.strain) {
+      return fiveCardHighBidChoiceResult(chosenBid, "competitive.raisePartner", "basic", "Compete by raising partner's suit with support.", extra);
+    }
+    if (chosenBid.strain === "NT") {
+      return fiveCardHighBidChoiceResult(chosenBid, "competitive.notrump", "basic", "Bid notrump competitively with balanced strength and a stopper.", extra);
+    }
+    return fiveCardHighBidChoiceResult(chosenBid, "competitive.newSuit", "basic", "Compete naturally in a new suit.", extra);
   }
 
   function chooseFiveCardHighBidTarget({ hand = [], auction = [], seat } = {}) {
-    if (!seat) return "Pass";
-    if (isUncontestedAuctionForSeat(auction, seat)) return chooseUncontestedFiveCardHighBid(hand, auction, seat);
-    return chooseCompetitiveFiveCardHighBid(hand, auction, seat);
+    if (!seat) return Pass();
+    const target = isUncontestedAuctionForSeat(auction, seat)
+      ? chooseUncontestedFiveCardHighBid(hand, auction, seat)
+      : chooseCompetitiveFiveCardHighBid(hand, auction, seat);
+    return normalizeBid(target) || Pass();
   }
 
   function chooseUncontestedFiveCardHighBid(hand, auction, seat) {
@@ -437,7 +897,7 @@
     if (!partnershipCalls.length) return chooseFiveCardHighOpening(hand);
 
     const lastPartnerCall = lastPartnerContractCall(auction, seat);
-    if (!lastPartnerCall) return "Pass";
+    if (!lastPartnerCall) return Pass();
 
     const openingCall = partnershipCalls[0];
     if (partnershipCalls.length === 1) return chooseFiveCardHighResponse(hand, openingCall.bid);
@@ -471,7 +931,7 @@
     const preempt = chooseFiveCardHighPreempt(shape, hand);
     if (preempt) return preempt;
 
-    if (shape.hcp < 12 || shape.hcp > 19) return "Pass";
+    if (shape.hcp < 12 || shape.hcp > 19) return Pass();
 
     const major = chooseFiveCardHighOpeningMajor(shape);
     if (major) return bid(1, major);
@@ -522,7 +982,7 @@
     if (bidEquals(partnerBid, 1, "D")) return respondToOneDiamondFiveCardHigh(shape);
     if (bidEquals(partnerBid, 1, "H")) return respondToOneMajorFiveCardHigh(shape, "H");
     if (bidEquals(partnerBid, 1, "S")) return respondToOneMajorFiveCardHigh(shape, "S");
-    return "Pass";
+    return Pass();
   }
 
   function respondToOneNotrumpFiveCardHigh(shape) {
@@ -532,7 +992,7 @@
     if (hasFourCardMajor(shape) && shape.hcp >= 8) return bid(2, "C");
     if (shape.hcp >= 10) return bid(3, "NT");
     if (shape.hcp >= 8) return bid(2, "NT");
-    return "Pass";
+    return Pass();
   }
 
   function respondToTwoNotrumpFiveCardHigh(shape) {
@@ -541,7 +1001,7 @@
     if (transferMajor === "S") return bid(3, "H");
     if (hasFourCardMajor(shape) && shape.hcp >= 1) return bid(3, "C");
     if (shape.hcp >= 4) return bid(3, "NT");
-    return "Pass";
+    return Pass();
   }
 
   function respondToStrongTwoClubsFiveCardHigh(shape, hand) {
@@ -561,17 +1021,17 @@
     const newSuit = chooseSuitByLengthThenRank(suits.filter((suit) => suit !== partnerBid.strain), shape, 5, true, (candidate) => suitQuality(hand, candidate) >= 2);
     if (newSuit && shape.hcp >= 10) return bid(cheapestLevelForStrain(newSuit, partnerBid), newSuit);
     if (support >= 3 && shape.hcp >= 10) return bid(partnerBid.level + 1, partnerBid.strain);
-    return "Pass";
+    return Pass();
   }
 
   function respondToPreemptFiveCardHigh(shape, partnerBid) {
     if (shape.counts[partnerBid.strain] >= 3 && shape.hcp >= 12) return bid(gameLevel(partnerBid.strain), partnerBid.strain);
     if (shape.balanced && shape.hcp >= 16) return bid(3, "NT");
-    return "Pass";
+    return Pass();
   }
 
   function respondToOneClubFiveCardHigh(shape) {
-    if (shape.hcp < 6) return "Pass";
+    if (shape.hcp < 6) return Pass();
     const newSuit = chooseResponseSuit(["D", "H", "S"], shape, 4);
     if (newSuit) return bid(1, newSuit);
     if (shape.counts.C >= 5) {
@@ -585,7 +1045,7 @@
   }
 
   function respondToOneDiamondFiveCardHigh(shape) {
-    if (shape.hcp < 6) return "Pass";
+    if (shape.hcp < 6) return Pass();
     const major = chooseResponseSuit(["H", "S"], shape, 4);
     if (major) return bid(1, major);
     const clubs = shape.counts.C >= 5 && shape.hcp >= 10 ? "C" : null;
@@ -601,8 +1061,7 @@
   }
 
   function respondToOneMajorFiveCardHigh(shape, openingMajor) {
-    if (shape.hcp < 6) return "Pass";
-    if (openingMajor === "H" && shape.counts.S >= 4) return bid(1, "S");
+    if (shape.hcp < 6) return Pass();
 
     const support = shape.counts[openingMajor] >= 3;
     if (support) {
@@ -611,8 +1070,10 @@
       return bid(2, openingMajor);
     }
 
+    if (openingMajor === "H" && shape.counts.S >= 4) return bid(1, "S");
+
     const sideSuits = suits.filter((suit) => suit !== openingMajor);
-    const twoLevelSuit = chooseSuitByLengthThenRank(sideSuits, shape, 5, true);
+    const twoLevelSuit = chooseSuitByLengthThenRank(sideSuits, shape, 4, false);
     if (twoLevelSuit && shape.hcp >= 10) return bid(cheapestLevelForStrain(twoLevelSuit, bid(1, openingMajor)), twoLevelSuit);
 
     if (shape.hcp <= 9) return bid(1, "NT");
@@ -626,7 +1087,7 @@
     if (bidEquals(openingBid, 2, "NT")) return rebidAfterTwoNotrumpResponseFiveCardHigh(shape, responseBid);
     if (bidEquals(openingBid, 2, "C")) return rebidAfterStrongTwoClubsFiveCardHigh(shape, hand);
     if (isOneSuitOpeningFiveCardHigh(openingBid)) return rebidAfterOneSuitOpeningFiveCardHigh(shape, openingBid, responseBid);
-    return "Pass";
+    return Pass();
   }
 
   function rebidAfterOneNotrumpResponseFiveCardHigh(shape, responseBid) {
@@ -637,8 +1098,8 @@
     }
     if (bidEquals(responseBid, 2, "D")) return bid(2, "H");
     if (bidEquals(responseBid, 2, "H")) return bid(2, "S");
-    if (bidEquals(responseBid, 2, "NT")) return shape.hcp >= 16 ? bid(3, "NT") : "Pass";
-    return "Pass";
+    if (bidEquals(responseBid, 2, "NT")) return shape.hcp >= 16 ? bid(3, "NT") : Pass();
+    return Pass();
   }
 
   function rebidAfterTwoNotrumpResponseFiveCardHigh(shape, responseBid) {
@@ -649,7 +1110,7 @@
     }
     if (bidEquals(responseBid, 3, "D")) return bid(3, "H");
     if (bidEquals(responseBid, 3, "H")) return bid(3, "S");
-    return "Pass";
+    return Pass();
   }
 
   function rebidAfterStrongTwoClubsFiveCardHigh(shape, hand) {
@@ -668,45 +1129,144 @@
   }
 
   function openerRebidAfterRaiseFiveCardHigh(shape, openingBid, responseBid) {
-    if (responseBid.level >= gameLevel(openingBid.strain)) return "Pass";
-    if (responseBid.level === 3) return shape.hcp >= 14 ? bid(gameLevel(openingBid.strain), openingBid.strain) : "Pass";
-    if (responseBid.level === 2) {
-      if (shape.hcp >= 16) return bid(gameLevel(openingBid.strain), openingBid.strain);
-      if (shape.hcp >= 15) return bid(3, openingBid.strain);
+    if (responseBid.level >= gameLevel(openingBid.strain)) return Pass();
+    if (responseBid.level === 3) return shape.hcp >= 14 ? bid(gameLevel(openingBid.strain), openingBid.strain) : Pass();
+    if (isMajorSingleRaiseFiveCardHigh(openingBid, responseBid)) {
+      if (shape.points >= 18) return bid(gameLevel(openingBid.strain), openingBid.strain);
+      if (shape.points >= 16) return bid(3, openingBid.strain);
+      return Pass();
     }
-    return "Pass";
+    return Pass();
   }
 
-  function openerRebidAfterNotrumpFiveCardHigh(shape, openingBid) {
+  function isMajorSingleRaiseFiveCardHigh(openingBid, responseBid) {
+    return (
+      openingBid?.level === 1 &&
+      (openingBid.strain === "H" || openingBid.strain === "S") &&
+      responseBid?.level === 2 &&
+      responseBid.strain === openingBid.strain
+    );
+  }
+
+  function openerRebidAfterNotrumpFiveCardHigh(shape, openingBid, responseBid) {
+    const context = majorOpeningNotrumpResponseContext(shape, openingBid, responseBid);
+    if (!context) return openerRebidAfterNotrumpFallbackFiveCardHigh(shape, openingBid);
+
+    if (responseBid.level === 1) {
+      if (context.handType === "twoSuiter") return shape.hcp >= 18 ? bid(3, context.secondSuit) : bid(2, context.secondSuit);
+      if (context.handType === "longMajor") {
+        if (shape.hcp >= 18) return bid(gameLevel(openingBid.strain), openingBid.strain);
+        if (shape.hcp >= 16) return bid(3, openingBid.strain);
+        if (shape.hcp >= 12) return bid(2, openingBid.strain);
+      }
+      if (context.handType === "balanced" && shape.hcp >= 18) return bid(3, "NT");
+      return Pass();
+    }
+
+    if (responseBid.level === 2) {
+      if (context.handType === "twoSuiter") {
+        if (shape.hcp >= 14) return openingBid.strain === "S" && context.secondSuit === "H" ? bid(4, "H") : bid(3, "NT");
+        if (shape.hcp >= 12) return bid(3, context.secondSuit);
+      }
+      if (context.handType === "longMajor") return shape.hcp >= 14 ? bid(gameLevel(openingBid.strain), openingBid.strain) : bid(3, openingBid.strain);
+      if (context.handType === "balanced" && shape.hcp >= 14) return bid(3, "NT");
+      return Pass();
+    }
+
+    return Pass();
+  }
+
+  function openerRebidAfterNotrumpFallbackFiveCardHigh(shape, openingBid) {
     if (shape.counts[openingBid.strain] >= 6) return bid(openingBid.level + 1, openingBid.strain);
     if (shape.balanced && shape.hcp >= 18) return bid(2, "NT");
     if (shape.balanced && shape.hcp >= 15) return bid(1, "NT");
     const secondSuit = chooseOpenerSecondSuit(shape, openingBid.strain);
     if (secondSuit) return bid(cheapestLevelForStrain(secondSuit, openingBid), secondSuit);
-    return "Pass";
+    return Pass();
+  }
+
+  function majorOpeningNotrumpResponseContext(shape, openingBid, responseBid) {
+    if (!isMajorOpeningNotrumpResponseFiveCardHigh(openingBid, responseBid)) return null;
+    const secondSuit = chooseLowerSecondSuitFiveCardHigh(shape, openingBid.strain);
+    if (secondSuit) return { handType: "twoSuiter", notrumpResponseLevel: responseBid.level, secondSuit };
+    if (shape.counts[openingBid.strain] >= 6) return { handType: "longMajor", notrumpResponseLevel: responseBid.level };
+    if (shape.balanced) return { handType: "balanced", notrumpResponseLevel: responseBid.level };
+    return { handType: "other", notrumpResponseLevel: responseBid.level };
+  }
+
+  function isMajorOpeningNotrumpResponseFiveCardHigh(openingBid, responseBid) {
+    return (
+      openingBid?.level === 1 &&
+      (openingBid.strain === "H" || openingBid.strain === "S") &&
+      responseBid?.strain === "NT" &&
+      (responseBid.level === 1 || responseBid.level === 2)
+    );
+  }
+
+  function chooseLowerSecondSuitFiveCardHigh(shape, openingStrain) {
+    const candidates = openingStrain === "H" ? ["C", "D"] : openingStrain === "S" ? ["C", "D", "H"] : [];
+    return chooseSuitByLengthThenRank(candidates, shape, 4, false);
+  }
+
+  function openerAfterNotrumpResponseRuleName(chosenBid, openingBid, responseBid, context) {
+    const prefix = responseBid.level === 1 ? "openerAfterOneNt" : "openerAfterTwoNt";
+    if (context.handType === "balanced" && bidEquals(chosenBid, 3, "NT")) return `continuation.${prefix}BalancedGame`;
+    if (context.handType === "longMajor" && chosenBid.strain === openingBid.strain) {
+      if (responseBid.level === 1) {
+        if (chosenBid.level === 2) return `continuation.${prefix}LongMajorMinimum`;
+        if (chosenBid.level === 3) return `continuation.${prefix}LongMajorInvite`;
+        if (chosenBid.level === 4) return `continuation.${prefix}LongMajorGame`;
+      }
+      if (responseBid.level === 2) {
+        if (chosenBid.level === 3) return `continuation.${prefix}LongMajorMinimum`;
+        if (chosenBid.level === 4) return `continuation.${prefix}LongMajorGame`;
+      }
+    }
+    if (context.handType === "twoSuiter") {
+      if (responseBid.level === 1 && chosenBid.strain === context.secondSuit) {
+        if (chosenBid.level === 2) return `continuation.${prefix}TwoSuiterLow`;
+        if (chosenBid.level === 3) return `continuation.${prefix}TwoSuiterHigh`;
+      }
+      if (responseBid.level === 2) {
+        if (chosenBid.strain === context.secondSuit && chosenBid.level === 3) return `continuation.${prefix}TwoSuiterLow`;
+        if (bidEquals(chosenBid, 4, "H")) return `continuation.${prefix}TwoMajorsGame`;
+        if (bidEquals(chosenBid, 3, "NT")) return `continuation.${prefix}TwoSuiterGameNotrump`;
+      }
+    }
+    return null;
   }
 
   function openerRebidAfterNewSuitFiveCardHigh(shape, openingBid, responseBid) {
-    const supportNeeded = responseBid.level === 1 ? 4 : 3;
-    if (responseBid.strain !== "NT" && shape.counts[responseBid.strain] >= supportNeeded) {
-      if (shape.hcp >= 18) return bid(gameLevel(responseBid.strain), responseBid.strain);
-      if (shape.hcp >= 16) return bid(3, responseBid.strain);
-      return bid(2, responseBid.strain);
+    if (responseBid.strain !== "NT" && shape.counts[responseBid.strain] >= 4) {
+      return bid(cheapestLevelForStrain(responseBid.strain, responseBid), responseBid.strain);
     }
-    if (shape.balanced && shape.hcp >= 18) return bid(2, "NT");
-    if (shape.balanced && shape.hcp >= 12) return bid(1, "NT");
-    if (shape.counts[openingBid.strain] >= 6) return bid(openingBid.level + 1, openingBid.strain);
+    if (shape.balanced) return bid(cheapestLevelForStrain("NT", responseBid), "NT");
+    if (shape.counts[openingBid.strain] >= 6) return bid(cheapestLevelForStrain(openingBid.strain, responseBid), openingBid.strain);
     const secondSuit = chooseOpenerSecondSuit(shape, openingBid.strain, responseBid.strain);
     if (secondSuit) return bid(cheapestLevelForStrain(secondSuit, responseBid), secondSuit);
-    return "Pass";
+    return Pass();
   }
 
   function chooseFiveCardHighResponderRebid(hand, openingBid, responseBid, openerRebid) {
     const shape = handShape(hand);
     if (bidEquals(openingBid, 1, "NT")) return rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid);
     if (bidEquals(openingBid, 2, "NT")) return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid);
+    if (isSingleRaiseInviteFiveCardHigh(responseBid, openerRebid)) return rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, openerRebid);
     if (isOneSuitOpeningFiveCardHigh(openingBid)) return chooseFiveCardHighNaturalContinuation(hand, openerRebid, openerRebid);
-    return "Pass";
+    return Pass();
+  }
+
+  function isSingleRaiseInviteFiveCardHigh(responseBid, openerRebid) {
+    return (
+      responseBid?.level === 2 &&
+      (responseBid.strain === "H" || responseBid.strain === "S") &&
+      openerRebid?.level === 3 &&
+      openerRebid.strain === responseBid.strain
+    );
+  }
+
+  function rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, openerRebid) {
+    return shape.hcp >= 8 ? bid(gameLevel(openerRebid.strain), openerRebid.strain) : Pass();
   }
 
   function rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid) {
@@ -718,7 +1278,7 @@
       }
       if (shape.hcp >= 10) return bid(3, "NT");
       if (shape.hcp >= 8) return bid(2, "NT");
-      return "Pass";
+      return Pass();
     }
 
     const transferSuit = bidEquals(responseBid, 2, "D") ? "H" : bidEquals(responseBid, 2, "H") ? "S" : null;
@@ -726,7 +1286,7 @@
       if (shape.counts[transferSuit] >= 6) {
         if (shape.hcp >= 10) return bid(4, transferSuit);
         if (shape.hcp >= 8) return bid(3, transferSuit);
-        return "Pass";
+        return Pass();
       }
       if (shape.hcp >= 10) return bid(3, "NT");
       if (shape.hcp >= 8) {
@@ -734,9 +1294,9 @@
         if (transferSuit === "S" && shape.counts.H >= 4) return bid(3, "H");
         return bid(2, "NT");
       }
-      return "Pass";
+      return Pass();
     }
-    return "Pass";
+    return Pass();
   }
 
   function rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid) {
@@ -747,7 +1307,7 @@
     const transferSuit = bidEquals(responseBid, 3, "D") ? "H" : bidEquals(responseBid, 3, "H") ? "S" : null;
     if (transferSuit && shape.counts[transferSuit] >= 6) return bid(4, transferSuit);
     if (transferSuit && shape.hcp >= 4) return bid(3, "NT");
-    return "Pass";
+    return Pass();
   }
 
   function chooseFiveCardHighOpenerThirdBid(hand, partnershipCalls) {
@@ -755,25 +1315,25 @@
     const openingBid = partnershipCalls[0].bid;
     const responseBid = partnershipCalls[1].bid;
     const responderRebid = partnershipCalls[3]?.bid;
-    if (!responderRebid || !bidEquals(openingBid, 1, "NT")) return "Pass";
+    if (!responderRebid || !bidEquals(openingBid, 1, "NT")) return Pass();
 
     if (bidEquals(responseBid, 2, "C")) {
-      if (bidEquals(responderRebid, 2, "NT")) return shape.hcp >= 16 ? bid(3, "NT") : "Pass";
+      if (bidEquals(responderRebid, 2, "NT")) return shape.hcp >= 16 ? bid(3, "NT") : Pass();
       if ((responderRebid.strain === "H" || responderRebid.strain === "S") && responderRebid.level === 3) {
-        return shape.hcp >= 16 ? bid(4, responderRebid.strain) : "Pass";
+        return shape.hcp >= 16 ? bid(4, responderRebid.strain) : Pass();
       }
     }
 
     const transferSuit = bidEquals(responseBid, 2, "D") ? "H" : bidEquals(responseBid, 2, "H") ? "S" : null;
-    if (!transferSuit) return "Pass";
+    if (!transferSuit) return Pass();
     const hasThreeCardSupport = shape.counts[transferSuit] >= 3;
     if (bidEquals(responderRebid, 2, "NT")) {
-      if (shape.hcp <= 15) return hasThreeCardSupport ? bid(3, transferSuit) : "Pass";
+      if (shape.hcp <= 15) return hasThreeCardSupport ? bid(3, transferSuit) : Pass();
       return hasThreeCardSupport ? bid(4, transferSuit) : bid(3, "NT");
     }
     if (bidEquals(responderRebid, 3, "NT") && hasThreeCardSupport) return bid(4, transferSuit);
-    if (bidEquals(responderRebid, 3, transferSuit)) return shape.hcp >= 16 ? bid(4, transferSuit) : "Pass";
-    return "Pass";
+    if (bidEquals(responderRebid, 3, transferSuit)) return shape.hcp >= 16 ? bid(4, transferSuit) : Pass();
+    return Pass();
   }
 
   function chooseCompetitiveFiveCardHighBid(hand, auction, seat) {
@@ -784,7 +1344,7 @@
     if (canRedoubleFromAuction(auction, seat)) {
       const partnerBid = partnershipCalls[0]?.bid || null;
       const fit = partnerBid && partnerBid.strain !== "NT" && shape.counts[partnerBid.strain] >= supportLengthForOpening(partnerBid.strain);
-      if (!fit && shape.hcp >= 10) return "Redouble";
+      if (!fit && shape.hcp >= 10) return Redouble();
     }
 
     if (!partnershipCalls.length) return chooseOvercallFiveCardHigh(hand, auction, seat);
@@ -798,14 +1358,14 @@
       }
     }
 
-    if (canDoubleFromAuction(auction, seat) && shouldMakeInformationDoubleFiveCardHigh(shape, lastBid)) return "Double";
-    return "Pass";
+    if (canDoubleFromAuction(auction, seat) && shouldMakeInformationDoubleFiveCardHigh(shape, lastBid)) return Double();
+    return Pass();
   }
 
   function chooseOvercallFiveCardHigh(hand, auction, seat) {
     const shape = handShape(hand);
     const lastBid = highestBid(auction);
-    if (!lastBid || !isContractBid(lastBid)) return "Pass";
+    if (!lastBid || !isContractBid(lastBid)) return Pass();
 
     if (shape.balanced && shape.hcp >= 15 && shape.hcp <= 17 && lastBid.strain !== "NT" && hasStopper(hand, lastBid.strain)) {
       return bid(cheapestLevelForStrain("NT", lastBid), "NT");
@@ -822,18 +1382,18 @@
       return bid(cheapestLevelForStrain(overcallSuit, lastBid), overcallSuit);
     }
 
-    if (canDoubleFromAuction(auction, seat) && shouldMakeInformationDoubleFiveCardHigh(shape, lastBid)) return "Double";
-    return "Pass";
+    if (canDoubleFromAuction(auction, seat) && shouldMakeInformationDoubleFiveCardHigh(shape, lastBid)) return Double();
+    return Pass();
   }
 
   function respondAfterPartnerOpenedAndOpponentDoubledFiveCardHigh(shape, partnerBid) {
     const support = partnerBid.strain !== "NT" && shape.counts[partnerBid.strain] >= supportLengthForOpening(partnerBid.strain);
     if (support && shape.hcp >= 10) return bid(2, "NT");
     if (support && shape.hcp >= 6) return bid(Math.min(partnerBid.level + 1, gameLevel(partnerBid.strain)), partnerBid.strain);
-    if (shape.hcp >= 10) return "Redouble";
+    if (shape.hcp >= 10) return Redouble();
     const newSuit = chooseSuitByLengthThenRank(suits.filter((suit) => suit !== partnerBid.strain), shape, 5, true);
     if (newSuit && shape.hcp >= 6) return bid(cheapestLevelForStrain(newSuit, partnerBid), newSuit);
-    return "Pass";
+    return Pass();
   }
 
   function respondAfterOvercallFiveCardHigh(shape, hand, partnerBid, opponentBid, auction, seat) {
@@ -844,9 +1404,9 @@
       if (shape.hcp >= 6) return bid(2, partnerBid.strain);
     }
     if (canDoubleFromAuction(auction, seat) && shouldMakeNegativeDoubleFiveCardHigh(shape, partnerBid, opponentBid)) {
-      return "Double";
+      return Double();
     }
-    if (shouldMakeNegativeDoubleFiveCardHigh(shape, partnerBid, opponentBid)) return "Double";
+    if (shouldMakeNegativeDoubleFiveCardHigh(shape, partnerBid, opponentBid)) return Double();
 
     const newSuit = chooseSuitByLengthThenRank(suits.filter((suit) => suit !== partnerBid.strain && suit !== opponentBid.strain), shape, 5, true);
     if (newSuit) {
@@ -861,7 +1421,7 @@
       if (shape.hcp >= 10 && shape.balanced && ntLevel <= 2) return bid(ntLevel, "NT");
       if (shape.hcp >= 6 && shape.balanced && ntLevel === 1) return bid(1, "NT");
     }
-    return "Pass";
+    return Pass();
   }
 
   function shouldMakeInformationDoubleFiveCardHigh(shape, opponentBid) {
@@ -889,7 +1449,7 @@
     if (shape.balanced && shape.hcp >= 12) return nextAvailableBid(bid(3, "NT"), lastBid);
     const suit = chooseSuitByLengthThenRank(suits.filter((candidate) => candidate !== partnerBid?.strain), shape, 5, true);
     if (suit && shape.hcp >= 10) return nextAvailableBid(bid(cheapestLevelForStrain(suit, lastBid), suit), lastBid);
-    return "Pass";
+    return Pass();
   }
 
   function chooseResponseSuit(candidates, shape, minimumLength) {
@@ -2161,6 +2721,28 @@
     return cards.find((card) => card.rank === rank) || null;
   }
 
+  function touchingHonorSequence(cards, minimumLength = 2) {
+    const ranks = new Set(cards.map((card) => card.rank));
+    for (let i = 0; i < leadHonorRanks.length; i++) {
+      const topRank = leadHonorRanks[i];
+      if (!ranks.has(topRank)) continue;
+
+      const run = [];
+      for (let j = i; j < leadHonorRanks.length; j++) {
+        if (!ranks.has(leadHonorRanks[j])) break;
+        run.push(leadHonorRanks[j]);
+      }
+      if (run.length >= minimumLength) {
+        return {
+          ranks: run,
+          topRank,
+          card: cardFromRank(cards, topRank)
+        };
+      }
+    }
+    return null;
+  }
+
   function notrumpLeadPattern(cards) {
     const ranks = new Set(cards.map((card) => card.rank));
     const candidates = [];
@@ -2259,6 +2841,130 @@
       }
     }
 
+    const highMiddleCard = highestCard(longestSuitCards);
+    if (!highMiddleCard) return null;
+
+    return cardPlayResult(
+      highMiddleCard,
+      "notrumpHighMiddleDeniesHonor",
+      "basic",
+      "Lead the highest card from the longest notrump suit to deny an honor.",
+      {
+        suit: longestSuit,
+        suitLength: longestSuitCards.length,
+        action: "highMiddleDeniesHonor"
+      }
+    );
+  }
+
+  function sideSuitGroups(legal, trump) {
+    return suits
+      .filter((suit) => suit !== trump)
+      .map((suit) => ({ suit, cards: cardsInSuit(legal, suit) }))
+      .filter((group) => group.cards.length);
+  }
+
+  function suitGroupOrder(a, b) {
+    const lengthDiff = b.cards.length - a.cards.length;
+    if (lengthDiff) return lengthDiff;
+    return suits.indexOf(a.suit) - suits.indexOf(b.suit);
+  }
+
+  function fourthBestCard(cards) {
+    return [...cards].sort((a, b) => rankOrder.indexOf(b.rank) - rankOrder.indexOf(a.rank))[3] || null;
+  }
+
+  function chooseSuitContractLeadCardPlay(legal, trump) {
+    const sideSuits = sideSuitGroups(legal, trump);
+    if (!sideSuits.length) return null;
+
+    const sequence = sideSuits
+      .map((group) => ({ ...group, pattern: touchingHonorSequence(group.cards, 2) }))
+      .filter((group) => group.pattern?.card)
+      .sort((a, b) => {
+        const rankDiff = rankOrder.indexOf(b.pattern.topRank) - rankOrder.indexOf(a.pattern.topRank);
+        if (rankDiff) return rankDiff;
+        const sequenceDiff = b.pattern.ranks.length - a.pattern.ranks.length;
+        if (sequenceDiff) return sequenceDiff;
+        return suits.indexOf(a.suit) - suits.indexOf(b.suit);
+      })[0];
+    if (sequence) {
+      return cardPlayResult(
+        sequence.pattern.card,
+        "suitContractSequenceLead",
+        "basic",
+        "Lead the highest card from a touching honor sequence against a suit contract.",
+        {
+          suit: sequence.suit,
+          suitLength: sequence.cards.length,
+          sequence: sequence.pattern.ranks.join(""),
+          action: "sequence"
+        }
+      );
+    }
+
+    const singleton = sideSuits.find((group) => group.cards.length === 1);
+    if (singleton) {
+      return cardPlayResult(
+        singleton.cards[0],
+        "suitContractSingletonLead",
+        "basic",
+        "Lead a singleton side suit against a suit contract.",
+        {
+          suit: singleton.suit,
+          suitLength: singleton.cards.length,
+          action: "singleton"
+        }
+      );
+    }
+
+    const doubleton = sideSuits.find((group) => group.cards.length === 2);
+    if (doubleton) {
+      return cardPlayResult(
+        highestCard(doubleton.cards),
+        "suitContractDoubletonLead",
+        "basic",
+        "Lead the highest card from a doubleton side suit against a suit contract.",
+        {
+          suit: doubleton.suit,
+          suitLength: doubleton.cards.length,
+          action: "doubleton"
+        }
+      );
+    }
+
+    const longSuit = sideSuits
+      .filter((group) => group.cards.length >= 4)
+      .sort(suitGroupOrder)[0];
+    if (longSuit) {
+      return cardPlayResult(
+        fourthBestCard(longSuit.cards),
+        "suitContractFourthBestLead",
+        "basic",
+        "Lead fourth best from length against a suit contract.",
+        {
+          suit: longSuit.suit,
+          suitLength: longSuit.cards.length,
+          action: "fourthBest"
+        }
+      );
+    }
+
+    const threeSmall = sideSuits.find((group) => group.cards.length === 3 && group.cards.every(isLowLeadCard));
+    if (threeSmall) {
+      return cardPlayResult(
+        lowestCard(threeSmall.cards),
+        "suitContractLowFromThreeSmall",
+        "basic",
+        "Lead low from three small cards against a suit contract.",
+        {
+          suit: threeSmall.suit,
+          suitLength: threeSmall.cards.length,
+          action: "lowFromThreeSmall"
+        }
+      );
+    }
+
     return null;
   }
 
@@ -2266,10 +2972,18 @@
     return !seat || !declarer || teamOf(seat) !== teamOf(declarer);
   }
 
+  function isDefensivePlaySeat(seat, declarer) {
+    return Boolean(seat && declarer && teamOf(seat) !== teamOf(declarer));
+  }
+
   function chooseLeadCardPlay(hand, legal, { contract = null, seat = null, declarer = null } = {}) {
     if (contract?.strain === "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
       const notrumpLead = chooseNotrumpLeadCardPlay(hand, legal);
       if (notrumpLead) return notrumpLead;
+    }
+    if (contract?.strain && contract.strain !== "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
+      const suitContractLead = chooseSuitContractLeadCardPlay(legal, contract.strain);
+      if (suitContractLead) return suitContractLead;
     }
 
     const longestSuit = longestSuitForLead(hand);
@@ -2301,7 +3015,7 @@
 
   function chooseThirdHandHighOverLowLead({ legal, currentTrick, seat, declarer, contract, trump, winning }) {
     if (contract?.strain !== "NT" || trump || !seat || currentTrick.length !== 2) return null;
-    if (!canUseDefensiveLeadAgreement(seat, declarer)) return null;
+    if (!isDefensivePlaySeat(seat, declarer)) return null;
     const leadPlay = currentTrick[0];
     if (leadPlay.seat !== partnerOf(seat) || !isLowPromisesHonorLead(leadPlay)) return null;
 
@@ -2323,9 +3037,101 @@
     );
   }
 
+  function cheapestHigherHonor(cards, rank) {
+    return cards
+      .filter((card) => isLeadHonorRank(card.rank) && rankOrder.indexOf(card.rank) > rankOrder.indexOf(rank))
+      .sort(compareLowCards)[0] || null;
+  }
+
+  function dummySupportsHonorCover(dummyHand, leadSuit, leadRank) {
+    if (!dummyHand?.length) return true;
+    const lowerHonor = leadHonorRanks[leadHonorRanks.indexOf(leadRank) + 1];
+    return Boolean(lowerHonor && cardsInSuit(dummyHand, leadSuit).some((card) => card.rank === lowerHonor));
+  }
+
+  function chooseSecondHandDefensivePlay({ legal, currentTrick, seat, declarer, dummyHand, trump }) {
+    if (currentTrick.length !== 1 || !isDefensivePlaySeat(seat, declarer)) return null;
+
+    const leadCard = currentTrick[0].card;
+    const leadSuit = leadCard.suit;
+    const suitedLegal = cardsInSuit(legal, leadSuit);
+    if (!suitedLegal.length) return null;
+
+    const sequence = touchingHonorSequence(suitedLegal, 2);
+    if (sequence?.card && beats(sequence.card, leadCard, leadSuit, trump)) {
+      return cardPlayResult(
+        sequence.card,
+        "secondHandSequenceHigh",
+        "basic",
+        "Second hand plays the top of a touching honor sequence when it can take over the led card.",
+        {
+          leadSuit,
+          sequence: sequence.ranks.join(""),
+          action: "secondHandSequence"
+        }
+      );
+    }
+
+    if (isLeadHonorRank(leadCard.rank)) {
+      const coverCard = cheapestHigherHonor(suitedLegal, leadCard.rank);
+      if (coverCard && dummySupportsHonorCover(dummyHand, leadSuit, leadCard.rank)) {
+        return cardPlayResult(
+          coverCard,
+          "secondHandCoverHonor",
+          "basic",
+          "Second hand covers an honor when dummy shows a lower touching honor that can be limited.",
+          {
+            leadSuit,
+            coveredRank: leadCard.rank,
+            action: "coverHonor"
+          }
+        );
+      }
+    }
+
+    return cardPlayResult(
+      lowestCard(suitedLegal),
+      "secondHandLow",
+      "basic",
+      "Second hand plays low when following suit.",
+      {
+        leadSuit,
+        action: "secondHandLow"
+      }
+    );
+  }
+
+  function chooseThirdHandDefensivePlay({ legal, currentTrick, seat, declarer, trump, winning }) {
+    if (currentTrick.length !== 2 || !isDefensivePlaySeat(seat, declarer)) return null;
+    const leadPlay = currentTrick[0];
+    if (leadPlay.seat !== partnerOf(seat)) return null;
+
+    const leadSuit = leadPlay.card.suit;
+    const suitedLegal = cardsInSuit(legal, leadSuit);
+    if (!suitedLegal.length) return null;
+
+    const canBeat = suitedLegal
+      .filter((card) => beats(card, winning.card, leadSuit, trump))
+      .sort(compareLowCards);
+    if (!canBeat.length) return null;
+
+    return cardPlayResult(
+      canBeat[0],
+      "thirdHandHighCheapest",
+      "basic",
+      "Third hand plays the cheapest card that can win the trick.",
+      {
+        leadSuit,
+        winningSeat: winning.seat,
+        action: "thirdHandHigh"
+      }
+    );
+  }
+
   function chooseCardPlay({
     hand = [],
     partnerHand = null,
+    dummyHand = null,
     currentTrick = [],
     trickHistory = [],
     seat,
@@ -2404,6 +3210,26 @@
       );
     }
 
+    const secondHandDefense = chooseSecondHandDefensivePlay({
+      legal,
+      currentTrick,
+      seat,
+      declarer,
+      dummyHand,
+      trump
+    });
+    if (secondHandDefense) return secondHandDefense;
+
+    const thirdHandDefense = chooseThirdHandDefensivePlay({
+      legal,
+      currentTrick,
+      seat,
+      declarer,
+      trump,
+      winning
+    });
+    if (thirdHandDefense) return thirdHandDefense;
+
     const canBeat = legal
       .filter((card) => beats(card, winning.card, leadSuit, trump))
       .sort(compareLowCards);
@@ -2457,6 +3283,7 @@
     handSuitOrder,
     bidStrains,
     rankOrder,
+    biddingSystems,
     vulnerabilityForDeal,
     dealerIndexForDeal,
     teamOf,
@@ -2469,6 +3296,13 @@
     countSuits,
     hcp,
     handShape,
+    callTypes,
+    Pass,
+    Bid,
+    Double,
+    Redouble,
+    normalizeBid,
+    sameCall,
     isPass,
     isDouble,
     isRedouble,
@@ -2479,6 +3313,7 @@
     highestBid,
     isBidHigher,
     chooseFiveCardHighBid,
+    chooseFiveCardHighBidResult,
     chooseFiveCardHighBidTarget,
     chooseFiveCardHighOpening,
     chooseFiveCardHighResponse,

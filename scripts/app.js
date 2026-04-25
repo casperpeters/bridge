@@ -388,15 +388,17 @@ function currentGuidance() {
 }
 
 function biddingGuidance() {
-  const bid = chooseRecommendedBid("South");
+  const result = chooseRecommendedBidResult("South");
   return {
     label: t("recommendedBid"),
-    action: formatCall(bid),
-    reason: `${recommendedBidReason(bid, "South")} ${t("bidSuggestionSource")}`
+    action: formatCall(result.bid),
+    reason: recommendedBidReason(result, "South")
   };
 }
 
-function recommendedBidReason(bid, seat) {
+function recommendedBidReason(resultOrBid, seat) {
+  if (resultOrBid?.bid && resultOrBid.ruleId) return explainBidChoiceResult(resultOrBid);
+  const bid = resultOrBid;
   if (isPass(bid)) return t("bidExplanationPass");
   if (isDouble(bid)) return t("bidExplanationDouble");
   if (isRedouble(bid)) return t("bidExplanationRedouble");
@@ -435,8 +437,7 @@ function formatCall(call) {
 }
 
 function sameCall(left, right) {
-  if (typeof left === "string" || typeof right === "string") return left === right;
-  return left?.level === right?.level && left?.strain === right?.strain;
+  return bridgeRules.sameCall(left, right);
 }
 
 function renderHint() {
@@ -583,6 +584,10 @@ function isRedouble(bid) {
 
 function isContractBid(bid) {
   return bridgeRules.isContractBid(bid);
+}
+
+function normalizeBid(bid) {
+  return bridgeRules.normalizeBid(bid);
 }
 
 function formatBid(bid) {

@@ -16,6 +16,11 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 - Bridgescoretests voor slembonussen en geredoubleerde contracten zijn aanwezig; toekomstig scorewerk moet vooral UI-uitleg en regressies rond biedmodelmigraties borgen.
 - Beginnerstest 1 uitgevoerd met de README-checklist op schone standaardinstellingen. Testbord `1o0ab2mctaply` werd volledig uitgespeeld met simpele beginnersacties: Zuid paste, speelde telkens een legale kaart, zag slagpauzes, eindcontract, resultaat, score-uitleg en handreview zonder consolefouten.
 - Contextuele dummy-uitleg toegevoegd: zodra de dummy na de uitkomst zichtbaar wordt, toont de tafel kort wie dummy is, wie leider is en of de speler verdedigt of beide Noord/Zuid-handen speelt.
+- Eerste verdedigende SA-uitkomstafspraken toegevoegd: langste kleur eerst, dan hoogste van serie of gebroken serie, anders `kleintje belooft plaatje`, anders hoge middenkaart die een plaatje ontkent; derde hand speelt hoog na partners lage SA-uitkomst.
+- Eerste verdedigende kleurcontractuitkomsten toegevoegd: hoogste van honneurserie, singleton, hoogste van doubleton, vierde van lengte en laag van drie kleintjes, met regressietests voor de voorkeursvolgorde.
+- Eerste defensieve tweede-/derde-handregels toegevoegd: tweede hand laag met serie- en honneur-dekuitzonderingen, derde hand goedkoop hoog, en hoogste kaart na partners `kleintje belooft plaatje`.
+- Biedingen genormaliseerd naar getypeerde call-objecten: `Pass`, `Bid`, `Double` en `Redouble`. Nieuwe biedverlopen slaan geen gemengde string/object-representatie meer op; legacy invoer wordt aan de rand genormaliseerd en regressietests borgen biedlegaliteit, eindcontract, scoring en UI-smoke.
+- Spiekbriefconventie voor antwoorden na partners `1H/1S` met een nieuwe kleur toegevoegd: fit met partners hoge kleur gaat voor, `1H-1S` toont `6+` HCP en `4+` schoppen zonder fit, nieuwe kleur op tweehoogte toont `10+` HCP en een `4+` kaart, en openaar herbiedt daarna eenvoudig met fit, SA-verdeling, eigen zeskaart of tweede kleur. Regressietests dekken responderprioriteit, exacte vierkaarten op tweehoogte en openaars herbieding na de nieuwe kleur.
 
 ## 1. Product- en testgereedheid
 
@@ -58,7 +63,7 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 
 ## 5. Competitief biedmodel
 
-- Normaliseer de huidige gemengde biedrepresentatie naar expliciete biedtypen: `Pass`, `Bid`, `Double` en `Redouble`. Nu zijn passen/doubletten/redoubletten nog strings en contractbiedingen objecten; dat werkt, maar is geen stabiele basis voor diepere biedlogica.
+- Gebruik het getypeerde biedmodel als basis voor diepere biedcontext, zodat nieuwe biedlogica niet terugvalt op gemengde string/object-calls.
 - Sla biedcontext op met gever, kwetsbaarheid, positie, partnerschap, eerdere biedingen en huidig contract.
 - Houd forcingstatus per partnerschap bij: forcing, mancheforcing, inviterend, afzwaaiend, alleen competitief.
 - Houd na elke bieding getoonde handranges bij: HCP, totaalpunten, kleurlengtes, stops, steun, controles en handpatroon.
@@ -68,6 +73,7 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 ## 6. Conventiesysteem
 
 - Blijf de NBB Vijfkaart Hoog-regelmodule uitbreiden voorbij de huidige basisdekking van de systeemkaart.
+- Huidige beginnersbasis bevat nu de spiekbriefregels voor `1H/1S` gevolgd door een nieuwe kleur van antwoorder; vervolgwerk moet deze regels niet vervangen door 2/1-mancheforcing, Jacoby-2SA, reverses of sprongafspraken zonder expliciete conventiekeuze.
 - Voeg regelmatching toe op basis van biedverlooppatroon, positie, kwetsbaarheid en partnerschapsstatus.
 - Geef elke regel een betekenis, legale vervolgen, puntenrange, vormvoorwaarden en prioriteit.
 - Ondersteun kunstmatige biedingen, alerts, forcingbiedingen en afzwaaibiedingen.
@@ -143,8 +149,7 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 
 ## 13. Uitkomsten bij kaartspel
 
-- Maak uitkomsten contractbewust: sans-atout- en kleurcontracten hebben verschillende prioriteiten nodig.
-- Voeg gangbare uitkomstafspraken toe: hoogste van aaneengesloten honneurs, vierde van lengte, laag van drie kleintjes en singletonuitkomsten tegen kleurcontracten.
+- Verfijn de eerste contractbewuste uitkomsten verder met uitzonderingen, zoals wanneer korte-kleuruitkomsten te riskant zijn of wanneer een passieve troefuitkomst beter is.
 - Gebruik biedinformatie om partners kleur te verkiezen, de sterke kleur van de leider te vermijden en zwak gestopte kleuren aan te vallen.
 - Voeg passieve uitkomsten toe wanneer het biedverloop suggereert dat de leider zijkleurkracht heeft.
 
@@ -161,8 +166,8 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 
 ## 15. Verdedigend spel
 
-- Voeg regels toe voor tweede hand laag en derde hand hoog, met uitzonderingen.
-- Dek honneurs wanneer dat verdedigende slagen kan promoveren.
+- Verfijn tweede hand laag en derde hand hoog met extra inferentie zodra kaartspelgeheugen bekend is.
+- Breid honneurs dekken uit voorbij de eerste dummy-zichtbare basis met partnerpromotie en gespeelde-kaartinferentie.
 - Speel partners uitkomstkleur terug wanneer dat verstandig is.
 - Voorkom dat de leider wordt geholpen door van niet-ondersteunde honneurs weg te spelen.
 - Speel troef wanneer dummy introefwaarde heeft of de leider op een crossruff lijkt te spelen.
@@ -202,6 +207,7 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 ## 20. Testen
 
 - Voeg regressietests toe voor biedlegaliteit en doubletten/redoubletten zodra het getypeerde biedmodel bestaat; de huidige doublet/redoublet-functionaliteit moet daarbij gedrag behouden.
+- Dek nieuw ongestoord biedwerk steeds af met fixturehanden zoals bij de spiekbriefregels voor nieuwe kleur na `1H/1S`: exacte minimale lengtes, prioriteit tussen fit en nieuwe kleur, en legale vervolgbiedingen van openaar.
 - Voeg fixturehanden toe voor veelvoorkomende competitieve Vijfkaart Hoog-biedverlopen.
 - Voeg regressietests toe voor kunstmatige biedingen die het verkeerde eindcontract worden.
 - Voeg tests toe voor kwetsbaarheidsgevoelige preempts en offers.
@@ -234,16 +240,15 @@ Enige bron van waarheid voor het product-, bied- en speelwerk van de bridge-app.
 4. Voeg kaartspelgeheugen en inferentie vroeg toe: gespeelde kaarten, renonces, resterende lengtes en waarschijnlijke hoge-kaartlocaties vormen de basis voor sterker leider- en tegenspel.
 5. Voeg samengestelde oefenhanden per plantype toe, omdat willekeurige spellen niet betrouwbaar genoeg de leermomenten tonen die testers moeten beoordelen.
 6. Verbeter uitkomsten en basisverdediging met benoemde kaartspelregelresultaten en ontwikkelaarsmodus-uitleg om keuzes te valideren.
-7. Start de diepe biedinfrastructuur: normaliseer biedingen naar getypeerde call-objecten, zodat `Pass`, `Bid`, `Double` en `Redouble` expliciet zijn.
-8. Breng de bestaande doublet/redoublet-ondersteuning over op het getypeerde model en borg legaliteit, eindcontract, scoring en UI met regressietests.
-9. Verbeter de basis-AI voor ongestoorde biedverlopen en voeg fixturechecks toe voor veelvoorkomende beginnersbiedingen.
-10. Breid de huidige Vijfkaart Hoog-biedregels uit met herbruikbare biedbetekenissen, ranges en forcingstatus.
-11. Voeg leerfuncties voor beginners toe waar de motor betrouwbaar is: uitleg van legale keuzes, woordenlijst/hulp en beperkte feedback na keuzes.
-12. Voeg ongedaan maken/herhalen toe voor de leermodus.
-13. Voeg kernhulpmiddelen voor competitief bieden toe: informatiedoubletten, negative doubles, eenvoudige volgbiedingen en `1NT`-volgbiedingen.
-14. Voeg competitieve verhogingen, cue-bids, balancingacties en afspraken voor sans-atout-interventie toe.
-15. Voeg optionele conventie-instellingen toe zodra het kerngedrag stabiel is.
-16. Voeg simulatie of double-dummy-zoekactie toe voor twijfelgevallen in bieden en kaartspel.
+7. Sla biedcontext op met gever, kwetsbaarheid, positie, partnerschap, eerdere biedingen en huidig contract bovenop de getypeerde call-objecten.
+8. Verbeter de basis-AI voor ongestoorde biedverlopen en voeg fixturechecks toe voor veelvoorkomende beginnersbiedingen.
+9. Breid de huidige Vijfkaart Hoog-biedregels uit met herbruikbare biedbetekenissen, ranges en forcingstatus.
+10. Voeg leerfuncties voor beginners toe waar de motor betrouwbaar is: uitleg van legale keuzes, woordenlijst/hulp en beperkte feedback na keuzes.
+11. Voeg ongedaan maken/herhalen toe voor de leermodus.
+12. Voeg kernhulpmiddelen voor competitief bieden toe: informatiedoubletten, negative doubles, eenvoudige volgbiedingen en `1NT`-volgbiedingen.
+13. Voeg competitieve verhogingen, cue-bids, balancingacties en afspraken voor sans-atout-interventie toe.
+14. Voeg optionele conventie-instellingen toe zodra het kerngedrag stabiel is.
+15. Voeg simulatie of double-dummy-zoekactie toe voor twijfelgevallen in bieden en kaartspel.
 
 ## 23. Volgende stappen na de eerste speelplannen
 

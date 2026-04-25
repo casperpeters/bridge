@@ -107,8 +107,6 @@ const text = {
   bidExplanationCompetitive: "Competitieve actie: {detail}.",
   bidExplanationContinuation: "Vervolg: {detail}.",
   bidExplanationArtificial: "Kunstmatige afspraak: {detail}.",
-  bidExplanationSource: "Bron: huidige Vijfkaart-Hoog-heuristiek; nog geen volledige systeemkaart.",
-  bidSuggestionSource: "Dit is heuristisch advies op basis van de huidige Vijfkaart-Hoog-regels.",
   playExplanations: "Speeluitleg",
   playPlan: "Speelplan",
   playPlanGoal: "Doel",

@@ -87,6 +87,7 @@ function chooseCardPlayResult(seat) {
   return bridgeRules.chooseCardPlay({
     hand: state.hands[seat],
     partnerHand: declarerSide ? state.hands[partnerOf(seat)] : null,
+    dummyHand: openingLeadHasBeenMade() && state.dummy ? state.hands[state.dummy] : null,
     currentTrick: state.currentTrick,
     trickHistory: state.trickHistory,
     seat,
@@ -160,8 +161,39 @@ function explainCardPlayResult(result) {
   if (ruleName === "notrumpLowPromisesHonor") {
     return `Kom tegen sans-atout laag uit je langste kleur: kleintje belooft plaatje.`;
   }
+  if (ruleName === "notrumpHighMiddleDeniesHonor") {
+    return `Kom tegen sans-atout met de hoogste middenkaart uit je langste kleur: die ontkent een plaatje.`;
+  }
+  if (ruleName === "suitContractSequenceLead") {
+    return `Kom tegen een kleurcontract met de hoogste kaart uit de honneurserie in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractSingletonLead") {
+    return `Kom tegen een kleurcontract met je singleton in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractDoubletonLead") {
+    return `Kom tegen een kleurcontract met de hoogste kaart van je doubleton in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractFourthBestLead") {
+    return `Kom tegen een kleurcontract met de vierde kaart van boven uit je lengte in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractLowFromThreeSmall") {
+    return `Kom tegen een kleurcontract laag uit drie kleintjes in ${suitName(result.suit)}.`;
+  }
   if (ruleName === "thirdHandHighOverLowLead") {
     return `Partner kwam laag uit tegen sans-atout: derde man doet wat hij kan en speelt hoog in ${suitName(result.leadSuit)}.`;
+  }
+  if (ruleName === "secondHandLow") {
+    return `Tweede hand speelt laag in ${suitName(result.leadSuit)}.`;
+  }
+  if (ruleName === "secondHandSequenceHigh") {
+    return `Tweede hand speelt hoog uit de honneurserie in ${suitName(result.leadSuit)}.`;
+  }
+  if (ruleName === "secondHandCoverHonor") {
+    const covered = rankLabel[result.coveredRank] || result.coveredRank;
+    return `Tweede hand dekt de ${covered} met een honneur omdat dummy een aansluitende honneur toont.`;
+  }
+  if (ruleName === "thirdHandHighCheapest") {
+    return `Derde hand speelt hoog, maar met de goedkoopste kaart die de slag voorlopig kan winnen.`;
   }
   if (ruleName === "finesseTowardHonor") {
     const finesse = rankLabel[result.finesseRank] || result.finesseRank;

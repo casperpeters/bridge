@@ -11,21 +11,26 @@ function continueAuction() {
     return;
   }
   window.setTimeout(() => {
-    makeBid(seat, chooseBid(seat));
+    const bidResult = chooseBidResult(seat);
+    makeBid(seat, bidResult.bid, bidResult);
   }, 560);
 }
 
-function makeBid(seat, bid) {
+function makeBid(seat, bid, bidResult = null) {
   if (state.phase !== "bidding" || seat !== seatAt(state.turnIndex)) return;
-  if (isContractBid(bid) && !isBidHigher(bid, highestBid())) return;
-  if (bid === "Double" && !canDouble(seat)) return;
-  if (bid === "Redouble" && !canRedouble(seat)) return;
-  state.auction.push({
+  const typedBid = normalizeBid(bid);
+  if (!typedBid) return;
+  if (isContractBid(typedBid) && !isBidHigher(typedBid, highestBid())) return;
+  if (isDouble(typedBid) && !canDouble(seat)) return;
+  if (isRedouble(typedBid) && !canRedouble(seat)) return;
+  const call = {
     seat,
-    bid,
+    bid: typedBid,
     stop: seat === "South" && state.pendingStop,
     alert: seat === "South" && state.pendingAlert
-  });
+  };
+  if (bidResult && sameCall(bidResult.bid, typedBid)) call.bidResult = bidResult;
+  state.auction.push(call);
   state.pendingStop = false;
   state.pendingAlert = false;
   state.turnIndex = (state.turnIndex + 1) % 4;
@@ -34,7 +39,11 @@ function makeBid(seat, bid) {
 }
 
 function chooseBid(seat) {
-  return bridgeRules.chooseFiveCardHighBid({
+  return chooseBidResult(seat).bid;
+}
+
+function chooseBidResult(seat) {
+  return bridgeRules.chooseFiveCardHighBidResult({
     hand: state.hands[seat],
     auction: state.auction,
     seat,
@@ -43,7 +52,11 @@ function chooseBid(seat) {
 }
 
 function chooseRecommendedBid(seat) {
-  return chooseBid(seat);
+  return chooseRecommendedBidResult(seat).bid;
+}
+
+function chooseRecommendedBidResult(seat) {
+  return chooseBidResult(seat);
 }
 
 function canDouble(seat) {
@@ -105,9 +118,11 @@ function autoCompleteAuction() {
   let callCount = 0;
   while (state.phase === "bidding" && !auctionComplete() && callCount < 80) {
     const seat = seatAt(state.turnIndex);
+    const bidResult = legalAutoBidResult(seat);
     state.auction.push({
       seat,
-      bid: legalAutoBid(seat),
+      bid: normalizeBid(bidResult.bid),
+      bidResult,
       stop: false,
       alert: false
     });
@@ -131,12 +146,18 @@ function autoCompleteAuction() {
 }
 
 function legalAutoBid(seat) {
-  const bid = chooseBid(seat);
-  if (!bid) return "Pass";
-  if (isContractBid(bid)) return isBidHigher(bid, highestBid()) ? bid : "Pass";
-  if (bid === "Double") return canDouble(seat) ? bid : "Pass";
-  if (bid === "Redouble") return canRedouble(seat) ? bid : "Pass";
-  return "Pass";
+  return legalAutoBidResult(seat).bid;
+}
+
+function legalAutoBidResult(seat) {
+  const result = chooseBidResult(seat);
+  const bid = result.bid;
+  if (!bid) return { bid: bridgeRules.Pass(), ruleId: "fiveCardHigh.pass.noAction" };
+  if (isContractBid(bid) && isBidHigher(bid, highestBid())) return result;
+  if (isDouble(bid) && canDouble(seat)) return result;
+  if (isRedouble(bid) && canRedouble(seat)) return result;
+  if (isPass(bid)) return result;
+  return { ...result, bid: bridgeRules.Pass(), ruleId: "fiveCardHigh.legalize.pass" };
 }
 
 function findDeclarer(contract) {
