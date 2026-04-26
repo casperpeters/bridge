@@ -10,14 +10,14 @@ function renderPlayPlan() {
 
   const goal = document.createElement("p");
   goal.className = "play-plan-goal";
-  goal.textContent = playPlanGoalText(plan);
+  goal.appendChild(BridgeGlossary.linkifyText(playPlanGoalText(plan)));
 
   const metrics = document.createElement("div");
   metrics.className = "play-plan-metrics";
   playPlanMetricTexts(plan).forEach((metric) => {
     const item = document.createElement("span");
     item.className = "play-plan-metric";
-    item.textContent = metric;
+    item.appendChild(BridgeGlossary.linkifyText(metric));
     metrics.appendChild(item);
   });
 
@@ -86,7 +86,7 @@ function playPlanList(label, items, className = "") {
   const list = document.createElement("ul");
   items.filter(Boolean).forEach((textItem) => {
     const item = document.createElement("li");
-    item.textContent = textItem;
+    item.appendChild(BridgeGlossary.linkifyText(textItem));
     list.appendChild(item);
   });
   section.append(heading, list);

@@ -1,0 +1,252 @@
+const {
+  assert,
+  rules,
+  test,
+  card,
+  hand,
+  bid,
+  pass,
+  double,
+  redouble,
+  chooseFiveCardHigh,
+  chooseFiveCardHighResult
+} = require("./harness.js");
+
+test("chooseCardPlay plays third hand high after partner's low-promises-honor notrump lead", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QH", "8H", "3H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("2H"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.equal(result.ruleId, "thirdHandHighOverLowLead");
+  assert.equal(result.leadSuit, "H");
+});
+
+test("chooseCardPlay keeps low-promises-honor as a defensive notrump agreement", () => {
+  const lead = rules.chooseCardPlay({
+    hand: hand("AC", "8C", "5C", "2C", "KH", "3D", "2S"),
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(lead.card.id, "AC");
+  assert.equal(lead.ruleId, "longestSuitLead");
+
+  const thirdHand = rules.chooseCardPlay({
+    hand: hand("QH", "8H", "3H", "AC"),
+    currentTrick: [
+      { seat: "South", card: card("2H"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "West", card: card("4H") }
+    ],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(thirdHand.card.id, "8H");
+  assert.equal(thirdHand.ruleId, "cheapestWinner");
+});
+
+test("chooseCardPlay makes a defender second hand play low even when a cheap winner is available", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("9H", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("7H") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("4H", "3H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "secondHandLow");
+});
+
+test("chooseCardPlay makes a defender second hand play high from a touching honor sequence", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "QH", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("9H") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("4H", "3H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "secondHandSequenceHigh");
+  assert.equal(result.sequence, "KQ");
+});
+
+test("chooseCardPlay makes a defender second hand cover an honor when dummy has a touching lower honor", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("QH") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("JH", "4H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "secondHandCoverHonor");
+  assert.equal(result.coveredRank, "Q");
+});
+
+test("chooseCardPlay does not cover an honor when dummy shows only small cards in the suit", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("QH") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("8H", "4H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "secondHandLow");
+});
+
+test("chooseCardPlay makes a defender third hand play the cheapest winning card", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "QH", "3H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("2H") },
+      { seat: "East", card: card("9H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.equal(result.ruleId, "thirdHandHighCheapest");
+});
+
+test("chooseCardPlay keeps third hand low when partner is already winning", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "2H", "AS"),
+    currentTrick: [
+      { seat: "North", card: card("AH") },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "partnerWinningLow");
+});
+
+test("chooseCardPlay does not apply second hand low to the declarer side", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("9H", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("7H") }],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    dummyHand: hand("9H", "2H", "AS"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "9H");
+  assert.equal(result.ruleId, "cheapestWinner");
+});
+
+test("chooseCardPlay plays low when partner is already winning", () => {
+  const result = rules.chooseCardPlay({
+    hand: [card("KH"), card("2H"), card("2S")],
+    currentTrick: [{ seat: "North", card: card("AH") }],
+    seat: "South",
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "partnerWinningLow");
+});
+
+test("chooseCardPlay avoids overtaking partner with a trump when discarding is possible", () => {
+  const result = rules.chooseCardPlay({
+    hand: [card("2S"), card("3C")],
+    currentTrick: [{ seat: "North", card: card("AH") }],
+    seat: "South",
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "3C");
+  assert.equal(result.ruleId, "partnerWinningLow");
+});
+
+test("chooseCardPlay chooses the cheapest current winner", () => {
+  const result = rules.chooseCardPlay({
+    hand: [card("AH"), card("9H"), card("2H")],
+    currentTrick: [{ seat: "West", card: card("7H") }],
+    seat: "North",
+    trump: null
+  });
+
+  assert.equal(result.card.id, "9H");
+  assert.equal(result.ruleId, "cheapestWinner");
+});
+
+test("chooseCardPlay follows suit low when the hand cannot win", () => {
+  const result = rules.chooseCardPlay({
+    hand: [card("JH"), card("2H"), card("AS")],
+    currentTrick: [{ seat: "West", card: card("QH") }],
+    seat: "North",
+    trump: null
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "lowestFollow");
+});
+
+test("chooseCardPlay trumps cheaply when void and able to win", () => {
+  const result = rules.chooseCardPlay({
+    hand: [card("2S"), card("AD")],
+    currentTrick: [{ seat: "West", card: card("QH") }],
+    seat: "North",
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2S");
+  assert.equal(result.ruleId, "cheapestWinner");
+});
+
+test("chooseCardPlay discards low when void and unable to win", () => {
+  const result = rules.chooseCardPlay({
+    hand: [card("2C"), card("3D"), card("AS")],
+    currentTrick: [{ seat: "West", card: card("QH") }],
+    seat: "North",
+    trump: null
+  });
+
+  assert.equal(result.card.id, "2C");
+  assert.equal(result.ruleId, "lowestDiscard");
+});

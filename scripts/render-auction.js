@@ -54,7 +54,9 @@ function renderBidExplanations() {
     const item = document.createElement("div");
     item.className = "bid-explanation";
     const callText = formatCall(call.bid);
-    item.innerHTML = `<strong>${seatName(call.seat)} ${callText}</strong><br>${explainBid(call, index)}`;
+    const title = document.createElement("strong");
+    title.textContent = `${seatName(call.seat)} ${callText}`;
+    item.append(title, document.createElement("br"), BridgeGlossary.linkifyText(explainBid(call, index)));
     els.bidExplanations.appendChild(item);
   });
 }
@@ -82,10 +84,10 @@ function explainBidChoiceResult(result) {
     const detail = ruleName === "competitive.negativeDouble"
       ? "negatief doublet: toont waarden en minstens een vierkaart in een ongeboden hoge kleur"
       : "informatiedoublet: openingskracht, kort in hun kleur en steun voor de ongeboden kleuren";
-    return t("bidExplanationCompetitive", { detail });
+    return t("bidExplanationCompetitive", { detail: `${detail}. ${ruleReferenceText(ruleName)}` });
   }
   if (isRedouble(result.bid)) {
-    return t("bidExplanationCompetitive", { detail: "redoublet met extra waarden nadat de tegenpartij partner heeft gedoubleerd" });
+    return t("bidExplanationCompetitive", { detail: `redoublet met extra waarden nadat de tegenpartij partner heeft gedoubleerd. ${ruleReferenceText(ruleName)}` });
   }
 
   const detail = bidChoiceDetail(ruleName, result);
@@ -106,6 +108,10 @@ function explainPassChoiceResult(ruleName, result = null) {
     "pass.openingNoAction": `geen opening: te weinig openingskracht en geen geschikte zwakke twee of preempt${factSuffix}`,
     "pass.responseNoAction": `geen antwoord: te weinig waarden of geen passende actie tegenover partner${factSuffix}`,
     "pass.openerMajorRaiseMinimum": `geen manchepoging na partners enkele hoge-kleursteun: met 12-15 totaalpunten past openaar${factSuffix}`,
+    "pass.openerMinorRaiseMinimum": `geen manchepoging na partners lage-kleursteun: openaar heeft een minimum en past${factSuffix}`,
+    "pass.openerMinorAfterOneNtMinimum": `pas na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en openaar heeft een minimum zonder lange lage kleur${factSuffix}`,
+    "pass.openerMinorAfterTwoNtMinimum": `pas na partners 2SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; openaar heeft onvoldoende overwaarde om de manche te bieden${factSuffix}`,
+    "pass.openerMinorAfterThreeNtPass": `pas na partners 3SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en 3SA is meestal het eindcontract${factSuffix}`,
     "pass.openerAfterOneNtBalancedMinimum": `herbieding na partners 1SA: SA-verdeling met 12-14 HCP, dus pas${factSuffix}`,
     "pass.openerAfterOneNtNoAction": `herbieding na partners 1SA: geen passende foto-regel voor dit handtype of deze HCP-range${factSuffix}`,
     "pass.openerAfterTwoNtBalancedMinimum": `herbieding na partners 2SA: SA-verdeling met 12-13 HCP, dus pas${factSuffix}`,
@@ -199,10 +205,64 @@ function bidChoiceDetail(ruleName, result) {
       return openerAfterNotrumpDetail(ruleName, result, "2SA", "tweekleurenspel schoppen en harten", "14+ HCP", "4H");
     case "continuation.openerAfterTwoNtTwoSuiterGameNotrump":
       return openerAfterNotrumpDetail(ruleName, result, "2SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "14+ HCP", "3SA");
+    case "continuation.openerMinorAfterOneNtInvite":
+      return `invite na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; met 15-17 HCP en een SA-verdeling biedt openaar 2SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterOneNtGame":
+      return `3SA na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; met 18-19 HCP en een SA-verdeling biedt openaar de manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterOneNtLongMinorMinimum":
+      return `lange lage kleur na partners 1SA: partner heeft geen hoge-kleurfit gevonden; met een ongebalanceerde zeskaart herbiedt openaar 2${result.openingSuit}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterOneNtLongMinorInvite":
+      return `invite met lange lage kleur na partners 1SA: partner heeft geen hoge-kleurfit gevonden; met extra waarden en een zeskaart biedt openaar 3${result.openingSuit}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterOneNtLongMinorGame":
+      return `lage-kleurmanche na partners 1SA: partner heeft geen hoge-kleurfit gevonden; openaar heeft een sterke ongebalanceerde lange lage kleur. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterTwoNtGame":
+      return `3SA na partners 2SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; openaar accepteert de invite met voldoende kracht. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterTwoNtLongMinorInvite":
+      return `lange lage kleur na partners 2SA: partner heeft geen hoge-kleurfit gevonden; openaar corrigeert naar 3${result.openingSuit} met een ongebalanceerde zeskaart. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterTwoNtLongMinorGame":
+      return `lage-kleurmanche na partners 2SA: partner heeft geen hoge-kleurfit gevonden; openaar heeft genoeg kracht en een lange lage kleur. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorAfterThreeNtLongMinorGame":
+      return `uit 3SA naar de lage-kleurmanche: alleen met een zeer lange ongebalanceerde lage kleur; partner heeft met 3SA geen hoge-kleurfit gevonden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitMajorFitMinimum":
+      return `fit na partners nieuwe hoge kleur: openaar heeft vierkaart steun en een minimum, dus hij steunt op 2-niveau. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitMajorFitInvite":
+      return `invite na partners nieuwe hoge kleur: openaar heeft vierkaart steun en extra waarden, dus hij steunt op 3-niveau. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitMajorFitGame":
+      return `manche na partners nieuwe hoge kleur: openaar heeft vierkaart steun en genoeg kracht voor de manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitNotrumpMinimum":
+      return `SA-herbieding na partners nieuwe kleur: er is geen hoge-kleurfit gevonden; met een gebalanceerde minimumhand biedt openaar 1SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitNotrumpInvite":
+      return `sterke SA-herbieding na partners nieuwe kleur: er is geen hoge-kleurfit gevonden; met gebalanceerde overwaarde biedt openaar 2SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitLongMinorMinimum":
+      return `herbiedt de eigen lage kleur: geen hoge-kleurfit en openaar heeft een zeskaart in de openingskleur. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitLongMinorInvite":
+      return `invite met lange lage kleur: geen hoge-kleurfit; openaar heeft een zeskaart in de openingskleur en extra waarden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitLongMinorGame":
+      return `lage-kleurmanche met lange openingskleur: geen hoge-kleurfit; openaar heeft een sterke ongebalanceerde hand. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitReverse":
+      return `reverse: openaar toont een tweede kleur op hoger niveau; dit gebeurt alleen met extra kracht. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorNewSuitSecondSuit":
+      return `tweede kleur van openaar: geen hoge-kleurfit, geen passende SA-herbieding en geen lange openingskleur; openaar toont natuurlijk een tweede vierkaart. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerOneDiamondTwoClubsNotrumpInvite":
+      return `2SA na 1R-2K: partner heeft met 2K minstens 10 punten, klaveren en geen vierkaart hoog getoond; zonder hoge-kleurfit is 2SA de natuurlijke invite. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerOneDiamondTwoClubsNotrumpGame":
+      return `3SA na 1R-2K: partner heeft met 2K geen vierkaart hoog getoond; zonder hoge-kleurfit en met genoeg kracht kies je de SA-manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerOneDiamondTwoClubsLongDiamondMinimum":
+      return `je herbiedt 2R na 1R-2K en belooft daarmee een zeskaart ruiten; je bent niet sterk, dus je blijft zo laag mogelijk. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerOneDiamondTwoClubsLongDiamondInvite":
+      return `je biedt 3R na 1R-2K: met extra waarden en een zeskaart ruiten laat je partner kiezen tussen 3SA en 5R. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerOneDiamondTwoClubsClubFit":
+      return `met klaverenfit na 1R-2K verhoog je partner een niveau naar 3K; partner mag passen of, indien hij sterker is, een manche bieden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
     case "continuation.openerMajorRaiseInvite":
       return `invite na partners enkele hoge-kleursteun: met 16-17 totaalpunten biedt openaar 3${result.suit}. ${handFactsText({ ruleName, result })}`;
     case "continuation.openerMajorRaiseGame":
       return `manche na partners enkele hoge-kleursteun: met 18-19 totaalpunten biedt openaar 4${result.suit}. ${handFactsText({ ruleName, result })}`;
+    case "continuation.openerMinorRaiseInvite":
+      return `invite na partners lage-kleursteun: met extra waarden, maar nog geen zekere manche, biedt openaar 3${result.suit}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorRaiseNotrumpGame":
+      return `3SA na partners lage-kleursteun: openaar heeft een gebalanceerde hand en genoeg gezamenlijke kracht voor de manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerMinorRaiseGame":
+      return `manche na partners lage-kleursteun: openaar heeft genoeg kracht en kiest de lage-kleurmanche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
     case "continuation.raisePartner":
       return `gevonden fit: steun voor partners kleur. ${handFactsText({ ruleName, result })}`;
     case "continuation.acceptMajorInvite":
@@ -218,7 +278,13 @@ function bidChoiceDetail(ruleName, result) {
     case "competitive.jumpOvercall":
       return `sprongvolgbod met beperkte kracht en een goede zeskaart. ${handFactsText({ ruleName, result })}`;
     case "competitive.simpleOvercall":
-      return `natuurlijk volgbod met een goede vijfkaart of langer in ${suitName(result.suit)}. ${handFactsText({ ruleName, result })}`;
+      return `natuurlijk volgbod met een goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || (result.bid?.level >= 2 ? 10 : 8)}+ HCP. ${handFactsText({ ruleName, result })}`;
+    case "competitive.raisePartnerOvercall":
+      return `steun voor partners volgbod met fit in ${suitName(result.partnerSuit)} en ${result.minimumHcp || (result.vulnerable ? 8 : 7)}+ HCP${result.vulnerable ? " kwetsbaar" : " niet-kwetsbaar"}. ${handFactsText({ ruleName, result })}`;
+    case "competitive.notrumpAfterPartnerOvercall":
+      return `3SA na partners volgbod: genoeg gezamenlijke kracht en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
+    case "competitive.newSuitAfterPartnerOvercall":
+      return `nieuwe kleur na partners volgbod: eigen vijfkaart of langer in ${suitName(result.suit)} en manche-interesse; partner heeft op tweehoogte minstens 10 HCP getoond. ${handFactsText({ ruleName, result })}`;
     case "competitive.raisePartner":
       return `verhoging van partners kleur. ${handFactsText({ ruleName, result })}`;
     case "competitive.notrump":

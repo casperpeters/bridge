@@ -69,6 +69,51 @@ test("developer bid explanations use rule references without the old source line
   await expect(page.locator("#bid-explanations")).not.toContainText("Bron: huidige Vijfkaart-Hoog-heuristiek; nog geen volledige systeemkaart.");
 });
 
+test("glossary opens from the toolbar and linked explanation terms", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.locator("#open-glossary").click();
+  await expect(page.locator("#glossary-dialog")).toBeVisible();
+  await expect(page.locator("#glossary-list")).toContainText("Contract");
+  await expect(page.locator("#glossary-list")).toContainText("Deler");
+  await expect(page.locator("#glossary-list")).toContainText("Kwetsbaarheid");
+  await expect(page.locator("#glossary-list")).toContainText("Kleur bekennen");
+  await expect(page.locator("#glossary-list")).toContainText("Slag");
+  await expect(page.locator("#glossary-list")).toContainText("Slem");
+  await expect(page.locator("#glossary-list")).toContainText("Overslag");
+  await expect(page.locator("#glossary-list")).toContainText("Onderslag");
+  await page.locator(".glossary-list-button", { hasText: "Leider" }).click();
+  await expect(page.locator("#glossary-definition")).toContainText("speelsoort als eerste bood");
+  await page.locator(".glossary-list-button", { hasText: "Manche" }).click();
+  await expect(page.locator("#glossary-definition")).toContainText("minstens 100 contractpunten");
+  await page.locator("#glossary-search").fill("gever");
+  await expect(page.locator(".glossary-list-button")).toHaveCount(1);
+  await expect(page.locator("#glossary-list")).toContainText("Deler");
+  await expect(page.locator("#glossary-term")).toHaveText("Deler");
+  await page.locator("#glossary-search").fill("contractpunten");
+  await expect(page.locator("#glossary-list")).toContainText("Manche");
+  await page.locator("#glossary-search").fill("bestaatniet");
+  await expect(page.locator("#glossary-list")).toContainText("Geen begrippen gevonden.");
+  await expect(page.locator("#glossary-term")).toHaveText("Geen resultaat");
+  await page.locator("#glossary-search").clear();
+  await expect(page.locator("#glossary-list")).toContainText("Contract");
+  await page.locator("#close-glossary").click();
+
+  await page.evaluate(() => {
+    state.developerMode = true;
+    state.guidanceMode = true;
+    renderAll();
+  });
+  await page.locator(".bid-controls .recommended-action").click();
+
+  const openingLink = page.locator("#bid-explanations .glossary-link", { hasText: "Opening" }).first();
+  await expect(openingLink).toBeVisible();
+  await openingLink.click();
+  await expect(page.locator("#glossary-dialog")).toBeVisible();
+  await expect(page.locator("#glossary-term")).toHaveText("Opening");
+  await expect(page.locator("#glossary-definition")).toContainText("eerste bod");
+});
+
 test("developer bid explanations describe opener rebids after notrump responses", async ({ page }) => {
   await openFreshApp(page);
 

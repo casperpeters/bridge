@@ -72,6 +72,17 @@ const els = {
   playHistoryModeDescription: document.querySelector("#play-history-mode-description"),
   hintButton: document.querySelector("#hint-button"),
   openFeedback: document.querySelector("#open-feedback"),
+  openGlossary: document.querySelector("#open-glossary"),
+  glossaryDialog: document.querySelector("#glossary-dialog"),
+  closeGlossary: document.querySelector("#close-glossary"),
+  glossaryTitle: document.querySelector("#glossary-title"),
+  glossarySearch: document.querySelector("#glossary-search"),
+  glossaryList: document.querySelector("#glossary-list"),
+  glossaryTerm: document.querySelector("#glossary-term"),
+  glossaryDefinition: document.querySelector("#glossary-definition"),
+  openScoreTable: document.querySelector("#open-score-table"),
+  scoreTableDialog: document.querySelector("#score-table-dialog"),
+  closeScoreTable: document.querySelector("#close-score-table"),
   newHand: document.querySelector("#new-hand"),
   sameHand: document.querySelector("#same-hand"),
   quickReview: document.querySelector("#quick-review"),
@@ -127,6 +138,17 @@ loadSavedSettings();
 els.newHand.addEventListener("click", startHand);
 els.sameHand.addEventListener("click", replayHand);
 els.quickReview.addEventListener("click", jumpToTrickOverview);
+BridgeGlossary.init({
+  dialog: els.glossaryDialog,
+  openButton: els.openGlossary,
+  closeButton: els.closeGlossary,
+  searchInput: els.glossarySearch,
+  list: els.glossaryList,
+  term: els.glossaryTerm,
+  definition: els.glossaryDefinition
+});
+els.openScoreTable.addEventListener("click", openScoreTableDialog);
+els.closeScoreTable.addEventListener("click", closeScoreTableDialog);
 els.loadSeed.addEventListener("click", loadSeedFromInput);
 els.copySeed.addEventListener("click", copyCurrentSeed);
 els.openFeedback.addEventListener("click", openFeedbackDialog);
@@ -138,6 +160,9 @@ els.feedbackMessage.addEventListener("input", refreshFeedbackMailLink);
 els.feedbackIncludeContext.addEventListener("change", refreshFeedbackMailLink);
 els.feedbackDialog.addEventListener("click", (event) => {
   if (event.target === els.feedbackDialog) closeFeedbackDialog();
+});
+els.scoreTableDialog.addEventListener("click", (event) => {
+  if (event.target === els.scoreTableDialog) closeScoreTableDialog();
 });
 document.documentElement.lang = "nl";
 els.developerMode.addEventListener("change", () => {
@@ -307,6 +332,8 @@ function applyStaticText() {
   els.settingsSummary.setAttribute("aria-label", t("settings"));
   els.settingsSummary.title = t("settings");
   els.openFeedback.textContent = t("openFeedback");
+  els.openGlossary.textContent = t("openGlossary");
+  els.openScoreTable.textContent = t("openScoreTable");
   els.developerModeLabel.textContent = t("developerMode");
   els.developerMode.checked = state.developerMode;
   els.developerModeDescription.textContent = t("developerModeHelp");
@@ -338,11 +365,31 @@ function applyStaticText() {
   els.mailFeedback.textContent = t("mailFeedback");
   els.closeFeedback.setAttribute("aria-label", t("closeFeedback"));
   els.feedbackDescription.textContent = t("feedbackHelp");
+  els.closeScoreTable.setAttribute("aria-label", t("closeScoreTable"));
+  els.closeGlossary.setAttribute("aria-label", t("closeGlossary"));
+  els.glossaryTitle.textContent = t("glossaryTitle");
   Object.entries(t("feedbackTypes")).forEach(([value, label]) => {
     const option = els.feedbackType.querySelector(`[value="${value}"]`);
     if (option) option.textContent = label;
   });
   els.hintButton.setAttribute("aria-label", t("hint"));
+}
+
+function openScoreTableDialog() {
+  if (typeof els.scoreTableDialog.showModal === "function") {
+    els.scoreTableDialog.showModal();
+  } else {
+    els.scoreTableDialog.setAttribute("open", "");
+  }
+  els.closeScoreTable.focus();
+}
+
+function closeScoreTableDialog() {
+  if (typeof els.scoreTableDialog.close === "function") {
+    els.scoreTableDialog.close();
+  } else {
+    els.scoreTableDialog.removeAttribute("open");
+  }
 }
 
 function openFeedbackDialog() {
@@ -376,7 +423,7 @@ function renderGuidance() {
   const title = document.createElement("strong");
   title.textContent = `${guidance.label}: ${guidance.action}`;
   const reason = document.createElement("span");
-  reason.textContent = guidance.reason;
+  reason.appendChild(BridgeGlossary.linkifyText(guidance.reason));
   els.guidancePanel.append(title, reason);
   els.guidancePanel.hidden = false;
 }

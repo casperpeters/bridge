@@ -1,0 +1,201 @@
+const BridgeGlossary = (() => {
+  const entries = [
+    ["Aftroeven", "Het bijspelen van een troef als je niet kunt bekennen, met de bedoeling de slag daarmee te winnen.", ["introeven"]],
+    ["Bijbod", "Een bod van de partner van de openaar. Er wordt onderscheid gemaakt tussen het eerste bijbod en het tweede bijbod."],
+    ["Contract", "Het aantal slagen dat de leider moet maken in een bepaalde speelsoort. Bij 2 schoppen moeten er bijvoorbeeld acht slagen worden gemaakt met schoppen als troef."],
+    ["Deler", "De speler die de kaarten deelt. In de app bepaalt de deler ook wie als eerste mag bieden.", ["gever"]],
+    ["Doubleton", "Het bezitten van precies twee kaarten in een kleur."],
+    ["Dummy", "Partner van de leider. De dummy legt zijn kaarten na de uitkomst open op tafel."],
+    ["Eenkleurenspel", "Een hand waarbij je in een kleur minstens zes kaarten hebt.", ["éénkleurenspel"]],
+    ["Entree", "Een hoge kaart waarmee je in een bepaalde hand aan slag kunt komen."],
+    ["Evenwichtige verdeling", "Een hand die verdeeld is als 4-3-3-3, 4-4-3-2 of 5-3-3-2; de volgorde van de kleuren is hierbij niet van belang.", ["gebalanceerde hand", "gebalanceerd", "SA-verdeling"]],
+    ["Fit", "Het samen met je partner hebben van minstens acht kaarten in een kleur."],
+    ["Gebroken serie", "Een serie waarbij je de derde kaart mist, maar wel de vierde hebt, zoals HV104 of VB95."],
+    ["Hoge kleuren", "De kleuren schoppen en harten.", ["hoge kleur"]],
+    ["Honneur", "Aas, Heer, Vrouw, Boer en 10 worden honneurs genoemd.", ["honneurs", "honneurserie"]],
+    ["Kanskaart", "Een kaart die je een kans geeft op een extra slag, bijvoorbeeld door te snijden met de vrouw."],
+    ["Kleur bekennen", "Het moeten bijspelen van een kaart van dezelfde kleur als de eerste kaart in deze slag, als je zo'n kaart hebt.", ["Bekennen", "bekennen"]],
+    ["Korte kant", "De hand waarin je van een bepaalde kleur het geringste aantal kaarten hebt."],
+    ["Kwetsbaarheid", "Een score-afspraak per bord. Als je kwetsbaar bent, leveren manches en slems meer bonus op, maar down gaan kost ook meer punten."],
+    ["Lage kleuren", "De kleuren ruiten en klaveren.", ["lage kleur"]],
+    ["Leider", "De speler van het contractpaar die de speelsoort als eerste bood. De leider probeert het contract te maken en speelt tijdens het spel ook de kaarten van de dummy."],
+    ["Lengteslagen", "Slagen die je kunt maken met een lange kleur nadat de hogere kaarten in die kleur zijn weggespeeld."],
+    ["Manche", "Een contract dat minstens 100 contractpunten waard is en daardoor een manchebonus krijgt. Voorbeelden zijn 3SA, 4 harten, 4 schoppen en 5 klaveren of 5 ruiten.", ["manchebonus", "lage-kleurmanche", "SA-manche"]],
+    ["Onderslag", "Een slag die de leider tekort komt om het contract te halen. Een contract dat twee slagen tekort komt, gaat twee onderslagen down.", ["Onderslagen", "downslagen"]],
+    ["Openaar", "De speler die als eerste in een bepaald spel een bod doet."],
+    ["Opening", "Het eerste bod van een spel wordt de opening genoemd."],
+    ["Overslag", "Een slag die extra wordt behaald boven het aantal dat nodig was voor het contract.", ["Overslagen", "overslagpunten"]],
+    ["Renonce", "Het hebben van nul kaarten in een kleur."],
+    ["Sans-atout", "De speelsoort waarbij er geen troef is.", ["SA", "sans-atouttrek"]],
+    ["Serie", "Twee of meer opeenvolgende kaarten in een kleur, zoals AHV5, AH8, HV32, VB1096 of B1084."],
+    ["Singleton", "Het bezitten van precies een kaart in een kleur."],
+    ["Slag", "Een ronde waarin elke speler een kaart speelt. De hoogste kaart in de voorgespeelde kleur wint, behalve als er met troef wordt gewonnen.", ["slagen"]],
+    ["Slem", "Een contract op zes- of zevenniveau. Klein slem vraagt twaalf slagen; groot slem vraagt alle dertien slagen.", ["klein slem", "groot slem", "slembonus"]],
+    ["Snijden", "Proberen een slag te maken met een kaart die niet de hoogste is, bijvoorbeeld naar Vrouw-Aas spelen in de hoop dat Heer ervoor zit.", ["snit"]],
+    ["Tegenspelers", "De twee spelers van het paar dat probeert te voorkomen dat de leider zijn contract maakt."],
+    ["Troef", "De kleur van de speelsoort. Als de speelsoort SA is, is er geen troef.", ["troeven", "troeft"]],
+    ["Tweekleurenspel", "Een hand met twee lange kleuren, minstens een vijfkaart en een vierkaart."],
+    ["Uitkomst", "De eerste kaart die in een spel wordt gespeeld."],
+    ["Verzaken", "Het spelen van een kaart van een andere kleur dan de voorgespeelde kleur terwijl je nog wel een kaart van die kleur in handen hebt."],
+    ["Volgbod", "Een bod door de partij die niet het openingsbod heeft gedaan."],
+    ["Vork", "Twee kaarten waarbij de tussenliggende kaart mist, zoals A-V, H-B of V-10."],
+    ["Vuilnisbakkenbod", "Het 1SA-bijbod wordt zo genoemd omdat het soms noodgedwongen gedaan moet worden op een kaart die niet geschikt is voor een SA-contract."],
+    ["Werkkleur", "De kleur die het meest in aanmerking komt voor het ontwikkelen van extra slagen, vooral belangrijk in een SA-contract."]
+  ].map(([term, definition, aliases = []]) => ({ term, definition, aliases }));
+
+  const aliasToEntry = new Map();
+  const rawAliases = new Map();
+  entries.forEach((entry) => {
+    [entry.term, ...entry.aliases].forEach((alias) => {
+      const key = normalize(alias);
+      aliasToEntry.set(key, entry);
+      rawAliases.set(key, alias);
+    });
+  });
+
+  const aliases = [...rawAliases.values()]
+    .map(escapeRegExp)
+    .sort((a, b) => b.length - a.length);
+  const linkPattern = new RegExp(`(^|[^\\p{L}\\p{N}])(${aliases.join("|")})(?=$|[^\\p{L}\\p{N}])`, "giu");
+  let nodes = {};
+  let selectedTerm = entries[0].term;
+
+  function init(nextNodes) {
+    nodes = nextNodes;
+    renderList();
+    nodes.searchInput?.addEventListener("input", updateSearchResults);
+    nodes.openButton?.addEventListener("click", () => open());
+    nodes.closeButton?.addEventListener("click", close);
+    nodes.dialog?.addEventListener("click", (event) => {
+      if (event.target === nodes.dialog) close();
+    });
+    renderDetail(entryForTerm(selectedTerm));
+  }
+
+  function open(term = selectedTerm) {
+    const requestedEntry = entryForTerm(term);
+    const visibleEntries = matchingEntries();
+    renderList(visibleEntries);
+    renderDetail(requestedEntry || visibleEntries[0] || entries[0]);
+    if (typeof nodes.dialog?.showModal === "function") {
+      nodes.dialog.showModal();
+    } else {
+      nodes.dialog?.setAttribute("open", "");
+    }
+    nodes.searchInput?.focus();
+  }
+
+  function close() {
+    if (typeof nodes.dialog?.close === "function") {
+      nodes.dialog.close();
+    } else {
+      nodes.dialog?.removeAttribute("open");
+    }
+  }
+
+  function renderList(nextEntries = matchingEntries()) {
+    if (!nodes.list) return;
+    nodes.list.innerHTML = "";
+    if (!nextEntries.length) {
+      const empty = document.createElement("p");
+      empty.className = "glossary-empty";
+      empty.textContent = "Geen begrippen gevonden.";
+      nodes.list.appendChild(empty);
+      return;
+    }
+    nextEntries.forEach((entry) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "glossary-list-button";
+      button.textContent = entry.term;
+      button.addEventListener("click", () => renderDetail(entry));
+      nodes.list.appendChild(button);
+    });
+  }
+
+  function updateSearchResults() {
+    const nextEntries = matchingEntries();
+    renderList(nextEntries);
+    const selectedEntry = entryForTerm(selectedTerm);
+    const nextEntry = nextEntries.includes(selectedEntry) ? selectedEntry : nextEntries[0];
+    if (nextEntry) {
+      renderDetail(nextEntry);
+      return;
+    }
+    selectedTerm = "";
+    if (nodes.term) nodes.term.textContent = "Geen resultaat";
+    if (nodes.definition) nodes.definition.textContent = "Probeer een ander begrip of zoekwoord.";
+  }
+
+  function renderDetail(entry) {
+    if (!entry) return;
+    selectedTerm = entry.term;
+    if (nodes.term) nodes.term.textContent = entry.term;
+    if (nodes.definition) {
+      nodes.definition.replaceChildren(linkifyText(entry.definition, entry));
+    }
+    nodes.list?.querySelectorAll(".glossary-list-button").forEach((button) => {
+      button.classList.toggle("active", button.textContent === entry.term);
+    });
+  }
+
+  function linkifyText(text, currentEntry = null) {
+    const fragment = document.createDocumentFragment();
+    if (!text) return fragment;
+
+    let index = 0;
+    for (const match of text.matchAll(linkPattern)) {
+      const prefix = match[1] || "";
+      const matchedText = match[2];
+      const prefixIndex = match.index;
+      const termIndex = prefixIndex + prefix.length;
+      const entry = entryForTerm(matchedText);
+
+      fragment.append(document.createTextNode(text.slice(index, prefixIndex)));
+      if (prefix) fragment.append(document.createTextNode(prefix));
+
+      if (!entry || entry === currentEntry) {
+        fragment.append(document.createTextNode(matchedText));
+      } else {
+        fragment.append(glossaryLink(matchedText, entry));
+      }
+      index = termIndex + matchedText.length;
+    }
+    fragment.append(document.createTextNode(text.slice(index)));
+    return fragment;
+  }
+
+  function glossaryLink(label, entry) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "glossary-link";
+    button.textContent = label;
+    button.title = entry.definition;
+    button.addEventListener("click", () => open(entry.term));
+    return button;
+  }
+
+  function entryForTerm(term) {
+    return aliasToEntry.get(normalize(term));
+  }
+
+  function matchingEntries() {
+    const query = normalize(nodes.searchInput?.value || "").trim();
+    if (!query) return entries;
+    return entries.filter((entry) => searchableText(entry).includes(query));
+  }
+
+  function searchableText(entry) {
+    return normalize([entry.term, entry.definition, ...entry.aliases].join(" "));
+  }
+
+  function normalize(value) {
+    return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  }
+
+  function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  return { entries, init, open, linkifyText };
+})();

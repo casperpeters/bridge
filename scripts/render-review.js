@@ -23,7 +23,9 @@ function renderPlayExplanations() {
 function playExplanationEl(explanation) {
   const item = document.createElement("div");
   item.className = "play-explanation";
-  item.innerHTML = `<strong>${t("trick")} ${explanation.trick}: ${seatName(explanation.seat)} ${cardText(explanation.card)}</strong><br>${explanation.text}`;
+  const title = document.createElement("strong");
+  title.textContent = `${t("trick")} ${explanation.trick}: ${seatName(explanation.seat)} ${cardText(explanation.card)}`;
+  item.append(title, document.createElement("br"), BridgeGlossary.linkifyText(explanation.text));
   return item;
 }
 
@@ -182,7 +184,7 @@ function reviewRow(label, value, className = "") {
   const labelEl = document.createElement("strong");
   const valueEl = document.createElement("span");
   labelEl.textContent = label;
-  valueEl.textContent = value;
+  valueEl.appendChild(BridgeGlossary.linkifyText(String(value)));
   row.append(labelEl, valueEl);
   return row;
 }
