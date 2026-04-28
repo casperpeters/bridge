@@ -710,12 +710,12 @@
         return Boolean(seat && declarer && teamOf(seat) !== teamOf(declarer));
       }
 
-  function chooseLeadCardPlay(hand, legal, { contract = null, seat = null, declarer = null } = {}) {
-      if (contract?.strain === "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
+  function chooseLeadCardPlay(hand, legal, { contract = null, seat = null, declarer = null, isOpeningLead = true } = {}) {
+      if (isOpeningLead && contract?.strain === "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
         const notrumpLead = chooseNotrumpLeadCardPlay(hand, legal);
         if (notrumpLead) return notrumpLead;
       }
-      if (contract?.strain && contract.strain !== "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
+      if (isOpeningLead && contract?.strain && contract.strain !== "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
         const suitContractLead = chooseSuitContractLeadCardPlay(legal, contract.strain);
         if (suitContractLead) return suitContractLead;
       }
@@ -739,6 +739,52 @@
         "Lead the lowest legal card.",
         {}
       );
+    }
+
+  function openingLeadPlay(trickHistory = []) {
+        return trickHistory[0]?.cards?.[0] || null;
+      }
+
+  function chooseReturnPartnerLeadSuit({ legal, trickHistory, seat, declarer }) {
+      if (!isDefensivePlaySeat(seat, declarer) || !trickHistory.length) return null;
+
+      const openingLead = openingLeadPlay(trickHistory);
+      if (!openingLead || openingLead.seat !== partnerOf(seat)) return null;
+
+      const leadSuit = openingLead.card.suit;
+      const suitedLegal = cardsInSuit(legal, leadSuit);
+      if (!suitedLegal.length) return null;
+
+      const lowCards = suitedLegal.filter(isLowLeadCard);
+      const card = lowestCard(lowCards.length ? lowCards : suitedLegal);
+      return cardPlayResult(
+        card,
+        "returnPartnerLeadSuit",
+        "basic",
+        "Return partner's opening lead suit when it is still available.",
+        {
+          suit: leadSuit,
+          leadCard: openingLead.card,
+          partnerSeat: openingLead.seat,
+          action: "returnPartnerLeadSuit"
+        }
+      );
+    }
+
+  function createCardPlayContext({ hand, currentTrick, trickHistory, seat, declarer, trump }) {
+      const legal = legalCards(hand, currentTrick);
+      const leadSuit = currentTrick[0]?.card?.suit || null;
+      const winning = currentTrick.length ? currentWinningPlay(currentTrick, trump) : null;
+      return {
+        legal,
+        playedCards: playedCardsFrom(trickHistory, currentTrick),
+        leadSuit,
+        winning,
+        partnerWinning: Boolean(winning && seat && teamOf(winning.seat) === teamOf(seat)),
+        isOpeningLead: currentTrick.length === 0 && trickHistory.length === 0,
+        isDefender: isDefensivePlaySeat(seat, declarer),
+        isDeclarerSide: Boolean(seat && declarer && teamOf(seat) === teamOf(declarer))
+      };
     }
 
   function isLowPromisesHonorLead(play) {
@@ -875,7 +921,8 @@
       trump = null,
       playPlan = null
     } = {}) {
-      const legal = legalCards(hand, currentTrick);
+      const context = createCardPlayContext({ hand, currentTrick, trickHistory, seat, declarer, trump });
+      const { legal } = context;
       if (!legal.length) return null;
 
       if (!currentTrick.length) {
@@ -915,12 +962,19 @@
           contract
         });
         if (development) return development;
-        return chooseLeadCardPlay(hand, legal, { contract, seat, declarer });
+
+        const returnPartnerLeadSuit = chooseReturnPartnerLeadSuit({
+          legal,
+          trickHistory,
+          seat,
+          declarer
+        });
+        if (returnPartnerLeadSuit) return returnPartnerLeadSuit;
+
+        return chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead });
       }
 
-      const leadSuit = currentTrick[0].card.suit;
-      const winning = currentWinningPlay(currentTrick, trump);
-      const partnerWinning = Boolean(winning && seat && teamOf(winning.seat) === teamOf(seat));
+      const { leadSuit, winning, partnerWinning } = context;
 
       const thirdHandHigh = chooseThirdHandHighOverLowLead({
         legal,
@@ -1024,6 +1078,9 @@
     canUseDefensiveLeadAgreement,
     isDefensivePlaySeat,
     chooseLeadCardPlay,
+    openingLeadPlay,
+    chooseReturnPartnerLeadSuit,
+    createCardPlayContext,
     isLowPromisesHonorLead,
     chooseThirdHandHighOverLowLead,
     cheapestHigherHonor,

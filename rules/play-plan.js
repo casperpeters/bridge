@@ -89,17 +89,18 @@
       contract = null,
       declarer = null,
       dummy = null,
-      trickHistory = []
+      trickHistory = [],
+      currentTrick = []
     } = {}) {
       if (!contract || !declarer || !dummy || !declarerHand.length || !dummyHand.length) return null;
       if (contract.strain === "NT") {
-        return createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory });
+        return createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick });
       }
-      return createSuitPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy });
+      return createSuitPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick });
     }
 
-  function createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory }) {
-      const playedCards = playedCardsFrom(trickHistory, []);
+  function createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick = [] }) {
+      const playedCards = playedCardsFrom(trickHistory, currentTrick);
       const neededTricks = contract.level + 6;
       const sureWinners = countSureWinners(declarerHand, dummyHand, playedCards, declarer, dummy);
       const developmentPriorities = notrumpDevelopmentPriorities({ declarerHand, dummyHand, declarer, dummy, playedCards });
@@ -428,13 +429,14 @@
         return hand.filter((card) => card.suit !== excludedSuit && card.rank === "A").length;
       }
 
-  function createSuitPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy }) {
+  function createSuitPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory = [], currentTrick = [] }) {
       const neededTricks = contract.level + 6;
       const trump = contract.strain;
+      const playedCards = playedCardsFrom(trickHistory, currentTrick);
       const losers = countSuitContractLosers(declarerHand, dummyHand, trump, neededTricks);
       const priorities = [];
       const ruffPriorities = shortSuitRuffPriorities(declarerHand, dummyHand, trump, dummy, losers.detailsBySuit);
-      const cashPriorities = suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy);
+      const cashPriorities = suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy, playedCards);
       const trumpPriority = drawTrumpPriority(declarerHand, dummyHand, trump, trumpDelayPlan(ruffPriorities, cashPriorities));
 
       if (trumpPriority?.timing === "early") {
@@ -577,13 +579,13 @@
           .sort((a, b) => b.score - a.score);
       }
 
-  function suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy) {
+  function suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy, playedCards = []) {
         return suits
           .filter((suit) => suit !== trump)
           .map((suit) => {
             const declarerSuitCards = cardsInSuit(declarerHand, suit);
             const dummySuitCards = cardsInSuit(dummyHand, suit);
-            const winnerRanks = visibleTopWinnerRanks([...declarerSuitCards, ...dummySuitCards], []);
+            const winnerRanks = visibleTopWinnerRanks([...declarerSuitCards, ...dummySuitCards], cardsInSuit(playedCards, suit));
             if (!winnerRanks.length) return null;
             const blockage = blockedSuitInfo({
               declarerHand,

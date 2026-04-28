@@ -40,6 +40,7 @@ const state = {
   trickHistory: [],
   playExplanations: [],
   playPlan: null,
+  playPlanKey: null,
   originalHands: {},
   dealNumber: 0,
   vulnerability: "none",
@@ -231,6 +232,7 @@ function startHand({ replay = false, seed = null, preserveBoard = false, skipFlo
   state.trickHistory = [];
   state.playExplanations = [];
   state.playPlan = null;
+  state.playPlanKey = null;
   state.animateDeal = true;
   state.finalScore = null;
   state.feedbackStatus = null;

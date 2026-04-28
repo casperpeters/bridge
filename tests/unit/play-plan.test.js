@@ -49,6 +49,44 @@ test("createPlayPlan counts notrump winners and chooses long-suit development", 
   assert.equal(plan.needToDevelop, 5);
 });
 
+test("createPlayPlan updates notrump development when the missing stopper is in the current trick", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "AD", "2C", "2D"),
+    dummyHand: hand("KC", "QC", "JC", "4C", "3C", "AH"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("AC") }]
+  });
+
+  assert.equal(plan.sureWinners.bySuit.C, 3);
+  assert.equal(plan.sureWinners.total, 7);
+  assert.ok(!plan.priorities.some((item) => item.kind === "developLongSuit" && item.suit === "C"));
+});
+
+test("createPlayPlan updates notrump development after the missing stopper has been played", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "AD", "2C", "2D"),
+    dummyHand: hand("KC", "QC", "JC", "4C", "3C", "AH"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("AC") },
+        { seat: "North", card: card("3C") },
+        { seat: "East", card: card("8C") },
+        { seat: "South", card: card("2C") }
+      ]
+    }]
+  });
+
+  assert.equal(plan.sureWinners.bySuit.C, 3);
+  assert.ok(!plan.priorities.some((item) => item.kind === "developLongSuit" && item.suit === "C"));
+});
+
 test("createPlayPlan warns when a notrump long suit has no outside entry", () => {
   const plan = rules.createPlayPlan({
     declarerHand: hand("AS", "AD", "2C"),

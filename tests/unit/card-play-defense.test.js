@@ -61,6 +61,58 @@ test("chooseCardPlay keeps low-promises-honor as a defensive notrump agreement",
   assert.equal(thirdHand.ruleId, "cheapestWinner");
 });
 
+test("chooseCardPlay returns partner's opening lead suit when a defender wins the lead later", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("8H", "AC", "2S"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("4H"), ruleId: "notrumpLowPromisesHonor" },
+        { seat: "East", card: card("AH") },
+        { seat: "South", card: card("QH") },
+        { seat: "West", card: card("3H") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "8H");
+  assert.equal(result.ruleId, "returnPartnerLeadSuit");
+  assert.equal(result.suit, "H");
+  assert.equal(result.partnerSeat, "North");
+});
+
+test("chooseCardPlay does not return partner's opening lead suit for the declarer side", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("8H", "AC", "2S"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("4H"), ruleId: "notrumpLowPromisesHonor" },
+        { seat: "East", card: card("AH") },
+        { seat: "South", card: card("QH") },
+        { seat: "West", card: card("3H") }
+      ]
+    }],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.notEqual(result.ruleId, "returnPartnerLeadSuit");
+  assert.equal(result.card.id, "AC");
+});
+
 test("chooseCardPlay makes a defender second hand play low even when a cheap winner is available", () => {
   const result = rules.chooseCardPlay({
     hand: hand("9H", "2H", "AS"),

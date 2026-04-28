@@ -48,6 +48,7 @@ function autoPlayCard(seat, card) {
     state.currentTrick = [];
     clearTrickSlots();
     state.turnIndex = seats.indexOf(winner);
+    ensurePlayPlan();
     setStatus("winsTrick", { seat: winner, number: state.trickHistory.length });
     return true;
   }
@@ -196,6 +197,9 @@ function explainCardPlayResult(result) {
   if (ruleName === "thirdHandHighCheapest") {
     return `Derde hand speelt hoog, maar met de goedkoopste kaart die de slag voorlopig kan winnen.`;
   }
+  if (ruleName === "returnPartnerLeadSuit") {
+    return `Speel partners uitkomstkleur ${suitName(result.suit)} terug zolang dat veilig en beschikbaar is.`;
+  }
   if (ruleName === "finesseTowardHonor") {
     const finesse = rankLabel[result.finesseRank] || result.finesseRank;
     const missing = rankLabel[result.missingHonor] || result.missingHonor;
@@ -281,6 +285,7 @@ function playCard(seat, cardId) {
   state.hands[seat] = state.hands[seat].filter((item) => item.id !== cardId);
   state.currentTrick.push({ seat, card, ruleId: ruleResult?.ruleId || null });
   ensurePlayPlan();
+  renderPlayPlan();
   if (explanation) {
     state.playExplanations.push({
       trick: state.trickHistory.length + 1,

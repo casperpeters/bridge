@@ -37,17 +37,50 @@ function currentPlayPlan() {
 }
 
 function ensurePlayPlan() {
-  if (state.playPlan) return state.playPlan;
-  if (!canCreatePlayPlan()) return null;
+  if (!canCreatePlayPlan()) return state.playPlan || null;
+  const key = playPlanStateKey();
+  if (state.playPlan && state.playPlanKey === key) return state.playPlan;
   state.playPlan = bridgeRules.createPlayPlan({
     declarerHand: state.hands[state.declarer],
     dummyHand: state.hands[state.dummy],
     contract: state.contract,
     declarer: state.declarer,
     dummy: state.dummy,
-    trickHistory: state.trickHistory
+    trickHistory: state.trickHistory,
+    currentTrick: state.currentTrick
   });
+  state.playPlanKey = key;
   return state.playPlan;
+}
+
+function playPlanStateKey() {
+  return [
+    state.contract ? formatBid(state.contract) : "no-contract",
+    state.declarer || "no-declarer",
+    state.dummy || "no-dummy",
+    handKey(state.hands[state.declarer]),
+    handKey(state.hands[state.dummy]),
+    trickHistoryKey(),
+    currentTrickKey()
+  ].join("|");
+}
+
+function handKey(hand = []) {
+  return hand.map((card) => card.id).join(",");
+}
+
+function trickHistoryKey() {
+  return state.trickHistory
+    .map((trick) => `${trick.number}:${trick.winner}:${(trick.cards || []).map(playKey).join(",")}`)
+    .join(";");
+}
+
+function currentTrickKey() {
+  return state.currentTrick.map(playKey).join(",");
+}
+
+function playKey(play) {
+  return `${play.seat}-${play.card.id}`;
 }
 
 function canCreatePlayPlan() {
