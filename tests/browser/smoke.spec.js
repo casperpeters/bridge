@@ -27,6 +27,59 @@ async function prepareNorthSouthDeclarerHand(page) {
   expect(stateSnapshot.statusText).toContain("komt uit");
 }
 
+async function clickMenuButton(page, selector) {
+  const menu = page.locator(".app-menu");
+  await menu.locator("summary").click();
+  await expect(menu).toHaveAttribute("open", "");
+  await page.locator(selector).click();
+}
+
+test("keeps tester-only menu actions behind developer mode", async ({ page }) => {
+  await openFreshApp(page);
+  await page.evaluate(() => {
+    state.developerMode = false;
+    renderAll();
+  });
+
+  const menu = page.locator(".app-menu");
+  await menu.locator("summary").click();
+  await expect(page.locator("#quick-review")).toBeHidden();
+
+  await page.evaluate(() => {
+    state.developerMode = true;
+    renderAll();
+  });
+  await expect(page.locator("#quick-review")).toBeVisible();
+});
+
+test("keeps Stop and Alert in a persisted expandable bidding bar", async ({ page }) => {
+  await openFreshApp(page);
+
+  await expect(page.locator("#bid-controls button.double")).toBeVisible();
+  await expect(page.locator("#bid-controls button.pass")).toBeVisible();
+  await expect(page.locator("#bid-controls button.redouble")).toBeVisible();
+  await expect(page.locator("#bid-controls button.stop")).toBeHidden();
+  await expect(page.locator("#bid-controls button.alert")).toBeHidden();
+
+  const toggle = page.locator("#bid-controls button.bid-advanced-toggle");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#bid-controls button.stop")).toBeVisible();
+  await expect(page.locator("#bid-controls button.alert")).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+  await expect(page.locator("#bid-controls button.bid-advanced-toggle")).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#bid-controls button.stop")).toBeVisible();
+
+  await page.locator("#bid-controls button.stop").click();
+  await page.locator("#bid-controls button.pass").click();
+  await expect(page.locator("#auction-log")).toContainText("Stop");
+  await expect(page.locator("#auction-log")).toContainText("Pas");
+});
+
 test("loads the live table and lets South make an auction call", async ({ page }) => {
   const pageErrors = await openFreshApp(page);
 
@@ -69,10 +122,32 @@ test("developer bid explanations use rule references without the old source line
   await expect(page.locator("#bid-explanations")).not.toContainText("Bron: huidige Vijfkaart-Hoog-heuristiek; nog geen volledige systeemkaart.");
 });
 
+test("developer bid explanations flag South calls that differ from the heuristic", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    startHand({ seed: "bid-deviation-smoke", skipFlow: true });
+    state.developerMode = true;
+    state.guidanceMode = true;
+    state.phase = "bidding";
+    state.turnIndex = seats.indexOf("South");
+    state.auction = [];
+    const recommended = chooseRecommendedBidResult("South");
+    const alternate = sameCall(recommended.bid, bridgeRules.Pass())
+      ? bridgeRules.Bid(1, "C")
+      : bridgeRules.Pass();
+    makeBid("South", alternate, recommended);
+  });
+
+  await expect(page.locator("#bid-explanations")).toContainText("wijkt af van de biedheuristiek");
+  await expect(page.locator("#bid-explanations")).toContainText("De heuristiek stelde");
+  await expect(page.locator("#bid-explanations")).toContainText("Gekozen bod");
+});
+
 test("glossary opens from the toolbar and linked explanation terms", async ({ page }) => {
   await openFreshApp(page);
 
-  await page.locator("#open-glossary").click();
+  await clickMenuButton(page, "#open-glossary");
   await expect(page.locator("#glossary-dialog")).toBeVisible();
   await expect(page.locator("#glossary-list")).toContainText("Contract");
   await expect(page.locator("#glossary-list")).toContainText("Deler");
@@ -151,6 +226,129 @@ test("developer bid explanations describe opener rebids after notrump responses"
   await expect(page.locator("#bid-explanations")).toContainText("Regel: continuation.openerAfterOneNtTwoSuiterHigh");
 });
 
+test("developer bid explanations describe fourth-suit forcing as artificial", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const northHand = [
+      "AS", "7S", "6S", "5S",
+      "4H", "3H",
+      "7D", "6D",
+      "AC", "KC", "QC", "6C", "5C"
+    ].map(makeCard);
+    state.developerMode = true;
+    state.guidanceMode = false;
+    state.phase = "bidding";
+    state.hands.North = northHand;
+    state.auction = [
+      { seat: "South", bid: bridgeRules.Bid(1, "H") },
+      { seat: "West", bid: bridgeRules.Pass() },
+      { seat: "North", bid: bridgeRules.Bid(1, "S") },
+      { seat: "East", bid: bridgeRules.Pass() },
+      { seat: "South", bid: bridgeRules.Bid(2, "D") },
+      { seat: "West", bid: bridgeRules.Pass() }
+    ];
+    const bidResult = bridgeRules.chooseFiveCardHighBidResult({
+      hand: northHand,
+      auction: state.auction,
+      seat: "North",
+      vulnerability: state.vulnerability
+    });
+    state.auction.push({ seat: "North", bid: bidResult.bid, bidResult });
+    renderAll();
+  });
+
+  await expect(page.locator("#bid-explanations")).toContainText("vierde-kleur-forcing");
+  await expect(page.locator("#bid-explanations")).toContainText("kunstmatig mancheforcing");
+  await expect(page.locator("#bid-explanations")).toContainText("Regel: continuation.responderFourthSuitForcing");
+});
+
+test("shows compact feedback when a player clicks an illegal card", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    state.phase = "playing";
+    state.turnIndex = seats.indexOf("South");
+    state.contract = bridgeRules.Bid(1, "H");
+    state.declarer = "North";
+    state.dummy = "South";
+    state.currentTrick = [{ seat: "West", card: makeCard("KH") }];
+    state.awaitingTrickAdvance = false;
+    state.trickAdvanceArmed = false;
+    state.hands = {
+      North: [],
+      East: [],
+      South: [makeCard("AS"), makeCard("2H")],
+      West: []
+    };
+    state.originalHands = {
+      North: [],
+      East: [],
+      South: [makeCard("AS"), makeCard("2H")],
+      West: []
+    };
+    renderAll();
+  });
+
+  await page.locator('#south-hand .card[aria-label="A schoppen"]').click();
+  await expect(page.locator("#table-feedback")).toContainText("Bekennen: speel eerst harten.");
+
+  const afterIllegalClick = await page.evaluate(() => ({
+    currentTrickLength: state.currentTrick.length,
+    southHandLength: state.hands.South.length
+  }));
+  expect(afterIllegalClick).toEqual({ currentTrickLength: 1, southHandLength: 2 });
+
+  await page.locator('#south-hand .card[aria-label="2 harten"]').click();
+  await expect(page.locator("#table-feedback")).toBeHidden();
+});
+
+test("pauses completed tricks without previewing the next AI card suggestion", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const plays = [
+      { seat: "North", card: makeCard("2S") },
+      { seat: "East", card: makeCard("5S") },
+      { seat: "South", card: makeCard("10S") },
+      { seat: "West", card: makeCard("AS") }
+    ];
+    state.phase = "playing";
+    state.guidanceMode = true;
+    state.turnIndex = seats.indexOf("South");
+    state.contract = bridgeRules.Bid(1, "S");
+    state.declarer = "East";
+    state.dummy = "West";
+    state.currentTrick = plays;
+    state.awaitingTrickAdvance = true;
+    state.trickAdvanceArmed = true;
+    state.pendingTrickWinner = "West";
+    state.hands = {
+      North: [],
+      East: [],
+      South: [makeCard("2C"), makeCard("5D")],
+      West: []
+    };
+    state.originalHands = {
+      North: [],
+      East: [],
+      South: [makeCard("2C"), makeCard("5D")],
+      West: []
+    };
+    clearTrickSlots();
+    plays.forEach((play) => renderPlayedCard(play.seat, play.card));
+    renderAll();
+  });
+
+  await expect(page.locator("#guidance-panel")).toBeHidden();
+  await expect(page.locator("#south-hand .recommended-card")).toHaveCount(0);
+  await expect(page.locator(".trick-west")).toHaveClass(/pending-trick-winner/);
+  await expect(page.locator("#trick-advance-hint")).toContainText("West wint slag 1.");
+});
+
 test("keeps dummy and the play plan hidden until after the opening lead", async ({ page }) => {
   await openFreshApp(page);
   await prepareNorthSouthDeclarerHand(page);
@@ -185,20 +383,54 @@ test("keeps dummy and the play plan hidden until after the opening lead", async 
   await expect(page.locator("#guidance-panel")).toContainText("speelplan");
 });
 
+test("developer play explanations flag cards that differ from the heuristic", async ({ page }) => {
+  await openFreshApp(page);
+
+  const madeDeviation = await page.evaluate(() => {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      startHand({ seed: `play-deviation-smoke-${attempt}`, skipFlow: true });
+      autoCompleteAuction();
+      if (state.phase !== "playing") continue;
+      state.developerMode = true;
+      autoPlayCard(seatAt(state.turnIndex), chooseCard(seatAt(state.turnIndex)));
+      const seat = seatAt(state.turnIndex);
+      if (!isHumanControlledSeat(seat)) continue;
+      const recommended = chooseCardPlayResult(seat);
+      const alternate = legalCards(seat).find((card) => card.id !== recommended?.card?.id);
+      if (!alternate) continue;
+      playCard(seat, alternate.id);
+      return true;
+    }
+    return false;
+  });
+
+  expect(madeDeviation).toBe(true);
+  await expect(page.locator("#play-explanations")).toContainText("wijkt af van de speelheuristiek");
+  await expect(page.locator("#play-explanations")).toContainText("De heuristiek stelde");
+});
+
 test("can finish a hand and copy a feedback report from the review", async ({ page, context, baseURL }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: baseURL });
   await openFreshApp(page);
 
-  await page.locator("#quick-review").click();
+  await page.evaluate(() => {
+    state.developerMode = true;
+    renderAll();
+  });
+  await clickMenuButton(page, "#quick-review");
 
   await expect(page.locator("#review-panel")).toBeVisible();
   await expect(page.locator("#review-summary")).toContainText("Contract");
-  await expect(page.locator("#review-summary")).toContainText("Score-uitleg");
-  await expect(page.locator("#review-summary")).toContainText("Contractdoel");
+  await expect(page.locator("#review-summary")).toContainText("Waarom deze score?");
+  await expect(page.locator("#review-summary")).toContainText("Nodig voor contract");
+  await expect(page.locator("#review-summary")).toContainText("Herhaalcode");
+  await expect(page.locator("#review-summary")).toContainText("Eerste kaart");
   await expect(page.locator("#review-summary")).toContainText("Eindscore");
+  await expect(page.locator("#review-summary")).not.toContainText("Handseed");
+  await expect(page.locator("#review-summary")).not.toContainText("Contractdoel");
   await expect(page.locator("#review-tricks tbody tr")).toHaveCount(13);
 
-  await page.locator("#open-feedback").click();
+  await clickMenuButton(page, "#open-feedback");
   await expect(page.locator("#feedback-dialog")).toBeVisible();
   await page.locator("#feedback-message").fill("Smoke test report");
 

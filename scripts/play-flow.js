@@ -100,7 +100,7 @@ function chooseCardPlayResult(seat) {
 }
 
 function currentRecommendedCard() {
-  if (state.phase !== "playing" || state.awaitingTrickAdvance) return null;
+  if (state.phase !== "playing" || state.awaitingTrickAdvance || state.currentTrick.length >= 4) return null;
   const seat = seatAt(state.turnIndex);
   if (!isHumanControlledSeat(seat)) return null;
   const result = chooseCardPlayResult(seat);
@@ -131,7 +131,8 @@ function explainCardPlay(seat, card, result = chooseCardPlayResult(seat)) {
   const ruleText = `${explainCardPlayResult(result)}${playPlanReferenceText(result)} Regel: ${result.ruleId}; zekerheid: ${confidenceName(result.confidence)}.`;
 
   if (result.card.id === card.id) return `${base}: ${ruleText}`;
-  return `${base}: ${seatName(seat)} speelde ${cardText(card)}. De regel stelde ${cardText(result.card)} voor: ${ruleText}`;
+  const actor = humanChoice ? "Je kaart" : `${seatName(seat)}s kaart`;
+  return `${base}: ${actor} wijkt af van de speelheuristiek. ${seatName(seat)} speelde ${cardText(card)}. De heuristiek stelde ${cardText(result.card)} voor: ${ruleText}`;
 }
 
 function explainCardPlayResult(result) {
@@ -239,11 +240,42 @@ function confidenceName(confidence) {
   }[confidence] || confidence || "onbekend";
 }
 
+function showIllegalCardFeedback(seat, card) {
+  state.illegalActionFeedback = illegalCardFeedbackText(seat, card);
+  renderIllegalActionFeedback();
+  if (illegalActionFeedbackTimer) window.clearTimeout(illegalActionFeedbackTimer);
+  illegalActionFeedbackTimer = window.setTimeout(() => {
+    state.illegalActionFeedback = null;
+    renderIllegalActionFeedback();
+    illegalActionFeedbackTimer = null;
+  }, 2200);
+}
+
+function illegalCardFeedbackText(seat, card) {
+  if (state.awaitingTrickAdvance) return t("illegalCardWaitTrick");
+  const turnSeat = seatAt(state.turnIndex);
+  if (seat !== turnSeat) return t("illegalCardWrongTurn", { seat: seatName(seat), turn: seatName(turnSeat) });
+  if (state.currentTrick.length && card) {
+    const leadSuit = state.currentTrick[0].card.suit;
+    const canFollow = state.hands[seat]?.some((heldCard) => heldCard.suit === leadSuit);
+    if (canFollow && card.suit !== leadSuit) return t("illegalCardFollowSuit", { suit: suitName(leadSuit) });
+  }
+  return t("illegalCardGeneric");
+}
+
 function playCard(seat, cardId) {
   if (state.phase !== "playing" || seat !== seatAt(state.turnIndex)) return;
-  if (state.awaitingTrickAdvance) return;
+  if (state.awaitingTrickAdvance) {
+    showIllegalCardFeedback(seat, null);
+    return;
+  }
   const card = state.hands[seat].find((item) => item.id === cardId);
-  if (!card || !isLegalCard(seat, card)) return;
+  if (!card || !isLegalCard(seat, card)) {
+    showIllegalCardFeedback(seat, card);
+    return;
+  }
+  state.illegalActionFeedback = null;
+  renderIllegalActionFeedback();
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
   state.hands[seat] = state.hands[seat].filter((item) => item.id !== cardId);
@@ -284,6 +316,8 @@ function pauseCompletedTrick() {
   state.awaitingTrickAdvance = true;
   state.trickAdvanceArmed = false;
   setStatus("winsTrick", { seat: winner.seat, number: state.trickHistory.length + 1 });
+  renderTrickSlotFocus();
+  renderGuidance();
   renderTrickAdvanceHint();
   window.setTimeout(() => {
     state.trickAdvanceArmed = true;

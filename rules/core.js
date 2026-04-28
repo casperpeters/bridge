@@ -148,6 +148,41 @@
         return Object.values(counts).reduce((sum, count) => sum + (count === 0 ? 3 : count === 1 ? 2 : count === 2 ? 1 : 0), 0);
       }
 
+  function fitPoints(hand, trumpSuit, partnerMinTrumpLength = 0) {
+        if (!trumpSuit || trumpSuit === "NT") return hcp(hand);
+
+        const counts = countSuits(hand);
+        const highCardPoints = hcp(hand);
+        const ownTrumpLength = counts[trumpSuit] || 0;
+        const combinedTrumpLength = ownTrumpLength + Math.max(0, partnerMinTrumpLength || 0);
+        const hasSideShortness = suits.some((suit) => suit !== trumpSuit && counts[suit] <= 1);
+        let total = highCardPoints;
+
+        if (combinedTrumpLength >= 9) total += 1;
+        if (combinedTrumpLength >= 10 && hasSideShortness) total += 1;
+        if (combinedTrumpLength > 10) total += combinedTrumpLength - 10;
+
+        for (const suit of suits) {
+          if (suit === trumpSuit) continue;
+          const suitCards = hand.filter((card) => card.suit === suit);
+          const length = suitCards.length;
+          const ranks = suitCards.map((card) => card.rank);
+          if (length === 0) total += 3;
+          if (length === 1) {
+            if (ranks[0] === "J") total += 1;
+            else if (ranks[0] !== "K" && ranks[0] !== "Q") total += 2;
+          }
+          if (length === 2) {
+            const hasQueen = ranks.includes("Q");
+            const hasJack = ranks.includes("J");
+            const hasAceOrKing = ranks.includes("A") || ranks.includes("K");
+            if (!((hasQueen || hasJack) && !hasAceOrKing)) total += 1;
+          }
+        }
+
+        return total;
+      }
+
   function isBalancedCounts(counts) {
         const pattern = Object.values(counts).sort((a, b) => b - a).join("-");
         return pattern === "4-3-3-3" || pattern === "4-4-3-2" || pattern === "5-3-3-2";
@@ -195,6 +230,7 @@
     partnerOf,
     hcp,
     distributionPointsFromCounts,
+    fitPoints,
     isBalancedCounts,
     handShape
   };

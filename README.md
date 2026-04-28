@@ -127,7 +127,7 @@ Use this checklist with someone who does not already know the app. Let the playe
 
 ## Deployment
 
-The app can be deployed as a static site. See [DEPLOY.md](./DEPLOY.md) for Netlify Drop and GitHub Pages instructions.
+The app can be deployed as a static site. See [DEPLOY.md](./DEPLOY.md) for GitHub Pages and generic static hosting instructions.
 
 ## Roadmap
 

@@ -104,6 +104,32 @@ test("Vijfkaart Hoog raises a five-card major with three-card support", () => {
   ], auction), bid(2, "H"));
 });
 
+test("Vijfkaart Hoog revalues a one-major raise with fit points", () => {
+  const auction = [
+    { seat: "North", bid: bid(1, "H") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const upgraded = chooseFiveCardHighResult([
+    "QS", "2S", "3S", "4S",
+    "AH", "2H", "3H",
+    "2D",
+    "QC", "2C", "3C", "4C", "5C"
+  ], auction);
+  assert.deepEqual(upgraded.bid, bid(3, "H"));
+  assert.equal(upgraded.fitPoints, 10);
+  assert.equal(upgraded.valuation, "fitPoints");
+
+  const shortHonor = chooseFiveCardHighResult([
+    "KS", "2S", "3S", "4S",
+    "AH", "2H", "3H",
+    "QD",
+    "QC", "2C", "3C", "4C", "5C"
+  ], auction);
+  assert.deepEqual(shortHonor.bid, bid(3, "H"));
+  assert.equal(shortHonor.fitPoints, 11);
+});
+
 test("Vijfkaart Hoog responds to a one-major opening with a new suit from four cards", () => {
   const oneHeart = [
     { seat: "North", bid: bid(1, "H") },

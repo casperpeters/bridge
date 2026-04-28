@@ -109,7 +109,81 @@ test("Vijfkaart Hoog raises partner's overcall from 8 HCP when vulnerable", () =
   assert.equal(result.ruleId, "fiveCardHigh.competitive.raisePartnerOvercall");
   assert.equal(result.minimumHcp, 8);
   assert.equal(result.vulnerable, true);
-  assert.match(result.reason, /8\+ HCP/);
+  assert.match(result.reason, /8\+ fit points/);
+});
+
+test("Vijfkaart Hoog can raise partner's overcall on fit points", () => {
+  const auction = [
+    { seat: "East", bid: bid(1, "D") },
+    { seat: "South", bid: bid(1, "S") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "QS", "2S", "3S",
+      "KH", "2H", "3H",
+      "2D",
+      "2C", "3C", "4C", "5C", "6C", "7C"
+    ),
+    auction,
+    seat: "North",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(2, "S"));
+  assert.equal(result.hcp, 5);
+  assert.equal(result.fitPoints, 7);
+  assert.equal(result.valuation, "fitPoints");
+});
+
+test("Vijfkaart Hoog uses Stayman after partner's 1NT overcall with game values and a four-card major", () => {
+  const auction = [
+    { seat: "South", bid: bid(1, "C") },
+    { seat: "West", bid: bid(1, "NT") },
+    { seat: "North", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "8S", "4S",
+      "KH", "QH", "TH", "7H",
+      "8D", "6D", "2D",
+      "JC", "6C", "3C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "both"
+  });
+
+  assert.deepEqual(result.bid, bid(2, "C"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.notrumpOvercallStayman");
+  assert.equal(result.hcp, 10);
+  assert.equal(result.counts.H, 4);
+});
+
+test("Vijfkaart Hoog bids 3NT after partner's 1NT overcall with game values and no four-card major", () => {
+  const auction = [
+    { seat: "South", bid: bid(1, "C") },
+    { seat: "West", bid: bid(1, "NT") },
+    { seat: "North", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "8S", "4S",
+      "KH", "QH", "7H",
+      "8D", "6D", "2D",
+      "QC", "JC", "6C", "3C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "both"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "NT"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.notrumpOvercallGame");
+  assert.equal(result.hcp, 12);
 });
 
 test("Vijfkaart Hoog bids 3NT after partner's two-level overcall with a stopper and game values", () => {
@@ -251,4 +325,30 @@ test("Vijfkaart Hoog uses a negative double with four-card majors after interfer
     "2D", "3D",
     "2C", "3C", "4C"
   ], auction), double());
+});
+
+test("Vijfkaart Hoog allows a minimum six-HCP negative double after 1C over 1H", () => {
+  const auction = [
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: bid(1, "C") },
+    { seat: "North", bid: bid(1, "H") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "TS", "8S", "7S", "2S",
+      "TH", "9H", "3H",
+      "KC", "JC", "3C", "2C",
+      "QD", "4D"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, double());
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.negativeDouble");
+  assert.equal(result.hcp, 6);
+  assert.equal(result.counts.S, 4);
 });

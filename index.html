@@ -15,51 +15,60 @@
           <div class="brand-copy">
             <p id="app-title" class="eyebrow">Bridgetafel</p>
             <h1 id="app-heading">Speel Vijfkaart Hoog met een AI-partner</h1>
-            <p id="play-mode" class="play-mode">Je speelt de kaarten van Zuid.</p>
           </div>
         </div>
         <div class="setup-controls">
-          <details class="settings-menu">
-            <summary id="settings-summary" aria-label="Instellingen" title="Instellingen">
-              <svg class="settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z" />
-                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2.05 2.05 0 0 1-2.9 2.9l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2.05 2.05 0 0 1-4.1 0v-.1a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2.05 2.05 0 0 1-2.9-2.9l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2.05 2.05 0 0 1 0-4.1h.1A1.7 1.7 0 0 0 4.66 8.8a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2.05 2.05 0 0 1 2.9-2.9l.06.06a1.7 1.7 0 0 0 1.88.34h.01A1.7 1.7 0 0 0 10.13 2.8V2.7a2.05 2.05 0 0 1 4.1 0v.1a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06a2.05 2.05 0 0 1 2.9 2.9l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.02h.1a2.05 2.05 0 0 1 0 4.1h-.1A1.7 1.7 0 0 0 19.4 15Z" />
-              </svg>
-              <span class="sr-only">Instellingen</span>
+          <details class="app-menu">
+            <summary id="settings-summary" aria-label="Menu" title="Menu">
+              <span class="menu-icon" aria-hidden="true"></span>
+              <span>Menu</span>
             </summary>
-            <div class="settings-panel">
-              <label for="developer-mode" class="developer-toggle">
-                <input id="developer-mode" type="checkbox" />
-                <span id="developer-mode-label">Developermodus</span>
-              </label>
-              <p id="developer-mode-description" class="setting-description"></p>
-              <label for="guidance-mode" class="developer-toggle">
-                <input id="guidance-mode" type="checkbox" />
-                <span id="guidance-mode-label">AI-suggesties</span>
-              </label>
-              <p id="guidance-mode-description" class="setting-description"></p>
-              <label for="play-history-mode" class="developer-toggle">
-                <input id="play-history-mode" type="checkbox" />
-                <span id="play-history-mode-label">Speelgeschiedenis</span>
-              </label>
-              <p id="play-history-mode-description" class="setting-description"></p>
-              <div class="setting-field">
-                <label id="seed-label" for="seed-input">Handseed</label>
-                <input id="seed-input" type="text" autocomplete="off" spellcheck="false" />
-                <div class="seed-actions">
-                  <button id="load-seed" type="button">Laad seed</button>
-                  <button id="copy-seed" type="button">Kopieer seed</button>
+            <div class="app-menu-panel">
+              <div class="menu-actions" aria-label="Menuacties">
+                <section class="menu-section" aria-labelledby="game-menu-title">
+                  <p id="game-menu-title" class="menu-section-title">Spel</p>
+                  <button id="new-hand" type="button">Nieuwe hand</button>
+                  <button id="same-hand" type="button">Zelfde hand</button>
+                </section>
+                <section class="menu-section" aria-labelledby="help-menu-title">
+                  <p id="help-menu-title" class="menu-section-title">Hulp</p>
+                  <button id="open-glossary" type="button">Woordenlijst</button>
+                  <button id="open-score-table" type="button">Scoretabel</button>
+                  <button id="open-feedback" type="button">Feedback</button>
+                </section>
+                <section class="menu-section developer-menu-section" aria-labelledby="test-menu-title" data-developer-only hidden>
+                  <p id="test-menu-title" class="menu-section-title">Testen</p>
+                  <button id="quick-review" type="button">Test slagenoverzicht</button>
+                </section>
+              </div>
+              <div class="settings-panel">
+                <label for="developer-mode" class="developer-toggle">
+                  <input id="developer-mode" type="checkbox" />
+                  <span id="developer-mode-label">Developermodus</span>
+                </label>
+                <p id="developer-mode-description" class="setting-description"></p>
+                <label for="guidance-mode" class="developer-toggle">
+                  <input id="guidance-mode" type="checkbox" />
+                  <span id="guidance-mode-label">AI-suggesties</span>
+                </label>
+                <p id="guidance-mode-description" class="setting-description"></p>
+                <label for="play-history-mode" class="developer-toggle">
+                  <input id="play-history-mode" type="checkbox" />
+                  <span id="play-history-mode-label">Speelgeschiedenis</span>
+                </label>
+                <p id="play-history-mode-description" class="setting-description"></p>
+                <div class="setting-field">
+                  <label id="seed-label" for="seed-input">Handseed</label>
+                  <input id="seed-input" type="text" autocomplete="off" spellcheck="false" />
+                  <div class="seed-actions">
+                    <button id="load-seed" type="button">Laad seed</button>
+                    <button id="copy-seed" type="button">Kopieer seed</button>
+                  </div>
+                  <p id="seed-description" class="setting-description"></p>
                 </div>
-                <p id="seed-description" class="setting-description"></p>
               </div>
             </div>
           </details>
-          <button id="open-feedback" type="button">Feedback</button>
-          <button id="open-glossary" type="button">Woordenlijst</button>
-          <button id="open-score-table" type="button">Scoretabel</button>
-          <button id="new-hand" type="button">Nieuwe hand</button>
-          <button id="same-hand" type="button">Zelfde hand</button>
-          <button id="quick-review" type="button">Test slagenoverzicht</button>
         </div>
       </section>
 
@@ -69,14 +78,14 @@
         <div class="turn-glow turn-glow-south" aria-hidden="true"></div>
         <div class="turn-glow turn-glow-west" aria-hidden="true"></div>
         <div class="opponent north">
-          <div id="north-label" class="seat-label">Noord &bull; Partner</div>
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
+          <div id="north-label" class="seat-label">Noord &bull; Partner</div>
         </div>
 
         <div class="middle-row">
           <div class="opponent west">
-            <div id="west-label" class="seat-label">West</div>
             <div id="west-hand" class="hand vertical" aria-label="West hand"></div>
+            <div id="west-label" class="seat-label">West</div>
           </div>
 
           <div class="felt">
@@ -86,13 +95,13 @@
               <div class="trick-slot trick-east" data-seat="Oost"></div>
               <div class="trick-slot trick-south" data-seat="Zuid"></div>
             </div>
-            <div class="status-row">
+            <div class="table-help-stack">
               <div id="status" class="status sr-only" aria-live="polite">Deel een nieuwe hand om te starten.</div>
-              <button id="hint-button" class="hint-button" type="button" aria-label="Hint" data-hint="Deel een nieuwe hand om te starten.">i</button>
+              <div id="dummy-notice" class="table-note" aria-live="polite" hidden></div>
+              <div id="table-feedback" class="table-feedback" aria-live="polite" hidden></div>
+              <div id="guidance-panel" class="guidance-panel" hidden></div>
+              <div id="trick-advance-hint" class="trick-advance-hint" hidden>Klik ergens of druk op Enter voor de volgende slag.</div>
             </div>
-            <div id="dummy-notice" class="table-note" aria-live="polite" hidden></div>
-            <div id="guidance-panel" class="guidance-panel" hidden></div>
-            <div id="trick-advance-hint" class="trick-advance-hint" hidden>Klik ergens of druk op Enter voor de volgende slag.</div>
           </div>
 
           <div class="opponent east">
@@ -102,7 +111,10 @@
         </div>
 
         <div class="player-zone">
-          <div id="south-label" class="seat-label">Zuid &bull; Jij</div>
+          <div class="player-label-row">
+            <div id="south-label" class="seat-label">Zuid &bull; Jij</div>
+            <button id="hint-button" class="hint-button" type="button" aria-label="Hint" data-hint="Deel een nieuwe hand om te starten.">i</button>
+          </div>
           <div id="south-hand" class="hand horizontal playable" aria-label="Jouw hand"></div>
         </div>
       </section>
@@ -113,13 +125,13 @@
             <h2 id="bidding-title">Bieden</h2>
             <span id="dealer-badge">Deler: Zuid</span>
           </div>
-          <div id="auction-log" class="auction-log"></div>
-          <div id="bid-explanations" class="bid-explanations" hidden></div>
-          <div id="bid-controls" class="bid-controls"></div>
           <div class="game-summary" aria-label="Spelstatus">
             <div id="contract" class="contract">Deel een hand om te starten</div>
             <div id="scoreline" class="scoreline"></div>
           </div>
+          <div id="auction-log" class="auction-log"></div>
+          <div id="bid-controls" class="bid-controls"></div>
+          <div id="bid-explanations" class="bid-explanations" hidden></div>
           <div id="play-plan-panel" class="play-plan-panel" hidden></div>
         </section>
 
@@ -330,6 +342,8 @@
     <script src="rules/core.js"></script>
     <script src="rules/auction.js"></script>
     <script src="rules/scoring.js"></script>
+    <script src="rules/bidding-five-card-high-context.js"></script>
+    <script src="rules/bidding-five-card-high-valuation.js"></script>
     <script src="rules/bidding-five-card-high.js"></script>
     <script src="rules/play-mechanics.js"></script>
     <script src="rules/play-plan.js"></script>

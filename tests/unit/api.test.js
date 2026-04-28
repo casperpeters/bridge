@@ -34,6 +34,7 @@ test("bridge-rules public API stays stable", () => {
     "downScore",
     "finalContract",
     "findDeclarer",
+    "fitPoints",
     "handShape",
     "handSuitOrder",
     "hcp",

@@ -2,7 +2,11 @@ function renderHands() {
   const recommended = state.guidanceMode ? currentRecommendedCard() : null;
   for (const seat of seats) {
     seatEls[seat].innerHTML = "";
-    seatEls[seat].classList.toggle("playable", isHumanControlledSeat(seat) && state.phase === "playing");
+    const activePlayHand = state.phase === "playing" && !state.awaitingTrickAdvance && seatAt(state.turnIndex) === seat;
+    const humanControlled = isHumanControlledSeat(seat) && state.phase === "playing";
+    seatEls[seat].classList.toggle("playable", humanControlled);
+    seatEls[seat].classList.toggle("active-play-hand", activePlayHand);
+    seatEls[seat].classList.toggle("inactive-play-hand", state.phase === "playing" && !activePlayHand);
     const complete = state.phase === "complete";
     const visible = state.developerMode || complete || isSeatVisible(seat);
     const sourceHand = complete ? state.originalHands[seat] : state.hands[seat];
@@ -45,16 +49,26 @@ function createHandCardEl(seat, card, visible, index, recommended) {
   } else {
     cardEl.classList.add("no-hand-animation");
   }
-  if (recommended?.seat === seat && recommended.card.id === card.id) cardEl.classList.add("recommended-card");
+  if (!state.awaitingTrickAdvance && state.currentTrick.length < 4 && recommended?.seat === seat && recommended.card.id === card.id) {
+    cardEl.classList.add("recommended-card");
+  }
   if (visible && isHumanControlledSeat(seat) && state.phase === "playing" && !state.awaitingTrickAdvance) {
     const legal = isLegalCard(seat, card);
     cardEl.classList.add(legal ? "legal" : "illegal");
-    if (legal && seatAt(state.turnIndex) === seat) {
+    if (seatAt(state.turnIndex) === seat) {
       cardEl.tabIndex = 0;
-      cardEl.addEventListener("click", () => playCard(seat, card.id));
-      cardEl.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") playCard(seat, card.id);
+      cardEl.addEventListener("click", () => {
+        if (legal) playCard(seat, card.id);
+        else showIllegalCardFeedback(seat, card);
       });
+      cardEl.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        if (legal) playCard(seat, card.id);
+        else showIllegalCardFeedback(seat, card);
+      });
+    } else {
+      cardEl.addEventListener("click", () => showIllegalCardFeedback(seat, card));
     }
   }
   return cardEl;

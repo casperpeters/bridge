@@ -30,6 +30,7 @@ function makeBid(seat, bid, bidResult = null) {
     alert: seat === "South" && state.pendingAlert
   };
   if (bidResult && sameCall(bidResult.bid, typedBid)) call.bidResult = bidResult;
+  if (bidResult && !sameCall(bidResult.bid, typedBid)) call.recommendedBidResult = bidResult;
   state.auction.push(call);
   state.pendingStop = false;
   state.pendingAlert = false;

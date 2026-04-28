@@ -39,7 +39,7 @@ const BridgeGlossary = (() => {
     ["Verzaken", "Het spelen van een kaart van een andere kleur dan de voorgespeelde kleur terwijl je nog wel een kaart van die kleur in handen hebt."],
     ["Volgbod", "Een bod door de partij die niet het openingsbod heeft gedaan."],
     ["Vork", "Twee kaarten waarbij de tussenliggende kaart mist, zoals A-V, H-B of V-10."],
-    ["Vuilnisbakkenbod", "Het 1SA-bijbod wordt zo genoemd omdat het soms noodgedwongen gedaan moet worden op een kaart die niet geschikt is voor een SA-contract."],
+    ["Vuilnisbakkenbod", "Het 1SA-bijbod na partners opening in een kleur: meestal 6-9 punten, geen steun voor partners kleur en geen eigen kleur die je op eenhoogte kunt bieden. Het heet zo omdat handen die nergens anders goed passen hierin terechtkomen; het belooft dus niet per se een mooie sans-atouthand."],
     ["Werkkleur", "De kleur die het meest in aanmerking komt voor het ontwikkelen van extra slagen, vooral belangrijk in een SA-contract."]
   ].map(([term, definition, aliases = []]) => ({ term, definition, aliases }));
 

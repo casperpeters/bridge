@@ -60,3 +60,78 @@ test("dealer and vulnerability follow the duplicate 16-board cycle", () => {
     assert.equal(rules.vulnerabilityForDeal(board), expectedVulnerabilities[board - 1]);
   }
 });
+
+test("fitPoints values extra trump length only after a fit", () => {
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S", "5S",
+    "2H", "3H", "4H",
+    "2D", "3D", "4D",
+    "2C", "3C", "4C"
+  ), "S", 5), 1);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S", "5S", "6S",
+    "2H", "3H", "4H",
+    "2D", "3D", "4D",
+    "2C", "3C"
+  ), "S", 5), 2);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S", "5S", "6S",
+    "2H",
+    "2D", "3D", "4D",
+    "2C", "3C", "4C", "5C"
+  ), "S", 5), 4);
+});
+
+test("fitPoints applies Berry short-suit honor corrections", () => {
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H",
+    "2D", "3D",
+    "2C", "3C", "4C", "5C"
+  ), "S", 5), 1);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H",
+    "QD", "2D",
+    "2C", "3C", "4C", "5C"
+  ), "S", 5), 2);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H",
+    "QD", "JD",
+    "2C", "3C", "4C", "5C"
+  ), "S", 5), 3);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H", "6H",
+    "JD",
+    "2C", "3C", "4C", "5C"
+  ), "S", 5), 2);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H", "6H",
+    "QD",
+    "2C", "3C", "4C", "5C"
+  ), "S", 5), 2);
+});
+
+test("fitPoints counts renounces and ignores shortness in trump", () => {
+  assert.equal(rules.fitPoints(hand(
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H", "6H",
+    "2C", "3C", "4C", "5C", "6C"
+  ), "S", 5), 3);
+
+  assert.equal(rules.fitPoints(hand(
+    "2S",
+    "2H", "3H", "4H", "5H",
+    "2D", "3D", "4D", "5D",
+    "2C", "3C", "4C", "5C"
+  ), "S", 7), 0);
+});

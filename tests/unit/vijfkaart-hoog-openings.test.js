@@ -59,11 +59,50 @@ test("Vijfkaart Hoog opens the longest major, not always spades first", () => {
   ]), bid(1, "H"));
 });
 
+test("Vijfkaart Hoog opens the highest suit with two five-card suits", () => {
+  assert.deepEqual(chooseFiveCardHigh([
+    "AS", "KS", "2S", "3S", "4S",
+    "2H", "3H",
+    "AD", "QD", "2D", "3D", "4D",
+    "2C"
+  ]), bid(1, "S"));
+
+  assert.deepEqual(chooseFiveCardHigh([
+    "2S", "3S",
+    "AH", "KH", "2H", "3H", "4H",
+    "AD", "QD", "2D", "3D", "4D",
+    "2C"
+  ]), bid(1, "H"));
+
+  assert.deepEqual(chooseFiveCardHigh([
+    "AS", "2S",
+    "2H",
+    "KD", "QD", "2D", "3D", "4D",
+    "QC", "JC", "2C", "3C", "4C"
+  ]), bid(1, "D"));
+});
+
 test("Vijfkaart Hoog opens a longer minor before a five-card major", () => {
   assert.deepEqual(chooseFiveCardHigh([
     "AS", "KS", "QS", "2S", "3S",
     "2H", "3H",
     "AC", "2C", "3C", "4C", "5C", "6C"
+  ]), bid(1, "C"));
+});
+
+test("Vijfkaart Hoog opens the lowest suit with multiple four-card suits", () => {
+  assert.deepEqual(chooseFiveCardHigh([
+    "AS", "QS", "2S", "3S",
+    "KH", "2H", "3H", "4H",
+    "KD", "QD", "2D", "3D",
+    "2C"
+  ]), bid(1, "D"));
+
+  assert.deepEqual(chooseFiveCardHigh([
+    "AS", "QS", "2S",
+    "KH", "2H", "3H",
+    "KD", "2D", "3D", "4D",
+    "QC", "JC", "2C", "3C"
   ]), bid(1, "C"));
 });
 
@@ -83,6 +122,48 @@ test("Vijfkaart Hoog opens weak twos with 6-10 HCP and a six-card suit", () => {
     "KD", "QD", "JD", "2D", "3D", "4D",
     "2C", "3C"
   ]), bid(2, "D"));
+});
+
+test("Vijfkaart Hoog opens by the Rule of 20 with fewer than 12 HCP", () => {
+  const oneMajor = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "2S", "3S",
+    "QH", "2H", "3H", "4H",
+    "2D", "3D",
+    "2C", "3C"
+  ]);
+
+  assert.deepEqual(oneMajor.bid, bid(1, "S"));
+  assert.equal(oneMajor.ruleId, "fiveCardHigh.opening.ruleOf20OneMajor");
+  assert.equal(oneMajor.hcp, 11);
+  assert.equal(oneMajor.ruleOf20Score, 20);
+  assert.equal(oneMajor.ruleOf20LongSuitHcp, 11);
+  assert.deepEqual(oneMajor.ruleOf20LongSuits, ["S", "H"]);
+
+  const oneMinor = chooseFiveCardHighResult([
+    "2S", "3S",
+    "2H", "3H",
+    "QD", "2D", "3D", "4D",
+    "AC", "KC", "QC", "2C", "3C"
+  ]);
+
+  assert.deepEqual(oneMinor.bid, bid(1, "C"));
+  assert.equal(oneMinor.ruleId, "fiveCardHigh.opening.ruleOf20OneMinor");
+  assert.equal(oneMinor.ruleOf20Score, 20);
+});
+
+test("Vijfkaart Hoog does not use the Rule of 20 when values are outside the long suits", () => {
+  const result = chooseFiveCardHighResult([
+    "AS", "2S", "3S", "4S", "5S",
+    "2H", "3H", "4H", "5H",
+    "KD", "QD", "2D",
+    "QC"
+  ]);
+
+  assert.deepEqual(result.bid, pass());
+  assert.equal(result.ruleId, "fiveCardHigh.pass.openingNoAction");
+  assert.equal(result.hcp, 11);
+  assert.equal(result.ruleOf20Score, 20);
+  assert.equal(result.ruleOf20LongSuitHcp, 4);
 });
 
 test("Vijfkaart Hoog bid results expose detailed opening explanation data", () => {

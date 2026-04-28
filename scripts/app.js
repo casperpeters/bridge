@@ -47,20 +47,26 @@ const state = {
   developerMode: false,
   guidanceMode: false,
   showPlayHistory: false,
+  showAdvancedBidControls: false,
   pendingStop: false,
   pendingAlert: false,
   status: { key: "chooseAndDeal", args: {} },
   finalScore: null,
   dealSeed: null,
   seedMessage: null,
-  feedbackStatus: null
+  feedbackStatus: null,
+  illegalActionFeedback: null
 };
+
+let illegalActionFeedbackTimer = null;
 
 const els = {
   title: document.querySelector("#app-title"),
   heading: document.querySelector("#app-heading"),
   playMode: document.querySelector("#play-mode"),
+  appMenu: document.querySelector(".app-menu"),
   settingsSummary: document.querySelector("#settings-summary"),
+  developerOnlyMenuSections: document.querySelectorAll("[data-developer-only]"),
   developerMode: document.querySelector("#developer-mode"),
   developerModeLabel: document.querySelector("#developer-mode-label"),
   developerModeDescription: document.querySelector("#developer-mode-description"),
@@ -127,6 +133,7 @@ const els = {
   status: document.querySelector("#status"),
   guidancePanel: document.querySelector("#guidance-panel"),
   dummyNotice: document.querySelector("#dummy-notice"),
+  tableFeedback: document.querySelector("#table-feedback"),
   trickAdvanceHint: document.querySelector("#trick-advance-hint"),
   scoreline: document.querySelector("#scoreline"),
   history: document.querySelector("#history"),
@@ -160,6 +167,9 @@ els.feedbackMessage.addEventListener("input", refreshFeedbackMailLink);
 els.feedbackIncludeContext.addEventListener("change", refreshFeedbackMailLink);
 els.feedbackDialog.addEventListener("click", (event) => {
   if (event.target === els.feedbackDialog) closeFeedbackDialog();
+});
+els.appMenu?.querySelector(".menu-actions")?.addEventListener("click", (event) => {
+  if (event.target.closest("button")) els.appMenu.removeAttribute("open");
 });
 els.scoreTableDialog.addEventListener("click", (event) => {
   if (event.target === els.scoreTableDialog) closeScoreTableDialog();
@@ -224,6 +234,11 @@ function startHand({ replay = false, seed = null, preserveBoard = false, skipFlo
   state.animateDeal = true;
   state.finalScore = null;
   state.feedbackStatus = null;
+  state.illegalActionFeedback = null;
+  if (illegalActionFeedbackTimer) {
+    window.clearTimeout(illegalActionFeedbackTimer);
+    illegalActionFeedbackTimer = null;
+  }
   state.pendingStop = false;
   state.pendingAlert = false;
   if (!loadedSeed) state.seedMessage = null;
@@ -296,6 +311,7 @@ function compareCards(a, b) {
 function renderAll() {
   applyStaticText();
   renderTurnFocus();
+  renderTrickSlotFocus();
   renderHands();
   renderAuction();
   renderBidControls();
@@ -306,6 +322,7 @@ function renderAll() {
   renderContract();
   renderGuidance();
   renderFeedbackStatus();
+  renderIllegalActionFeedback();
   els.dealerBadge.textContent = `${t("board")} ${state.dealNumber} ${separatorDot} ${t("dealer")}: ${seatName(seatAt(state.dealerIndex))}`;
   els.trickCount.textContent = `${state.tricks.NS + state.tricks.EW} ${t("tricks")}`;
   els.scoreline.textContent = state.finalScore
@@ -324,13 +341,25 @@ function renderTurnFocus() {
   els.tableArea.classList.add(`turn-focus-${seatAt(state.turnIndex).toLowerCase()}`);
 }
 
+function renderTrickSlotFocus() {
+  Object.values(slotEls).forEach((slot) => {
+    slot.classList.remove("active-trick-slot", "pending-trick-winner");
+  });
+  if (state.phase === "playing" && state.awaitingTrickAdvance && state.pendingTrickWinner) {
+    slotEls[state.pendingTrickWinner]?.classList.add("pending-trick-winner");
+    return;
+  }
+  if (state.phase !== "playing" || state.awaitingTrickAdvance) return;
+  slotEls[seatAt(state.turnIndex)]?.classList.add("active-trick-slot");
+}
+
 function applyStaticText() {
   document.title = t("title");
   els.title.textContent = t("title");
   els.heading.textContent = t("heading");
-  els.playMode.textContent = t("playMode");
-  els.settingsSummary.setAttribute("aria-label", t("settings"));
-  els.settingsSummary.title = t("settings");
+  if (els.playMode) els.playMode.textContent = t("playMode");
+  els.settingsSummary.setAttribute("aria-label", "Menu");
+  els.settingsSummary.title = "Menu";
   els.openFeedback.textContent = t("openFeedback");
   els.openGlossary.textContent = t("openGlossary");
   els.openScoreTable.textContent = t("openScoreTable");
@@ -346,6 +375,9 @@ function applyStaticText() {
   els.newHand.textContent = t("newHand");
   els.sameHand.textContent = t("sameHand");
   els.quickReview.textContent = t("quickReview");
+  els.developerOnlyMenuSections.forEach((section) => {
+    section.hidden = !state.developerMode;
+  });
   els.seedLabel.textContent = t("seed");
   els.loadSeed.textContent = t("loadSeed");
   els.copySeed.textContent = t("copySeed");
@@ -491,8 +523,22 @@ function renderHint() {
   els.hintButton.dataset.hint = currentHint();
 }
 
+function renderIllegalActionFeedback() {
+  if (!els.tableFeedback) return;
+  els.tableFeedback.hidden = !state.illegalActionFeedback;
+  els.tableFeedback.textContent = state.illegalActionFeedback || "";
+}
+
 function renderTrickAdvanceHint() {
   els.trickAdvanceHint.hidden = !state.awaitingTrickAdvance;
+  if (!state.awaitingTrickAdvance) {
+    els.trickAdvanceHint.textContent = "";
+    return;
+  }
+  const winner = state.pendingTrickWinner;
+  const number = state.trickHistory.length + 1;
+  const winnerText = winner ? `${seatName(winner)} wint slag ${number}. ` : "";
+  els.trickAdvanceHint.textContent = `${winnerText}Klik ergens of druk op Enter voor de volgende slag.`;
 }
 
 function currentHint() {

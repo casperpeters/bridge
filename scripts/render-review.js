@@ -45,16 +45,19 @@ function renderReview() {
   els.reviewSummary.appendChild(reviewSectionTitle("Samenvatting"));
   [
     [t("finalContract"), contractText],
-    [t("board"), state.dealNumber],
-    [t("seed"), state.dealSeed || t("none")],
     [t("declarer"), passOut ? t("none") : seatName(state.declarer)],
     [t("dummy"), passOut ? t("none") : seatName(state.dummy)],
-    [t("vulnerability"), vulnerabilityName()],
-    [t("openingLead"), openingPlay ? `${seatName(openingPlay.seat)} ${cardText(openingPlay.card)}` : t("none")],
     [t("result"), resultText],
-    [t("bridgeScore"), state.finalScore.scoreText]
+    [t("bridgeScore"), state.finalScore.scoreText],
+    [t("vulnerability"), vulnerabilityName()],
+    [t("openingLead"), openingPlay ? `${seatName(openingPlay.seat)} ${cardText(openingPlay.card)}` : t("none")]
   ].forEach(([label, value]) => els.reviewSummary.appendChild(reviewRow(label, value)));
   appendScoreExplanation(passOut, resultText);
+  els.reviewSummary.appendChild(reviewSectionTitle("Hand opnieuw spelen"));
+  [
+    [t("board"), state.dealNumber],
+    [t("seed"), state.dealSeed || t("none")]
+  ].forEach(([label, value]) => els.reviewSummary.appendChild(reviewRow(label, value)));
   renderFeedbackStatus();
   if (state.playPlan) {
     els.reviewSummary.appendChild(reviewSectionTitle(t("playPlan")));
@@ -108,7 +111,7 @@ function contractScoreExplanationRows(resultText) {
       [t("scoreContractPoints"), contractPointsText(score)],
       [t("scoreOvertricks"), overtricksText(score)],
       [t("scoreBonus"), bonusText(score)],
-      [t("scoreFinal"), `${score.scoreText}: ${score.contractScore} contractpunten + ${score.overtrickScore} overslagpunten + ${score.bonusScore} bonuspunten.`]
+      [t("scoreFinal"), `${score.scoreText}: ${score.contractScore} contractpunten + ${score.overtrickScore} punten voor extra slagen + ${score.bonusScore} bonuspunten.`]
     );
     return rows;
   }
@@ -121,7 +124,7 @@ function contractScoreExplanationRows(resultText) {
 }
 
 function contractGoalText(score) {
-  return `${formatBid(state.contract)} vraagt ${score.needed} ${trickWord(score.needed)}: ${state.contract.level} bied${trickWord(state.contract.level)} + 6 basisslagen.`;
+  return `${formatBid(state.contract)} vraagt ${score.needed} ${trickWord(score.needed)}: altijd 6 basisslagen plus ${state.contract.level} voor het geboden niveau.`;
 }
 
 function vulnerabilityScoreText(score) {
@@ -140,8 +143,8 @@ function contractPointsText(score) {
 function contractBaseText(contract) {
   if (contract.strain === "C" || contract.strain === "D") return `${contract.level} x 20 voor ${suitName(contract.strain)}`;
   if (contract.strain === "H" || contract.strain === "S") return `${contract.level} x 30 voor ${suitName(contract.strain)}`;
-  if (contract.level === 1) return "40 voor de eerste sans-atouttrek";
-  return `40 voor de eerste sans-atouttrek + ${contract.level - 1} x 30`;
+  if (contract.level === 1) return "40 voor de eerste slag boven de basis in sans-atout";
+  return `40 voor de eerste slag boven de basis in sans-atout + ${contract.level - 1} x 30`;
 }
 
 function multiplierText(multiplier) {
@@ -149,13 +152,13 @@ function multiplierText(multiplier) {
 }
 
 function overtricksText(score) {
-  if (!score.overtricks) return "Geen overslagen.";
-  return `${score.overtricks} ${trickWord(score.overtricks)} boven contract = ${score.overtrickScore} punten.`;
+  if (!score.overtricks) return "Geen extra slagen boven het contract.";
+  return `${score.overtricks} ${trickWord(score.overtricks)} meer dan nodig = ${score.overtrickScore} punten.`;
 }
 
 function bonusText(score) {
   const parts = [];
-  if (score.partscoreBonus) parts.push(`deelscore +${score.partscoreBonus}`);
+  if (score.partscoreBonus) parts.push(`klein-contractbonus +${score.partscoreBonus}`);
   if (score.gameBonus) parts.push(`manchebonus +${score.gameBonus}`);
   if (score.slamBonus) parts.push(`slembonus +${score.slamBonus}`);
   if (score.insultBonus) parts.push(`doublet/redoublet-bonus +${score.insultBonus}`);

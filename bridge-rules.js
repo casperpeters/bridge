@@ -48,6 +48,7 @@
     "dealHands",
     "countSuits",
     "hcp",
+    "fitPoints",
     "handShape",
     "callTypes",
     "Pass",

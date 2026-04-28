@@ -5,7 +5,10 @@ function renderAuction() {
   headers.forEach((seat) => {
     const cell = document.createElement("div");
     cell.className = "auction-cell";
-    cell.innerHTML = `<strong>${seat.slice(0, 1)}</strong>`;
+    cell.classList.toggle("auction-active-seat", state.phase === "bidding" && seatAt(state.turnIndex) === seat);
+    const label = document.createElement("strong");
+    label.textContent = seatName(seat).slice(0, 1);
+    cell.appendChild(label);
     els.auctionLog.appendChild(cell);
   });
   const offset = state.dealerIndex;
@@ -50,6 +53,11 @@ function renderBidExplanations() {
   els.bidExplanations.innerHTML = "";
   if (els.bidExplanations.hidden) return;
 
+  const heading = document.createElement("h3");
+  heading.className = "review-section-title";
+  heading.textContent = t("bidExplanations");
+  els.bidExplanations.appendChild(heading);
+
   state.auction.forEach((call, index) => {
     const item = document.createElement("div");
     item.className = "bid-explanation";
@@ -65,6 +73,19 @@ function explainBid(call, index) {
   if (call.bidResult && bidResultMatchesCall(call.bidResult, call.bid)) {
     return explainBidChoiceResult(call.bidResult);
   }
+  if (call.recommendedBidResult && !bidResultMatchesCall(call.recommendedBidResult, call.bid)) {
+    return explainBidDeviation(call, index);
+  }
+  return explainBidFallback(call, index);
+}
+
+function explainBidDeviation(call, index) {
+  const recommended = call.recommendedBidResult;
+  const actor = call.seat === "South" ? "Je bod" : `${seatName(call.seat)}s bod`;
+  return `${actor} wijkt af van de biedheuristiek. De heuristiek stelde ${formatCall(recommended.bid)} voor: ${explainBidChoiceResult(recommended)} Gekozen bod: ${explainBidFallback(call, index)}`;
+}
+
+function explainBidFallback(call, index) {
   if (isPass(call.bid)) return t("bidExplanationPass");
   if (isDouble(call.bid)) return t("bidExplanationDouble");
   if (isRedouble(call.bid)) return t("bidExplanationRedouble");
@@ -117,6 +138,7 @@ function explainPassChoiceResult(ruleName, result = null) {
     "pass.openerAfterTwoNtBalancedMinimum": `herbieding na partners 2SA: SA-verdeling met 12-13 HCP, dus pas${factSuffix}`,
     "pass.openerAfterTwoNtNoAction": `herbieding na partners 2SA: geen passende foto-regel voor dit handtype of deze HCP-range${factSuffix}`,
     "pass.declineMajorInvite": `invite afgeslagen: na de enkele steun heeft responder de lage range; met 6-7 HCP past hij${factSuffix}`,
+    "pass.responderAfterFourthSuitAcceptNotrumpGame": `na vierde-kleur-forcing accepteert antwoorder 3SA als eindcontract${factSuffix}`,
     "pass.continuationNoAction": `geen vervolg: geen zinvol herbod binnen de huidige afspraken${factSuffix}`,
     "pass.competitiveNoAction": `geen competitieve actie: geen verantwoord volgbod, steunbod, SA-bod of doublet${factSuffix}`,
     "pass.noSeat": `geen speler beschikbaar voor de biedengine${factSuffix}`,
@@ -129,7 +151,7 @@ function explainPassChoiceResult(ruleName, result = null) {
 function bidChoiceExplanationKey(ruleName) {
   const normalized = ruleName.toLowerCase();
   if (ruleName.startsWith("opening.")) return "bidExplanationOpening";
-  if (normalized.includes("stayman") || normalized.includes("transfer") || normalized.includes("strongtwoclubs")) return "bidExplanationArtificial";
+  if (normalized.includes("stayman") || normalized.includes("transfer") || normalized.includes("strongtwoclubs") || normalized.includes("fourthsuit")) return "bidExplanationArtificial";
   if (ruleName.startsWith("response.")) return "bidExplanationResponse";
   if (ruleName.startsWith("competitive.")) return "bidExplanationCompetitive";
   return "bidExplanationContinuation";
@@ -147,10 +169,14 @@ function bidChoiceDetail(ruleName, result) {
       return `zwakke twee in ${suitName(result.suit)}: 6-10 HCP met een goede exacte 6-kaart. ${handFactsText({ ruleName, result })}`;
     case "opening.preempt":
       return `preemptieve opening in ${suitName(result.suit)}: 6-10 HCP met een goede ${result.length >= 8 ? "8+-kaart op vierniveau" : "7+-kaart op drieniveau"}. ${handFactsText({ ruleName, result })}`;
+    case "opening.ruleOf20OneMajor":
+      return `Regel van 20: open de langste kleur; met twee vijfkaarten kies je de hoogste. Deze opening toont minstens een vijfkaart ${suitName(result.suit)}. ${ruleOf20FactsText(result)} ${handFactsText({ ruleName, result })}`;
+    case "opening.ruleOf20OneMinor":
+      return `Regel van 20: open de gekozen lage kleur; je opent de langste kleur, met twee vijfkaarten de hoogste en met meerdere vierkaarten de laagste. ${ruleOf20FactsText(result)} ${openingMinorReason(result)} ${handFactsText({ ruleName, result })}`;
     case "opening.oneMajor":
-      return `vijfkaart ${suitName(result.suit)} met openingskracht; er is geen langere lage kleur en geen passend SA-bod. ${handFactsText({ ruleName, result })}`;
+      return `12-19 punten met minstens een vijfkaart ${suitName(result.suit)}; open de langste kleur en kies met twee vijfkaarten de hoogste. Er is geen langere lage kleur en geen passend SA-bod. ${handFactsText({ ruleName, result })}`;
     case "opening.oneMinor":
-      return `gekozen lage kleur met openingskracht; geen passend SA-bod of vijfkaart hoog volgens de openingsregel. ${openingMinorReason(result)} ${handFactsText({ ruleName, result })}`;
+      return `12-19 punten in een kleur op eenhoogte: 1R belooft minstens een vierkaart, 1K kan vanaf een tweekaart. Je opent de langste kleur; met twee vijfkaarten de hoogste en met meerdere vierkaarten de laagste. ${openingMinorReason(result)} ${handFactsText({ ruleName, result })}`;
     case "response.stayman":
       return `Stayman: vraagt de openaar naar een vierkaart hoog. ${handFactsText({ ruleName, result })}`;
     case "response.transferToH":
@@ -267,6 +293,28 @@ function bidChoiceDetail(ruleName, result) {
       return `gevonden fit: steun voor partners kleur. ${handFactsText({ ruleName, result })}`;
     case "continuation.acceptMajorInvite":
       return `invite aangenomen: na de enkele steun heeft responder de hoge range; met 8+ HCP biedt hij de manche. ${handFactsText({ ruleName, result })}`;
+    case "continuation.responderPreference":
+      return `tweede bijbod met minimum: antwoorder houdt het laag en geeft preferentie voor openaars eerste kleur. ${handFactsText({ ruleName, result })}`;
+    case "continuation.responderOneNotrumpMinimum":
+      return `tweede bijbod met 6-9 HCP: zolang het nog op eenniveau kan, houdt antwoorder het laag met 1SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.responderTwoNotrumpInvite":
+      return `tweede bijbod met 10-11 HCP: 2SA is inviterend en belooft geen minimum. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.responderRaiseOpenerSecondSuit":
+      return `tweede bijbod: antwoorder steunt openaars tweede kleur met fit. ${handFactsText({ ruleName, result })}`;
+    case "continuation.responderRebidOwnSixCard":
+      return `tweede bijbod: antwoorder herbiedt de eigen kleur met een zeskaart. ${handFactsText({ ruleName, result })}`;
+    case "continuation.responderFourthSuitForcing":
+      return `vierde-kleur-forcing: kunstmatig mancheforcing vraagbod; antwoorder heeft genoeg kracht maar nog geen duidelijk eindcontract. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerAfterFourthSuitSupport":
+      return `antwoord op vierde-kleur-forcing: openaar toont driekaart steun voor antwoorders eerste kleur. ${handFactsText({ ruleName, result })}`;
+    case "continuation.openerAfterFourthSuitNotrump":
+      return `antwoord op vierde-kleur-forcing: openaar biedt SA met stop in ${suitName(result.stopperSuit || result.fourthSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "continuation.openerAfterFourthSuitRebidOwnSuit":
+      return `antwoord op vierde-kleur-forcing: openaar herbiedt de openingskleur met extra lengte. ${handFactsText({ ruleName, result })}`;
+    case "continuation.openerAfterFourthSuitRebidSecondSuit":
+      return `antwoord op vierde-kleur-forcing: openaar herbiedt zijn tweede kleur en beschrijft daarmee extra lengte of geen beter SA-/steunbod. ${handFactsText({ ruleName, result })}`;
+    case "continuation.responderAfterFourthSuitChooseGame":
+      return `na vierde-kleur-forcing kiest antwoorder de beste manche op basis van openaars extra omschrijving. ${handFactsText({ ruleName, result })}`;
     case "continuation.notrumpRebid":
       return `SA-herbieding met een SA-verdeling. ${handFactsText({ ruleName, result })}`;
     case "continuation.rebidOwnSuit":
@@ -275,12 +323,21 @@ function bidChoiceDetail(ruleName, result) {
       return `toont een tweede kleur in ${suitName(result.suit)} met een tweekleurenspel. ${handFactsText({ ruleName, result })}`;
     case "competitive.oneNotrumpOvercall":
       return `SA-volgbod met 15-17 HCP, gebalanceerde hand en stop in hun kleur. ${handFactsText({ ruleName, result })}`;
+    case "competitive.notrumpOvercallStayman":
+      return `Stayman na partners SA-volgbod: vraagt naar een vierkaart hoog; met deze kracht mag de manche worden onderzocht. ${handFactsText({ ruleName, result })}`;
+    case "competitive.notrumpOvercallTransferToH":
+    case "competitive.notrumpOvercallTransferToS":
+      return `transfer na partners SA-volgbod: toont een vijfkaart ${suitName(result.transferSuit)} of langer en laat partner de hoge kleur bieden. ${handFactsText({ ruleName, result })}`;
+    case "competitive.notrumpOvercallInvite":
+      return `invite na partners SA-volgbod: gebalanceerde hand met inviterende kracht. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+    case "competitive.notrumpOvercallGame":
+      return `3SA na partners SA-volgbod: genoeg gezamenlijke kracht voor de manche en geen vierkaart hoog om eerst via Stayman te zoeken. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
     case "competitive.jumpOvercall":
       return `sprongvolgbod met beperkte kracht en een goede zeskaart. ${handFactsText({ ruleName, result })}`;
     case "competitive.simpleOvercall":
       return `natuurlijk volgbod met een goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || (result.bid?.level >= 2 ? 10 : 8)}+ HCP. ${handFactsText({ ruleName, result })}`;
     case "competitive.raisePartnerOvercall":
-      return `steun voor partners volgbod met fit in ${suitName(result.partnerSuit)} en ${result.minimumHcp || (result.vulnerable ? 8 : 7)}+ HCP${result.vulnerable ? " kwetsbaar" : " niet-kwetsbaar"}. ${handFactsText({ ruleName, result })}`;
+      return `steun voor partners volgbod met fit in ${suitName(result.partnerSuit)} en ${result.minimumHcp || (result.vulnerable ? 8 : 7)}+ fitpunten${result.vulnerable ? " kwetsbaar" : " niet-kwetsbaar"}. ${handFactsText({ ruleName, result })}`;
     case "competitive.notrumpAfterPartnerOvercall":
       return `3SA na partners volgbod: genoeg gezamenlijke kracht en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
     case "competitive.newSuitAfterPartnerOvercall":
@@ -311,6 +368,12 @@ function openingMinorReason(result) {
   if (clubs === 4 && diamonds === 4) return "Bij 4-4 laag kiest de regel klaveren.";
   if (diamonds >= 4) return "Ruiten heeft minstens vier kaarten.";
   return "Klaveren is de vangnetopening.";
+}
+
+function ruleOf20FactsText(result) {
+  const longSuits = (result.ruleOf20LongSuits || []).map(suitName).join(" en ");
+  if (!longSuits || !Number.isInteger(result.ruleOf20Score)) return "";
+  return `Telling: ${result.hcp} HCP + lengte ${longSuits} = ${result.ruleOf20Score}; daarin zitten ${result.ruleOf20LongSuitHcp} HCP.`;
 }
 
 function openerAfterNotrumpDetail(ruleName, result, responseText, handType, rangeText, actionText) {
@@ -348,6 +411,7 @@ function handFactsText({ ruleName, result, suit = result?.suit, valueMode = "ful
 function valueText(result, mode = "full") {
   if (!Number.isInteger(result?.hcp)) return "";
   if (mode === "hcp") return `${result.hcp} HCP`;
+  if (result.valuation === "fitPoints" && Number.isInteger(result.fitPoints)) return `${result.hcp} HCP / ${result.fitPoints} fitpunten`;
   if (Number.isInteger(result.points) && result.points !== result.hcp) return `${result.hcp} HCP / ${result.points} totaalpunten`;
   return `${result.hcp} HCP`;
 }
@@ -407,9 +471,9 @@ function openingBidMeaning(bid) {
   if (bid.level === 2 && bid.strain === "C") return "Vijfkaart Hoog: sterke kunstmatige opening, 20+ met een kleur of 23+ met SA-verdeling.";
   if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, ongeveer 6-10 HCP en een zeskaart.`;
   if (bid.level === 3 && bid.strain !== "NT") return `preemptieve opening in ${suitName(bid.strain)}, meestal een lange kleur en beperkte kracht.`;
-  if (bid.level === 1 && (bid.strain === "H" || bid.strain === "S")) return `vijfkaart ${suitName(bid.strain)} met openingskracht.`;
-  if (bid.level === 1 && bid.strain === "D") return "Vijfkaart Hoog: 12-19 punten met een vierkaart of langer ruiten.";
-  if (bid.level === 1 && bid.strain === "C") return "Vijfkaart Hoog: 12-19 punten, kan vanaf een tweekaart klaveren.";
+  if (bid.level === 1 && (bid.strain === "H" || bid.strain === "S")) return `Vijfkaart Hoog: 12-19 punten met minstens een vijfkaart ${suitName(bid.strain)}; open de langste kleur en met twee vijfkaarten de hoogste.`;
+  if (bid.level === 1 && bid.strain === "D") return "Vijfkaart Hoog: 12-19 punten met minstens een vierkaart ruiten; open de langste kleur en met meerdere vierkaarten de laagste.";
+  if (bid.level === 1 && bid.strain === "C") return "Vijfkaart Hoog: 12-19 punten, kan vanaf een tweekaart klaveren; 1K is de laagste vierkaart of vangnetopening.";
   return "natuurlijk openingsbod.";
 }
 
@@ -427,7 +491,23 @@ function artificialBidMeaning(bid, context) {
     if (bidEquals(bid, 3, "H")) return "transfer, vraagt de openaar schoppen te bieden.";
   }
   if (bidEquals(opening, 2, "C") && bidEquals(bid, 2, "D")) return "afwachtend antwoord op sterke 2K.";
+  const partnershipCalls = context.partnershipCalls || [];
+  const responseBid = partnershipCalls[1]?.bid || null;
+  const openerRebid = partnershipCalls[2]?.bid || null;
+  const strains = [opening?.strain, responseBid?.strain, openerRebid?.strain];
+  const fourthSuit = strains.every((strain) => strain && strain !== "NT") && new Set(strains).size === 3
+    ? ["C", "D", "H", "S"].find((suit) => !strains.includes(suit))
+    : null;
+  if (fourthSuit && bidEquals(bid, cheapestLevelForStrainForMeaning(fourthSuit, openerRebid), fourthSuit)) {
+    return `vierde-kleur-forcing: kunstmatig mancheforcing vraagbod in ${suitName(fourthSuit)}; vraagt openaar zijn hand verder te beschrijven.`;
+  }
   return null;
+}
+
+function cheapestLevelForStrainForMeaning(strain, current) {
+  const order = ["C", "D", "H", "S", "NT"];
+  if (!current) return 1;
+  return order.indexOf(strain) > order.indexOf(current.strain) ? current.level : current.level + 1;
 }
 
 function responseBidMeaning(bid, partnerBid) {
@@ -465,10 +545,35 @@ function renderBidControls() {
       button.classList.add(`strain-${strain.toLowerCase()}`);
       button.disabled = !isBidHigher(bid, highestBid());
       if (sameCall(recommendedBid, bid)) button.classList.add("recommended-action");
-      button.addEventListener("click", () => makeBid("South", bid, recommendedBidResultForCall(recommendedBidResult, bid)));
+      button.addEventListener("click", () => makeBid("South", bid, recommendedBidResult));
       els.bidControls.appendChild(button);
     }
   }
+
+  const double = biddingButton(t("double"), "double");
+  double.disabled = !canDouble("South");
+  const doubleBid = bridgeRules.Double();
+  if (sameCall(recommendedBid, doubleBid)) double.classList.add("recommended-action");
+  double.addEventListener("click", () => makeBid("South", doubleBid, recommendedBidResult));
+
+  const pass = biddingButton(t("pass"), "pass");
+  const passBid = bridgeRules.Pass();
+  if (sameCall(recommendedBid, passBid)) pass.classList.add("recommended-action");
+  pass.addEventListener("click", () => makeBid("South", passBid, recommendedBidResult));
+
+  const redouble = biddingButton(t("redouble"), "redouble");
+  redouble.disabled = !canRedouble("South");
+  const redoubleBid = bridgeRules.Redouble();
+  if (sameCall(recommendedBid, redoubleBid)) redouble.classList.add("recommended-action");
+  redouble.addEventListener("click", () => makeBid("South", redoubleBid, recommendedBidResult));
+
+  const primaryActions = document.createElement("div");
+  primaryActions.className = "bid-primary-actions";
+  primaryActions.append(double, pass, redouble);
+
+  const advancedActions = document.createElement("div");
+  advancedActions.className = "bid-advanced-actions";
+  advancedActions.hidden = !state.showAdvancedBidControls;
 
   const stop = biddingButton(t("stop"), "stop");
   stop.setAttribute("aria-label", t("stopAria"));
@@ -478,18 +583,6 @@ function renderBidControls() {
     renderBidControls();
   });
 
-  const double = biddingButton(t("double"), "double");
-  double.disabled = !canDouble("South");
-  const doubleBid = bridgeRules.Double();
-  if (sameCall(recommendedBid, doubleBid)) double.classList.add("recommended-action");
-  double.addEventListener("click", () => makeBid("South", doubleBid, recommendedBidResultForCall(recommendedBidResult, doubleBid)));
-
-  const redouble = biddingButton(t("redouble"), "redouble");
-  redouble.disabled = !canRedouble("South");
-  const redoubleBid = bridgeRules.Redouble();
-  if (sameCall(recommendedBid, redoubleBid)) redouble.classList.add("recommended-action");
-  redouble.addEventListener("click", () => makeBid("South", redoubleBid, recommendedBidResultForCall(recommendedBidResult, redoubleBid)));
-
   const alert = biddingButton(t("alert"), "alert");
   alert.setAttribute("aria-label", t("alertAria"));
   alert.classList.toggle("active-action", state.pendingAlert);
@@ -497,17 +590,19 @@ function renderBidControls() {
     state.pendingAlert = !state.pendingAlert;
     renderBidControls();
   });
+  advancedActions.append(stop, alert);
 
-  const pass = biddingButton(t("pass"), "pass");
-  const passBid = bridgeRules.Pass();
-  if (sameCall(recommendedBid, passBid)) pass.classList.add("recommended-action");
-  pass.addEventListener("click", () => makeBid("South", passBid, recommendedBidResultForCall(recommendedBidResult, passBid)));
+  const advancedToggle = biddingButton(state.showAdvancedBidControls ? "⌃" : "⌄", "bid-advanced-toggle");
+  advancedToggle.setAttribute("aria-expanded", String(state.showAdvancedBidControls));
+  advancedToggle.setAttribute("aria-label", state.showAdvancedBidControls ? t("advancedBidControlsClose") : t("advancedBidControlsOpen"));
+  advancedToggle.title = advancedToggle.getAttribute("aria-label");
+  advancedToggle.addEventListener("click", () => {
+    state.showAdvancedBidControls = !state.showAdvancedBidControls;
+    saveSettings();
+    renderBidControls();
+  });
 
-  els.bidControls.append(stop, double, redouble, alert, pass);
-}
-
-function recommendedBidResultForCall(result, bid) {
-  return bidResultMatchesCall(result, bid) ? result : null;
+  els.bidControls.append(primaryActions, advancedActions, advancedToggle);
 }
 
 function biddingButton(label, className) {
