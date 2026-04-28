@@ -1,6 +1,6 @@
 (function initBridgeRulesBiddingFiveCardHighValuation(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
-  const deps = isCommonJs ? { core: require("./core.js") } : root.BridgeRulesParts || {};
+  const deps = isCommonJs ? { core: require("../../core.js") } : root.BridgeRulesParts || {};
   const api = factory(deps.core);
   if (isCommonJs) module.exports = api;
   root.BridgeRulesParts = root.BridgeRulesParts || {};

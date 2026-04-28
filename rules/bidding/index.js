@@ -2,8 +2,8 @@
   const isCommonJs = typeof module === "object" && module.exports;
   const deps = isCommonJs
     ? {
-        core: require("./core.js"),
-        fiveCardHigh: require("./bidding-five-card-high.js")
+        core: require("../core.js"),
+        fiveCardHigh: require("./systems/five-card-high/index.js")
       }
     : root.BridgeRulesParts || {};
   const api = factory(deps.core, deps.fiveCardHigh || deps.biddingFiveCardHigh);

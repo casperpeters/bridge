@@ -49,6 +49,9 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - `bridge-rules.js`: browser-facing aggregator that exposes the rule modules in dependency order.
 - `practice-hands/`: curated fixed beginner deals and scenario metadata for lessons, debugging, and regression tests.
 - `rules/`: testable bridge rules, scoring, bidding heuristics, card-play heuristics, and play-plan data.
+- `rules/bidding/common/`: shared bidding context, valuation, legality, and result helpers for system profiles.
+- `rules/bidding/index.js`: bidding-system dispatcher that selects the active convention profile.
+- `rules/bidding/systems/five-card-high/`: current NBB/Barry's Vijfkaart Hoog profile, split into opening, responses, rebids, competitive bidding, conventions, explanations, and the profile entrypoint.
 - `scripts/app.js`: app bootstrap, shared state, DOM references, shared formatting/status helpers, and top-level orchestration.
 - `scripts/text-nl.js`: Dutch UI copy and labels.
 - `scripts/settings.js`: saved settings.

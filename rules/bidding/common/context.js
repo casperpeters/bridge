@@ -1,6 +1,6 @@
 (function initBridgeRulesBiddingFiveCardHighContext(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
-  const deps = isCommonJs ? { core: require("./core.js"), auction: require("./auction.js") } : root.BridgeRulesParts || {};
+  const deps = isCommonJs ? { core: require("../../core.js"), auction: require("../../auction.js") } : root.BridgeRulesParts || {};
   const api = factory(deps.core, deps.auction);
   if (isCommonJs) module.exports = api;
   root.BridgeRulesParts = root.BridgeRulesParts || {};

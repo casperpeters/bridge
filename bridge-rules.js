@@ -5,8 +5,8 @@
         core: require("./rules/core.js"),
         auction: require("./rules/auction.js"),
         scoring: require("./rules/scoring.js"),
-        biddingFiveCardHigh: require("./rules/bidding-five-card-high.js"),
-        bidding: require("./rules/bidding.js"),
+        biddingFiveCardHigh: require("./rules/bidding/systems/five-card-high/index.js"),
+        bidding: require("./rules/bidding/index.js"),
         playMechanics: require("./rules/play-mechanics.js"),
         playPlan: require("./rules/play-plan.js"),
         cardPlay: require("./rules/card-play.js")
