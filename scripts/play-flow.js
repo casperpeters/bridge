@@ -67,6 +67,10 @@ function continuePlay() {
   const seat = seatAt(state.turnIndex);
   renderAll();
   if (isHumanControlledSeat(seat)) {
+    if (!openingLeadHasBeenMade()) {
+      setStatus("yourOpeningLead");
+      return;
+    }
     setStatus("yourPlay");
     return;
   }

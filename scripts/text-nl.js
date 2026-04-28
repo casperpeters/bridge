@@ -133,6 +133,7 @@ const text = {
   lead: "{leader} komt uit. Leider: {declarer}. Dummy: {dummy}.",
   dummyNoticeDeclaring: "{dummy} is dummy: {declarer} is leider, dus jij speelt nu beide Noord/Zuid-handen.",
   dummyNoticeDefending: "{dummy} is dummy: {declarer} is leider, dus {dummy} ligt open. Jij verdedigt als Zuid.",
+  yourOpeningLead: "Jij komt uit. Kies een kaart.",
   yourPlay: "Jij bent aan de beurt. Bekennen als dat kan.",
   illegalCardFollowSuit: "Bekennen: speel eerst {suit}.",
   illegalCardWrongTurn: "{seat} is niet aan de beurt. {turn} moet spelen.",

@@ -13,10 +13,14 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ## Voorgestelde implementatievolgorde
 
-1. Draai beginnerstest 2 op standaardinstellingen en noteer alleen echte afhakers: beurt, biedlegaliteit, dummy, slagwinnaar, score, vervolgactie. Controleer daarin ook of `Nieuwe hand`, `Zelfde hand` en feedback na afloop vanzelf duidelijk zijn; voeg alleen een apart review-actieblok toe als testers daar vastlopen.
-2. Gebruik de eerste `practice-hands/` catalogus in beginnerstest 2 en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
-3. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
-4. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
+1. Gebruik de eerste `practice-hands/` catalogus in beginnerstests en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
+2. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
+3. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
+
+## Recente bevindingen
+
+- Beginnerstest 2 op standaardinstellingen is gedraaid op 2026-04-28. Basisflow, biedlegaliteit, dummy, slagwinnaars, score-uitleg, `Nieuwe hand`, `Zelfde hand` en feedback waren voldoende duidelijk; geen apart review-actieblok nodig.
+- Enige echte afhaker was de status bij de openingsuitkomst: die gebruikte ten onrechte "Bekennen". Dit is opgelost met aparte copy voor `Jij komt uit. Kies een kaart.` en een browser-smoketest.
 
 ## Korte termijn
 
@@ -24,7 +28,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Ruim de normale beginnersflow op: feedbackknoppen en geavanceerde biedhulpmiddelen mogen de hoofdactie niet visueel verdringen.
 - Houd actieve-handbegeleiding vooral visueel; voeg alleen minimale tekst toe wanneer een beperking anders onduidelijk is, bijvoorbeeld bij kleur bekennen.
-- Voeg een tweede beginnerstest toe aan de README-checklist en controleer daarin ook of vervolgacties na afloop duidelijk genoeg zijn.
+- Voeg het beginnerstest-2-scenario toe aan de README-checklist zodat de volgende ronde dezelfde punten controleert zonder extra uitleg.
 
 ### Oefenhanden en leerbare situaties
 

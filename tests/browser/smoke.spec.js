@@ -395,6 +395,39 @@ test("shows compact feedback when a player clicks an illegal card", async ({ pag
   await expect(page.locator("#table-feedback")).toBeHidden();
 });
 
+test("shows a separate status for South opening lead", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    state.phase = "playing";
+    state.turnIndex = seats.indexOf("South");
+    state.contract = bridgeRules.Bid(2, "C");
+    state.declarer = "East";
+    state.dummy = "West";
+    state.currentTrick = [];
+    state.trickHistory = [];
+    state.awaitingTrickAdvance = false;
+    state.hands = {
+      North: [makeCard("2S")],
+      East: [makeCard("3S")],
+      South: [makeCard("4S")],
+      West: [makeCard("5S")]
+    };
+    state.originalHands = {
+      North: [makeCard("2S")],
+      East: [makeCard("3S")],
+      South: [makeCard("4S")],
+      West: [makeCard("5S")]
+    };
+    clearTrickSlots();
+    continuePlay();
+  });
+
+  await expect(page.locator("#status")).toContainText("Jij komt uit. Kies een kaart.");
+  await expect(page.locator("#status")).not.toContainText("Bekennen");
+});
+
 test("pauses completed tricks without previewing the next AI card suggestion", async ({ page }) => {
   await openFreshApp(page);
 
