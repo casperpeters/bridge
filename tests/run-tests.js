@@ -9,6 +9,7 @@ require("./unit/vijfkaart-hoog-openings.test.js");
 require("./unit/vijfkaart-hoog-responses.test.js");
 require("./unit/vijfkaart-hoog-rebids.test.js");
 require("./unit/vijfkaart-hoog-competitive.test.js");
+require("./unit/practice-hands.test.js");
 require("./unit/play-mechanics.test.js");
 require("./unit/play-plan.test.js");
 require("./unit/card-play-plan-priority.test.js");

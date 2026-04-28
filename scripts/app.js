@@ -58,6 +58,7 @@ const state = {
   finalScore: null,
   dealSeed: null,
   seedMessage: null,
+  practice: null,
   feedbackStatus: null,
   illegalActionFeedback: null
 };
@@ -223,10 +224,38 @@ function startHand({ replay = false, seed = null, preserveBoard = false, skipFlo
     if (!preserveBoard || state.dealNumber === 0) state.dealNumber += 1;
     state.dealSeed = loadedSeed || createDealSeed();
   }
-  state.dealerIndex = dealerIndexForDeal(state.dealNumber);
-  state.vulnerability = vulnerabilityForDeal(state.dealNumber);
-  state.hands = dealHands(state.dealSeed);
+  startPreparedHand({
+    dealerIndex: dealerIndexForDeal(state.dealNumber),
+    vulnerability: vulnerabilityForDeal(state.dealNumber),
+    hands: dealHands(state.dealSeed),
+    practice: null,
+    clearSeedMessage: !loadedSeed,
+    skipFlow
+  });
+}
+
+function startPracticeHand(handId, { preserveBoard = false, skipFlow = false } = {}) {
+  if (!globalThis.PracticeHands) throw new Error("practice-hands/index.js must load before practice hands can be used");
+  const scenario = globalThis.PracticeHands.preparePracticeHand(handId);
+  if (!preserveBoard || state.dealNumber === 0) state.dealNumber += 1;
+
+  state.dealSeed = scenario.id;
+  startPreparedHand({
+    dealerIndex: seats.indexOf(scenario.dealer),
+    vulnerability: scenario.vulnerability,
+    hands: scenario.hands,
+    practice: practiceStateFromScenario(scenario),
+    skipFlow
+  });
+  return scenario;
+}
+
+function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null, clearSeedMessage = false, skipFlow = false }) {
+  state.dealerIndex = dealerIndex;
+  state.vulnerability = vulnerability;
+  state.hands = hands;
   state.originalHands = cloneHands(state.hands);
+  state.practice = practice;
   state.phase = "bidding";
   state.turnIndex = state.dealerIndex;
   state.auction = [];
@@ -253,7 +282,7 @@ function startHand({ replay = false, seed = null, preserveBoard = false, skipFlo
   }
   state.pendingStop = false;
   state.pendingAlert = false;
-  if (!loadedSeed) state.seedMessage = null;
+  if (clearSeedMessage) state.seedMessage = null;
   clearTrickSlots();
   if (skipFlow) {
     state.animateDeal = false;
@@ -267,7 +296,28 @@ function startHand({ replay = false, seed = null, preserveBoard = false, skipFlo
 }
 
 function replayHand() {
+  if (state.practice?.id) {
+    startPracticeHand(state.practice.id, { preserveBoard: true });
+    return;
+  }
   startHand({ replay: true });
+}
+
+function practiceStateFromScenario(scenario) {
+  return {
+    id: scenario.id,
+    title: scenario.title,
+    level: scenario.level,
+    focus: [...(scenario.focus || [])],
+    systemId: scenario.systemId,
+    expectedAuction: scenario.expectedAuction || [],
+    expectedContract: scenario.expectedContract || null,
+    expectedPlayPlan: scenario.expectedPlayPlan || null,
+    expectedScore: scenario.expectedScore || null,
+    teachingPoints: scenario.teachingPoints || [],
+    explanationKeys: scenario.explanationKeys || [],
+    testGoal: scenario.testGoal || ""
+  };
 }
 
 function jumpToTrickOverview() {

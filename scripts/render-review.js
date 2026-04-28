@@ -384,6 +384,7 @@ function buildCompactFeedbackReport() {
     "",
     `Seed: ${state.dealSeed || t("none")}`,
     `${t("board")}: ${state.dealNumber || t("none")}`,
+    ...feedbackPracticeContextLines(),
     `${t("dealer")}: ${seatName(seatAt(state.dealerIndex))}`,
     `${t("vulnerability")}: ${vulnerabilityName()}`,
     `${t("feedbackPhase")}: ${phaseName(state.phase)}`,
@@ -404,6 +405,7 @@ function feedbackContextLines() {
     "",
     `Seed: ${state.dealSeed || t("none")}`,
     `${t("board")}: ${state.dealNumber || t("none")}`,
+    ...feedbackPracticeContextLines(),
     `${t("dealer")}: ${seatName(seatAt(state.dealerIndex))}`,
     `${t("vulnerability")}: ${vulnerabilityName()}`,
     `${t("feedbackPhase")}: ${phaseName(state.phase)}`,
@@ -442,6 +444,13 @@ function feedbackContextLines() {
     lines.push("", `## ${t("playPlan")}`, "", ...feedbackPlayPlanLines());
   }
 
+  return lines;
+}
+
+function feedbackPracticeContextLines() {
+  if (!state.practice) return [];
+  const lines = [`Oefenhand: ${state.practice.title} (${state.practice.id})`];
+  if (state.practice.testGoal) lines.push(`Testdoel: ${state.practice.testGoal}`);
   return lines;
 }
 

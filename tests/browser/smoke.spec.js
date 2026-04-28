@@ -105,6 +105,31 @@ test("loads the live table and lets South make an auction call", async ({ page }
   expect(pageErrors).toEqual([]);
 });
 
+test("loads curated practice hands through the repeat-code field", async ({ page }) => {
+  await openFreshApp(page);
+
+  const snapshot = await page.evaluate(() => {
+    els.seedInput.value = "stayman-after-1nt-001";
+    loadSeedFromInput();
+    return {
+      seed: state.dealSeed,
+      practiceId: state.practice?.id,
+      practiceTitle: state.practice?.title,
+      dealer: seatAt(state.dealerIndex),
+      vulnerability: state.vulnerability,
+      southHand: state.hands.South.map((card) => card.id)
+    };
+  });
+
+  expect(snapshot.seed).toBe("stayman-after-1nt-001");
+  expect(snapshot.practiceId).toBe("stayman-after-1nt-001");
+  expect(snapshot.practiceTitle).toContain("Stayman");
+  expect(snapshot.dealer).toBe("North");
+  expect(snapshot.vulnerability).toBe("none");
+  expect(snapshot.southHand).toContain("KS");
+  await expect(page.locator("#seed-description")).toContainText("Code geladen");
+});
+
 test("developer bid explanations use rule references without the old source line", async ({ page }) => {
   await openFreshApp(page);
 

@@ -24,7 +24,7 @@ const text = {
   seed: "Herhaalcode",
   loadSeed: "Laad code",
   copySeed: "Kopieer code",
-  seedHelp: "Kopieer deze code of plak een andere code om dezelfde kaartverdeling op dit bord te laden.",
+  seedHelp: "Kopieer deze code of plak een andere herhaal- of oefenhandcode om dezelfde kaartverdeling op dit bord te laden.",
   seedCopied: "Code gekopieerd.",
   seedLoaded: "Code geladen.",
   seedRequired: "Vul eerst een code in.",

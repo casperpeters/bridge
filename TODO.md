@@ -14,7 +14,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 ## Voorgestelde implementatievolgorde
 
 1. Draai beginnerstest 2 op standaardinstellingen en noteer alleen echte afhakers: beurt, biedlegaliteit, dummy, slagwinnaar, score, vervolgactie. Controleer daarin ook of `Nieuwe hand`, `Zelfde hand` en feedback na afloop vanzelf duidelijk zijn; voeg alleen een apart review-actieblok toe als testers daar vastlopen.
-2. Voeg samengestelde oefenhanden toe voor bestaande plantypes en biedsituaties, zodat testen niet afhankelijk is van willekeurige spellen.
+2. Gebruik de eerste `practice-hands/` catalogus in beginnerstest 2 en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
 3. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
 4. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
 
@@ -28,8 +28,8 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Oefenhanden en leerbare situaties
 
-- Voeg samengestelde oefenspellen toe voor bestaande functies: openingsbiedingen, antwoorden op partner, nieuwe kleur na `1H/1S`, eenvoudige volgbiedingen, negative double, uitkomsten, dummyspel en scoren.
-- Maak oefenspellen reproduceerbaar met seed en kort testdoel.
+- Breid de eerste `practice-hands/` catalogus verder uit voor nieuwe kleur na `1H/1S`, eenvoudige volgbiedingen, negative double, uitkomsten en dummyspel.
+- Houd oefenspellen reproduceerbaar met oefenhand-id en kort testdoel.
 - Houd uitleg buiten de basisgame; oefenmodus, AI-suggesties en developermodus mogen meer tekst bevatten.
 
 ### Speelplan en kaartadvies

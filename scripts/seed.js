@@ -6,6 +6,10 @@ function loadSeedFromInput() {
     return;
   }
   state.seedMessage = t("seedLoaded");
+  if (globalThis.PracticeHands?.findPracticeHand(seed)) {
+    startPracticeHand(seed, { preserveBoard: true });
+    return;
+  }
   startHand({ seed, preserveBoard: true });
 }
 

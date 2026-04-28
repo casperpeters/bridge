@@ -47,6 +47,7 @@ npm run test:browser
 The app stays build-free: `index.html` loads plain browser scripts in dependency order.
 
 - `bridge-rules.js`: browser-facing aggregator that exposes the rule modules in dependency order.
+- `practice-hands/`: curated fixed beginner deals and scenario metadata for lessons, debugging, and regression tests.
 - `rules/`: testable bridge rules, scoring, bidding heuristics, card-play heuristics, and play-plan data.
 - `scripts/app.js`: app bootstrap, shared state, DOM references, shared formatting/status helpers, and top-level orchestration.
 - `scripts/text-nl.js`: Dutch UI copy and labels.
@@ -79,6 +80,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Pause after each completed trick so the player can inspect the cards.
 - Replay the same hand without advancing the board.
 - Copy or load a hand seed to replay a specific card distribution.
+- Curated beginner practice hands can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
 - Trick history and full hand review after completion.
 - Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, auction, tricks, score, settings, current phase, and optional tester notes.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
@@ -96,7 +98,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - AI suggestions are simple heuristics, not authoritative teaching advice.
 - Vijfkaart Hoog agreements are implemented in a testable rules module, with deeper competitive and slam continuations still heuristic.
 - Card-play AI is simple and only has first shallow notrump declarer-play planning heuristics.
-- No curated lesson hands yet.
+- No dedicated lesson-mode UI yet for selecting curated practice hands.
 
 ## Beginners Acceptance Checklist
 
