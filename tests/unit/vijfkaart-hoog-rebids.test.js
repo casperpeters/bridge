@@ -702,6 +702,372 @@ test("Vijfkaart Hoog opener rebids after a 2NT response to a major opening", () 
   assert.equal(lowSecondSuitGame.ruleId, "fiveCardHigh.continuation.openerAfterTwoNtTwoSuiterGameNotrump");
 });
 
+test("Vijfkaart Hoog explains responder rebids after a Jacoby transfer", () => {
+  const oneNotrumpOpening = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+  const oneNotrumpHeartTransfer = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() }
+  ];
+  const oneNotrumpSpadeTransfer = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const hand1FiveHeartsFourSpadesMinimum = [
+    "JS", "9S", "7S", "3S",
+    "KH", "TH", "8H", "6H", "5H",
+    "2D",
+    "TC", "9C", "8C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand1FiveHeartsFourSpadesMinimum, oneNotrumpOpening).bid, bid(2, "D"));
+  const example1 = chooseFiveCardHighResult(hand1FiveHeartsFourSpadesMinimum, oneNotrumpHeartTransfer);
+  assert.deepEqual(example1.bid, pass());
+  assert.equal(example1.ruleId, "fiveCardHigh.pass.responderAfterTransferMinimum");
+
+  const hand2FiveHeartsFourSpadesEnough = [
+    "AS", "JS", "9S", "4S",
+    "TH", "6H", "5H", "3H", "2H",
+    "KD", "7D", "6D",
+    "6C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand2FiveHeartsFourSpadesEnough, oneNotrumpOpening).bid, bid(2, "D"));
+  const example2 = chooseFiveCardHighResult(hand2FiveHeartsFourSpadesEnough, oneNotrumpHeartTransfer);
+  assert.deepEqual(example2.bid, bid(2, "S"));
+  assert.equal(example2.ruleId, "fiveCardHigh.continuation.responderAfterTransferFiveHeartsFourSpades");
+
+  const hand3FiveSpadesFourHeartsGame = [
+    "KS", "JS", "8S", "6S", "5S",
+    "AH", "KH", "JH", "8H",
+    "KD", "5D", "2D",
+    "8C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand3FiveSpadesFourHeartsGame, oneNotrumpOpening).bid, bid(2, "H"));
+  const example3 = chooseFiveCardHighResult(hand3FiveSpadesFourHeartsGame, oneNotrumpSpadeTransfer);
+  assert.deepEqual(example3.bid, bid(3, "H"));
+  assert.equal(example3.ruleId, "fiveCardHigh.continuation.responderAfterTransferFiveSpadesFourHeartsGame");
+
+  const hand4FiveSpadesFourHeartsInvite = [
+    "QS", "TS", "9S", "7S", "3S",
+    "AH", "QH", "8H", "6H",
+    "2D",
+    "TC", "9C", "8C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand4FiveSpadesFourHeartsInvite, oneNotrumpOpening).bid, bid(2, "H"));
+  const example4 = chooseFiveCardHighResult(hand4FiveSpadesFourHeartsInvite, oneNotrumpSpadeTransfer);
+  assert.deepEqual(example4.bid, bid(2, "NT"));
+  assert.equal(example4.ruleId, "fiveCardHigh.continuation.responderAfterTransferFiveSpadesFourHeartsInvite");
+
+  const hand5TwoFiveCardMajorsGame = [
+    "KS", "QS", "8S", "7S", "4S",
+    "KH", "TH", "8H", "6H", "5H",
+    "5D",
+    "AC", "3C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand5TwoFiveCardMajorsGame, oneNotrumpOpening).bid, bid(2, "H"));
+  const example5 = chooseFiveCardHighResult(hand5TwoFiveCardMajorsGame, oneNotrumpSpadeTransfer);
+  assert.deepEqual(example5.bid, bid(4, "H"));
+  assert.equal(example5.ruleId, "fiveCardHigh.continuation.responderAfterTransferTwoFiveMajorsGame");
+
+  const openerAfterThreeHearts = chooseFiveCardHighResult([
+    "AS", "QS", "2S",
+    "QH", "2H",
+    "AD", "JD", "4D", "3D",
+    "KC", "4C", "3C", "2C"
+  ], [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "H") },
+    { seat: "West", bid: pass() }
+  ], "North");
+  assert.deepEqual(openerAfterThreeHearts.bid, bid(4, "S"));
+  assert.equal(openerAfterThreeHearts.ruleId, "fiveCardHigh.continuation.openerAfterTransferFiveSpadesFourHeartsChooseGame");
+
+  const minimum = chooseFiveCardHighResult([
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H", "6H", "7H",
+    "2D", "3D",
+    "2C", "3C"
+  ], oneNotrumpHeartTransfer);
+  assert.deepEqual(minimum.bid, pass());
+  assert.equal(minimum.ruleId, "fiveCardHigh.pass.responderAfterTransferMinimum");
+
+  const inviteWithSix = chooseFiveCardHighResult([
+    "2S", "3S",
+    "AH", "QH", "2H", "3H", "4H", "5H",
+    "KD", "2D",
+    "2C", "3C", "4C"
+  ], oneNotrumpHeartTransfer);
+  assert.deepEqual(inviteWithSix.bid, bid(3, "H"));
+  assert.equal(inviteWithSix.ruleId, "fiveCardHigh.continuation.responderAfterTransferSixCardInvite");
+
+  const gameWithSix = chooseFiveCardHighResult([
+    "2S", "3S",
+    "AH", "KH", "QH", "2H", "3H", "4H",
+    "AD", "2D",
+    "2C", "3C", "4C"
+  ], oneNotrumpHeartTransfer);
+  assert.deepEqual(gameWithSix.bid, bid(4, "H"));
+  assert.equal(gameWithSix.ruleId, "fiveCardHigh.continuation.responderAfterTransferSixCardGame");
+});
+
+test("Vijfkaart Hoog explains opener choices after a Jacoby transfer invite", () => {
+  const heartTransferInvite = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+  const spadeTransferInvite = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const hand1MinimumNoHeartSupport = chooseFiveCardHighResult([
+    "QS", "JS", "6S", "4S",
+    "8H", "3H",
+    "AD", "JD", "7D", "3D",
+    "AC", "QC", "JC"
+  ], heartTransferInvite, "North");
+  assert.deepEqual(hand1MinimumNoHeartSupport.bid, pass());
+  assert.equal(hand1MinimumNoHeartSupport.ruleId, "fiveCardHigh.pass.openerAfterTransferInviteMinimumNoSupport");
+
+  const hand2MinimumSpadeSupport = chooseFiveCardHighResult([
+    "KS", "TS", "4S",
+    "AH", "QH", "JH", "3H",
+    "QD", "5D", "2D",
+    "KC", "7C", "4C"
+  ], spadeTransferInvite, "North");
+  assert.deepEqual(hand2MinimumSpadeSupport.bid, bid(3, "S"));
+  assert.equal(hand2MinimumSpadeSupport.ruleId, "fiveCardHigh.continuation.openerAfterTransferInviteMinimumSupport");
+
+  const hand3MaximumHeartSupport = chooseFiveCardHighResult([
+    "AS", "QS", "3S", "4S",
+    "6H", "5H", "3H",
+    "AD", "KD", "8D", "6D",
+    "AC", "8C"
+  ], heartTransferInvite, "North");
+  assert.deepEqual(hand3MaximumHeartSupport.bid, bid(4, "H"));
+  assert.equal(hand3MaximumHeartSupport.ruleId, "fiveCardHigh.continuation.openerAfterTransferInviteMaximumSupportGame");
+
+  const hand4MinimumSpadeSupport = chooseFiveCardHighResult([
+    "AS", "JS", "5S",
+    "7H", "3H",
+    "KD", "QD", "7D", "2D",
+    "AC", "JC", "6C", "2C"
+  ], spadeTransferInvite, "North");
+  assert.deepEqual(hand4MinimumSpadeSupport.bid, bid(3, "S"));
+  assert.equal(hand4MinimumSpadeSupport.ruleId, "fiveCardHigh.continuation.openerAfterTransferInviteMinimumSupport");
+});
+
+test("Vijfkaart Hoog explains responder rebids after Stayman", () => {
+  const oneNotrumpOpening = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+  const staymanHeartAnswer = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const hand1FitInvite = [
+    "4S", "3S",
+    "QH", "JH", "7H", "4H",
+    "AD", "JD", "7D", "6D", "3D",
+    "TC", "8C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand1FitInvite, oneNotrumpOpening).bid, bid(2, "C"));
+  const example1 = chooseFiveCardHighResult(hand1FitInvite, staymanHeartAnswer);
+  assert.deepEqual(example1.bid, bid(3, "H"));
+  assert.equal(example1.ruleId, "fiveCardHigh.continuation.responderAfterStaymanFitInvite");
+
+  const hand2FitGame = [
+    "QS", "TS", "6S", "4S",
+    "KH", "TH", "8H", "5H",
+    "AD", "6D", "5D",
+    "KC", "9C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand2FitGame, oneNotrumpOpening).bid, bid(2, "C"));
+  const example2 = chooseFiveCardHighResult(hand2FitGame, staymanHeartAnswer);
+  assert.deepEqual(example2.bid, bid(4, "H"));
+  assert.equal(example2.ruleId, "fiveCardHigh.continuation.responderAfterStaymanFitGame");
+
+  const hand3NoFitInvite = [
+    "AS", "JS", "7S", "6S",
+    "9H", "4H", "3H",
+    "JD", "5D", "2D",
+    "KC", "8C", "4C"
+  ];
+  assert.deepEqual(chooseFiveCardHighResult(hand3NoFitInvite, oneNotrumpOpening).bid, bid(2, "C"));
+  const example3 = chooseFiveCardHighResult(hand3NoFitInvite, staymanHeartAnswer);
+  assert.deepEqual(example3.bid, bid(2, "NT"));
+  assert.equal(example3.ruleId, "fiveCardHigh.continuation.responderAfterStaymanNoFitInvite");
+});
+
+test("Vijfkaart Hoog explains opener choices after Stayman without a heart fit", () => {
+  const staymanNoHeartFitInvite = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+  const staymanNoHeartFitGame = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const minimumNoSpades = chooseFiveCardHighResult([
+    "2S", "3S",
+    "KH", "QH", "7H", "3H",
+    "QD", "5D", "2D",
+    "KC", "JC", "TC", "4C"
+  ], staymanNoHeartFitInvite, "North");
+  assert.deepEqual(minimumNoSpades.bid, pass());
+  assert.equal(minimumNoSpades.ruleId, "fiveCardHigh.pass.openerAfterStaymanNoHeartFitMinimumNotrump");
+
+  const minimumWithSpades = chooseFiveCardHighResult([
+    "AS", "TS", "6S", "4S",
+    "AH", "QH", "7H",
+    "QD", "5D", "2D",
+    "9C", "8C", "7C"
+  ], staymanNoHeartFitInvite, "North");
+  assert.deepEqual(minimumWithSpades.bid, bid(3, "S"));
+  assert.equal(minimumWithSpades.ruleId, "fiveCardHigh.continuation.openerAfterStaymanNoHeartFitSpadeInvite");
+
+  const maximumNoSpades = chooseFiveCardHighResult([
+    "AS", "QS", "3S",
+    "AH", "QH", "7H", "3H",
+    "KD", "QD", "5D",
+    "KC", "8C", "4C"
+  ], staymanNoHeartFitInvite, "North");
+  assert.deepEqual(maximumNoSpades.bid, bid(3, "NT"));
+  assert.equal(maximumNoSpades.ruleId, "fiveCardHigh.continuation.openerAfterStaymanNoHeartFitNotrumpGame");
+
+  const maximumWithSpades = chooseFiveCardHighResult([
+    "AS", "QS", "6S", "4S",
+    "AH", "QH", "7H",
+    "KD", "QD", "5D",
+    "KC", "8C", "4C"
+  ], staymanNoHeartFitInvite, "North");
+  assert.deepEqual(maximumWithSpades.bid, bid(4, "S"));
+  assert.equal(maximumWithSpades.ruleId, "fiveCardHigh.continuation.openerAfterStaymanNoHeartFitSpadeGame");
+
+  const gameNoSpades = chooseFiveCardHighResult([
+    "AS", "QS", "3S",
+    "AH", "QH", "7H", "3H",
+    "KD", "QD", "5D",
+    "KC", "8C", "4C"
+  ], staymanNoHeartFitGame, "North");
+  assert.deepEqual(gameNoSpades.bid, pass());
+  assert.equal(gameNoSpades.ruleId, "fiveCardHigh.pass.openerAfterStaymanNoHeartFitMinimumNotrump");
+
+  const gameWithSpades = chooseFiveCardHighResult([
+    "KS", "TS", "6S", "4S",
+    "AH", "QH", "JH", "5H",
+    "AD", "KD", "3D",
+    "9C", "7C"
+  ], staymanNoHeartFitGame, "North");
+  assert.deepEqual(gameWithSpades.bid, bid(4, "S"));
+  assert.equal(gameWithSpades.ruleId, "fiveCardHigh.continuation.openerAfterStaymanNoHeartFitSpadeGame");
+});
+
+test("Vijfkaart Hoog shows a five-card major after a Stayman invite with maximum", () => {
+  const staymanHeartInvite = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+  const staymanSpadeInvite = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const maximumFiveHearts = chooseFiveCardHighResult([
+    "AS", "4S",
+    "AH", "QH", "JH", "5H", "3H",
+    "QD", "JD", "3D",
+    "KC", "TC", "8C"
+  ], staymanHeartInvite, "North");
+  assert.deepEqual(maximumFiveHearts.bid, bid(3, "H"));
+  assert.equal(maximumFiveHearts.ruleId, "fiveCardHigh.continuation.openerAfterStaymanInviteFiveCardMajor");
+
+  const maximumFiveSpades = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "9S", "7S",
+    "AH", "8H", "2H",
+    "QD", "JD",
+    "TC", "9C", "8C"
+  ], staymanSpadeInvite, "North");
+  assert.deepEqual(maximumFiveSpades.bid, bid(3, "S"));
+  assert.equal(maximumFiveSpades.ruleId, "fiveCardHigh.continuation.openerAfterStaymanInviteFiveCardMajor");
+
+  const minimumFiveHearts = chooseFiveCardHighResult([
+    "QS", "4S",
+    "AH", "QH", "JH", "5H", "3H",
+    "QD", "JD", "3D",
+    "KC", "TC", "8C"
+  ], staymanHeartInvite, "North");
+  assert.deepEqual(minimumFiveHearts.bid, pass());
+  assert.equal(minimumFiveHearts.ruleId, "fiveCardHigh.pass.openerAfterStaymanNoHeartFitMinimumNotrump");
+
+  const maximumFourHeartsNoSpades = chooseFiveCardHighResult([
+    "AS", "QS", "3S",
+    "AH", "QH", "7H", "3H",
+    "KD", "QD", "5D",
+    "KC", "8C", "4C"
+  ], staymanHeartInvite, "North");
+  assert.deepEqual(maximumFourHeartsNoSpades.bid, bid(3, "NT"));
+  assert.equal(maximumFourHeartsNoSpades.ruleId, "fiveCardHigh.continuation.openerAfterStaymanNoHeartFitNotrumpGame");
+});
+
 test("Vijfkaart Hoog responder accepts or declines a major invite after a single raise", () => {
   const heartInviteAuction = [
     { seat: "North", bid: bid(1, "H") },

@@ -246,6 +246,68 @@
             support: shape.counts[openerRebidCall.bid.strain] || 0
           });
         }
+        const openerTransferSuit = openingCall?.seat === seat && bidEquals(openingCall?.bid, 1, "NT")
+          ? notrumpTransferSuit(openingCall.bid, responseCall?.bid)
+          : null;
+        if (openerTransferSuit && bidEquals(responderRebidCall?.bid, 2, "S") && openerTransferSuit === "H" && shape.counts.S >= 4) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterTransferFiveHeartsFourSpadesMinimum", "basic", "Pass with a minimum after responder showed five hearts and four spades.", {
+            ...base,
+            category: "continuation",
+            convention: "jacobyTransfer",
+            transferSuit: openerTransferSuit,
+            responderSecondSuit: "S",
+            support: shape.counts.S || 0,
+            range: "15"
+          });
+        }
+        if (openerTransferSuit && bidEquals(responderRebidCall?.bid, 4, "H") && openerTransferSuit === "S" && shape.counts.H >= 3) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterTransferTwoFiveMajorsChooseHearts", "basic", "Pass because responder showed two five-card majors and opener prefers hearts.", {
+            ...base,
+            category: "continuation",
+            convention: "jacobyTransfer",
+            transferSuit: openerTransferSuit,
+            responderSecondSuit: "H",
+            support: shape.counts.H || 0
+          });
+        }
+        if (openerTransferSuit && bidEquals(responderRebidCall?.bid, 2, "NT")) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterTransferInviteMinimumNoSupport", "basic", "Pass because responder invited after the transfer and opener has a minimum without three-card support.", {
+            ...base,
+            category: "continuation",
+            convention: "jacobyTransfer",
+            transferSuit: openerTransferSuit,
+            support: shape.counts[openerTransferSuit] || 0,
+            range: "15"
+          });
+        }
+        if (openingCall?.seat === seat && bidEquals(openingCall?.bid, 1, "NT") && bidEquals(responseCall?.bid, 2, "C")) {
+          const openerRebidBid = openerRebidCall?.bid;
+          if (openerRebidBid?.strain === "H" && (bidEquals(responderRebidCall?.bid, 2, "NT") || bidEquals(responderRebidCall?.bid, 3, "NT"))) {
+            return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterStaymanNoHeartFitMinimumNotrump", "basic", "Pass with a minimum after responder denied a heart fit and opener has no spade fit.", {
+              ...base,
+              category: "continuation",
+              convention: "stayman",
+              responderDeniedSuit: "H",
+              possibleFitSuit: "S",
+              support: shape.counts.S || 0,
+              range: "15"
+            });
+          }
+        }
+        const transferSuit = openingCall?.seat === partnerOf(seat) && bidEquals(openingCall?.bid, 1, "NT")
+          ? notrumpTransferSuit(openingCall.bid, responseCall?.bid)
+          : null;
+        if (transferSuit) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.responderAfterTransferMinimum", "basic", "Pass after partner accepted the transfer because responder has a minimum hand.", {
+            ...base,
+            category: "continuation",
+            convention: "jacobyTransfer",
+            transferSuit,
+            suit: transferSuit,
+            length: shape.counts[transferSuit] || 0,
+            range: "0-7"
+          });
+        }
 
         return fiveCardHighBidChoiceResult(Pass(), "pass.continuationNoAction", "basic", "Pass because there is no useful continuation in the current Five-card Major heuristic.", {
           ...base,
@@ -517,6 +579,126 @@
           partnerSuit: openerRebid?.strain || null,
           support: openerRebid?.strain && openerRebid.strain !== "NT" ? shape.counts[openerRebid.strain] : 0
         };
+        const transferSuit = bidEquals(openingBid, 1, "NT") ? notrumpTransferSuit(openingBid, responseBid) : null;
+        if (transferSuit) {
+          const otherMajor = transferSuit === "H" ? "S" : "H";
+          const transferLength = shape.counts[transferSuit] || 0;
+          const otherMajorLength = shape.counts[otherMajor] || 0;
+          const transferExtra = {
+            ...extra,
+            convention: "jacobyTransfer",
+            transferSuit,
+            suit: chosenBid.strain,
+            length: transferLength,
+            otherMajor,
+            otherMajorLength
+          };
+          if (transferSuit === "H" && chosenBid.strain === "S" && transferLength === 5 && otherMajorLength >= 4) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.responderAfterTransferFiveHeartsFourSpades",
+              "basic",
+              "Show four spades after transferring to hearts with at least invitational values.",
+              {
+                ...transferExtra,
+                range: "8+"
+              }
+            );
+          }
+          if (transferSuit === "S" && chosenBid.strain === "H" && transferLength === 5 && otherMajorLength >= 5) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.responderAfterTransferTwoFiveMajorsGame",
+              "basic",
+              "Jump to four hearts with two five-card majors after transferring to spades.",
+              {
+                ...transferExtra,
+                range: "10+"
+              }
+            );
+          }
+          if (transferSuit === "S" && chosenBid.strain === "H" && transferLength === 5 && otherMajorLength >= 4) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.responderAfterTransferFiveSpadesFourHeartsGame",
+              "basic",
+              "Show four hearts at the three-level after transferring to spades; this is game-forcing.",
+              {
+                ...transferExtra,
+                range: "10+",
+                gameForcing: true
+              }
+            );
+          }
+          if (transferSuit === "S" && chosenBid.strain === "NT" && transferLength === 5 && otherMajorLength >= 4) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.responderAfterTransferFiveSpadesFourHeartsInvite",
+              "basic",
+              "Invite with two notrump because showing hearts would require the three-level.",
+              {
+                ...transferExtra,
+                range: "8-9"
+              }
+            );
+          }
+          if (chosenBid.strain === transferSuit && shape.counts[transferSuit] >= 6) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              chosenBid.level === gameLevel(transferSuit) ? "continuation.responderAfterTransferSixCardGame" : "continuation.responderAfterTransferSixCardInvite",
+              "basic",
+              "Rebid the transferred major with a six-card suit or longer after partner accepted the transfer.",
+              {
+                ...transferExtra,
+                range: chosenBid.level === gameLevel(transferSuit) ? "10+" : "8-9"
+              }
+            );
+          }
+          if (chosenBid.strain === "NT") {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              chosenBid.level === 3 ? "continuation.responderAfterTransferNotrumpGame" : "continuation.responderAfterTransferNotrumpInvite",
+              "basic",
+              "Rebid notrump with only a five-card transferred major and invitational or game-going strength.",
+              {
+                ...transferExtra,
+                range: chosenBid.level === 3 ? "10+" : "8-9"
+              }
+            );
+          }
+        }
+        if (bidEquals(openingBid, 1, "NT") && bidEquals(responseBid, 2, "C")) {
+          const foundFit = (openerRebid?.strain === "H" || openerRebid?.strain === "S") && shape.counts[openerRebid.strain] >= 4;
+          if (foundFit && chosenBid.strain === openerRebid.strain) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              chosenBid.level === gameLevel(openerRebid.strain) ? "continuation.responderAfterStaymanFitGame" : "continuation.responderAfterStaymanFitInvite",
+              "basic",
+              "Choose the major after Stayman found a fit.",
+              {
+                ...extra,
+                convention: "stayman",
+                fitSuit: openerRebid.strain,
+                support: shape.counts[openerRebid.strain] || 0,
+                range: chosenBid.level === gameLevel(openerRebid.strain) ? "10+" : "8-9"
+              }
+            );
+          }
+          if (chosenBid.strain === "NT") {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              chosenBid.level === 3 ? "continuation.responderAfterStaymanNoFitGame" : "continuation.responderAfterStaymanNoFitInvite",
+              "basic",
+              "Return to notrump after Stayman did not find responder's major-suit fit.",
+              {
+                ...extra,
+                convention: "stayman",
+                deniedFitSuit: openerRebid?.strain || null,
+                range: chosenBid.level === 3 ? "10+" : "8-9"
+              }
+            );
+          }
+        }
         const fourthSuit = fourthSuitForAuction(openingBid, responseBid, openerRebid);
         if (fourthSuit && bidEquals(chosenBid, cheapestLevelForStrain(fourthSuit, openerRebid), fourthSuit)) {
           return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderFourthSuitForcing", "basic", "Use fourth-suit forcing with game-going values when no natural game is clear.", {
@@ -590,6 +772,151 @@
           openerRebidSuit: openerRebid?.strain || null,
           fourthSuit
         };
+        const transferSuit = bidEquals(openingBid, 1, "NT") ? notrumpTransferSuit(openingBid, responseBid) : null;
+        if (transferSuit) {
+          const transferExtra = {
+            ...extra,
+            convention: "jacobyTransfer",
+            transferSuit,
+            responderSecondSuit: responderRebid?.strain || null,
+            support: chosenBid.strain && chosenBid.strain !== "NT" ? shape.counts[chosenBid.strain] || 0 : 0
+          };
+          if (transferSuit === "H" && bidEquals(responderRebid, 2, "S")) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              chosenBid.strain === "NT" ? "continuation.openerAfterTransferFiveHeartsFourSpadesNotrump" : "continuation.openerAfterTransferFiveHeartsFourSpadesChooseMajor",
+              "basic",
+              "Choose a strain after responder showed five hearts and four spades after a transfer.",
+              {
+                ...transferExtra,
+                gameBid: chosenBid.level >= 4,
+                maximum: shape.hcp >= 16
+              }
+            );
+          }
+          if (transferSuit === "S" && bidEquals(responderRebid, 3, "H")) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.openerAfterTransferFiveSpadesFourHeartsChooseGame",
+              "basic",
+              "Choose a game after responder showed five spades and four hearts; the three-heart bid is forcing to game.",
+              {
+                ...transferExtra,
+                gameForcing: true,
+                supportSpades: shape.counts.S || 0,
+                supportHearts: shape.counts.H || 0
+              }
+            );
+          }
+          if (transferSuit === "S" && bidEquals(responderRebid, 4, "H")) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.openerAfterTransferTwoFiveMajorsChooseSpades",
+              "basic",
+              "Correct to spades after responder showed two five-card majors and opener prefers spades.",
+              {
+                ...transferExtra,
+                supportSpades: shape.counts.S || 0,
+                supportHearts: shape.counts.H || 0
+              }
+            );
+          }
+          if (bidEquals(responderRebid, 2, "NT")) {
+            const ruleName = chosenBid.strain === transferSuit
+              ? chosenBid.level === gameLevel(transferSuit)
+                ? "continuation.openerAfterTransferInviteMaximumSupportGame"
+                : "continuation.openerAfterTransferInviteMinimumSupport"
+              : "continuation.openerAfterTransferInviteMaximumNotrump";
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              ruleName,
+              "basic",
+              "Choose after responder's invitational notrump rebid following a Jacoby transfer.",
+              {
+                ...transferExtra,
+                support: shape.counts[transferSuit] || 0,
+                maximum: shape.hcp >= 16,
+                range: shape.hcp >= 16 ? "16-17" : "15"
+              }
+            );
+          }
+        }
+        if (bidEquals(openingBid, 1, "NT") && bidEquals(responseBid, 2, "C")) {
+          if (openerRebid?.strain === "H" && (bidEquals(responderRebid, 2, "NT") || bidEquals(responderRebid, 3, "NT"))) {
+            const hasSpadeFit = shape.counts.S >= 4;
+            const staymanExtra = {
+              ...extra,
+              convention: "stayman",
+              responderDeniedSuit: "H",
+              possibleFitSuit: "S",
+              support: hasSpadeFit ? shape.counts.S : 0,
+              maximum: shape.hcp >= 16,
+              gameForcing: bidEquals(responderRebid, 3, "NT")
+            };
+            if (bidEquals(responderRebid, 2, "NT") && chosenBid.strain === openerRebid.strain && shape.counts[openerRebid.strain] >= 5) {
+              return fiveCardHighBidChoiceResult(
+                chosenBid,
+                "continuation.openerAfterStaymanInviteFiveCardMajor",
+                "basic",
+                "Show a five-card major after opening 1NT and accepting responder's Stayman invite.",
+                {
+                  ...staymanExtra,
+                  fiveCardMajor: openerRebid.strain,
+                  length: shape.counts[openerRebid.strain] || 0
+                }
+              );
+            }
+            if (chosenBid.strain === "S") {
+              return fiveCardHighBidChoiceResult(
+                chosenBid,
+                chosenBid.level === 4 ? "continuation.openerAfterStaymanNoHeartFitSpadeGame" : "continuation.openerAfterStaymanNoHeartFitSpadeInvite",
+                "basic",
+                "Choose spades after responder denied a heart fit but may still have four spades.",
+                staymanExtra
+              );
+            }
+            if (chosenBid.strain === "NT") {
+              return fiveCardHighBidChoiceResult(
+                chosenBid,
+                chosenBid.level === 3 ? "continuation.openerAfterStaymanNoHeartFitNotrumpGame" : "continuation.openerAfterStaymanNoHeartFitNotrumpInvite",
+                "basic",
+                "Choose notrump after responder denied a heart fit and opener has no spade fit.",
+                staymanExtra
+              );
+            }
+          }
+          if (openerRebid?.strain === "S" && bidEquals(responderRebid, 2, "NT")) {
+            const staymanExtra = {
+              ...extra,
+              convention: "stayman",
+              responderDeniedSuit: "S",
+              maximum: shape.hcp >= 16
+            };
+            if (chosenBid.strain === openerRebid.strain && shape.counts[openerRebid.strain] >= 5) {
+              return fiveCardHighBidChoiceResult(
+                chosenBid,
+                "continuation.openerAfterStaymanInviteFiveCardMajor",
+                "basic",
+                "Show a five-card major after opening 1NT and accepting responder's Stayman invite.",
+                {
+                  ...staymanExtra,
+                  fiveCardMajor: openerRebid.strain,
+                  length: shape.counts[openerRebid.strain] || 0,
+                  support: shape.counts[openerRebid.strain] || 0
+                }
+              );
+            }
+            if (chosenBid.strain === "NT") {
+              return fiveCardHighBidChoiceResult(
+                chosenBid,
+                chosenBid.level === 3 ? "continuation.openerAfterStaymanNoFitNotrumpGame" : "continuation.openerAfterStaymanNoFitNotrumpInvite",
+                "basic",
+                "Choose notrump after responder invited and did not fit opener's shown major.",
+                staymanExtra
+              );
+            }
+          }
+        }
         if (fourthSuit && bidEquals(responderRebid, cheapestLevelForStrain(fourthSuit, openerRebid), fourthSuit)) {
           if (chosenBid.strain === responseBid.strain && shape.counts[responseBid.strain] >= 3) {
             return fiveCardHighBidChoiceResult(chosenBid, "continuation.openerAfterFourthSuitSupport", "basic", "Answer fourth-suit forcing by showing three-card support for responder's first suit.", {
@@ -1432,18 +1759,22 @@
 
         const transferSuit = bidEquals(responseBid, 2, "D") ? "H" : bidEquals(responseBid, 2, "H") ? "S" : null;
         if (transferSuit) {
-          if (shape.counts[transferSuit] >= 6) {
-            if (shape.hcp >= 10) return bid(4, transferSuit);
-            if (shape.hcp >= 8) return bid(3, transferSuit);
-            return Pass();
-          }
-          if (shape.hcp >= 10) return bid(3, "NT");
-          if (shape.hcp >= 8) {
-            if (transferSuit === "H" && shape.counts.S >= 4) return bid(2, "S");
-            if (transferSuit === "S" && shape.counts.H >= 4) return bid(3, "H");
+          const otherMajor = transferSuit === "H" ? "S" : "H";
+          const transferLength = shape.counts[transferSuit] || 0;
+          const otherMajorLength = shape.counts[otherMajor] || 0;
+          if (shape.hcp < 8) return Pass();
+          if (transferSuit === "H" && transferLength === 5 && otherMajorLength >= 4) return bid(2, "S");
+          if (transferSuit === "S" && transferLength === 5 && otherMajorLength >= 5 && shape.hcp >= 10) return bid(4, "H");
+          if (transferSuit === "S" && transferLength === 5 && otherMajorLength >= 4) {
+            if (shape.hcp >= 10) return bid(3, "H");
             return bid(2, "NT");
           }
-          return Pass();
+          if (shape.counts[transferSuit] >= 6) {
+            if (shape.hcp >= 10) return bid(4, transferSuit);
+            return bid(3, transferSuit);
+          }
+          if (shape.hcp >= 10) return bid(3, "NT");
+          return bid(2, "NT");
         }
         return Pass();
       }
@@ -1474,7 +1805,17 @@
         if (!bidEquals(openingBid, 1, "NT")) return Pass();
 
         if (bidEquals(responseBid, 2, "C")) {
-          if (bidEquals(responderRebid, 2, "NT")) return shape.hcp >= 16 ? bid(3, "NT") : Pass();
+          if (bidEquals(responderRebid, 2, "NT")) {
+            if ((openerRebid?.strain === "H" || openerRebid?.strain === "S") && shape.hcp >= 16 && shape.counts[openerRebid.strain] >= 5) {
+              return bid(3, openerRebid.strain);
+            }
+            if (openerRebid?.strain === "H" && shape.counts.S >= 4) return shape.hcp >= 16 ? bid(4, "S") : bid(3, "S");
+            return shape.hcp >= 16 ? bid(3, "NT") : Pass();
+          }
+          if (bidEquals(responderRebid, 3, "NT")) {
+            if (openerRebid?.strain === "H" && shape.counts.S >= 4) return bid(4, "S");
+            return Pass();
+          }
           if ((responderRebid.strain === "H" || responderRebid.strain === "S") && responderRebid.level === 3) {
             return shape.hcp >= 16 ? bid(4, responderRebid.strain) : Pass();
           }
@@ -1483,6 +1824,19 @@
         const transferSuit = bidEquals(responseBid, 2, "D") ? "H" : bidEquals(responseBid, 2, "H") ? "S" : null;
         if (!transferSuit) return Pass();
         const hasThreeCardSupport = shape.counts[transferSuit] >= 3;
+        if (transferSuit === "H" && bidEquals(responderRebid, 2, "S")) {
+          if (shape.counts.S >= 4) return shape.hcp >= 16 ? bid(4, "S") : Pass();
+          if (hasThreeCardSupport) return shape.hcp >= 16 ? bid(4, "H") : bid(3, "H");
+          return shape.hcp >= 16 ? bid(3, "NT") : bid(2, "NT");
+        }
+        if (transferSuit === "S" && bidEquals(responderRebid, 3, "H")) {
+          if (shape.counts.H >= 4) return bid(4, "H");
+          if (hasThreeCardSupport) return bid(4, "S");
+          return bid(3, "NT");
+        }
+        if (transferSuit === "S" && bidEquals(responderRebid, 4, "H")) {
+          return shape.counts.H >= 3 ? Pass() : bid(4, "S");
+        }
         if (bidEquals(responderRebid, 2, "NT")) {
           if (shape.hcp <= 15) return hasThreeCardSupport ? bid(3, transferSuit) : Pass();
           return hasThreeCardSupport ? bid(4, transferSuit) : bid(3, "NT");

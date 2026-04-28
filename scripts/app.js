@@ -128,6 +128,7 @@ const els = {
   mailFeedback: document.querySelector("#mail-feedback"),
   closeFeedback: document.querySelector("#close-feedback"),
   feedbackDescription: document.querySelector("#feedback-description"),
+  bidControlsTitle: document.querySelector("#bid-controls-title"),
   bidControls: document.querySelector("#bid-controls"),
   bidExplanations: document.querySelector("#bid-explanations"),
   playPlan: document.querySelector("#play-plan-panel"),
@@ -442,6 +443,7 @@ function closeScoreTableDialog() {
 
 function openFeedbackDialog() {
   state.feedbackStatus = null;
+  els.appMenu?.removeAttribute("open");
   refreshFeedbackMailLink();
   renderFeedbackStatus();
   if (typeof els.feedbackDialog.showModal === "function") {
@@ -488,28 +490,6 @@ function biddingGuidance() {
     label: t("recommendedBid"),
     action: formatCall(result.bid),
     reason: recommendedBidReason(result, "South")
-  };
-}
-
-function recommendedBidReason(resultOrBid, seat) {
-  if (resultOrBid?.bid && resultOrBid.ruleId) return explainBidChoiceResult(resultOrBid);
-  const bid = resultOrBid;
-  if (isPass(bid)) return t("bidExplanationPass");
-  if (isDouble(bid)) return t("bidExplanationDouble");
-  if (isRedouble(bid)) return t("bidExplanationRedouble");
-  const detail = bidMeaning(bid, auctionContextForCall(seat));
-  return t(detail.key, { detail: detail.text });
-}
-
-function auctionContextForCall(seat) {
-  const previous = state.auction;
-  const partnershipCalls = previous.filter((prior) => teamOf(prior.seat) === teamOf(seat) && isContractBid(prior.bid));
-  const opponentCalls = previous.filter((prior) => teamOf(prior.seat) !== teamOf(seat) && isContractBid(prior.bid));
-  return {
-    partnershipCalls,
-    opponentCalls,
-    openingBid: partnershipCalls[0]?.bid || null,
-    lastPartnerBid: [...previous].reverse().find((prior) => prior.seat === partnerOf(seat) && isContractBid(prior.bid))?.bid || null
   };
 }
 
@@ -574,7 +554,7 @@ function biddingHint() {
     if (highestBid()) return "Je mag alleen hoger bieden dan het huidige hoogste bod. Pas betekent dat je nu geen bod doet.";
     return "Open alleen met genoeg kracht of een duidelijke verdeling. 1SA toont meestal een gebalanceerde hand.";
   }
-  if (highestBid()?.strain === "NT") return "Na 1SA is 2K Stayman en zijn 2R/2H Jacoby-transfers in deze Vijfkaart-Hoog-basis.";
+  if (highestBid()?.strain === "NT") return "Na 1SA zoek je eerst een hoge-kleurfit: 2K Stayman met een vierkaart hoog, 2R/2H transfer met een vijfkaart hoog.";
   return "Als partner jouw kleur steunt, hebben jullie waarschijnlijk een fit.";
 }
 

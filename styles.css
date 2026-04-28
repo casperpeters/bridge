@@ -51,6 +51,8 @@ textarea {
 
 .topbar {
   grid-column: 1 / -1;
+  position: relative;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -111,6 +113,11 @@ h2 {
 .app-menu {
   position: relative;
   z-index: 12;
+}
+
+.topbar-feedback {
+  min-width: 116px;
+  font-weight: 800;
 }
 
 .app-menu summary {
@@ -190,6 +197,7 @@ h2 {
 
 .app-menu-panel {
   position: absolute;
+  z-index: 30;
   right: 0;
   top: calc(100% + 8px);
   width: min(380px, calc(100vw - 36px));
@@ -1099,7 +1107,7 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
-  margin: 12px 0;
+  margin: 6px 0 12px;
 }
 
 .auction-cell {
@@ -1139,12 +1147,19 @@ button:disabled {
 }
 
 .bid-controls {
+  --bid-control-row: 38px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  grid-auto-rows: 38px;
+  grid-template-rows: repeat(7, var(--bid-control-row)) var(--bid-control-row);
+  grid-auto-rows: auto;
   gap: 6px;
+  margin: 6px 0 12px;
   border-radius: 8px;
   transition: box-shadow 900ms ease, outline-color 900ms ease;
+}
+
+.bid-controls[aria-hidden="true"] {
+  display: none;
 }
 
 .bid-controls.active-bid-box {
@@ -1172,6 +1187,7 @@ button:disabled {
 .bid-advanced-actions {
   display: grid;
   gap: 6px;
+  min-height: var(--bid-control-row);
 }
 
 .bid-primary-actions {
@@ -1343,7 +1359,7 @@ button:disabled {
 .bid-explanations {
   display: grid;
   gap: 6px;
-  margin: 12px 0;
+  margin: 8px 0 0;
 }
 
 .bid-explanation {
@@ -1368,7 +1384,7 @@ button:disabled {
 .game-summary {
   display: grid;
   gap: 4px;
-  margin: 0 0 12px;
+  margin: 6px 0 12px;
   padding: 9px 10px;
   border-left: 3px solid rgba(224, 194, 95, 0.62);
   border-radius: 0 8px 8px 0;
@@ -1377,6 +1393,7 @@ button:disabled {
 
 .game-summary .contract {
   text-align: left;
+  font-weight: 900;
 }
 
 .game-summary .scoreline {
@@ -1961,8 +1978,7 @@ button:disabled {
   gap: 8px;
 }
 
-.feedback-actions button,
-.feedback-actions .button-link {
+.feedback-actions button {
   width: 100%;
 }
 
@@ -2397,8 +2413,8 @@ button:disabled {
   }
 
   .app-menu-panel {
-    left: 0;
-    right: auto;
+    left: auto;
+    right: 0;
     width: calc(100vw - 20px);
     max-width: 380px;
   }
@@ -2501,8 +2517,8 @@ button:disabled {
   }
 
   .bid-controls {
+    --bid-control-row: 42px;
     grid-template-columns: repeat(5, minmax(44px, 1fr));
-    grid-auto-rows: 42px;
   }
 
   .bid-controls button {

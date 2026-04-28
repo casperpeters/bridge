@@ -28,7 +28,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Oefenhanden en leerbare situaties
 
-- Voeg samengestelde oefenspellen toe voor bestaande functies: openingsbiedingen, antwoorden op partner, nieuwe kleur na `1H/1S`, 1SA-antwoorden, eenvoudige volgbiedingen, negative double, uitkomsten, dummyspel en scoren.
+- Voeg samengestelde oefenspellen toe voor bestaande functies: openingsbiedingen, antwoorden op partner, nieuwe kleur na `1H/1S`, eenvoudige volgbiedingen, negative double, uitkomsten, dummyspel en scoren.
 - Maak oefenspellen reproduceerbaar met seed en kort testdoel.
 - Houd uitleg buiten de basisgame; oefenmodus, AI-suggesties en developermodus mogen meer tekst bevatten.
 
@@ -52,7 +52,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Breid bestaande biedcontext uit met kwetsbaarheid, positie, partnerschap, huidig contract en getoonde ranges waar die nog ontbreken.
 - Scheid contract, call-type en betekenis consequent. Voorbeeld: `2D` na `1NT` kan een transfer zijn en dus niet letterlijk ruiten betekenen.
-- Verbeter ongestoorde Vijfkaart Hoog-vervolgen alleen gericht op concrete gaten uit tests of oefenhanden.
+- Verbeter resterende ongestoorde Vijfkaart Hoog-vervolgen alleen gericht op concrete gaten uit tests of oefenhanden; 1SA-vervolgen met Stayman/Jacoby-transfer hebben nu specifieke uitleg en fixtures.
 - Voeg alleen gebruikerswaarschuwingen toe voor biedingen buiten systeem wanneer de app dat betrouwbaar kan vaststellen.
 - Houd nieuw competitief bieden klein en testbaar; veel basisgevallen zoals eenvoudige volgbiedingen, raises na volgbod, 1SA-volgbodvervolgen en negative doubles bestaan al.
 

@@ -18,6 +18,7 @@
           </div>
         </div>
         <div class="setup-controls">
+          <button id="open-feedback" class="topbar-feedback" type="button">Feedback</button>
           <details class="app-menu">
             <summary id="settings-summary" aria-label="Menu" title="Menu">
               <span class="menu-icon" aria-hidden="true"></span>
@@ -34,7 +35,6 @@
                   <p id="help-menu-title" class="menu-section-title">Hulp</p>
                   <button id="open-glossary" type="button">Woordenlijst</button>
                   <button id="open-score-table" type="button">Scoretabel</button>
-                  <button id="open-feedback" type="button">Feedback</button>
                 </section>
                 <section class="menu-section developer-menu-section" aria-labelledby="test-menu-title" data-developer-only hidden>
                   <p id="test-menu-title" class="menu-section-title">Testen</p>
@@ -132,12 +132,15 @@
             <h2 id="bidding-title">Bieden</h2>
             <span id="dealer-badge">Deler: Zuid</span>
           </div>
-          <div class="game-summary" aria-label="Spelstatus">
+          <h3 id="contract-title" class="review-section-title">Contract</h3>
+          <div class="game-summary" aria-labelledby="contract-title">
             <div id="contract" class="contract">Deel een hand om te starten</div>
             <div id="scoreline" class="scoreline"></div>
           </div>
-          <div id="auction-log" class="auction-log"></div>
-          <div id="bid-controls" class="bid-controls"></div>
+          <h3 id="auction-log-title" class="review-section-title">Biedverloop</h3>
+          <div id="auction-log" class="auction-log" aria-labelledby="auction-log-title"></div>
+          <h3 id="bid-controls-title" class="review-section-title" hidden>Biedbox</h3>
+          <div id="bid-controls" class="bid-controls" aria-labelledby="bid-controls-title"></div>
           <div id="play-plan-panel" class="play-plan-panel" hidden></div>
           <div id="bid-explanations" class="bid-explanations" hidden></div>
         </section>
@@ -340,7 +343,7 @@
         </label>
         <div class="feedback-actions">
           <button id="copy-feedback" type="button">Kopieer feedback</button>
-          <a id="mail-feedback" class="button-link" href="mailto:casper.peters@gmail.com">Mail feedback</a>
+          <button id="mail-feedback" type="button">Mail feedback</button>
         </div>
         <p id="feedback-description" class="setting-description"></p>
       </section>
@@ -357,6 +360,8 @@
     <script src="rules/card-play.js"></script>
     <script src="bridge-rules.js"></script>
     <script src="scripts/text-nl.js"></script>
+    <script src="rules/bidding/systems/five-card-high/explanations-nl.js"></script>
+    <script src="scripts/bid-explanations.js"></script>
     <script src="scripts/glossary.js"></script>
     <script src="scripts/settings.js"></script>
     <script src="scripts/seed.js"></script>

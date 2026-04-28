@@ -46,17 +46,20 @@ npm run test:browser
 
 The app stays build-free: `index.html` loads plain browser scripts in dependency order.
 
-- `bridge-rules.js`: testable bridge rules, scoring, bidding heuristics, card-play heuristics, and play-plan data.
+- `bridge-rules.js`: browser-facing aggregator that exposes the rule modules in dependency order.
+- `rules/`: testable bridge rules, scoring, bidding heuristics, card-play heuristics, and play-plan data.
 - `scripts/app.js`: app bootstrap, shared state, DOM references, shared formatting/status helpers, and top-level orchestration.
 - `scripts/text-nl.js`: Dutch UI copy and labels.
 - `scripts/settings.js`: saved settings.
 - `scripts/seed.js`: hand seed loading/copying and seed UI state.
+- `scripts/bid-explanations.js`: bid explanation orchestration for guidance and developer mode.
 - `scripts/play-plan.js`: visible play-plan rendering and play-plan explanation text.
 - `scripts/render-hands.js`: card and hand rendering.
-- `scripts/render-auction.js`: auction log, bid explanations, and bidding controls.
+- `scripts/render-auction.js`: auction log and bidding controls.
 - `scripts/render-review.js`: trick history, play explanations, and final hand review.
 - `scripts/auction-flow.js`: auction flow and bidding decisions.
 - `scripts/play-flow.js`: card-play flow, automatic play, legal play handling, and trick advancement.
+- `rules/bidding/systems/five-card-high/explanations-nl.js`: Dutch explanation text for the current Vijfkaart Hoog system profile.
 
 ## Current Features
 

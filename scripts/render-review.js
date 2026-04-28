@@ -295,7 +295,7 @@ function formatSuitHolding(hand, suit) {
 }
 
 const feedbackMailRecipient = "casper.peters@gmail.com";
-const mailtoUrlLengthLimit = 7600;
+const mailtoUrlLengthLimit = 1800;
 
 async function copyFeedbackReport() {
   try {
@@ -308,11 +308,12 @@ async function copyFeedbackReport() {
 }
 
 function mailFeedbackReport(event) {
+  event?.preventDefault();
   try {
-    refreshFeedbackMailLink();
-    state.feedbackStatus = t("feedbackMailOpened");
+    const url = buildFeedbackMailtoUrl();
+    openFeedbackMailClient(url);
+    state.feedbackStatus = t("feedbackMailOpening");
   } catch {
-    event?.preventDefault();
     state.feedbackStatus = t("feedbackMailFailed");
   }
   renderFeedbackStatus();
@@ -320,7 +321,7 @@ function mailFeedbackReport(event) {
 
 function refreshFeedbackMailLink() {
   if (!els.mailFeedback) return;
-  els.mailFeedback.href = buildFeedbackMailtoUrl();
+  els.mailFeedback.dataset.mailto = buildFeedbackMailtoUrl();
 }
 
 function buildFeedbackMailtoUrl() {
@@ -333,6 +334,15 @@ function buildFeedbackMailtoUrl() {
 
 function mailtoUrl(subject, body) {
   return `mailto:${feedbackMailRecipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function openFeedbackMailClient(url) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.style.display = "none";
+  document.body.append(link);
+  link.click();
+  link.remove();
 }
 
 function renderFeedbackStatus() {

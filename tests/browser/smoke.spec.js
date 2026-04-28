@@ -149,14 +149,40 @@ test("glossary opens from the toolbar and linked explanation terms", async ({ pa
 
   await clickMenuButton(page, "#open-glossary");
   await expect(page.locator("#glossary-dialog")).toBeVisible();
-  await expect(page.locator("#glossary-list")).toContainText("Contract");
-  await expect(page.locator("#glossary-list")).toContainText("Deler");
-  await expect(page.locator("#glossary-list")).toContainText("Kwetsbaarheid");
-  await expect(page.locator("#glossary-list")).toContainText("Kleur bekennen");
-  await expect(page.locator("#glossary-list")).toContainText("Slag");
-  await expect(page.locator("#glossary-list")).toContainText("Slem");
-  await expect(page.locator("#glossary-list")).toContainText("Overslag");
-  await expect(page.locator("#glossary-list")).toContainText("Onderslag");
+  const expectedGlossaryTerms = [
+    "Afgooien",
+    "Bijkleur",
+    "Blokkeren",
+    "Contract",
+    "Contractpunten",
+    "Deler",
+    "Doublet",
+    "Fitpunten",
+    "Forcing",
+    "HCP",
+    "Herbieding",
+    "Incasseren",
+    "Invite",
+    "Kleur bekennen",
+    "Kleurcontract",
+    "Kwetsbaarheid",
+    "Maximum",
+    "Minimum",
+    "Onderslag",
+    "Openingskracht",
+    "Overslag",
+    "Redoublet",
+    "Slag",
+    "Slem",
+    "Stopper",
+    "Troef trekken",
+    "Verliezers",
+    "Vierde-kleur-forcing",
+    "Vrijspelen"
+  ];
+  for (const term of expectedGlossaryTerms) {
+    await expect(page.locator("#glossary-list")).toContainText(term);
+  }
   await page.locator(".glossary-list-button", { hasText: "Leider" }).click();
   await expect(page.locator("#glossary-definition")).toContainText("speelsoort als eerste bood");
   await page.locator(".glossary-list-button", { hasText: "Manche" }).click();
@@ -167,6 +193,30 @@ test("glossary opens from the toolbar and linked explanation terms", async ({ pa
   await expect(page.locator("#glossary-term")).toHaveText("Deler");
   await page.locator("#glossary-search").fill("contractpunten");
   await expect(page.locator("#glossary-list")).toContainText("Manche");
+  await page.locator("#glossary-search").fill("staymanconventie");
+  await expect(page.locator("#glossary-list")).toContainText("Stayman");
+  await expect(page.locator("#glossary-term")).toHaveText("Stayman");
+  await page.locator("#glossary-search").fill("honneurpunten");
+  await expect(page.locator("#glossary-term")).toHaveText("HCP");
+  await page.locator("#glossary-search").fill("mancheforcing");
+  await expect(page.locator("#glossary-term")).toHaveText("Forcing");
+  await page.locator("#glossary-search").fill("maximumhand");
+  await expect(page.locator("#glossary-term")).toHaveText("Maximum");
+  await page.locator("#glossary-search").fill("minimumhand");
+  await expect(page.locator("#glossary-term")).toHaveText("Minimum");
+  await page.locator("#glossary-search").fill("dekking");
+  await expect(page.locator("#glossary-term")).toHaveText("Stopper");
+  await page.locator("#glossary-search").fill("troeftrekken");
+  await expect(page.locator("#glossary-term")).toHaveText("Troef trekken");
+  await page.locator("#glossary-search").fill("vierde kleur forcing");
+  await expect(page.locator("#glossary-term")).toHaveText("Vierde-kleur-forcing");
+  await page.locator("#glossary-search").fill("openingskracht");
+  await expect(page.locator("#glossary-list")).toContainText("Openingskracht");
+  await expect(page.locator("#glossary-definition")).toContainText("sterk genoeg");
+  await page.locator("#glossary-search").fill("verliezer");
+  await expect(page.locator("#glossary-list")).toContainText("Verliezers");
+  await page.locator(".glossary-list-button", { hasText: "Verliezers" }).click();
+  await expect(page.locator("#glossary-term")).toHaveText("Verliezers");
   await page.locator("#glossary-search").fill("bestaatniet");
   await expect(page.locator("#glossary-list")).toContainText("Geen begrippen gevonden.");
   await expect(page.locator("#glossary-term")).toHaveText("Geen resultaat");
@@ -455,7 +505,8 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await expect(page.locator("#replay-new-hand")).toBeVisible();
   await expect(page.locator("#replay-same-hand")).toBeVisible();
 
-  await clickMenuButton(page, "#open-feedback");
+  await expect(page.locator(".setup-controls > #open-feedback")).toBeVisible();
+  await page.locator(".setup-controls > #open-feedback").click();
   await expect(page.locator("#feedback-dialog")).toBeVisible();
   await page.locator("#feedback-message").fill("Smoke test report");
 
@@ -466,4 +517,16 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   expect(report).toContain("Smoke test report");
   expect(report).toContain("## Handcontext");
   expect(report).toContain("## Slagenoverzicht");
+
+  await page.evaluate(() => {
+    window.__feedbackMailUrl = "";
+    openFeedbackMailClient = (url) => {
+      window.__feedbackMailUrl = url;
+    };
+  });
+  await page.locator("#mail-feedback").click();
+  await expect(page.locator("#feedback-state")).toContainText("Mail-app wordt geopend");
+  const mailUrl = await page.evaluate(() => window.__feedbackMailUrl);
+  expect(mailUrl).toContain("mailto:casper.peters@gmail.com");
+  expect(mailUrl).toContain("Smoke%20test%20report");
 });

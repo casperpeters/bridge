@@ -5,18 +5,18 @@ Projectcontext voor AI-agenten die aan deze repo werken.
 ## Doel
 
 `bridge-app` is een kleine, build-vrije bridge-app om bridge te leren en te oefenen. De speler zit Zuid, biedt met een eenvoudige NBB/Barry's Vijfkaart Hoog AI-partner/tegenstanders, speelt de hand uit en kan daarna bieding, slagen en score reviewen.
+Voor nu wordt de bied- speel- en speelplanuitleg voornamlijk gebruikt om te controleren of de speelengine correct is, en waarom hij wat doet. Op de lange termijn moet dit gebruikt worden als feedback voor de speler wanneer hij een fout maakt. Zo kan hij daarvan leren. 
 
 Voor nu gebruikt de app de NBB/Barry's Vijfkaart Hoog- en `Start met Bridge 1 & 2`-cursusconventies als basis. Op lange termijn moet de app meerdere conventies kunnen ondersteunen en biedafspraken kunnen personaliseren per gebruiker of oefenset. De code-structuur moet daar nu al rekening mee houden: houd biedregels, conventiebetekenissen en UI-copy zoveel mogelijk modulair en voorkom hardcoded aannames die personalisatie later blokkeren.
 
-Het productdoel: beginners moeten zonder veel uitleg kunnen zien:
-
+Beginners moeten zonder veel uitleg kunnen zien:
 - wie aan de beurt is;
 - welke biedingen/kaarten legaal zijn;
 - wanneer en waarom dummy verschijnt;
 - wie een slag wint;
 - wat het eindcontract en resultaat zijn;
 - waarom de score zo uitkomt;
-- wat de volgende actie is.
+- wat de volgende actie is. (met AI suggestie aan)
 
 ## Werkprincipes
 
@@ -82,19 +82,21 @@ Belangrijke plekken:
 - `scripts/text-nl.js` - Nederlandse UI-copy.
 - `scripts/settings.js` - opgeslagen instellingen.
 - `scripts/seed.js` - handseed laden/kopieren en seed-UI.
+- `scripts/bid-explanations.js` - bieduitleg-orchestratie voor AI-suggesties en developermodus.
 - `scripts/render-hands.js` - kaarten en handen renderen.
-- `scripts/render-auction.js` - biedlog, bieduitleg en biedcontrols.
+- `scripts/render-auction.js` - biedlog en biedcontrols.
 - `scripts/render-review.js` - slagenoverzicht, speeluitleg en handreview.
 - `scripts/play-plan.js` - zichtbaar speelplan en tekst daarover.
 - `scripts/auction-flow.js` - biedverloop en biedbeslissingen.
 - `scripts/play-flow.js` - kaartspel, automatisch spel, legaliteit en slagvoortgang.
+- `rules/bidding/systems/five-card-high/explanations-nl.js` - Nederlandse uitlegtekst gekoppeld aan het huidige Vijfkaart-Hoog-profiel.
 - `rules/` - testbare bridge-regels, scoring, biedheuristiek, kaartspel en speelplanlogica.
 - `tests/` - unit tests en Playwright-smoketests.
 
 ## UI- en uitlegafspraken
 
 - Normale gameplay: visueel en compact, geen lange uitlegblokken.
-- Developer mode: mag technische regelreferenties, heuristieken en testhulpmiddelen tonen.
+- Developer mode: moet uitgebreide technische regelreferenties, heuristieken en testhulpmiddelen tonen.
 - AI-suggesties: kort en eerlijk; formuleer als suggestie, niet als absolute waarheid.
 - Review/woordenlijst: geschikt voor extra uitleg na afloop of op aanvraag.
 - Toekomstige lessen/oefenmodus: plek voor uitgebreidere feedback en didactiek.
