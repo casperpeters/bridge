@@ -4,6 +4,7 @@ require("./unit/core.test.js");
 require("./unit/api.test.js");
 require("./unit/scoring.test.js");
 require("./unit/auction.test.js");
+require("./unit/bidding-dispatcher.test.js");
 require("./unit/vijfkaart-hoog-openings.test.js");
 require("./unit/vijfkaart-hoog-responses.test.js");
 require("./unit/vijfkaart-hoog-rebids.test.js");

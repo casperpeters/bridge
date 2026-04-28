@@ -6,6 +6,7 @@
         auction: require("./rules/auction.js"),
         scoring: require("./rules/scoring.js"),
         biddingFiveCardHigh: require("./rules/bidding-five-card-high.js"),
+        bidding: require("./rules/bidding.js"),
         playMechanics: require("./rules/play-mechanics.js"),
         playPlan: require("./rules/play-plan.js"),
         cardPlay: require("./rules/card-play.js")
@@ -22,6 +23,7 @@
     "auction",
     "scoring",
     "biddingFiveCardHigh",
+    "bidding",
     "playMechanics",
     "playPlan",
     "cardPlay"
@@ -66,6 +68,7 @@
     "highestBidCall",
     "highestBid",
     "isBidHigher",
+    "chooseBid",
     "chooseFiveCardHighBid",
     "chooseFiveCardHighBidResult",
     "chooseFiveCardHighBidTarget",

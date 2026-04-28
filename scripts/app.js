@@ -9,6 +9,7 @@ const rankLabel = { T: "10", J: "J", Q: "Q", K: "K", A: "A" };
 const settingsStorageKey = "bridge-app-settings";
 const bridgeRules = globalThis.BridgeRules;
 if (!bridgeRules) throw new Error("bridge-rules.js must load before app.js");
+const defaultBiddingSystem = bridgeRules.biddingSystems.fiveCardHigh;
 const seatEls = {
   North: document.querySelector("#north-hand"),
   East: document.querySelector("#east-hand"),
@@ -49,6 +50,8 @@ const state = {
   guidanceMode: false,
   showPlayHistory: false,
   showAdvancedBidControls: false,
+  biddingSystemId: defaultBiddingSystem.id,
+  biddingAgreements: { ...defaultBiddingSystem.conventionDefaults },
   pendingStop: false,
   pendingAlert: false,
   status: { key: "chooseAndDeal", args: {} },

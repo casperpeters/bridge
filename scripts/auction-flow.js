@@ -44,11 +44,13 @@ function chooseBid(seat) {
 }
 
 function chooseBidResult(seat) {
-  return bridgeRules.chooseFiveCardHighBidResult({
+  return bridgeRules.chooseBid({
+    systemId: state.biddingSystemId,
     hand: state.hands[seat],
     auction: state.auction,
     seat,
-    vulnerability: state.vulnerability
+    vulnerability: state.vulnerability,
+    agreements: state.biddingAgreements
   });
 }
 
@@ -153,12 +155,13 @@ function legalAutoBid(seat) {
 function legalAutoBidResult(seat) {
   const result = chooseBidResult(seat);
   const bid = result.bid;
-  if (!bid) return { bid: bridgeRules.Pass(), ruleId: "fiveCardHigh.pass.noAction" };
+  const systemId = result.system || state.biddingSystemId;
+  if (!bid) return { bid: bridgeRules.Pass(), ruleId: `${systemId}.pass.noAction`, system: systemId };
   if (isContractBid(bid) && isBidHigher(bid, highestBid())) return result;
   if (isDouble(bid) && canDouble(seat)) return result;
   if (isRedouble(bid) && canRedouble(seat)) return result;
   if (isPass(bid)) return result;
-  return { ...result, bid: bridgeRules.Pass(), ruleId: "fiveCardHigh.legalize.pass" };
+  return { ...result, bid: bridgeRules.Pass(), ruleId: `${systemId}.legalize.pass`, system: systemId };
 }
 
 function findDeclarer(contract) {

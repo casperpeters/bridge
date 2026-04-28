@@ -255,16 +255,29 @@ test("developer bid explanations describe opener rebids after notrump responses"
     state.phase = "bidding";
     state.hands.South = southHand;
     state.auction = [
-      { seat: "South", bid: bridgeRules.Bid(1, "S"), bidResult: bridgeRules.chooseFiveCardHighBidResult({ hand: southHand, auction: [], seat: "South", vulnerability: state.vulnerability }) },
+      {
+        seat: "South",
+        bid: bridgeRules.Bid(1, "S"),
+        bidResult: bridgeRules.chooseBid({
+          systemId: state.biddingSystemId,
+          hand: southHand,
+          auction: [],
+          seat: "South",
+          vulnerability: state.vulnerability,
+          agreements: state.biddingAgreements
+        })
+      },
       { seat: "West", bid: bridgeRules.Pass() },
       { seat: "North", bid: bridgeRules.Bid(1, "NT") },
       { seat: "East", bid: bridgeRules.Pass() }
     ];
-    const bidResult = bridgeRules.chooseFiveCardHighBidResult({
+    const bidResult = bridgeRules.chooseBid({
+      systemId: state.biddingSystemId,
       hand: southHand,
       auction: state.auction,
       seat: "South",
-      vulnerability: state.vulnerability
+      vulnerability: state.vulnerability,
+      agreements: state.biddingAgreements
     });
     state.auction.push({ seat: "South", bid: bidResult.bid, bidResult });
     renderAll();
@@ -299,11 +312,13 @@ test("developer bid explanations describe fourth-suit forcing as artificial", as
       { seat: "South", bid: bridgeRules.Bid(2, "D") },
       { seat: "West", bid: bridgeRules.Pass() }
     ];
-    const bidResult = bridgeRules.chooseFiveCardHighBidResult({
+    const bidResult = bridgeRules.chooseBid({
+      systemId: state.biddingSystemId,
       hand: northHand,
       auction: state.auction,
       seat: "North",
-      vulnerability: state.vulnerability
+      vulnerability: state.vulnerability,
+      agreements: state.biddingAgreements
     });
     state.auction.push({ seat: "North", bid: bidResult.bid, bidResult });
     renderAll();

@@ -15,6 +15,7 @@ test("bridge-rules public API stays stable", () => {
     "callTypes",
     "canDoubleFromAuction",
     "canRedoubleFromAuction",
+    "chooseBid",
     "chooseCardPlay",
     "chooseFiveCardHighBid",
     "chooseFiveCardHighBidResult",
