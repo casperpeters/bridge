@@ -139,8 +139,23 @@ function explainCardPlay(seat, card, result = chooseCardPlayResult(seat)) {
 function explainCardPlayResult(result) {
   const ruleName = result.ruleId.split(".").pop();
   if (ruleName === "drawTrumps") {
-    const timing = result.timing === "afterRuff" ? "na de geplande introever" : "nu";
+    if (result.timing === "limitedBeforeRuff") {
+      return `Trek nu maximaal ${result.roundLimit} ronde troef, maar bewaar troef bij ${seatName(result.preserveSeat)} voor de geplande introever.`;
+    }
+    const timing = result.timing === "afterRuff"
+      ? "na de geplande introever"
+      : result.timing === "afterLongSuitRuff"
+        ? "nadat de lange zijkleur is vrijgetroefd"
+        : result.timing === "afterUnblock"
+          ? "na het deblokkeren"
+          : result.timing === "afterUrgentDiscard"
+            ? "nadat eerst een verliezer op een hoge bijkleur is weggegooid"
+            : "nu";
     return `Trek ${suitName(result.suit)} ${timing} door een hoge troef voor te spelen.`;
+  }
+  if (ruleName === "discardLoserOnWinner") {
+    const ranks = result.cashRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
+    return `Speel eerst de hoge ${suitName(result.suit)}${ranks ? ` (${ranks})` : ""}, zodat er een verliezer in ${suitName(result.attackedSuit)} weg kan voordat je troef trekt.`;
   }
   if (ruleName === "ruffShortSuit") {
     return `Speel ${suitName(result.suit)} zodat ${seatName(result.shortSeat)} kan introeven.`;
@@ -148,6 +163,16 @@ function explainCardPlayResult(result) {
   if (ruleName === "enterLongTrumpHand") {
     const rank = rankLabel[result.entryRank] || result.entryRank;
     return `Speel laag ${suitName(result.entrySuit)} naar de ${rank} van ${seatName(result.targetSeat)} zodat die daarna ${suitName(result.suit)} kan naspelen voor de introever.`;
+  }
+  if (ruleName === "establishLongSuitByRuffing") {
+    return `Speel de lange ${suitName(result.suit)} van ${seatName(result.longSeat)} door voordat je alle troeven trekt; er blijven troeven nodig om die kleur vrij te troeven.`;
+  }
+  if (ruleName === "enterLongSuitHand") {
+    const rank = rankLabel[result.entryRank] || result.entryRank;
+    return `Speel laag ${suitName(result.entrySuit)} naar de ${rank} van ${seatName(result.targetSeat)} om de lange ${suitName(result.suit)} verder vrij te troeven.`;
+  }
+  if (ruleName === "ruffOutLongSuit") {
+    return `Troef ${suitName(result.suit)} in ${seatName(result.shortSeat)} om de lange kleur van ${seatName(result.longSeat)} vrij te spelen.`;
   }
   if (ruleName === "cashSureWinners") return "Speel een hoge zekere slag uit voordat je een nieuwe kleur openbreekt.";
   if (ruleName === "longestSuitLead") {
@@ -200,6 +225,10 @@ function explainCardPlayResult(result) {
   if (ruleName === "returnPartnerLeadSuit") {
     return `Speel partners uitkomstkleur ${suitName(result.suit)} terug zolang dat veilig en beschikbaar is.`;
   }
+  if (ruleName === "holdUpStopper") {
+    const stopper = rankLabel[result.stopperRank] || result.stopperRank;
+    return `Houd de ${stopper} in ${suitName(result.suit)} nog vast en speel laag, zodat de tegenspelers hun kleur minder makkelijk kunnen vrijspelen.`;
+  }
   if (ruleName === "finesseTowardHonor") {
     const finesse = rankLabel[result.finesseRank] || result.finesseRank;
     const missing = rankLabel[result.missingHonor] || result.missingHonor;
@@ -212,6 +241,16 @@ function explainCardPlayResult(result) {
       .map((rank) => rankLabel[rank] || rank)
       .join(" en ");
     return `Speel laag naar de ${finesse} in ${suitName(result.suit)} voor een dubbele snit tegen ${missing}${finesseEntryText(result)}.`;
+  }
+  if (ruleName === "repeatFinesse") {
+    const finesse = rankLabel[result.finesseRank] || result.finesseRank;
+    const missing = rankLabel[result.missingHonor] || result.missingHonor;
+    return `Herhaal de snit: speel laag naar de ${finesse} in ${suitName(result.suit)} zolang de ${missing} nog niet is gevallen${finesseEntryText(result)}.`;
+  }
+  if (ruleName === "twoWayFinesse") {
+    const finesse = rankLabel[result.finesseRank] || result.finesseRank;
+    const missing = rankLabel[result.missingHonor] || result.missingHonor;
+    return `Speel de tweerichtingssnit in ${suitName(result.suit)} richting ${seatName(result.targetSeat)} naar de ${finesse}; de ${missing} ontbreekt nog${finesseEntryText(result)}.`;
   }
   if (ruleName === "developLongSuit") {
     const missing = rankLabel[result.missingStopper] || result.missingStopper;

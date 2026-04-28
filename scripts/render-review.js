@@ -53,7 +53,6 @@ function renderReview() {
     [t("openingLead"), openingPlay ? `${seatName(openingPlay.seat)} ${cardText(openingPlay.card)}` : t("none")]
   ].forEach(([label, value]) => els.reviewSummary.appendChild(reviewRow(label, value)));
   appendScoreExplanation(passOut, resultText);
-  els.reviewSummary.appendChild(reviewSectionTitle("Hand opnieuw spelen"));
   [
     [t("board"), state.dealNumber],
     [t("seed"), state.dealSeed || t("none")]
@@ -79,7 +78,7 @@ function renderReview() {
   if (state.developerMode && state.playExplanations.length) {
     els.reviewTricks.appendChild(reviewSectionTitle(t("playExplanations")));
     state.playExplanations.forEach((explanation) => {
-      els.reviewTricks.appendChild(reviewRow(`${t("trick")} ${explanation.trick}: ${seatName(explanation.seat)} ${cardText(explanation.card)}`, explanation.text));
+      els.reviewTricks.appendChild(playExplanationEl(explanation));
     });
   }
 }

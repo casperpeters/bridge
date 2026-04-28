@@ -1,6 +1,8 @@
 function renderPlayPlan() {
   els.playPlan.hidden = true;
   els.playPlan.innerHTML = "";
+  if (!state.developerMode) return;
+
   const plan = currentPlayPlan();
   if (!plan) return;
 
@@ -127,6 +129,10 @@ function playPlanList(label, items, className = "") {
 }
 
 function playPlanPriorityText(priority) {
+  if (priority.kind === "holdUpStopper") {
+    const stopper = rankLabel[priority.stopperRank] || priority.stopperRank;
+    return `Houd de ${stopper} in ${suitName(priority.suit)} nog vast; speel laag zolang dat kan, omdat er nog ${priority.needToDevelop} slag${priority.needToDevelop === 1 ? "" : "en"} ontwikkeld moet${priority.needToDevelop === 1 ? "" : "en"} worden.`;
+  }
   if (priority.kind === "developLongSuit") {
     const missing = rankLabel[priority.missingStopper] || priority.missingStopper;
     const entry = priority.entryTiming === "outsideEntry"
@@ -142,16 +148,46 @@ function playPlanPriorityText(priority) {
     const rank = rankLabel[priority.finesseRank] || priority.finesseRank;
     return `Overweeg een dubbele snit naar de ${rank} in ${suitName(priority.suit)}; dit blijft onzeker.`;
   }
+  if (priority.kind === "repeatFinesse") {
+    const rank = rankLabel[priority.finesseRank] || priority.finesseRank;
+    const missing = rankLabel[priority.missingHonor] || priority.missingHonor;
+    return `Herhaal de snit in ${suitName(priority.suit)} naar de ${rank}; de ${missing} is nog niet gevallen.`;
+  }
+  if (priority.kind === "twoWayFinesse") {
+    const rank = rankLabel[priority.finesseRank] || priority.finesseRank;
+    return `Neem de tweerichtingssnit in ${suitName(priority.suit)} richting ${seatName(priority.targetSeat)} naar de ${rank}; deze richting past nu het best bij entrees en lengte.`;
+  }
   if (priority.kind === "ruffShortSuit") {
     return `Gebruik de korte ${suitName(priority.suit)} van ${seatName(priority.shortSeat)} om verliezers te troeven; als die hand aan slag is, zoek eerst een entree naar de andere hand.`;
   }
+  if (priority.kind === "establishLongSuitByRuffing") {
+    const entry = priority.entrySuit
+      ? ` Bewaar de entree via ${rankLabel[priority.entryRank] || priority.entryRank} ${suitName(priority.entrySuit)} naar ${seatName(priority.longSeat)}.`
+      : "";
+    const entries = typeof priority.entryCount === "number" ? ` Er zijn ${priority.entryCount} duidelijke entree${priority.entryCount === 1 ? "" : "s"}.` : "";
+    return `Ontwikkel de lange ${suitName(priority.suit)} van ${seatName(priority.longSeat)} door die kleur te spelen en in ${seatName(priority.shortSeat)} te troeven; verwacht ongeveer ${priority.maxUsefulRuffs || priority.estimatedRuffsNeeded} introever${(priority.maxUsefulRuffs || priority.estimatedRuffsNeeded) === 1 ? "" : "s"}.${entry}${entries}`;
+  }
   if (priority.kind === "drawTrumps") {
+    const missing = priority.missingHonors?.length
+      ? ` Ontbrekend hoog: ${priority.missingHonors.map((rank) => rankLabel[rank] || rank).join(", ")}.`
+      : "";
+    if (priority.timing === "limitedBeforeRuff") {
+      return `Trek eerst maximaal ${priority.roundLimit} ronde troef en bewaar minstens ${priority.preserveTrumpCount} troef${priority.preserveTrumpCount === 1 ? "" : "en"} bij ${seatName(priority.preserveSeat)} voor de introever; jullie hebben ${priority.trumpLength} troeven samen.${missing}`;
+    }
     const timing = priority.timing === "afterRuff"
       ? "nadat de directe introever is genomen"
-      : priority.timing === "afterUnblock"
-        ? `nadat ${suitName(priority.delaySuit)} is gedeblokkeerd`
-        : "vroeg";
-    return `Trek ${suitName(priority.suit)} ${timing}; jullie hebben ${priority.trumpLength} troeven samen.`;
+      : priority.timing === "afterLongSuitRuff"
+        ? "nadat de lange zijkleur is vrijgetroefd"
+        : priority.timing === "afterUnblock"
+          ? `nadat ${suitName(priority.delaySuit)} is gedeblokkeerd`
+          : priority.timing === "afterUrgentDiscard"
+            ? `nadat eerst een verliezer op ${suitName(priority.delaySuit)} is weggegooid`
+            : "vroeg";
+    return `Trek ${suitName(priority.suit)} ${timing}; jullie hebben ${priority.trumpLength} troeven samen.${missing}`;
+  }
+  if (priority.kind === "discardLoserOnWinner") {
+    const ranks = priority.cashRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
+    return `Speel eerst de hoge ${suitName(priority.suit)}${ranks ? ` (${ranks})` : ""} om een verliezer in ${suitName(priority.attackedSuit)} weg te gooien; wacht daarom nog even met troeftrekken.`;
   }
   if (priority.kind === "cashWinners") {
     const ranks = priority.cashRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
@@ -191,9 +227,16 @@ function playPlanReferenceText(result) {
     if (ruleName === "developLongSuit") return priority.kind === "developLongSuit";
     if (ruleName === "finesseTowardHonor") return priority.kind === "finesse";
     if (ruleName === "doubleFinesseTowardHonor") return priority.kind === "doubleFinesse";
+    if (ruleName === "holdUpStopper") return priority.kind === "holdUpStopper";
+    if (ruleName === "repeatFinesse") return priority.kind === "repeatFinesse";
+    if (ruleName === "twoWayFinesse") return priority.kind === "twoWayFinesse";
     if (ruleName === "drawTrumps") return priority.kind === "drawTrumps";
+    if (ruleName === "discardLoserOnWinner") return priority.kind === "discardLoserOnWinner";
     if (ruleName === "ruffShortSuit") return priority.kind === "ruffShortSuit";
     if (ruleName === "enterLongTrumpHand") return priority.kind === "ruffShortSuit";
+    if (ruleName === "establishLongSuitByRuffing") return priority.kind === "establishLongSuitByRuffing";
+    if (ruleName === "enterLongSuitHand") return priority.kind === "establishLongSuitByRuffing";
+    if (ruleName === "ruffOutLongSuit") return priority.kind === "establishLongSuitByRuffing";
     if (ruleName === "cashWinners") return priority.kind === "cashWinners";
     if (ruleName === "cashSureWinners") return priority.kind === "cashSureWinners";
     return false;

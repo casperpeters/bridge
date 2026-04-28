@@ -92,6 +92,10 @@ const els = {
   closeScoreTable: document.querySelector("#close-score-table"),
   newHand: document.querySelector("#new-hand"),
   sameHand: document.querySelector("#same-hand"),
+  replayPanel: document.querySelector("#replay-panel"),
+  replayTitle: document.querySelector("#replay-title"),
+  replayNewHand: document.querySelector("#replay-new-hand"),
+  replaySameHand: document.querySelector("#replay-same-hand"),
   quickReview: document.querySelector("#quick-review"),
   seedLabel: document.querySelector("#seed-label"),
   seedInput: document.querySelector("#seed-input"),
@@ -145,6 +149,8 @@ loadSavedSettings();
 
 els.newHand.addEventListener("click", startHand);
 els.sameHand.addEventListener("click", replayHand);
+els.replayNewHand.addEventListener("click", startHand);
+els.replaySameHand.addEventListener("click", replayHand);
 els.quickReview.addEventListener("click", jumpToTrickOverview);
 BridgeGlossary.init({
   dialog: els.glossaryDialog,
@@ -325,6 +331,7 @@ function renderAll() {
   renderGuidance();
   renderFeedbackStatus();
   renderIllegalActionFeedback();
+  renderReplayPanel();
   els.dealerBadge.textContent = `${t("board")} ${state.dealNumber} ${separatorDot} ${t("dealer")}: ${seatName(seatAt(state.dealerIndex))}`;
   els.trickCount.textContent = `${state.tricks.NS + state.tricks.EW} ${t("tricks")}`;
   els.scoreline.textContent = state.finalScore
@@ -334,6 +341,10 @@ function renderAll() {
   renderTrickAdvanceHint();
   renderSeedControls();
   renderStatus();
+}
+
+function renderReplayPanel() {
+  els.replayPanel.hidden = state.phase !== "complete";
 }
 
 function renderTurnFocus() {
@@ -376,6 +387,9 @@ function applyStaticText() {
   els.playHistoryModeDescription.textContent = t("playHistoryModeHelp");
   els.newHand.textContent = t("newHand");
   els.sameHand.textContent = t("sameHand");
+  els.replayTitle.textContent = t("replayTitle");
+  els.replayNewHand.textContent = t("newHand");
+  els.replaySameHand.textContent = t("sameHand");
   els.quickReview.textContent = t("quickReview");
   els.developerOnlyMenuSections.forEach((section) => {
     section.hidden = !state.developerMode;

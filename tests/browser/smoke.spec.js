@@ -349,7 +349,7 @@ test("pauses completed tricks without previewing the next AI card suggestion", a
   await expect(page.locator("#trick-advance-hint")).toContainText("West wint slag 1.");
 });
 
-test("keeps dummy and the play plan hidden until after the opening lead", async ({ page }) => {
+test("keeps dummy hidden until the opening lead and shows the play plan only in developer mode", async ({ page }) => {
   await openFreshApp(page);
   await prepareNorthSouthDeclarerHand(page);
 
@@ -364,7 +364,17 @@ test("keeps dummy and the play plan hidden until after the opening lead", async 
   await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
   await expect(page.locator(".table-area")).toHaveClass(/turn-focus-north/);
   await expect(page.locator("#dummy-notice")).toContainText("dummy");
+  await expect(page.locator("#play-plan-panel")).toBeHidden();
+
+  await page.evaluate(() => {
+    state.developerMode = true;
+    renderAll();
+  });
   await expect(page.locator("#play-plan-panel")).toBeVisible();
+  const playPlanBeforeBidExplanations = await page.evaluate(
+    () => document.querySelector("#play-plan-panel").nextElementSibling?.id === "bid-explanations"
+  );
+  expect(playPlanBeforeBidExplanations).toBe(true);
 
   await page.locator("#north-hand .card.legal").first().focus();
   await page.keyboard.press("Enter");
@@ -424,11 +434,26 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await expect(page.locator("#review-summary")).toContainText("Waarom deze score?");
   await expect(page.locator("#review-summary")).toContainText("Nodig voor contract");
   await expect(page.locator("#review-summary")).toContainText("Herhaalcode");
+  await expect(page.locator("#review-summary")).not.toContainText("Hand opnieuw spelen");
   await expect(page.locator("#review-summary")).toContainText("Eerste kaart");
   await expect(page.locator("#review-summary")).toContainText("Eindscore");
   await expect(page.locator("#review-summary")).not.toContainText("Handseed");
   await expect(page.locator("#review-summary")).not.toContainText("Contractdoel");
   await expect(page.locator("#review-tricks tbody tr")).toHaveCount(13);
+  await expect(page.locator("#review-tricks .play-explanation").first()).toBeVisible();
+  await expect(page.locator("#review-tricks .play-explanation").first()).toContainText("Slag");
+  await expect
+    .poll(() =>
+      page.locator("#review-panel").evaluate((panel) => {
+        panel.scrollTop = panel.scrollHeight;
+        return panel.scrollTop > 0;
+      })
+    )
+    .toBe(true);
+  await expect(page.locator("#replay-panel")).toBeVisible();
+  await expect(page.locator("#replay-panel")).toContainText("Speel opnieuw");
+  await expect(page.locator("#replay-new-hand")).toBeVisible();
+  await expect(page.locator("#replay-same-hand")).toBeVisible();
 
   await clickMenuButton(page, "#open-feedback");
   await expect(page.locator("#feedback-dialog")).toBeVisible();

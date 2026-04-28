@@ -1,6 +1,6 @@
 # TODO: Routekaart Bridge-app
 
-Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na codecheck op 2026-04-27.
+Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na codecheck op 2026-04-28.
 
 ## Werkprincipes
 
@@ -34,8 +34,9 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Speelplan en kaartadvies
 
-- Breid speelplan-randgevallen uit voorbij de huidige basis: hold-upspel in sans-atout, herhaalde snits, tweerichtingssnits en rijkere timing wanneer meerdere planregels tegelijk speelbaar zijn.
-- Verfijn kleurcontractplannen met meer uitzonderingen rond troefcontrole, introevers en zij-kleuren ontwikkelen.
+- Voeg eerst NBB-gebaseerde kleurcontractfixtures toe voor het kernprincipe: “troef trekken, tenzij er een duidelijke reden is om dat niet te doen”. Dek daarbij minimaal: stabiel vroeg troeftrekken, korte-troefkant aftroeven, lange bijkleur vrijtroeven met bewaarde entrees, en directe verliezer weggooien op een hoge bijkleur wanneer een stopper wordt aangevallen.
+- Breid daarna speelplan-randgevallen verder uit met keuzes waar meerdere even sterke planregels tegelijk speelbaar zijn.
+- Verfijn kleurcontractplannen later verder met specifieke kleurcontractsnits en complexere communicatie tussen beide leiderhanden.
 - Houd kaartadvies aan leiderskant gekoppeld aan het zichtbare speelplan; AI-suggesties en developermodus-uitleg moeten dezelfde planregel noemen.
 - Voeg alleen feedback na kaartkeuzes toe waar de planregel betrouwbaar genoeg is. Anders hoogstens: legaal, onzeker, of “de app zou X suggereren”.
 

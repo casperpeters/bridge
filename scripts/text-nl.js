@@ -17,6 +17,7 @@ const text = {
   guidanceMode: "AI-suggesties",
   playHistoryMode: "Speelgeschiedenis",
   bidExplanations: "Bieduitleg",
+  replayTitle: "Speel opnieuw",
   newHand: "Nieuwe hand",
   sameHand: "Zelfde hand",
   quickReview: "Test slagenoverzicht",
