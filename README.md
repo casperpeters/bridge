@@ -83,7 +83,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Pause after each completed trick so the player can inspect the cards.
 - Replay the same hand without advancing the board.
 - Copy or load a hand seed to replay a specific card distribution.
-- Curated beginner practice hands, including basic defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
+- Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
 - Trick history and full hand review after completion.
 - Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, auction, tricks, score, settings, current phase, and optional tester notes.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.

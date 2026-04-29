@@ -32,7 +32,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Oefenhanden en leerbare situaties
 
-- Breid de eerste `practice-hands/` catalogus verder uit voor nieuwe kleur na `1H/1S`, eenvoudige volgbiedingen, negative double en extra dummyspel.
+- Breid de eerste `practice-hands/` catalogus verder uit met extra dummyspel en concrete bied-/speelmissers uit testgebruik.
 - Houd oefenspellen reproduceerbaar met oefenhand-id en kort testdoel.
 - Houd uitleg buiten de basisgame; oefenmodus, AI-suggesties en developermodus mogen meer tekst bevatten.
 

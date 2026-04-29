@@ -5,6 +5,7 @@
     ? {
         fiveCardHighOpenings: require("./five-card-high-openings.js"),
         notrumpResponses: require("./notrump-responses.js"),
+        basicBidding: require("./bidding-basic.js"),
         basicPlayPlan: require("./play-plan-basic.js"),
         basicDefense: require("./defense-basic.js"),
         basicScoring: require("./scoring-basic.js")
@@ -38,6 +39,7 @@
   const collectionOrder = [
     "fiveCardHighOpenings",
     "notrumpResponses",
+    "basicBidding",
     "basicPlayPlan",
     "basicDefense",
     "basicScoring"

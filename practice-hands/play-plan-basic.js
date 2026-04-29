@@ -152,6 +152,35 @@
         "Hier moeten de klaveren worden vrijgespeeld door de aas eruit te werken.",
         "De dummy heeft een entree, dus de ontwikkelde klaveren zijn later bereikbaar."
       ]
+    },
+    {
+      id: "notrump-unblock-long-suit-001",
+      title: "Deblokkeren voordat je naar dummy gaat",
+      level: "beginner",
+      focus: ["play", "play-plan", "notrump", "unblock", "entries"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Bij 3SA moet Zuid eerst klaveren aas cashen om dummy's lange klaverenkleur niet te blokkeren.",
+      hands: {
+        North: ["9S", "8S", "4S", "3S", "KC", "QC", "JC", "4C", "3C", "2C", "AD", "7D", "6D"],
+        East: ["KS", "QS", "2S", "JH", "TH", "9H", "8H", "7H", "TC", "9C", "5C", "8D", "5D"],
+        South: ["AS", "7S", "6S", "5S", "AH", "KH", "QH", "5H", "4H", "AC", "4D", "3D", "2D"],
+        West: ["JS", "TS", "6H", "3H", "2H", "9D", "TD", "JD", "QD", "KD", "8C", "7C", "6C"]
+      },
+      expectedContract: { contract: "3NT", declarer: "South" },
+      expectedPlayPlan: {
+        priorityKind: "cashWinners",
+        suit: "C",
+        timing: "unblockBeforeEntry",
+        entrySuit: "D",
+        entryRank: "A"
+      },
+      explanationKeys: ["playPlan.cashWinners"],
+      teachingPoints: [
+        "Als dummy een lange kleur heeft maar Zuid het aas sec/hoog houdt, kan die kleur blokkeren.",
+        "Cash eerst klaveren aas en gebruik daarna de ruitenentree om dummy's klaveren te maken."
+      ]
     }
   ];
 });
