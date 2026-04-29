@@ -813,6 +813,35 @@
         return [...cards].sort((a, b) => rankOrder.indexOf(b.rank) - rankOrder.indexOf(a.rank))[3] || null;
       }
 
+  function unsupportedHonorUnderleadRisk(cards, leadCard) {
+        if (!leadCard || !cards?.length) return null;
+        const ranks = new Set(cards.map((card) => card.rank));
+        const unsupportedHonors = [
+          { honor: "A", support: "K" },
+          { honor: "K", support: "Q" },
+          { honor: "Q", support: "J" }
+        ];
+        return unsupportedHonors.find(({ honor, support }) => {
+          if (!ranks.has(honor) || ranks.has(support)) return false;
+          return rankOrder.indexOf(leadCard.rank) < rankOrder.indexOf(honor);
+        }) || null;
+      }
+
+  function safeSuitContractLengthLeadGroups(groups) {
+        return groups
+          .map((group) => ({ ...group, leadCard: fourthBestCard(group.cards) }))
+          .filter((group) => group.leadCard && !unsupportedHonorUnderleadRisk(group.cards, group.leadCard));
+      }
+
+  function unsafeSuitContractLengthLeadGroups(groups) {
+        return groups
+          .map((group) => {
+            const leadCard = fourthBestCard(group.cards);
+            return { ...group, leadCard, risk: unsupportedHonorUnderleadRisk(group.cards, leadCard) };
+          })
+          .filter((group) => group.leadCard && group.risk);
+      }
+
   function chooseSuitContractLeadCardPlay(legal, trump) {
         const sideSuits = sideSuitGroups(legal, trump);
         if (!sideSuits.length) return null;
@@ -872,25 +901,26 @@
           );
         }
 
-        const longSuit = sideSuits
-          .filter((group) => group.cards.length >= 4)
-          .sort(suitGroupOrder)[0];
-        if (longSuit) {
+        const lengthGroups = sideSuits.filter((group) => group.cards.length >= 4).sort(suitGroupOrder);
+        const safeLongSuit = safeSuitContractLengthLeadGroups(lengthGroups)[0];
+        if (safeLongSuit) {
           return cardPlayResult(
-            fourthBestCard(longSuit.cards),
+            safeLongSuit.leadCard,
             "suitContractFourthBestLead",
             "basic",
-            "Lead fourth best from length against a suit contract.",
+            "Lead fourth best from length against a suit contract when the suit is not underleading an unsupported honor.",
             {
-              suit: longSuit.suit,
-              suitLength: longSuit.cards.length,
-              action: "fourthBest"
+              suit: safeLongSuit.suit,
+              suitLength: safeLongSuit.cards.length,
+              action: "fourthBest",
+              honorSafety: "safeLength"
             }
           );
         }
 
         const threeSmall = sideSuits.find((group) => group.cards.length === 3 && group.cards.every(isLowLeadCard));
         if (threeSmall) {
+          const avoided = unsafeSuitContractLengthLeadGroups(lengthGroups)[0];
           return cardPlayResult(
             lowestCard(threeSmall.cards),
             "suitContractLowFromThreeSmall",
@@ -899,7 +929,27 @@
             {
               suit: threeSmall.suit,
               suitLength: threeSmall.cards.length,
-              action: "lowFromThreeSmall"
+              action: "lowFromThreeSmall",
+              avoidedSuit: avoided?.suit || null,
+              avoidedHonor: avoided?.risk?.honor || null,
+              honorSafety: avoided ? "avoidedUnsupportedHonorUnderlead" : "safeSmallCards"
+            }
+          );
+        }
+
+        const unsafeLongSuit = unsafeSuitContractLengthLeadGroups(lengthGroups)[0];
+        if (unsafeLongSuit) {
+          return cardPlayResult(
+            unsafeLongSuit.leadCard,
+            "suitContractFourthBestLead",
+            "uncertain",
+            "Lead fourth best from length only because no safer side-suit lead is available; this underleads an unsupported honor.",
+            {
+              suit: unsafeLongSuit.suit,
+              suitLength: unsafeLongSuit.cards.length,
+              action: "fourthBest",
+              honorSafety: "fallbackUnsupportedHonorUnderlead",
+              unsupportedHonor: unsafeLongSuit.risk.honor
             }
           );
         }

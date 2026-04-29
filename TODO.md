@@ -45,7 +45,6 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Basisverdediging
 
-- Voorkom dat verdedigers zonder reden van niet-ondersteunde honneurs wegspelen.
 - Voeg simpele troefuitkomsten/-switches toe wanneer dummy introefwaarde heeft of crossruff dreigt.
 
 ### Bieden

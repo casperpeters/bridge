@@ -206,9 +206,17 @@ function explainCardPlayResult(result) {
     return `Kom tegen een kleurcontract met de hoogste kaart van je doubleton in ${suitName(result.suit)}.`;
   }
   if (ruleName === "suitContractFourthBestLead") {
+    if (result.honorSafety === "fallbackUnsupportedHonorUnderlead") {
+      const honor = rankLabel[result.unsupportedHonor] || result.unsupportedHonor;
+      return `Kom tegen een kleurcontract met de vierde kaart van boven uit je lengte in ${suitName(result.suit)}; er is geen veiligere zijkleur, dus dit speelt wel onder een losse ${honor}.`;
+    }
     return `Kom tegen een kleurcontract met de vierde kaart van boven uit je lengte in ${suitName(result.suit)}.`;
   }
   if (ruleName === "suitContractLowFromThreeSmall") {
+    if (result.honorSafety === "avoidedUnsupportedHonorUnderlead") {
+      const honor = rankLabel[result.avoidedHonor] || result.avoidedHonor;
+      return `Kom tegen een kleurcontract laag uit drie kleintjes in ${suitName(result.suit)}: veiliger dan onder een losse ${honor} in ${suitName(result.avoidedSuit)} uitkomen.`;
+    }
     return `Kom tegen een kleurcontract laag uit drie kleintjes in ${suitName(result.suit)}.`;
   }
   if (ruleName === "thirdHandHighOverLowLead") {

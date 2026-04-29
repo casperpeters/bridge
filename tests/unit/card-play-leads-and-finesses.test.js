@@ -153,6 +153,93 @@ test("chooseCardPlay leads low from three small before the suit-contract fallbac
   assert.equal(result.ruleId, "suitContractLowFromThreeSmall");
 });
 
+test("chooseCardPlay avoids underleading an unsupported ace against a suit contract when three small is available", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AC", "8C", "5C", "2C", "9D", "6D", "3D", "AS"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "3D");
+  assert.equal(result.ruleId, "suitContractLowFromThreeSmall");
+  assert.equal(result.honorSafety, "avoidedUnsupportedHonorUnderlead");
+  assert.equal(result.avoidedSuit, "C");
+  assert.equal(result.avoidedHonor, "A");
+});
+
+test("chooseCardPlay avoids underleading unsupported king and queen suits when a safe suit is available", () => {
+  const kingRisk = rules.chooseCardPlay({
+    hand: hand("KH", "8H", "5H", "2H", "9D", "6D", "3D", "AS"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+  const queenRisk = rules.chooseCardPlay({
+    hand: hand("QH", "8H", "5H", "2H", "9D", "6D", "3D", "AS"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(kingRisk.card.id, "3D");
+  assert.equal(kingRisk.avoidedHonor, "K");
+  assert.equal(queenRisk.card.id, "3D");
+  assert.equal(queenRisk.avoidedHonor, "Q");
+});
+
+test("chooseCardPlay still prefers the top of a supported honor sequence against a suit contract", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "KH", "8H", "2H", "9D", "6D", "3D", "AS"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "AH");
+  assert.equal(result.ruleId, "suitContractSequenceLead");
+  assert.equal(result.sequence, "AK");
+});
+
+test("chooseCardPlay marks unsupported-honor underlead as uncertain when no safer side suit is available", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "8H", "5H", "2H", "KC", "8C", "5C", "2C", "AS"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2C");
+  assert.equal(result.ruleId, "suitContractFourthBestLead");
+  assert.equal(result.confidence, "uncertain");
+  assert.equal(result.honorSafety, "fallbackUnsupportedHonorUnderlead");
+  assert.equal(result.unsupportedHonor, "K");
+});
+
+test("chooseCardPlay keeps notrump low-from-honor length leads available", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AC", "8C", "5C", "2C", "9D", "6D", "3D", "AS"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "2C");
+  assert.equal(result.ruleId, "notrumpLowPromisesHonor");
+});
+
 test("chooseCardPlay keeps the strongest longest-suit lead heuristic as a named result", () => {
   const result = rules.chooseCardPlay({
     hand: [card("2C"), card("AC"), card("3H"), card("4H"), card("5H")],
