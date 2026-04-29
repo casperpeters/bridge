@@ -91,7 +91,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Settings menu with saved AI-suggestion mode, play-history mode, and developer mode.
 - Optional AI-suggestion mode with heuristic bid/card suggestions and short reasons.
 - Named bid and card-play rule results for AI suggestions and developer explanations, including explicit play-plan references where applicable.
-- Defensive card-play explanations for beginner rules such as second hand low, conservative honor covering from visible dummy threats, third hand high with visible played-card information, returning partner's opening lead suit, and avoiding unsupported-honor underleads against suit contracts when a safer side suit is available.
+- Defensive card-play explanations for beginner rules such as second hand low, conservative honor covering from visible dummy threats, third hand high with visible played-card information, returning partner's opening lead suit, avoiding unsupported-honor underleads against suit contracts when a safer side suit is available, and conservative trump switches against visible dummy ruffing value.
 - Strongest available card-play heuristics, including notrump declarer-play rules for developing long touching-honor suits and trying entry-aware simple and double finesses.
 - Developer mode with extra bid and play explanations.
 - Responsive layout for desktop and smaller screens.

@@ -1040,6 +1040,41 @@
       return { card: lowestCard(suitedLegal), type: "onlyHonors" };
     }
 
+  function dummyRuffThreat(dummyHand, trump) {
+      if (!trump || !dummyHand?.length) return null;
+      const dummyTrumps = cardsInSuit(dummyHand, trump);
+      if (dummyTrumps.length < 2) return null;
+
+      return suits
+        .filter((suit) => suit !== trump)
+        .map((suit) => ({ suit, length: cardsInSuit(dummyHand, suit).length }))
+        .filter((threat) => threat.length <= 1)
+        .sort((a, b) => a.length - b.length || suits.indexOf(a.suit) - suits.indexOf(b.suit))[0] || null;
+    }
+
+  function chooseTrumpSwitchAgainstDummyRuff({ legal, dummyHand, trump, seat, declarer }) {
+      if (!isDefensivePlaySeat(seat, declarer) || !trump || !dummyHand?.length) return null;
+      const trumpCards = cardsInSuit(legal, trump);
+      if (!trumpCards.length) return null;
+
+      const threat = dummyRuffThreat(dummyHand, trump);
+      if (!threat) return null;
+
+      return cardPlayResult(
+        lowestCard(trumpCards),
+        "trumpSwitchAgainstDummyRuff",
+        "basic",
+        "Switch to trump when dummy visibly has ruffing value in a short side suit and no stronger defensive return applies.",
+        {
+          action: "drawDummyTrumps",
+          trump,
+          dummyShortSuit: threat.suit,
+          dummyShortLength: threat.length,
+          dummyTrumpLength: cardsInSuit(dummyHand, trump).length
+        }
+      );
+    }
+
   function createCardPlayContext({ hand, currentTrick, trickHistory, seat, declarer, trump }) {
       const legal = legalCards(hand, currentTrick);
       const leadSuit = currentTrick[0]?.card?.suit || null;
@@ -1280,6 +1315,17 @@
         });
         if (returnPartnerLeadSuit) return returnPartnerLeadSuit;
 
+        if (!context.isOpeningLead) {
+          const trumpSwitchAgainstDummyRuff = chooseTrumpSwitchAgainstDummyRuff({
+            legal,
+            dummyHand,
+            trump,
+            seat,
+            declarer
+          });
+          if (trumpSwitchAgainstDummyRuff) return trumpSwitchAgainstDummyRuff;
+        }
+
         return chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead });
       }
 
@@ -1418,6 +1464,8 @@
     chooseLeadCardPlay,
     openingLeadPlay,
     chooseReturnPartnerLeadSuit,
+    dummyRuffThreat,
+    chooseTrumpSwitchAgainstDummyRuff,
     createCardPlayContext,
     isLowPromisesHonorLead,
     chooseThirdHandHighOverLowLead,

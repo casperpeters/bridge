@@ -216,6 +216,141 @@ test("chooseCardPlay does not return partner's opening lead suit for the declare
   assert.equal(result.card.id, "AC");
 });
 
+test("chooseCardPlay switches to a low trump when visible dummy has ruffing value", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("3S", "9H", "7H", "2C"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("2D") },
+        { seat: "East", card: card("AD") },
+        { seat: "South", card: card("3D") },
+        { seat: "West", card: card("4D") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("AS", "KS", "QS", "8C", "7C", "6C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "3S");
+  assert.equal(result.ruleId, "trumpSwitchAgainstDummyRuff");
+  assert.equal(result.dummyShortSuit, "D");
+  assert.equal(result.dummyShortLength, 0);
+  assert.equal(result.dummyTrumpLength, 3);
+});
+
+test("chooseCardPlay switches to trump when visible dummy has a singleton side suit", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("4S", "2S", "9H", "7H", "2C"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("2D") },
+        { seat: "East", card: card("AD") },
+        { seat: "South", card: card("3D") },
+        { seat: "West", card: card("4D") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("AS", "KS", "QS", "8H", "7H", "6H", "5H", "9C", "8C", "2D"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2S");
+  assert.equal(result.ruleId, "trumpSwitchAgainstDummyRuff");
+  assert.equal(result.dummyShortSuit, "D");
+  assert.equal(result.dummyShortLength, 1);
+});
+
+test("chooseCardPlay returns partner's suit before considering a dummy-ruff trump switch", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("3S", "9H", "7H", "2C"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("4H") },
+        { seat: "East", card: card("AH") },
+        { seat: "South", card: card("QH") },
+        { seat: "West", card: card("3H") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("AS", "KS", "QS", "8C", "7C", "6C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "7H");
+  assert.equal(result.ruleId, "returnPartnerLeadSuit");
+});
+
+test("chooseCardPlay does not switch to trump without visible dummy ruffing value", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("3S", "9H", "7H", "2C"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("2D") },
+        { seat: "East", card: card("AD") },
+        { seat: "South", card: card("3D") },
+        { seat: "West", card: card("4D") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.notEqual(result.ruleId, "trumpSwitchAgainstDummyRuff");
+});
+
+test("chooseCardPlay does not switch to trump in notrump or when dummy has too few trumps", () => {
+  const notrump = rules.chooseCardPlay({
+    hand: hand("3S", "9H", "7H", "2C"),
+    currentTrick: [],
+    trickHistory: [{ number: 1, winner: "South", cards: [{ seat: "North", card: card("2D") }] }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("AS", "KS", "8C", "7C", "6C"),
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+  const tooFewTrumps = rules.chooseCardPlay({
+    hand: hand("3S", "9H", "7H", "2C"),
+    currentTrick: [],
+    trickHistory: [{ number: 1, winner: "South", cards: [{ seat: "North", card: card("2D") }] }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("AS", "8C", "7C", "6C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.notEqual(notrump.ruleId, "trumpSwitchAgainstDummyRuff");
+  assert.notEqual(tooFewTrumps.ruleId, "trumpSwitchAgainstDummyRuff");
+});
+
 test("chooseCardPlay makes a defender second hand play low even when a cheap winner is available", () => {
   const result = rules.chooseCardPlay({
     hand: hand("9H", "2H", "AS"),

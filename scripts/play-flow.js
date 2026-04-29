@@ -243,6 +243,10 @@ function explainCardPlayResult(result) {
     const sequence = result.returnType === "honorSequence" && result.sequence ? ` met de hoogste kaart van je serie (${result.sequence})` : "";
     return `Partner kwam in de eerste slag uit met ${lead}. Speel die kleur (${suitName(result.suit)}) terug${sequence}, zolang er geen sterker plan is.`;
   }
+  if (ruleName === "trumpSwitchAgainstDummyRuff") {
+    const shortText = result.dummyShortLength === 0 ? "renonce" : "kort";
+    return `Speel troef: dummy is ${shortText} in ${suitName(result.dummyShortSuit)} en heeft nog ${result.dummyTrumpLength} troeven. Zo beperk je dummy's introevers.`;
+  }
   if (ruleName === "holdUpStopper") {
     const stopper = rankLabel[result.stopperRank] || result.stopperRank;
     return `Houd de ${stopper} in ${suitName(result.suit)} nog vast en speel laag, zodat de tegenspelers hun kleur minder makkelijk kunnen vrijspelen.`;

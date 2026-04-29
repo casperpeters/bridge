@@ -45,7 +45,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Basisverdediging
 
-- Voeg simpele troefuitkomsten/-switches toe wanneer dummy introefwaarde heeft of crossruff dreigt.
+- Breid basisverdediging alleen verder uit wanneer tests of oefenhanden concrete gemiste situaties tonen.
 
 ### Bieden
 
