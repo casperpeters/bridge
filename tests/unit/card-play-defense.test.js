@@ -285,6 +285,28 @@ test("chooseCardPlay does not use hidden partner honors to justify covering", ()
   assert.equal(result.ruleId, "secondHandLow");
 });
 
+test("chooseCardPlay gives the same defender advice when hidden partnerHand is supplied", () => {
+  const publicContext = {
+    hand: hand("KH", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("QH") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("8H", "4H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  };
+
+  const withoutHiddenPartner = rules.chooseCardPlay(publicContext);
+  const withHiddenPartner = rules.chooseCardPlay({
+    ...publicContext,
+    partnerHand: hand("JH", "AH", "3C")
+  });
+
+  assert.equal(withHiddenPartner.card.id, withoutHiddenPartner.card.id);
+  assert.equal(withHiddenPartner.ruleId, withoutHiddenPartner.ruleId);
+});
+
 test("chooseCardPlay does not cover an honor when dummy shows only small cards in the suit", () => {
   const result = rules.chooseCardPlay({
     hand: hand("KH", "2H", "AS"),

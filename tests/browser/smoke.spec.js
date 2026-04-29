@@ -481,6 +481,26 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
   await expect(page.locator("#north-hand .card.back")).toHaveCount(13);
   await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
 
+  const preOpeningLeadAdviceContext = await page.evaluate(() => {
+    const originalChooseCardPlay = bridgeRules.chooseCardPlay;
+    let captured = null;
+    bridgeRules.chooseCardPlay = (options) => {
+      captured = {
+        partnerHand: options.partnerHand,
+        dummyHand: options.dummyHand,
+        playPlan: options.playPlan
+      };
+      return originalChooseCardPlay(options);
+    };
+    try {
+      chooseCardPlayResult(state.declarer);
+    } finally {
+      bridgeRules.chooseCardPlay = originalChooseCardPlay;
+    }
+    return captured;
+  });
+  expect(preOpeningLeadAdviceContext).toEqual({ partnerHand: null, dummyHand: null, playPlan: null });
+
   await page.evaluate(() => continuePlay());
 
   await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
