@@ -960,20 +960,34 @@
       const suitedLegal = cardsInSuit(legal, leadSuit);
       if (!suitedLegal.length) return null;
 
-      const lowCards = suitedLegal.filter(isLowLeadCard);
-      const card = lowestCard(lowCards.length ? lowCards : suitedLegal);
+      const returnChoice = choosePartnerLeadSuitReturnCard(suitedLegal);
       return cardPlayResult(
-        card,
+        returnChoice.card,
         "returnPartnerLeadSuit",
         "basic",
-        "Return partner's opening lead suit when it is still available.",
+        "Return partner's opening lead suit when it is still available and no stronger plan applies.",
         {
           suit: leadSuit,
           leadCard: openingLead.card,
+          leadRank: openingLead.card.rank,
           partnerSeat: openingLead.seat,
+          returnType: returnChoice.type,
+          sequence: returnChoice.sequence,
           action: "returnPartnerLeadSuit"
         }
       );
+    }
+
+  function choosePartnerLeadSuitReturnCard(suitedLegal) {
+      const lowCards = suitedLegal.filter(isLowLeadCard);
+      if (lowCards.length) return { card: lowestCard(lowCards), type: "lowCard" };
+
+      const sequence = touchingHonorSequence(suitedLegal, 2);
+      if (sequence?.card) {
+        return { card: sequence.card, type: "honorSequence", sequence: sequence.ranks.join("") };
+      }
+
+      return { card: lowestCard(suitedLegal), type: "onlyHonors" };
     }
 
   function createCardPlayContext({ hand, currentTrick, trickHistory, seat, declarer, trump }) {
@@ -998,7 +1012,7 @@
         return isLowLeadCard(play.card);
       }
 
-  function chooseThirdHandHighOverLowLead({ legal, currentTrick, seat, declarer, contract, trump, winning }) {
+  function chooseThirdHandHighOverLowLead({ legal, currentTrick, seat, declarer, contract, trump, winning, playedCards = [] }) {
       if (contract?.strain !== "NT" || trump || !seat || currentTrick.length !== 2) return null;
       if (!isDefensivePlaySeat(seat, declarer)) return null;
       const leadPlay = currentTrick[0];
@@ -1008,18 +1022,33 @@
       const suitedLegal = cardsInSuit(legal, leadSuit);
       if (!suitedLegal.length) return null;
 
+      const canBeat = suitedLegal
+        .filter((card) => beats(card, winning.card, leadSuit, trump))
+        .sort(compareLowCards);
+      const canBeatHonors = canBeat.filter((card) => isLeadHonorRank(card.rank));
+      const card = canBeatHonors[0] || canBeat[0] || highestCard(suitedLegal);
+      const higherPlayed = playedHigherCardsInSuit({ playedCards, suit: leadSuit, rank: card.rank });
+
       return cardPlayResult(
-        highestCard(suitedLegal),
+        card,
         "thirdHandHighOverLowLead",
         "basic",
-        "Partner led low to promise a high card in notrump, so third hand plays high.",
+        "Partner led low to promise a high card in notrump, so third hand plays the cheapest useful high card.",
         {
           leadSuit,
           leadCard: leadPlay.card,
           winningSeat: winning?.seat || null,
+          higherPlayed,
+          usedPlayedCardInfo: higherPlayed.length > 0,
           action: "thirdHandHigh"
         }
       );
+    }
+
+  function playedHigherCardsInSuit({ playedCards = [], suit, rank }) {
+      return cardsInSuit(playedCards, suit)
+        .filter((card) => rankOrder.indexOf(card.rank) > rankOrder.indexOf(rank))
+        .map((card) => card.rank);
     }
 
   function cheapestHigherHonor(cards, rank) {
@@ -1028,13 +1057,25 @@
           .sort(compareLowCards)[0] || null;
       }
 
-  function dummySupportsHonorCover(dummyHand, leadSuit, leadRank) {
-        if (!dummyHand?.length) return true;
+  function honorCoverTarget({ dummyHand, leadSuit, leadRank, playedCards = [] }) {
         const lowerHonor = leadHonorRanks[leadHonorRanks.indexOf(leadRank) + 1];
-        return Boolean(lowerHonor && cardsInSuit(dummyHand, leadSuit).some((card) => card.rank === lowerHonor));
+        if (!lowerHonor) return null;
+        const lowerHonorAlreadyPlayed = cardsInSuit(playedCards, leadSuit).some((card) => card.rank === lowerHonor);
+        if (lowerHonorAlreadyPlayed) return null;
+
+        if (dummyHand?.length && cardsInSuit(dummyHand, leadSuit).some((card) => card.rank === lowerHonor)) {
+          return {
+            type: "dummyThreat",
+            promotedRank: lowerHonor,
+            promotionSeat: null,
+            reason: "dummy shows the touching lower honor, so covering can limit it"
+          };
+        }
+
+        return null;
       }
 
-  function chooseSecondHandDefensivePlay({ legal, currentTrick, seat, declarer, dummyHand, trump }) {
+  function chooseSecondHandDefensivePlay({ legal, currentTrick, seat, declarer, dummyHand, trump, playedCards = [] }) {
       if (currentTrick.length !== 1 || !isDefensivePlaySeat(seat, declarer)) return null;
 
       const leadCard = currentTrick[0].card;
@@ -1059,15 +1100,24 @@
 
       if (isLeadHonorRank(leadCard.rank)) {
         const coverCard = cheapestHigherHonor(suitedLegal, leadCard.rank);
-        if (coverCard && dummySupportsHonorCover(dummyHand, leadSuit, leadCard.rank)) {
+        const coverTarget = honorCoverTarget({
+          dummyHand,
+          leadSuit,
+          leadRank: leadCard.rank,
+          playedCards
+        });
+        if (coverCard && coverTarget) {
           return cardPlayResult(
             coverCard,
             "secondHandCoverHonor",
             "basic",
-            "Second hand covers an honor when dummy shows a lower touching honor that can be limited.",
+            "Second hand covers an honor only when a visible dummy target makes the cover useful.",
             {
               leadSuit,
               coveredRank: leadCard.rank,
+              promotedRank: coverTarget.promotedRank,
+              promotionSeat: coverTarget.promotionSeat,
+              coverReason: coverTarget.type,
               action: "coverHonor"
             }
           );
@@ -1086,7 +1136,7 @@
       );
     }
 
-  function chooseThirdHandDefensivePlay({ legal, currentTrick, seat, declarer, trump, winning }) {
+  function chooseThirdHandDefensivePlay({ legal, currentTrick, seat, declarer, trump, winning, playedCards = [] }) {
       if (currentTrick.length !== 2 || !isDefensivePlaySeat(seat, declarer)) return null;
       const leadPlay = currentTrick[0];
       if (leadPlay.seat !== partnerOf(seat)) return null;
@@ -1100,14 +1150,18 @@
         .sort(compareLowCards);
       if (!canBeat.length) return null;
 
+      const card = canBeat[0];
+      const higherPlayed = playedHigherCardsInSuit({ playedCards, suit: leadSuit, rank: card.rank });
       return cardPlayResult(
-        canBeat[0],
+        card,
         "thirdHandHighCheapest",
         "basic",
-        "Third hand plays the cheapest card that can win the trick.",
+        "Third hand plays the cheapest card that can win the trick, preserving higher cards when visible play says they are not needed.",
         {
           leadSuit,
           winningSeat: winning.seat,
+          higherPlayed,
+          usedPlayedCardInfo: higherPlayed.length > 0,
           action: "thirdHandHigh"
         }
       );
@@ -1179,7 +1233,7 @@
         return chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead });
       }
 
-      const { leadSuit, winning, partnerWinning } = context;
+      const { leadSuit, winning, partnerWinning, playedCards } = context;
 
       const thirdHandHigh = chooseThirdHandHighOverLowLead({
         legal,
@@ -1188,7 +1242,8 @@
         declarer,
         contract,
         trump,
-        winning
+        winning,
+        playedCards
       });
       if (thirdHandHigh) return thirdHandHigh;
 
@@ -1231,7 +1286,8 @@
         seat,
         declarer,
         dummyHand,
-        trump
+        trump,
+        playedCards
       });
       if (secondHandDefense) return secondHandDefense;
 
@@ -1241,7 +1297,8 @@
         seat,
         declarer,
         trump,
-        winning
+        winning,
+        playedCards
       });
       if (thirdHandDefense) return thirdHandDefense;
 
@@ -1315,7 +1372,7 @@
     isLowPromisesHonorLead,
     chooseThirdHandHighOverLowLead,
     cheapestHigherHonor,
-    dummySupportsHonorCover,
+    honorCoverTarget,
     chooseSecondHandDefensivePlay,
     chooseThirdHandDefensivePlay,
     chooseCardPlay

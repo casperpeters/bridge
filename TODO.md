@@ -38,17 +38,13 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Speelplan en kaartadvies
 
-- Voeg eerst NBB-gebaseerde kleurcontractfixtures toe voor het kernprincipe: “troef trekken, tenzij er een duidelijke reden is om dat niet te doen”. Dek daarbij minimaal: stabiel vroeg troeftrekken, korte-troefkant aftroeven, lange bijkleur vrijtroeven met bewaarde entrees, en directe verliezer weggooien op een hoge bijkleur wanneer een stopper wordt aangevallen.
 - Breid daarna speelplan-randgevallen verder uit met keuzes waar meerdere even sterke planregels tegelijk speelbaar zijn.
 - Verfijn kleurcontractplannen later verder met specifieke kleurcontractsnits en complexere communicatie tussen beide leiderhanden.
 - Houd kaartadvies aan leiderskant gekoppeld aan het zichtbare speelplan; AI-suggesties en developermodus-uitleg moeten dezelfde planregel noemen.
-- Voeg alleen feedback na kaartkeuzes toe waar de planregel betrouwbaar genoeg is. Anders hoogstens: legaal, onzeker, of “de app zou X suggereren”.
+- Voeg alleen feedback na kaartkeuzes toe waar de planregel betrouwbaar genoeg is. Anders hoogstens: legaal, onzeker, of "de app zou X suggereren".
 
 ### Basisverdediging
 
-- Verfijn tweede hand laag en derde hand hoog met gespeelde-kaartinformatie.
-- Breid honneurs dekken uit met partnerpromotie en meer gespeelde-kaartinferentie.
-- Speel partners uitkomstkleur terug wanneer dat logisch is.
 - Voorkom dat verdedigers zonder reden van niet-ondersteunde honneurs wegspelen.
 - Voeg simpele troefuitkomsten/-switches toe wanneer dummy introefwaarde heeft of crossruff dreigt.
 

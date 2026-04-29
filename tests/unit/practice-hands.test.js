@@ -8,9 +8,9 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains ten valid beginner deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 10);
-  assert.equal(practiceHands.validatePracticeHands(), 10);
+test("practice hand catalog contains thirteen valid beginner deals", () => {
+  assert.equal(practiceHands.beginnerHands.length, 13);
+  assert.equal(practiceHands.validatePracticeHands(), 13);
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {
@@ -25,7 +25,7 @@ test("practice hand catalog contains ten valid beginner deals", () => {
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 10);
+  assert.equal(ids.size, 13);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {
@@ -65,18 +65,19 @@ test("practice hand play-plan targets expose their expected priority", () => {
     const contract = practiceHands.contractFromText(prepared.expectedContract.contract);
     const declarer = prepared.expectedContract.declarer;
     const dummy = rules.partnerOf(declarer);
+    const expected = prepared.expectedPlayPlan;
     const plan = rules.createPlayPlan({
       declarerHand: prepared.hands[declarer],
       dummyHand: prepared.hands[dummy],
       contract,
       declarer,
-      dummy
+      dummy,
+      currentTrick: playsFromSpecs(expected.currentTrick)
     });
-    const expected = prepared.expectedPlayPlan;
-    const priority = plan.priorities.find((item) => item.kind === expected.priorityKind && (!expected.suit || item.suit === expected.suit));
 
-    assert.ok(priority, `${prepared.id} expected ${expected.priorityKind}`);
-    if (expected.missingStopper) assert.equal(priority.missingStopper, expected.missingStopper);
+    assertPlanPriority(plan, expected, prepared.id);
+    for (const related of expected.also || []) assertPlanPriority(plan, related, prepared.id);
+    if (expected.firstPriorityKind) assert.equal(plan.priorities[0]?.kind, expected.firstPriorityKind, prepared.id);
   }
 });
 
@@ -95,3 +96,36 @@ test("practice hand scoring target documents the vulnerable game bonus", () => {
   assert.equal(score.contractPoints, scenario.expectedScore.contractPoints);
   assert.equal(score.gameBonus, scenario.expectedScore.gameBonus);
 });
+
+function playsFromSpecs(specs = []) {
+  return specs.map((spec) => ({
+    seat: spec.seat,
+    card: practiceHands.cardFromId(spec.card)
+  }));
+}
+
+function assertPlanPriority(plan, expected, scenarioId) {
+  const priority = plan.priorities.find((item) => priorityMatches(item, expected));
+  assert.ok(priority, `${scenarioId} expected ${expected.priorityKind}`);
+
+  [
+    "missingStopper",
+    "timing",
+    "delayReason",
+    "entrySuit",
+    "entryRank",
+    "attackedSuit",
+    "discardSeat",
+    "firstSeat",
+    "longSeat",
+    "shortSeat"
+  ].forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(expected, key)) {
+      assert.equal(priority[key], expected[key], `${scenarioId} ${expected.priorityKind} ${key}`);
+    }
+  });
+}
+
+function priorityMatches(priority, expected) {
+  return priority.kind === expected.priorityKind && (!expected.suit || priority.suit === expected.suit);
+}

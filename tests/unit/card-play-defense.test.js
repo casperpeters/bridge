@@ -61,6 +61,54 @@ test("chooseCardPlay keeps low-promises-honor as a defensive notrump agreement",
   assert.equal(thirdHand.ruleId, "cheapestWinner");
 });
 
+test("chooseCardPlay preserves the ace when third hand has a cheaper winner over partner's low lead", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "QH", "3H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("2H"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "East", card: card("9H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.equal(result.ruleId, "thirdHandHighOverLowLead");
+});
+
+test("chooseCardPlay records played higher cards when third hand can conserve honors", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "JH", "3H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("2H"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "East", card: card("9H") }
+    ],
+    trickHistory: [{
+      number: 1,
+      winner: "East",
+      cards: [
+        { seat: "East", card: card("KH") },
+        { seat: "South", card: card("4H") },
+        { seat: "West", card: card("5H") },
+        { seat: "North", card: card("QH") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "JH");
+  assert.equal(result.ruleId, "thirdHandHighOverLowLead");
+  assert.deepEqual(result.higherPlayed, ["K", "Q"]);
+  assert.equal(result.usedPlayedCardInfo, true);
+});
+
 test("chooseCardPlay returns partner's opening lead suit when a defender wins the lead later", () => {
   const result = rules.chooseCardPlay({
     hand: hand("8H", "AC", "2S"),
@@ -86,6 +134,61 @@ test("chooseCardPlay returns partner's opening lead suit when a defender wins th
   assert.equal(result.ruleId, "returnPartnerLeadSuit");
   assert.equal(result.suit, "H");
   assert.equal(result.partnerSeat, "North");
+  assert.equal(result.returnType, "lowCard");
+  assert.equal(result.leadRank, "4");
+});
+
+test("chooseCardPlay returns partner's opening lead suit in suit contracts too", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("9H", "7H", "AC", "2S"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("4H") },
+        { seat: "East", card: card("AH") },
+        { seat: "South", card: card("QH") },
+        { seat: "West", card: card("3H") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "7H");
+  assert.equal(result.ruleId, "returnPartnerLeadSuit");
+  assert.equal(result.suit, "H");
+});
+
+test("chooseCardPlay returns the top of an honor sequence in partner's lead suit", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "QH", "AC", "2S"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("4H") },
+        { seat: "East", card: card("AH") },
+        { seat: "South", card: card("JH") },
+        { seat: "West", card: card("3H") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "returnPartnerLeadSuit");
+  assert.equal(result.returnType, "honorSequence");
+  assert.equal(result.sequence, "KQ");
 });
 
 test("chooseCardPlay does not return partner's opening lead suit for the declarer side", () => {
@@ -161,12 +264,57 @@ test("chooseCardPlay makes a defender second hand cover an honor when dummy has 
   assert.equal(result.card.id, "KH");
   assert.equal(result.ruleId, "secondHandCoverHonor");
   assert.equal(result.coveredRank, "Q");
+  assert.equal(result.promotedRank, "J");
+  assert.equal(result.coverReason, "dummyThreat");
+});
+
+test("chooseCardPlay does not use hidden partner honors to justify covering", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "2H", "AS"),
+    partnerHand: hand("JH", "7H", "3C"),
+    currentTrick: [{ seat: "East", card: card("QH") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("8H", "4H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "secondHandLow");
 });
 
 test("chooseCardPlay does not cover an honor when dummy shows only small cards in the suit", () => {
   const result = rules.chooseCardPlay({
     hand: hand("KH", "2H", "AS"),
     currentTrick: [{ seat: "East", card: card("QH") }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("8H", "4H", "2C"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "secondHandLow");
+});
+
+test("chooseCardPlay does not cover an honor when the touching lower honor has already fallen", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "2H", "AS"),
+    currentTrick: [{ seat: "East", card: card("QH") }],
+    trickHistory: [{
+      number: 1,
+      winner: "East",
+      cards: [
+        { seat: "East", card: card("JH") },
+        { seat: "South", card: card("3H") },
+        { seat: "West", card: card("4H") },
+        { seat: "North", card: card("5H") }
+      ]
+    }],
     seat: "South",
     declarer: "East",
     dummy: "West",

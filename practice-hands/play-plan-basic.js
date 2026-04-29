@@ -31,6 +31,105 @@
       ]
     },
     {
+      id: "short-trump-ruff-001",
+      title: "Eerst een introever in de korte troefhand",
+      level: "beginner",
+      focus: ["play", "play-plan", "trump", "ruff-short-suit"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Bij 4 schoppen moet het speelplan de korte harten van dummy gebruiken voordat alle troeven worden getrokken.",
+      hands: {
+        North: ["JS", "TS", "7S", "6D", "5D", "4D", "3D", "2D", "8C", "7C", "6C", "5C", "4C"],
+        East: ["4H", "5H", "6H", "7H", "9H", "QH", "KH", "AH", "2S", "3S", "4S", "5S", "6S"],
+        South: ["AS", "KS", "QS", "9S", "8S", "JH", "TH", "8H", "3H", "AD", "KD", "AC", "KC"],
+        West: ["2C", "3C", "9C", "TC", "JC", "QC", "7D", "8D", "9D", "TD", "JD", "QD", "2H"]
+      },
+      expectedContract: { contract: "4S", declarer: "South" },
+      expectedPlayPlan: {
+        priorityKind: "ruffShortSuit",
+        suit: "H",
+        shortSeat: "North",
+        also: [
+          { priorityKind: "drawTrumps", suit: "S", timing: "afterRuff", delayReason: "shortSuitRuff" }
+        ]
+      },
+      explanationKeys: ["playPlan.ruffShortSuit", "playPlan.drawTrumps"],
+      teachingPoints: [
+        "De NBB-basislijn blijft: trek troef, tenzij een duidelijke introever eerst nodig is.",
+        "Dummy heeft minder troeven en geen harten; die troeven zijn nuttig om hartenverliezers te troeven."
+      ]
+    },
+    {
+      id: "long-side-suit-ruff-001",
+      title: "Lange bijkleur vrijtroeven",
+      level: "beginner",
+      focus: ["play", "play-plan", "trump", "long-side-suit", "entries"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Bij 4 schoppen moet het speelplan de lange hartenkleur vrijtroeven en de ruitenentree bewaren.",
+      hands: {
+        North: ["JS", "TS", "9S", "2H", "6D", "4D", "3D", "2D", "8C", "7C", "6C", "4C", "3C"],
+        East: ["KD", "3H", "4H", "5H", "6H", "7H", "AH", "3S", "4S", "5S", "6S", "7S", "8S"],
+        South: ["AS", "KS", "QS", "2S", "KH", "QH", "JH", "TH", "9H", "8H", "AD", "5D", "2C"],
+        West: ["5C", "9C", "TC", "JC", "QC", "KC", "AC", "7D", "8D", "9D", "TD", "JD", "QD"]
+      },
+      expectedContract: { contract: "4S", declarer: "South" },
+      expectedPlayPlan: {
+        priorityKind: "establishLongSuitByRuffing",
+        suit: "H",
+        longSeat: "South",
+        shortSeat: "North",
+        entrySuit: "D",
+        entryRank: "A",
+        timing: "beforeDrawTrumps",
+        also: [
+          { priorityKind: "drawTrumps", suit: "S", timing: "afterLongSuitRuff", delayReason: "longSuitRuffDevelopment" }
+        ]
+      },
+      explanationKeys: ["playPlan.ruffOutLongSuit", "playPlan.drawTrumps"],
+      teachingPoints: [
+        "Soms levert een lange bijkleur extra slagen op als je eerst de tegenpartij leegtroeft in die kleur.",
+        "De entree naar Zuid via ruiten aas moet beschikbaar blijven om de vrijgetroefde harten later te bereiken."
+      ]
+    },
+    {
+      id: "discard-loser-on-winner-001",
+      title: "Verliezer weggooien voordat troef wordt getrokken",
+      level: "beginner",
+      focus: ["play", "play-plan", "trump", "discard-loser", "attacked-suit"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Bij 4 schoppen moet het speelplan op een klaverenaanval eerst een klaverenverliezer op hoge harten weggooien.",
+      hands: {
+        North: ["TS", "8S", "AH", "KH", "QH", "8D", "6D", "4D", "3D", "2D", "7C", "5C", "2C"],
+        East: ["5H", "6H", "7H", "8H", "9H", "TH", "JH", "2S", "3S", "4S", "5S", "6S", "7S"],
+        South: ["AS", "KS", "QS", "JS", "9S", "2H", "3H", "KD", "QD", "JD", "AC", "6C", "4C"],
+        West: ["JC", "3C", "8C", "9C", "TC", "QC", "KC", "5D", "7D", "9D", "TD", "AD", "4H"]
+      },
+      expectedContract: { contract: "4S", declarer: "South" },
+      expectedPlayPlan: {
+        currentTrick: [{ seat: "West", card: "JC" }],
+        priorityKind: "discardLoserOnWinner",
+        suit: "H",
+        attackedSuit: "C",
+        discardSeat: "South",
+        firstSeat: "North",
+        timing: "urgentBeforeTrumps",
+        firstPriorityKind: "discardLoserOnWinner",
+        also: [
+          { priorityKind: "drawTrumps", suit: "S", timing: "afterUrgentDiscard", delayReason: "discardLoserOnWinner" }
+        ]
+      },
+      explanationKeys: ["playPlan.discardLoserOnWinner", "playPlan.drawTrumps"],
+      teachingPoints: [
+        "Als de verdediging een stopper aanvalt, kan een directe weggooi belangrijker zijn dan meteen troef trekken.",
+        "De hoge harten van dummy geven Zuid tijd om een klaverenverliezer kwijt te raken."
+      ]
+    },
+    {
       id: "notrump-develop-long-suit-001",
       title: "Slagen ontwikkelen in sans-atout",
       level: "beginner",
