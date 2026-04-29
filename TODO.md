@@ -28,11 +28,11 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Ruim de normale beginnersflow op: feedbackknoppen en geavanceerde biedhulpmiddelen mogen de hoofdactie niet visueel verdringen.
 - Houd actieve-handbegeleiding vooral visueel; voeg alleen minimale tekst toe wanneer een beperking anders onduidelijk is, bijvoorbeeld bij kleur bekennen.
-- Voeg het beginnerstest-2-scenario toe aan de README-checklist zodat de volgende ronde dezelfde punten controleert zonder extra uitleg.
+- Gebruik de README-checklist voor de volgende beginnerstest-2-herhaling en noteer alleen concrete afhakers.
 
 ### Oefenhanden en leerbare situaties
 
-- Breid de eerste `practice-hands/` catalogus verder uit voor nieuwe kleur na `1H/1S`, eenvoudige volgbiedingen, negative double, uitkomsten en dummyspel.
+- Breid de eerste `practice-hands/` catalogus verder uit voor nieuwe kleur na `1H/1S`, eenvoudige volgbiedingen, negative double en extra dummyspel.
 - Houd oefenspellen reproduceerbaar met oefenhand-id en kort testdoel.
 - Houd uitleg buiten de basisgame; oefenmodus, AI-suggesties en developermodus mogen meer tekst bevatten.
 

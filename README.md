@@ -83,7 +83,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Pause after each completed trick so the player can inspect the cards.
 - Replay the same hand without advancing the board.
 - Copy or load a hand seed to replay a specific card distribution.
-- Curated beginner practice hands can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
+- Curated beginner practice hands, including basic defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
 - Trick history and full hand review after completion.
 - Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, auction, tricks, score, settings, current phase, and optional tester notes.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
@@ -106,7 +106,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 
 ## Beginners Acceptance Checklist
 
-Use this checklist with someone who does not already know the app. Let the player complete one full board, preferably without extra explanation, and note where the app leaves questions open.
+Use this checklist with someone who does not already know the app. Let the player complete one full board, preferably without extra explanation, and note where the app leaves questions open. For a repeatable follow-up round, replay the beginner-test-2 flow by checking a normal deal from auction through review: bidding legality, opening lead status, dummy reveal, trick winners, score explanation, `Nieuwe hand`, `Zelfde hand`, and feedback copy.
 
 - The player can see clearly whose turn it is.
 - The player understands which bids or calls are currently available.

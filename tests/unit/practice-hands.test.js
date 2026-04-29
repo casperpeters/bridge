@@ -8,9 +8,9 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains thirteen valid beginner deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 13);
-  assert.equal(practiceHands.validatePracticeHands(), 13);
+test("practice hand catalog contains seventeen valid beginner deals", () => {
+  assert.equal(practiceHands.beginnerHands.length, 17);
+  assert.equal(practiceHands.validatePracticeHands(), 17);
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {
@@ -25,7 +25,7 @@ test("practice hand catalog contains thirteen valid beginner deals", () => {
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 13);
+  assert.equal(ids.size, 17);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {
@@ -81,6 +81,44 @@ test("practice hand play-plan targets expose their expected priority", () => {
   }
 });
 
+test("practice hand defensive card-play targets expose their expected rule", () => {
+  const cardPlayScenarios = practiceHands.beginnerHands.filter((scenario) => scenario.expectedCardPlay);
+
+  for (const scenario of cardPlayScenarios) {
+    const prepared = practiceHands.preparePracticeHand(scenario.id);
+    const expected = prepared.expectedCardPlay;
+    const contract = practiceHands.contractFromText(prepared.expectedContract.contract);
+    const declarer = prepared.expectedContract.declarer;
+    const dummy = rules.partnerOf(declarer);
+    const result = rules.chooseCardPlay({
+      hand: expected.hand ? expected.hand.map(practiceHands.cardFromId) : prepared.hands[expected.seat],
+      dummyHand: prepared.hands[dummy],
+      currentTrick: playsFromSpecs(expected.currentTrick),
+      trickHistory: tricksFromSpecs(expected.trickHistory),
+      seat: expected.seat,
+      declarer,
+      dummy,
+      contract,
+      trump: expected.trump || (contract.strain === "NT" ? null : contract.strain)
+    });
+
+    assert.equal(result.ruleId, expected.ruleId, prepared.id);
+    assert.equal(result.card.id, expected.card, prepared.id);
+    [
+      "suit",
+      "trump",
+      "honorSafety",
+      "dummyShortSuit",
+      "dummyShortLength",
+      "dummyTrumpLength"
+    ].forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(expected, key)) {
+        assert.equal(result[key], expected[key], `${prepared.id} ${key}`);
+      }
+    });
+  }
+});
+
 test("practice hand scoring target documents the vulnerable game bonus", () => {
   const scenario = practiceHands.preparePracticeHand("game-bonus-vulnerable-001");
   const contract = practiceHands.contractFromText(scenario.expectedContract.contract);
@@ -101,6 +139,13 @@ function playsFromSpecs(specs = []) {
   return specs.map((spec) => ({
     seat: spec.seat,
     card: practiceHands.cardFromId(spec.card)
+  }));
+}
+
+function tricksFromSpecs(specs = []) {
+  return specs.map((trick) => ({
+    ...trick,
+    cards: playsFromSpecs(trick.cards)
   }));
 }
 

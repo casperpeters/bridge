@@ -6,6 +6,7 @@
         fiveCardHighOpenings: require("./five-card-high-openings.js"),
         notrumpResponses: require("./notrump-responses.js"),
         basicPlayPlan: require("./play-plan-basic.js"),
+        basicDefense: require("./defense-basic.js"),
         basicScoring: require("./scoring-basic.js")
       }
     : root.PracticeHandCollections || {};
@@ -38,6 +39,7 @@
     "fiveCardHighOpenings",
     "notrumpResponses",
     "basicPlayPlan",
+    "basicDefense",
     "basicScoring"
   ];
   const allPracticeHands = collectionOrder.flatMap((name) => collections[name] || []);
