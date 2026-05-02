@@ -272,6 +272,10 @@ function explainCardPlayResult(result) {
       : "Speel laag om af te signaleren";
     return `Partner kwam met een plaatje uit een serie. ${attitude} in ${suitName(result.leadSuit)}.`;
   }
+  if (ruleName === "thirdHandUnblockHonor") {
+    const rank = rankLabel[result.unblockRank] || result.unblockRank;
+    return `Derde hand deblokkeert de ${rank} in ${suitName(result.leadSuit)}: de hoge kaart zit kort, zodat partners lange kleur later kan doorlopen.`;
+  }
   if (ruleName === "secondHandLow") {
     return `Tweede hand speelt laag in ${suitName(result.leadSuit)}: geen honneur onnodig opofferen als partner nog kan helpen of de dekking niets oplevert.`;
   }

@@ -136,6 +136,40 @@
         "Als dummy zichtbaar kort is in een zijkleur en nog troeven heeft, kan troef naspelen introevers beperken.",
         "Deze regel gebruikt alleen zichtbare dummy-informatie; niet de verborgen hand van partner."
       ]
+    },
+    {
+      id: "defense-unblock-honor-001",
+      title: "Deblokkeren na partners honneur-uitkomst",
+      level: "beginner",
+      focus: ["defense", "card-play", "notrump", "unblock"],
+      systemId: "fiveCardHigh",
+      dealer: "West",
+      vulnerability: "none",
+      testGoal: "Als partner tegen sans-atout met een honneur uit een serie uitkomt, moet derde hand een korte hogere honneur kunnen deblokkeren.",
+      hands: {
+        North: ["QS", "JS", "TS", "6S", "3S", "AH", "5H", "9D", "5D", "2D", "TC", "6C", "4C"],
+        East: ["9S", "5S", "2S", "TH", "7H", "2H", "AD", "QD", "8D", "4D", "KC", "QC", "9C"],
+        South: ["KS", "7S", "9H", "8H", "6H", "3H", "JD", "7D", "3D", "JC", "8C", "5C", "2C"],
+        West: ["AS", "8S", "4S", "KH", "QH", "JH", "4H", "KD", "TD", "6D", "AC", "7C", "3C"]
+      },
+      expectedContract: { contract: "3NT", declarer: "West" },
+      expectedCardPlay: {
+        seat: "South",
+        ruleId: "thirdHandUnblockHonor",
+        card: "KS",
+        leadSuit: "S",
+        unblockRank: "K",
+        partnerSeat: "North",
+        currentTrick: [
+          { seat: "North", card: "QS", ruleId: "notrumpSequenceLead" },
+          { seat: "East", card: "2S" }
+        ]
+      },
+      explanationKeys: ["cardPlay.thirdHandUnblockHonor"],
+      teachingPoints: [
+        "Met een honneur doubleton in partners lange kleur speel je de hoge kaart meteen, anders kan die kleur blokkeren.",
+        "Deze regel geldt hier omdat partner tegen sans-atout met een plaatje uit een serie is uitgekomen."
+      ]
     }
   ];
 });

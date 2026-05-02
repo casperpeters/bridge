@@ -1494,6 +1494,42 @@
       );
     }
 
+  function chooseThirdHandUnblockHonor({ legal, currentTrick, trickHistory, seat, declarer, contract, trump, winning }) {
+      if (contract?.strain !== "NT" || trump || trickHistory.length || currentTrick.length !== 2) return null;
+      if (!isDefensivePlaySeat(seat, declarer)) return null;
+
+      const leadPlay = currentTrick[0];
+      if (leadPlay.seat !== partnerOf(seat) || !isOpeningHonorSequenceLead(leadPlay)) return null;
+      if (winning?.seat !== leadPlay.seat) return null;
+
+      const leadSuit = leadPlay.card.suit;
+      const suitedLegal = cardsInSuit(legal, leadSuit);
+      if (suitedLegal.length !== 2) return null;
+
+      const lowCards = suitedLegal.filter((card) => !isLeadHonorRank(card.rank));
+      if (lowCards.length !== 1) return null;
+
+      const unblockCards = suitedLegal
+        .filter((card) => isLeadHonorRank(card.rank) && beats(card, leadPlay.card, leadSuit, trump))
+        .sort(compareLowCards);
+      if (unblockCards.length !== 1) return null;
+
+      const card = unblockCards[0];
+      return cardPlayResult(
+        card,
+        "thirdHandUnblockHonor",
+        "basic",
+        "Third hand unblocks a higher honor from a doubleton after partner's notrump honor lead, so partner's long suit does not get blocked.",
+        {
+          leadSuit,
+          leadCard: leadPlay.card,
+          unblockRank: card.rank,
+          partnerSeat: leadPlay.seat,
+          action: "unblockDefense"
+        }
+      );
+    }
+
   function playedHigherCardsInSuit({ playedCards = [], suit, rank }) {
       return cardsInSuit(playedCards, suit)
         .filter((card) => rankOrder.indexOf(card.rank) > rankOrder.indexOf(rank))
@@ -1713,6 +1749,18 @@
       });
       if (thirdHandHigh) return thirdHandHigh;
 
+      const thirdHandUnblock = chooseThirdHandUnblockHonor({
+        legal,
+        currentTrick,
+        trickHistory,
+        seat,
+        declarer,
+        contract,
+        trump,
+        winning
+      });
+      if (thirdHandUnblock) return thirdHandUnblock;
+
       const openingLeadAttitudeSignal = chooseOpeningLeadAttitudeSignal({
         hand,
         legal,
@@ -1850,6 +1898,7 @@
     createCardPlayContext,
     isLowPromisesHonorLead,
     chooseThirdHandHighOverLowLead,
+    chooseThirdHandUnblockHonor,
     cheapestHigherHonor,
     honorCoverTarget,
     chooseSecondHandDefensivePlay,

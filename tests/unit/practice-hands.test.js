@@ -8,9 +8,9 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains twenty-five valid beginner deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 25);
-  assert.equal(practiceHands.validatePracticeHands(), 25);
+test("practice hand catalog contains twenty-six valid beginner deals", () => {
+  assert.equal(practiceHands.beginnerHands.length, 26);
+  assert.equal(practiceHands.validatePracticeHands(), 26);
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {
@@ -25,7 +25,7 @@ test("practice hand catalog contains twenty-five valid beginner deals", () => {
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 25);
+  assert.equal(ids.size, 26);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {
@@ -108,6 +108,9 @@ test("practice hand defensive card-play targets expose their expected rule", () 
       "suit",
       "trump",
       "honorSafety",
+      "leadSuit",
+      "unblockRank",
+      "partnerSeat",
       "dummyShortSuit",
       "dummyShortLength",
       "dummyTrumpLength"
@@ -138,7 +141,8 @@ test("practice hand scoring target documents the vulnerable game bonus", () => {
 function playsFromSpecs(specs = []) {
   return specs.map((spec) => ({
     seat: spec.seat,
-    card: practiceHands.cardFromId(spec.card)
+    card: practiceHands.cardFromId(spec.card),
+    ruleId: spec.ruleId || null
   }));
 }
 

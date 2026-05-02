@@ -626,6 +626,123 @@ test("chooseCardPlay makes a defender third hand play the cheapest winning card"
   assert.equal(result.ruleId, "thirdHandHighCheapest");
 });
 
+test("chooseCardPlay unblocks a doubleton honor after partner's notrump sequence lead", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "7S", "9H", "8H"),
+    currentTrick: [
+      { seat: "North", card: card("QS"), ruleId: "notrumpSequenceLead" },
+      { seat: "East", card: card("2S") }
+    ],
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KS");
+  assert.equal(result.ruleId, "thirdHandUnblockHonor");
+  assert.equal(result.leadSuit, "S");
+  assert.equal(result.leadCard.id, "QS");
+  assert.equal(result.unblockRank, "K");
+  assert.equal(result.partnerSeat, "North");
+  assert.equal(result.action, "unblockDefense");
+});
+
+test("chooseCardPlay unblocks comparable short honors after partner's notrump honor lead", () => {
+  const examples = [
+    {
+      name: "ace from A8 over partner's king",
+      hand: hand("AH", "8H"),
+      leadCard: "KH",
+      dummyCard: "2H",
+      expectedCard: "AH",
+      expectedRank: "A"
+    },
+    {
+      name: "queen from Q5 over partner's jack",
+      hand: hand("QC", "5C"),
+      leadCard: "JC",
+      dummyCard: "2C",
+      expectedCard: "QC",
+      expectedRank: "Q"
+    }
+  ];
+
+  examples.forEach((example) => {
+    const result = rules.chooseCardPlay({
+      hand: example.hand,
+      currentTrick: [
+        { seat: "North", card: card(example.leadCard), ruleId: "notrumpSequenceLead" },
+        { seat: "East", card: card(example.dummyCard) }
+      ],
+      seat: "South",
+      declarer: "West",
+      dummy: "East",
+      contract: { level: 3, strain: "NT" },
+      trump: null
+    });
+
+    assert.equal(result.card.id, example.expectedCard, example.name);
+    assert.equal(result.ruleId, "thirdHandUnblockHonor", example.name);
+    assert.equal(result.unblockRank, example.expectedRank, example.name);
+  });
+});
+
+test("chooseCardPlay does not unblock when third hand has a longer holding", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "7S", "2S", "9H"),
+    currentTrick: [
+      { seat: "North", card: card("QS"), ruleId: "notrumpSequenceLead" },
+      { seat: "East", card: card("3S") }
+    ],
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "2S");
+  assert.equal(result.ruleId, "openingLeadAttitudeSignal");
+  assert.notEqual(result.ruleId, "thirdHandUnblockHonor");
+});
+
+test("chooseCardPlay keeps low-lead third-hand-high separate from unblocking", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "7S", "9H"),
+    currentTrick: [
+      { seat: "North", card: card("4S"), ruleId: "notrumpLowPromisesHonor" },
+      { seat: "East", card: card("2S") }
+    ],
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KS");
+  assert.equal(result.ruleId, "thirdHandHighOverLowLead");
+});
+
+test("chooseCardPlay does not unblock a doubleton honor in a suit contract", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "7S", "9H"),
+    currentTrick: [
+      { seat: "North", card: card("QS"), ruleId: "suitContractSequenceLead" },
+      { seat: "East", card: card("2S") }
+    ],
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 4, strain: "H" },
+    trump: "H"
+  });
+
+  assert.notEqual(result.ruleId, "thirdHandUnblockHonor");
+});
+
 test("chooseCardPlay discourages with three low cards after partner's opening sequence lead", () => {
   const result = rules.chooseCardPlay({
     hand: hand("9S", "7S", "4S", "KH", "QH", "7H", "QD", "9D", "5D", "JC", "8C", "4C", "2C"),

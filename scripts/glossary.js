@@ -6,6 +6,7 @@ const BridgeGlossary = (() => {
     ["Biedplicht", "Een afspraak waarbij je niet mag passen. Na een informatiedoublet van partner moet je een bod doen zolang de rechtertegenstander na dat doublet geen contractbod heeft gedaan.", ["verplicht bieden"]],
     ["Bijkleur", "Een andere kleur dan de troefkleur of de hoofdkleur waar het plan om draait. Een hoge bijkleur kan soms helpen om verliezers weg te gooien."],
     ["Blokkeren", "Een kleur zo spelen dat de hoge kaarten in de ene hand vast komen te zitten omdat je geen entree meer hebt naar die hand.", ["geblokkeerde kleur", "geblokkeerd"]],
+    ["Deblokkeren", "Een hoge kaart in de korte hand eerst spelen, zodat de lange hand daarna zijn slagen in die kleur achter elkaar kan maken.", ["deblokkeer", "deblokkeert", "gedeblokkeerd"]],
     ["Contract", "Het aantal slagen dat de leider moet maken in een bepaalde speelsoort. Bij 2 schoppen moeten er bijvoorbeeld acht slagen worden gemaakt met schoppen als troef."],
     ["Contractpunten", "De punten voor de geboden en gemaakte contractslagen, nog zonder overslagen, onderslagen of bonussen. Ze bepalen onder andere of een contract een manche is."],
     ["Deler", "De speler die de kaarten deelt. In de app bepaalt de deler ook wie als eerste mag bieden.", ["gever"]],
