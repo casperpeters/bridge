@@ -79,8 +79,8 @@ function renderBidControls() {
     return;
   }
   els.bidControls.removeAttribute("aria-hidden");
-  const recommendedBidResult = state.guidanceMode ? chooseRecommendedBidResult("South") : null;
-  const recommendedBid = recommendedBidResult?.bid || null;
+  const southBidResult = chooseRecommendedBidResult("South");
+  const recommendedBid = state.guidanceMode ? southBidResult?.bid || null : null;
 
   for (let level = 1; level <= 7; level++) {
     for (const strain of biddingBoxStrains) {
@@ -89,7 +89,7 @@ function renderBidControls() {
       button.classList.add(`strain-${strain.toLowerCase()}`);
       button.disabled = !isBidHigher(bid, highestBid());
       if (sameCall(recommendedBid, bid)) button.classList.add("recommended-action");
-      button.addEventListener("click", () => makeBid("South", bid, recommendedBidResult));
+      button.addEventListener("click", () => makeBid("South", bid, southBidResult));
       els.bidControls.appendChild(button);
     }
   }
@@ -98,18 +98,18 @@ function renderBidControls() {
   double.disabled = !canDouble("South");
   const doubleBid = bridgeRules.Double();
   if (sameCall(recommendedBid, doubleBid)) double.classList.add("recommended-action");
-  double.addEventListener("click", () => makeBid("South", doubleBid, recommendedBidResult));
+  double.addEventListener("click", () => makeBid("South", doubleBid, southBidResult));
 
   const pass = biddingButton(t("pass"), "pass");
   const passBid = bridgeRules.Pass();
   if (sameCall(recommendedBid, passBid)) pass.classList.add("recommended-action");
-  pass.addEventListener("click", () => makeBid("South", passBid, recommendedBidResult));
+  pass.addEventListener("click", () => makeBid("South", passBid, southBidResult));
 
   const redouble = biddingButton(t("redouble"), "redouble");
   redouble.disabled = !canRedouble("South");
   const redoubleBid = bridgeRules.Redouble();
   if (sameCall(recommendedBid, redoubleBid)) redouble.classList.add("recommended-action");
-  redouble.addEventListener("click", () => makeBid("South", redoubleBid, recommendedBidResult));
+  redouble.addEventListener("click", () => makeBid("South", redoubleBid, southBidResult));
 
   const primaryActions = document.createElement("div");
   primaryActions.className = "bid-primary-actions";

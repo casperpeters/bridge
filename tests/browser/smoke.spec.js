@@ -124,6 +124,57 @@ test("loads curated practice hands through the repeat-code field", async ({ page
   await expect(page.locator("#seed-description")).toContainText("Code geladen");
 });
 
+test("stores South convention metadata without showing an AI suggestion", async ({ page }) => {
+  await openFreshApp(page);
+
+  const snapshot = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const makeCard = app.makeCard;
+    const current = app.getState();
+    const southHand = [
+      "2S", "3S", "4S",
+      "AH", "KH", "QH", "2H", "3H",
+      "2D", "3D",
+      "2C", "3C", "4C"
+    ].map(makeCard);
+    app.setState({
+      phase: "bidding",
+      guidanceMode: false,
+      turnIndex: 2,
+      vulnerability: "none",
+      hands: { ...current.hands, South: southHand },
+      auction: [
+        { seat: "North", bid: rules.Bid(1, "NT") },
+        { seat: "East", bid: rules.Pass() }
+      ]
+    });
+    app.renderAll();
+
+    const recommendedCount = document.querySelectorAll("#bid-controls .recommended-action").length;
+    const transferButton = [...document.querySelectorAll("#bid-controls button.bid")]
+      .find((button) => button.textContent === "2\u2666");
+    transferButton.click();
+
+    const call = app.getState().auction.at(-1);
+    return {
+      recommendedCount,
+      bid: `${call.bid.level}${call.bid.strain}`,
+      ruleId: call.bidResult?.ruleId || null,
+      transferSuit: call.bidResult?.transferSuit || null,
+      recommendedRuleId: call.recommendedBidResult?.ruleId || null
+    };
+  });
+
+  expect(snapshot).toEqual({
+    recommendedCount: 0,
+    bid: "2D",
+    ruleId: "fiveCardHigh.response.transferToH",
+    transferSuit: "H",
+    recommendedRuleId: null
+  });
+});
+
 test("developer bid explanations use rule references without the old source line", async ({ page }) => {
   await openFreshApp(page);
 
