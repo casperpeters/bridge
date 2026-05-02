@@ -67,7 +67,7 @@
     },
     {
       id: "lead-avoid-unsupported-honor-001",
-      title: "Niet onder een losse honneur uitkomen als er een veiliger zijkleur is",
+      title: "Niet onder een losse aas uitkomen als er een veiliger zijkleur is",
       level: "beginner",
       focus: ["defense", "opening-lead", "suit-contract", "honor-safety"],
       systemId: "fiveCardHigh",
@@ -83,16 +83,16 @@
       expectedContract: { contract: "4S", declarer: "South" },
       expectedCardPlay: {
         seat: "West",
-        ruleId: "suitContractLowFromThreeSmall",
-        card: "3C",
+        ruleId: "suitContractTopOfNothingLead",
+        card: "5C",
         suit: "C",
         isOpeningLead: true,
-        honorSafety: "avoidedUnsupportedHonorUnderlead"
+        honorSafety: "avoidedUnsupportedAceUnderlead"
       },
-      explanationKeys: ["cardPlay.suitContractLowFromThreeSmall"],
+      explanationKeys: ["cardPlay.suitContractTopOfNothingLead"],
       teachingPoints: [
-        "Onder een losse aas, heer of vrouw uitkomen tegen een kleurcontract kan duur zijn.",
-        "Een lage kaart uit drie kleintjes is vaak rustiger en veiliger voor beginners."
+        "Klein onder een losse aas uitkomen tegen een kleurcontract kan duur zijn.",
+        "Als je met kleine kaarten uitkomt, is top of nothing de afspraak: de hoogste kaart ontkent een plaatje."
       ]
     },
     {

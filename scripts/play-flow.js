@@ -101,7 +101,8 @@ function chooseCardPlayResult(seat) {
     dummy: state.dummy,
     contract: state.contract,
     trump: state.contract.strain === "NT" ? null : state.contract.strain,
-    playPlan
+    playPlan,
+    auction: state.auction
   });
 }
 
@@ -139,6 +140,15 @@ function explainCardPlay(seat, card, result = chooseCardPlayResult(seat)) {
   if (result.card.id === card.id) return `${base}: ${ruleText}`;
   const actor = humanChoice ? "Je kaart" : `${seatName(seat)}s kaart`;
   return `${base}: ${actor} wijkt af van de speelheuristiek. ${seatName(seat)} speelde ${cardText(card)}. De heuristiek stelde ${cardText(result.card)} voor: ${ruleText}`;
+}
+
+function notrumpLeadSelectionText(result) {
+  if (result.leadSelection === "partnerSuit") return "partners kleur";
+  if (result.leadSelection === "throughDummySecondSuit") return "door dummy's tweede kleur heen";
+  if (result.leadSelection === "qualityUnbidSuit") return "beste serie in een ongeboden kleur";
+  if (result.leadSelection === "qualitySuit") return "beste seriekleur";
+  if (result.leadSelection === "longestUnbidSuit") return "langste ongeboden kleur";
+  return "langste kleur";
 }
 
 function explainCardPlayResult(result) {
@@ -184,26 +194,59 @@ function explainCardPlayResult(result) {
     return `Speel de hoogste kaart uit de langste kleur (${suitName(result.suit)}, ${result.suitLength} kaarten).`;
   }
   if (ruleName === "notrumpSequenceLead") {
-    return `Kom tegen sans-atout met de hoogste kaart uit de serie in ${suitName(result.suit)}.`;
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout met de hoogste kaart uit de serie in je ${suitText}: ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "notrumpAceKingLead") {
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout met het aas uit AH in je ${suitText}: ${suitName(result.suit)}.`;
   }
   if (ruleName === "notrumpBrokenSequenceLead") {
     const missing = rankLabel[result.missingRank] || result.missingRank;
-    return `Kom tegen sans-atout met de hoogste kaart uit de gebroken serie in ${suitName(result.suit)}${missing ? `; de ${missing} ontbreekt` : ""}.`;
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout met de hoogste kaart uit de gebroken serie in je ${suitText}: ${suitName(result.suit)}${missing ? `; de ${missing} ontbreekt` : ""}.`;
+  }
+  if (ruleName === "notrumpInternalSequenceLead") {
+    const sequence = result.sequence ? ` (${result.sequence})` : "";
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout met de hoogste kaart van je interne serie${sequence} in je ${suitText}: ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "notrumpDoubletonLead") {
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout met de hoogste kaart van je doubleton in je ${suitText}: ${suitName(result.suit)}.`;
   }
   if (ruleName === "notrumpLowPromisesHonor") {
-    return `Kom tegen sans-atout laag uit je langste kleur: kleintje belooft plaatje.`;
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout laag uit je ${suitText}: kleintje belooft plaatje.`;
   }
-  if (ruleName === "notrumpHighMiddleDeniesHonor") {
-    return `Kom tegen sans-atout met de hoogste middenkaart uit je langste kleur: die ontkent een plaatje.`;
+  if (ruleName === "notrumpTopOfNothingLead" || ruleName === "notrumpHighMiddleDeniesHonor") {
+    const suitText = notrumpLeadSelectionText(result);
+    return `Kom tegen sans-atout met top of nothing uit je ${suitText}: de hoogste kaart ontkent een plaatje.`;
   }
   if (ruleName === "suitContractSequenceLead") {
     return `Kom tegen een kleurcontract met de hoogste kaart uit de honneurserie in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractInternalSequenceLead") {
+    const sequence = result.sequence ? ` (${result.sequence})` : "";
+    return `Kom tegen een kleurcontract met de hoogste kaart van je interne serie${sequence} in ${suitName(result.suit)}.`;
   }
   if (ruleName === "suitContractSingletonLead") {
     return `Kom tegen een kleurcontract met je singleton in ${suitName(result.suit)}.`;
   }
   if (ruleName === "suitContractDoubletonLead") {
     return `Kom tegen een kleurcontract met de hoogste kaart van je doubleton in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractUnsupportedAceLead") {
+    return `Kom tegen een kleurcontract niet klein onder een losse aas uit; als deze kleur toch aan de beurt is, speel dan de aas in ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "suitContractLowPromisesHonor") {
+    return `Kom tegen een kleurcontract laag uit ${suitName(result.suit)}: kleintje belooft plaatje.`;
+  }
+  if (ruleName === "suitContractTopOfNothingLead") {
+    if (result.honorSafety === "avoidedUnsupportedAceUnderlead") {
+      return `Kom tegen een kleurcontract met top of nothing in ${suitName(result.suit)}: veiliger dan klein onder de losse aas in ${suitName(result.avoidedSuit)}.`;
+    }
+    return `Kom tegen een kleurcontract met top of nothing in ${suitName(result.suit)}: de hoogste kaart ontkent een plaatje.`;
   }
   if (ruleName === "suitContractFourthBestLead") {
     if (result.honorSafety === "fallbackUnsupportedHonorUnderlead") {
