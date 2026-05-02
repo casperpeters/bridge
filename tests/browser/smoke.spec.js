@@ -4,7 +4,7 @@ async function openFreshApp(page) {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
-  await page.goto("/");
+  await page.goto("/?testHooks=1");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
@@ -14,9 +14,10 @@ async function openFreshApp(page) {
 
 async function prepareNorthSouthDeclarerHand(page) {
   const stateSnapshot = await page.evaluate(() => {
-    startHand({ seed: "browser-smoke-0", skipFlow: true });
-    autoCompleteAuction();
-    renderAll();
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "browser-smoke-0", skipFlow: true });
+    app.autoCompleteAuction();
+    app.renderAll();
     return {
       contractText: document.querySelector("#contract").textContent,
       statusText: document.querySelector("#status").textContent
@@ -36,19 +37,13 @@ async function clickMenuButton(page, selector) {
 
 test("keeps tester-only menu actions behind developer mode", async ({ page }) => {
   await openFreshApp(page);
-  await page.evaluate(() => {
-    state.developerMode = false;
-    renderAll();
-  });
+  await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(false));
 
   const menu = page.locator(".app-menu");
   await menu.locator("summary").click();
   await expect(page.locator("#quick-review")).toBeHidden();
 
-  await page.evaluate(() => {
-    state.developerMode = true;
-    renderAll();
-  });
+  await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(true));
   await expect(page.locator("#quick-review")).toBeVisible();
 });
 
@@ -92,10 +87,7 @@ test("loads the live table and lets South make an auction call", async ({ page }
   await expect(page.locator(".game-summary #scoreline")).toContainText("Kwetsbaarheid");
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
 
-  await page.evaluate(() => {
-    state.guidanceMode = true;
-    renderAll();
-  });
+  await page.evaluate(() => window.BridgeAppTestHooks.setGuidanceMode(true));
   await expect(page.locator("#guidance-panel")).toContainText("AI-suggestie bod");
   await expect(page.locator("#guidance-panel")).toContainText("Regel:");
   await expect(page.locator("#guidance-panel")).not.toContainText("Dit is heuristisch advies op basis van de huidige Vijfkaart-Hoog-regels.");
@@ -109,13 +101,15 @@ test("loads curated practice hands through the repeat-code field", async ({ page
   await openFreshApp(page);
 
   const snapshot = await page.evaluate(() => {
-    els.seedInput.value = "stayman-after-1nt-001";
-    loadSeedFromInput();
+    const app = window.BridgeAppTestHooks;
+    app.getEls().seedInput.value = "stayman-after-1nt-001";
+    app.loadSeedFromInput();
+    const state = app.getState();
     return {
       seed: state.dealSeed,
       practiceId: state.practice?.id,
       practiceTitle: state.practice?.title,
-      dealer: seatAt(state.dealerIndex),
+      dealer: app.seatAt(state.dealerIndex),
       vulnerability: state.vulnerability,
       southHand: state.hands.South.map((card) => card.id)
     };
@@ -134,9 +128,9 @@ test("developer bid explanations use rule references without the old source line
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    state.developerMode = true;
-    state.guidanceMode = true;
-    renderAll();
+    const app = window.BridgeAppTestHooks;
+    app.setState({ developerMode: true, guidanceMode: true });
+    app.renderAll();
   });
   const suggestedAction = await page.locator("#guidance-panel strong").textContent();
   const suggestedBid = suggestedAction.split(": ").pop();
@@ -151,17 +145,21 @@ test("developer bid explanations flag South calls that differ from the heuristic
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    startHand({ seed: "bid-deviation-smoke", skipFlow: true });
-    state.developerMode = true;
-    state.guidanceMode = true;
-    state.phase = "bidding";
-    state.turnIndex = seats.indexOf("South");
-    state.auction = [];
-    const recommended = chooseRecommendedBidResult("South");
-    const alternate = sameCall(recommended.bid, bridgeRules.Pass())
-      ? bridgeRules.Bid(1, "C")
-      : bridgeRules.Pass();
-    makeBid("South", alternate, recommended);
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "bid-deviation-smoke", skipFlow: true });
+    const rules = app.rules;
+    app.setState({
+      developerMode: true,
+      guidanceMode: true,
+      phase: "bidding",
+      turnIndex: 2,
+      auction: []
+    });
+    const recommended = app.chooseRecommendedBidResult("South");
+    const alternate = app.sameCall(recommended.bid, rules.Pass())
+      ? rules.Bid(1, "C")
+      : rules.Pass();
+    app.makeBid("South", alternate, recommended);
   });
 
   await expect(page.locator("#bid-explanations")).toContainText("wijkt af van de biedheuristiek");
@@ -250,9 +248,9 @@ test("glossary opens from the toolbar and linked explanation terms", async ({ pa
   await page.locator("#close-glossary").click();
 
   await page.evaluate(() => {
-    state.developerMode = true;
-    state.guidanceMode = true;
-    renderAll();
+    const app = window.BridgeAppTestHooks;
+    app.setState({ developerMode: true, guidanceMode: true });
+    app.renderAll();
   });
   await page.locator(".bid-controls .recommended-action").click();
 
@@ -268,44 +266,50 @@ test("developer bid explanations describe opener rebids after notrump responses"
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const makeCard = app.makeCard;
     const southHand = [
       "AS", "KS", "QS", "2S", "3S",
       "AH", "KH", "QH", "2H",
       "2D", "3D",
       "2C", "3C"
     ].map(makeCard);
-    state.developerMode = true;
-    state.guidanceMode = false;
-    state.phase = "bidding";
-    state.hands.South = southHand;
-    state.auction = [
+    const current = app.getState();
+    const auction = [
       {
         seat: "South",
-        bid: bridgeRules.Bid(1, "S"),
-        bidResult: bridgeRules.chooseBid({
-          systemId: state.biddingSystemId,
+        bid: rules.Bid(1, "S"),
+        bidResult: rules.chooseBid({
+          systemId: current.biddingSystemId,
           hand: southHand,
           auction: [],
           seat: "South",
-          vulnerability: state.vulnerability,
-          agreements: state.biddingAgreements
+          vulnerability: current.vulnerability,
+          agreements: current.biddingAgreements
         })
       },
-      { seat: "West", bid: bridgeRules.Pass() },
-      { seat: "North", bid: bridgeRules.Bid(1, "NT") },
-      { seat: "East", bid: bridgeRules.Pass() }
+      { seat: "West", bid: rules.Pass() },
+      { seat: "North", bid: rules.Bid(1, "NT") },
+      { seat: "East", bid: rules.Pass() }
     ];
-    const bidResult = bridgeRules.chooseBid({
-      systemId: state.biddingSystemId,
-      hand: southHand,
-      auction: state.auction,
-      seat: "South",
-      vulnerability: state.vulnerability,
-      agreements: state.biddingAgreements
+    app.setState({
+      developerMode: true,
+      guidanceMode: false,
+      phase: "bidding",
+      hands: { ...current.hands, South: southHand },
+      auction
     });
-    state.auction.push({ seat: "South", bid: bidResult.bid, bidResult });
-    renderAll();
+    const bidResult = rules.chooseBid({
+      systemId: current.biddingSystemId,
+      hand: southHand,
+      auction,
+      seat: "South",
+      vulnerability: current.vulnerability,
+      agreements: current.biddingAgreements
+    });
+    app.setState({ auction: [...auction, { seat: "South", bid: bidResult.bid, bidResult }] });
+    app.renderAll();
   });
 
   await expect(page.locator("#bid-explanations")).toContainText("herbieding na partners 1SA");
@@ -318,35 +322,41 @@ test("developer bid explanations describe fourth-suit forcing as artificial", as
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const makeCard = app.makeCard;
     const northHand = [
       "AS", "7S", "6S", "5S",
       "4H", "3H",
       "7D", "6D",
       "AC", "KC", "QC", "6C", "5C"
     ].map(makeCard);
-    state.developerMode = true;
-    state.guidanceMode = false;
-    state.phase = "bidding";
-    state.hands.North = northHand;
-    state.auction = [
-      { seat: "South", bid: bridgeRules.Bid(1, "H") },
-      { seat: "West", bid: bridgeRules.Pass() },
-      { seat: "North", bid: bridgeRules.Bid(1, "S") },
-      { seat: "East", bid: bridgeRules.Pass() },
-      { seat: "South", bid: bridgeRules.Bid(2, "D") },
-      { seat: "West", bid: bridgeRules.Pass() }
+    const current = app.getState();
+    const auction = [
+      { seat: "South", bid: rules.Bid(1, "H") },
+      { seat: "West", bid: rules.Pass() },
+      { seat: "North", bid: rules.Bid(1, "S") },
+      { seat: "East", bid: rules.Pass() },
+      { seat: "South", bid: rules.Bid(2, "D") },
+      { seat: "West", bid: rules.Pass() }
     ];
-    const bidResult = bridgeRules.chooseBid({
-      systemId: state.biddingSystemId,
-      hand: northHand,
-      auction: state.auction,
-      seat: "North",
-      vulnerability: state.vulnerability,
-      agreements: state.biddingAgreements
+    app.setState({
+      developerMode: true,
+      guidanceMode: false,
+      phase: "bidding",
+      hands: { ...current.hands, North: northHand },
+      auction
     });
-    state.auction.push({ seat: "North", bid: bidResult.bid, bidResult });
-    renderAll();
+    const bidResult = rules.chooseBid({
+      systemId: current.biddingSystemId,
+      hand: northHand,
+      auction,
+      seat: "North",
+      vulnerability: current.vulnerability,
+      agreements: current.biddingAgreements
+    });
+    app.setState({ auction: [...auction, { seat: "North", bid: bidResult.bid, bidResult }] });
+    app.renderAll();
   });
 
   await expect(page.locator("#bid-explanations")).toContainText("vierde-kleur-forcing");
@@ -358,37 +368,39 @@ test("shows compact feedback when a player clicks an illegal card", async ({ pag
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
-    state.phase = "playing";
-    state.turnIndex = seats.indexOf("South");
-    state.contract = bridgeRules.Bid(1, "H");
-    state.declarer = "North";
-    state.dummy = "South";
-    state.currentTrick = [{ seat: "West", card: makeCard("KH") }];
-    state.awaitingTrickAdvance = false;
-    state.trickAdvanceArmed = false;
-    state.hands = {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = app.makeCard;
+    const hands = {
       North: [],
       East: [],
       South: [makeCard("AS"), makeCard("2H")],
       West: []
     };
-    state.originalHands = {
-      North: [],
-      East: [],
-      South: [makeCard("AS"), makeCard("2H")],
-      West: []
-    };
-    renderAll();
+    app.setState({
+      phase: "playing",
+      turnIndex: 2,
+      contract: app.rules.Bid(1, "H"),
+      declarer: "North",
+      dummy: "South",
+      currentTrick: [{ seat: "West", card: makeCard("KH") }],
+      awaitingTrickAdvance: false,
+      trickAdvanceArmed: false,
+      hands,
+      originalHands: hands
+    });
+    app.renderAll();
   });
 
   await page.locator('#south-hand .card[aria-label="A schoppen"]').click();
   await expect(page.locator("#table-feedback")).toContainText("Bekennen: speel eerst harten.");
 
-  const afterIllegalClick = await page.evaluate(() => ({
-    currentTrickLength: state.currentTrick.length,
-    southHandLength: state.hands.South.length
-  }));
+  const afterIllegalClick = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      currentTrickLength: state.currentTrick.length,
+      southHandLength: state.hands.South.length
+    };
+  });
   expect(afterIllegalClick).toEqual({ currentTrickLength: 1, southHandLength: 2 });
 
   await page.locator('#south-hand .card[aria-label="2 harten"]').click();
@@ -399,29 +411,28 @@ test("shows a separate status for South opening lead", async ({ page }) => {
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
-    state.phase = "playing";
-    state.turnIndex = seats.indexOf("South");
-    state.contract = bridgeRules.Bid(2, "C");
-    state.declarer = "East";
-    state.dummy = "West";
-    state.currentTrick = [];
-    state.trickHistory = [];
-    state.awaitingTrickAdvance = false;
-    state.hands = {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = app.makeCard;
+    const hands = {
       North: [makeCard("2S")],
       East: [makeCard("3S")],
       South: [makeCard("4S")],
       West: [makeCard("5S")]
     };
-    state.originalHands = {
-      North: [makeCard("2S")],
-      East: [makeCard("3S")],
-      South: [makeCard("4S")],
-      West: [makeCard("5S")]
-    };
-    clearTrickSlots();
-    continuePlay();
+    app.setState({
+      phase: "playing",
+      turnIndex: 2,
+      contract: app.rules.Bid(2, "C"),
+      declarer: "East",
+      dummy: "West",
+      currentTrick: [],
+      trickHistory: [],
+      awaitingTrickAdvance: false,
+      hands,
+      originalHands: hands
+    });
+    app.clearTrickSlots();
+    app.continuePlay();
   });
 
   await expect(page.locator("#status")).toContainText("Jij komt uit. Kies een kaart.");
@@ -432,38 +443,37 @@ test("pauses completed tricks without previewing the next AI card suggestion", a
   await openFreshApp(page);
 
   await page.evaluate(() => {
-    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const app = window.BridgeAppTestHooks;
+    const makeCard = app.makeCard;
     const plays = [
       { seat: "North", card: makeCard("2S") },
       { seat: "East", card: makeCard("5S") },
       { seat: "South", card: makeCard("10S") },
       { seat: "West", card: makeCard("AS") }
     ];
-    state.phase = "playing";
-    state.guidanceMode = true;
-    state.turnIndex = seats.indexOf("South");
-    state.contract = bridgeRules.Bid(1, "S");
-    state.declarer = "East";
-    state.dummy = "West";
-    state.currentTrick = plays;
-    state.awaitingTrickAdvance = true;
-    state.trickAdvanceArmed = true;
-    state.pendingTrickWinner = "West";
-    state.hands = {
+    const hands = {
       North: [],
       East: [],
       South: [makeCard("2C"), makeCard("5D")],
       West: []
     };
-    state.originalHands = {
-      North: [],
-      East: [],
-      South: [makeCard("2C"), makeCard("5D")],
-      West: []
-    };
-    clearTrickSlots();
-    plays.forEach((play) => renderPlayedCard(play.seat, play.card));
-    renderAll();
+    app.setState({
+      phase: "playing",
+      guidanceMode: true,
+      turnIndex: 2,
+      contract: app.rules.Bid(1, "S"),
+      declarer: "East",
+      dummy: "West",
+      currentTrick: plays,
+      awaitingTrickAdvance: true,
+      trickAdvanceArmed: true,
+      pendingTrickWinner: "West",
+      hands,
+      originalHands: hands
+    });
+    app.clearTrickSlots();
+    plays.forEach((play) => app.renderPlayedCard(play.seat, play.card));
+    app.renderAll();
   });
 
   await expect(page.locator("#guidance-panel")).toBeHidden();
@@ -482,9 +492,10 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
   await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
 
   const preOpeningLeadAdviceContext = await page.evaluate(() => {
-    const originalChooseCardPlay = bridgeRules.chooseCardPlay;
+    const app = window.BridgeAppTestHooks;
+    const originalChooseCardPlay = app.rules.chooseCardPlay;
     let captured = null;
-    bridgeRules.chooseCardPlay = (options) => {
+    app.rules.chooseCardPlay = (options) => {
       captured = {
         partnerHand: options.partnerHand,
         dummyHand: options.dummyHand,
@@ -493,15 +504,15 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
       return originalChooseCardPlay(options);
     };
     try {
-      chooseCardPlayResult(state.declarer);
+      app.chooseCardPlayResult(app.getState().declarer);
     } finally {
-      bridgeRules.chooseCardPlay = originalChooseCardPlay;
+      app.rules.chooseCardPlay = originalChooseCardPlay;
     }
     return captured;
   });
   expect(preOpeningLeadAdviceContext).toEqual({ partnerHand: null, dummyHand: null, playPlan: null });
 
-  await page.evaluate(() => continuePlay());
+  await page.evaluate(() => window.BridgeAppTestHooks.continuePlay());
 
   await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
   await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
@@ -509,10 +520,7 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
   await expect(page.locator("#dummy-notice")).toContainText("dummy");
   await expect(page.locator("#play-plan-panel")).toBeHidden();
 
-  await page.evaluate(() => {
-    state.developerMode = true;
-    renderAll();
-  });
+  await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(true));
   await expect(page.locator("#play-plan-panel")).toBeVisible();
   const playPlanBeforeBidExplanations = await page.evaluate(
     () => document.querySelector("#play-plan-panel").nextElementSibling?.id === "bid-explanations"
@@ -524,13 +532,17 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
   await expect(page.locator("#trick-area .card.played")).toHaveCount(2);
 
   await page.evaluate(() => {
-    state.guidanceMode = true;
-    state.currentTrick = [];
-    state.trickHistory = [{ number: 1, winner: state.declarer, cards: [] }];
-    state.turnIndex = seats.indexOf(state.declarer);
-    state.playPlan = null;
-    clearTrickSlots();
-    renderAll();
+    const app = window.BridgeAppTestHooks;
+    const state = app.getState();
+    app.setState({
+      guidanceMode: true,
+      currentTrick: [],
+      trickHistory: [{ number: 1, winner: state.declarer, cards: [] }],
+      turnIndex: ["North", "East", "South", "West"].indexOf(state.declarer),
+      playPlan: null
+    });
+    app.clearTrickSlots();
+    app.renderAll();
   });
   await expect(page.locator("#guidance-panel")).toBeVisible();
   await expect(page.locator("#guidance-panel")).toContainText("speelplan");
@@ -540,18 +552,25 @@ test("developer play explanations flag cards that differ from the heuristic", as
   await openFreshApp(page);
 
   const madeDeviation = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
     for (let attempt = 0; attempt < 20; attempt++) {
-      startHand({ seed: `play-deviation-smoke-${attempt}`, skipFlow: true });
-      autoCompleteAuction();
+      app.startHand({ seed: `play-deviation-smoke-${attempt}`, skipFlow: true });
+      app.autoCompleteAuction();
+      let state = app.getState();
       if (state.phase !== "playing") continue;
-      state.developerMode = true;
-      autoPlayCard(seatAt(state.turnIndex), chooseCard(seatAt(state.turnIndex)));
-      const seat = seatAt(state.turnIndex);
-      if (!isHumanControlledSeat(seat)) continue;
-      const recommended = chooseCardPlayResult(seat);
-      const alternate = legalCards(seat).find((card) => card.id !== recommended?.card?.id);
+      app.setState({ developerMode: true });
+      app.autoPlayCard(app.seatAt(state.turnIndex), app.chooseCard(app.seatAt(state.turnIndex)));
+      state = app.getState();
+      const seat = app.seatAt(state.turnIndex);
+      const declarerTeam = seat === "North" || seat === "South" ? "NS" : "EW";
+      const humanControlled = state.declarer && (state.declarer === "North" || state.declarer === "South")
+        ? declarerTeam === "NS"
+        : seat === "South";
+      if (!humanControlled) continue;
+      const recommended = app.chooseCardPlayResult(seat);
+      const alternate = app.legalCards(seat).find((card) => card.id !== recommended?.card?.id);
       if (!alternate) continue;
-      playCard(seat, alternate.id);
+      app.playCard(seat, alternate.id);
       return true;
     }
     return false;
@@ -566,10 +585,7 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: baseURL });
   await openFreshApp(page);
 
-  await page.evaluate(() => {
-    state.developerMode = true;
-    renderAll();
-  });
+  await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(true));
   await clickMenuButton(page, "#quick-review");
 
   await expect(page.locator("#review-panel")).toBeVisible();

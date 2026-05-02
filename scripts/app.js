@@ -372,6 +372,7 @@ function compareCards(a, b) {
 
 function renderAll() {
   applyStaticText();
+  renderScoreTable();
   renderTurnFocus();
   renderTrickSlotFocus();
   renderHands();
@@ -811,6 +812,113 @@ function seatName(seat) {
 
 function suitName(suit) {
   return text.suits[suit] || suit;
+}
+
+const BridgeApp = {
+  state,
+  els,
+  rules: bridgeRules,
+  actions: {
+    startHand,
+    startPracticeHand,
+    autoCompleteAuction,
+    autoCompletePlay,
+    continuePlay,
+    playCard,
+    makeBid,
+    replayHand,
+    jumpToTrickOverview
+  },
+  render: {
+    renderAll,
+    renderHands,
+    renderAuction,
+    renderBidControls,
+    renderPlayPlan,
+    renderHistory,
+    renderReview,
+    renderScoreTable,
+    renderPlayedCard,
+    clearTrickSlots
+  },
+  helpers: {
+    seatAt,
+    seatName,
+    suitName,
+    cardText,
+    legalCards,
+    chooseCard,
+    autoPlayCard,
+    chooseCardPlayResult,
+    chooseRecommendedBidResult,
+    currentRecommendedCard,
+    sameCall
+  }
+};
+
+globalThis.BridgeApp = BridgeApp;
+globalThis.BridgeAppContext = BridgeApp;
+
+if (new URLSearchParams(globalThis.location?.search || "").has("testHooks")) {
+  globalThis.BridgeAppTestHooks = createBridgeAppTestHooks();
+}
+
+function createBridgeAppTestHooks() {
+  const setState = (nextState) => {
+    const patch = typeof nextState === "function" ? nextState(state) : nextState;
+    if (!patch || typeof patch !== "object") return getState();
+    Object.assign(state, patch);
+    return getState();
+  };
+
+  const setDeveloperMode = (enabled) => {
+    state.developerMode = Boolean(enabled);
+    renderAll();
+    return getState();
+  };
+
+  const setGuidanceMode = (enabled) => {
+    state.guidanceMode = Boolean(enabled);
+    renderAll();
+    return getState();
+  };
+
+  return {
+    app: BridgeApp,
+    rules: bridgeRules,
+    startHand,
+    startPracticeHand,
+    autoCompleteAuction,
+    autoCompletePlay,
+    renderAll,
+    continuePlay,
+    playCard,
+    makeBid,
+    setState,
+    getState,
+    makeCard,
+    clearTrickSlots,
+    renderPlayedCard,
+    setDeveloperMode,
+    setGuidanceMode,
+    loadSeedFromInput,
+    chooseRecommendedBidResult,
+    chooseCardPlayResult,
+    chooseCard,
+    autoPlayCard,
+    legalCards,
+    seatAt,
+    sameCall,
+    getEls: () => els
+  };
+}
+
+function getState() {
+  return JSON.parse(JSON.stringify(state));
+}
+
+function makeCard(id) {
+  return { id, rank: id.slice(0, -1), suit: id.slice(-1) };
 }
 
 startHand();

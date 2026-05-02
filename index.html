@@ -189,43 +189,7 @@
                     <th scope="col">Kwetsbaar</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">1<span class="black-suit">♣</span> / 1<span class="red-suit">♦</span><br />1<span class="red-suit">♥</span> / 1<span class="black-suit">♠</span><br />1SA</th>
-                    <td><span>20 + 50 = <strong>70</strong></span><span>30 + 50 = <strong>80</strong></span><span>40 + 50 = <strong>90</strong></span></td>
-                    <td><span>20 + 50 = <strong>70</strong></span><span>30 + 50 = <strong>80</strong></span><span>40 + 50 = <strong>90</strong></span></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">2<span class="black-suit">♣</span> / 2<span class="red-suit">♦</span><br />2<span class="red-suit">♥</span> / 2<span class="black-suit">♠</span><br />2SA</th>
-                    <td><span>40 + 50 = <strong>90</strong></span><span>60 + 50 = <strong>110</strong></span><span>70 + 50 = <strong>120</strong></span></td>
-                    <td><span>40 + 50 = <strong>90</strong></span><span>60 + 50 = <strong>110</strong></span><span>70 + 50 = <strong>120</strong></span></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">3<span class="black-suit">♣</span> / 3<span class="red-suit">♦</span><br />3<span class="red-suit">♥</span> / 3<span class="black-suit">♠</span><br />3SA</th>
-                    <td><span>60 + 50 = <strong>110</strong></span><span>90 + 50 = <strong>140</strong></span><span>100 + 300 = <strong>400</strong></span></td>
-                    <td><span>60 + 50 = <strong>110</strong></span><span>90 + 50 = <strong>140</strong></span><span>100 + 500 = <strong>600</strong></span></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">4<span class="black-suit">♣</span> / 4<span class="red-suit">♦</span><br />4<span class="red-suit">♥</span> / 4<span class="black-suit">♠</span><br />4SA</th>
-                    <td><span>80 + 50 = <strong>130</strong></span><span>120 + 300 = <strong>420</strong></span><span>130 + 300 = <strong>430</strong></span></td>
-                    <td><span>80 + 50 = <strong>130</strong></span><span>120 + 500 = <strong>620</strong></span><span>130 + 500 = <strong>630</strong></span></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">5<span class="black-suit">♣</span> / 5<span class="red-suit">♦</span><br />5<span class="red-suit">♥</span> / 5<span class="black-suit">♠</span><br />5SA</th>
-                    <td><span>100 + 300 = <strong>400</strong></span><span>150 + 300 = <strong>450</strong></span><span>160 + 300 = <strong>460</strong></span></td>
-                    <td><span>100 + 500 = <strong>600</strong></span><span>150 + 500 = <strong>650</strong></span><span>160 + 500 = <strong>660</strong></span></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">6<span class="black-suit">♣</span> / 6<span class="red-suit">♦</span><br />6<span class="red-suit">♥</span> / 6<span class="black-suit">♠</span><br />6SA</th>
-                    <td><span>120 + 800 = <strong>920</strong></span><span>180 + 800 = <strong>980</strong></span><span>190 + 800 = <strong>990</strong></span></td>
-                    <td><span>120 + 1250 = <strong>1370</strong></span><span>180 + 1250 = <strong>1430</strong></span><span>190 + 1250 = <strong>1440</strong></span></td>
-                  </tr>
-                  <tr>
-                    <th scope="row">7<span class="black-suit">♣</span> / 7<span class="red-suit">♦</span><br />7<span class="red-suit">♥</span> / 7<span class="black-suit">♠</span><br />7SA</th>
-                    <td><span>140 + 1300 = <strong>1440</strong></span><span>210 + 1300 = <strong>1510</strong></span><span>220 + 1300 = <strong>1520</strong></span></td>
-                    <td><span>140 + 2000 = <strong>2140</strong></span><span>210 + 2000 = <strong>2210</strong></span><span>220 + 2000 = <strong>2220</strong></span></td>
-                  </tr>
-                </tbody>
+                <tbody id="contract-score-rows"></tbody>
               </table>
             </div>
           </section>
@@ -244,20 +208,7 @@
                       <th scope="col">Geredoubleerd</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr>
-                      <th scope="row"><span class="black-suit">♣</span> / <span class="red-suit">♦</span></th>
-                      <td data-label="Ongedoubleerd">20</td>
-                      <td data-label="Gedoubleerd">100 / 200</td>
-                      <td data-label="Geredoubleerd">200 / 400</td>
-                    </tr>
-                    <tr>
-                      <th scope="row"><span class="red-suit">♥</span> / <span class="black-suit">♠</span> / SA</th>
-                      <td data-label="Ongedoubleerd">30</td>
-                      <td data-label="Gedoubleerd">100 / 200</td>
-                      <td data-label="Geredoubleerd">200 / 400</td>
-                    </tr>
-                  </tbody>
+                  <tbody id="overtrick-score-rows"></tbody>
                 </table>
               </div>
             </section>
@@ -275,20 +226,7 @@
                       <th scope="col">Geredoubleerd</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr>
-                      <th scope="row">Niet kwetsbaar</th>
-                      <td data-label="Ongedoubleerd">50</td>
-                      <td data-label="Gedoubleerd">100, 300, 500, daarna +300</td>
-                      <td data-label="Geredoubleerd">200, 600, 1000, daarna +600</td>
-                    </tr>
-                    <tr>
-                      <th scope="row">Kwetsbaar</th>
-                      <td data-label="Ongedoubleerd">100</td>
-                      <td data-label="Gedoubleerd">200, daarna +300</td>
-                      <td data-label="Geredoubleerd">400, daarna +600</td>
-                    </tr>
-                  </tbody>
+                  <tbody id="undertrick-score-rows"></tbody>
                 </table>
               </div>
             </section>
@@ -352,6 +290,7 @@
     <script src="rules/core.js"></script>
     <script src="rules/auction.js"></script>
     <script src="rules/scoring.js"></script>
+    <script src="rules/score-table.js"></script>
     <script src="rules/bidding/common/context.js"></script>
     <script src="rules/bidding/common/valuation.js"></script>
     <script src="rules/bidding/common/legality.js"></script>
@@ -380,6 +319,7 @@
     <script src="scripts/glossary.js"></script>
     <script src="scripts/settings.js"></script>
     <script src="scripts/seed.js"></script>
+    <script src="scripts/score-table.js"></script>
     <script src="scripts/play-plan.js"></script>
     <script src="scripts/render-hands.js"></script>
     <script src="scripts/render-auction.js"></script>
