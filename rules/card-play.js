@@ -1422,13 +1422,13 @@
       ].includes(play.ruleId);
     }
 
-  function attitudeSignalSupport(suitedHand) {
-      if (suitedHand.some((card) => isLeadHonorRank(card.rank))) return "honor";
-      if (suitedHand.length >= 4) return "length";
+  function attitudeSignalSupport({ hand, suitedHand, leadSuit, trump }) {
+      if (suitedHand.length === 3 && suitedHand.some((card) => card.rank === "Q")) return "honor";
+      if (trump && leadSuit !== trump && suitedHand.length === 2 && cardsInSuit(hand, trump).length) return "ruffValue";
       return null;
     }
 
-  function chooseOpeningLeadAttitudeSignal({ hand, legal, currentTrick, trickHistory, seat, declarer }) {
+  function chooseOpeningLeadAttitudeSignal({ hand, legal, currentTrick, trickHistory, seat, declarer, trump }) {
       if (trickHistory.length || currentTrick.length !== 2) return null;
       if (!isDefensivePlaySeat(seat, declarer)) return null;
 
@@ -1440,8 +1440,8 @@
       if (suitedLegal.length <= 1) return null;
 
       const suitedHand = cardsInSuit(hand, leadSuit);
-      const highSignalCard = highestCard(suitedLegal);
-      const supportReason = attitudeSignalSupport(suitedHand);
+      const highSignalCard = highestCard(suitedLegal.filter(isLowLeadCard)) || highestCard(suitedLegal);
+      const supportReason = attitudeSignalSupport({ hand, suitedHand, leadSuit, trump });
       const signal = supportReason ? "encourage" : "discourage";
       const card = signal === "encourage" ? highSignalCard : lowestCard(suitedLegal);
 
@@ -1719,7 +1719,8 @@
         currentTrick,
         trickHistory,
         seat,
-        declarer
+        declarer,
+        trump
       });
       if (openingLeadAttitudeSignal) return openingLeadAttitudeSignal;
 
