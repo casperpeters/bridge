@@ -275,7 +275,11 @@ function explainCardPlayResult(result) {
   if (ruleName === "secondHandCoverHonor") {
     const covered = rankLabel[result.coveredRank] || result.coveredRank;
     const promoted = rankLabel[result.promotedRank] || result.promotedRank;
-    return `Tweede hand dekt de ${covered} met een honneur omdat dummy de aansluitende ${promoted} toont.`;
+    if (result.coverReason === "dummyThreat" && promoted) {
+      return `Tweede hand dekt de ${covered} met de goedkoopste hogere honneur omdat dummy de aansluitende ${promoted} toont.`;
+    }
+    const tenText = result.coveredRank === "T" ? "; ook de 10 telt hier als honneur" : "";
+    return `Tweede hand dekt de ${covered} met de goedkoopste hogere honneur${tenText}.`;
   }
   if (ruleName === "thirdHandHighCheapest") {
     const visible = result.higherPlayed?.length ? " De al gespeelde hoge kaarten maken een goedkopere winnaar veilig genoeg." : "";

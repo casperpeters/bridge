@@ -1456,7 +1456,7 @@
       }
 
   function honorCoverTarget({ dummyHand, leadSuit, leadRank, playedCards = [] }) {
-        const lowerHonor = leadHonorRanks[leadHonorRanks.indexOf(leadRank) + 1];
+        const lowerHonor = rankBelow(leadRank);
         if (!lowerHonor) return null;
         const lowerHonorAlreadyPlayed = cardsInSuit(playedCards, leadSuit).some((card) => card.rank === lowerHonor);
         if (lowerHonorAlreadyPlayed) return null;
@@ -1473,6 +1473,11 @@
         return null;
       }
 
+  function rankBelow(rank) {
+        const index = rankOrder.indexOf(rank);
+        return index > 0 ? rankOrder[index - 1] : null;
+      }
+
   function chooseSecondHandDefensivePlay({ legal, currentTrick, seat, declarer, dummyHand, trump, playedCards = [] }) {
       if (currentTrick.length !== 1 || !isDefensivePlaySeat(seat, declarer)) return null;
 
@@ -1480,6 +1485,32 @@
       const leadSuit = leadCard.suit;
       const suitedLegal = cardsInSuit(legal, leadSuit);
       if (!suitedLegal.length) return null;
+
+      if (isLeadHonorRank(leadCard.rank)) {
+        const coverCard = cheapestHigherHonor(suitedLegal, leadCard.rank);
+        const coverTarget = honorCoverTarget({
+          dummyHand,
+          leadSuit,
+          leadRank: leadCard.rank,
+          playedCards
+        });
+        if (coverCard) {
+          return cardPlayResult(
+            coverCard,
+            "secondHandCoverHonor",
+            "basic",
+            "Second hand covers a led honor with the cheapest higher honor; the ten counts as an honor.",
+            {
+              leadSuit,
+              coveredRank: leadCard.rank,
+              promotedRank: coverTarget?.promotedRank || rankBelow(leadCard.rank),
+              promotionSeat: coverTarget?.promotionSeat || null,
+              coverReason: coverTarget?.type || "honorOnHonor",
+              action: "coverHonor"
+            }
+          );
+        }
+      }
 
       const sequence = touchingHonorSequence(suitedLegal, 2);
       if (sequence?.card && beats(sequence.card, leadCard, leadSuit, trump)) {
@@ -1494,32 +1525,6 @@
             action: "secondHandSequence"
           }
         );
-      }
-
-      if (isLeadHonorRank(leadCard.rank)) {
-        const coverCard = cheapestHigherHonor(suitedLegal, leadCard.rank);
-        const coverTarget = honorCoverTarget({
-          dummyHand,
-          leadSuit,
-          leadRank: leadCard.rank,
-          playedCards
-        });
-        if (coverCard && coverTarget) {
-          return cardPlayResult(
-            coverCard,
-            "secondHandCoverHonor",
-            "basic",
-            "Second hand covers an honor only when a visible dummy target makes the cover useful.",
-            {
-              leadSuit,
-              coveredRank: leadCard.rank,
-              promotedRank: coverTarget.promotedRank,
-              promotionSeat: coverTarget.promotionSeat,
-              coverReason: coverTarget.type,
-              action: "coverHonor"
-            }
-          );
-        }
       }
 
       return cardPlayResult(
