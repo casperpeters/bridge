@@ -119,8 +119,9 @@ Belangrijke plekken:
 
 Volg de implementatievolgorde bovenaan `TODO.md`. Huidige korte-termijnfocus is product- en beginner-UX:
 
-1. Beginnerstest 2 draaien en daarin ook vervolgacties na afloop controleren.
-2. Daarna reproduceerbare oefenhanden toevoegen.
+1. Gebruik de eerste `practice-hands/` catalogus in beginnerstests en regressietests.
+2. Breid reproduceerbare oefenhanden alleen gericht uit waar testers of bugs extra vaste situaties vragen.
+3. Pak daarna bewezen zwakke plekken in speelplan, basisverdediging of biedcontext aan.
 
 ## Veiligheid en onderhoud
 

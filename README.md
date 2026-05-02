@@ -102,12 +102,12 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - AI suggestions are simple heuristics, not authoritative teaching advice.
 - Vijfkaart Hoog agreements are implemented in a testable rules module, with deeper competitive and slam continuations still heuristic.
 - Cue-bid and penalty-pass continuations after partner's takeout double are not implemented yet.
-- Card-play AI is simple and only has first shallow notrump declarer-play planning heuristics.
+- Card-play AI remains heuristic and lacks deep contract-aware planning, but includes basic declarer plan priorities, notrump development rules, and beginner defense heuristics.
 - No dedicated lesson-mode UI yet for selecting curated practice hands.
 
 ## Beginners Acceptance Checklist
 
-Use this checklist with someone who does not already know the app. Let the player complete one full board, preferably without extra explanation, and note where the app leaves questions open. For a repeatable follow-up round, replay the beginner-test-2 flow by checking a normal deal from auction through review: bidding legality, opening lead status, dummy reveal, trick winners, score explanation, `Nieuwe hand`, `Zelfde hand`, and feedback copy.
+Use this checklist with someone who does not already know the app. Let the player complete one full board, preferably without extra explanation, and note where the app leaves questions open. For repeatable follow-up rounds, load fixed practice hands through the repeat-code field, for example `response-new-suit-after-1h-001` for bidding, `draw-trumps-001` for dummy/play-plan/review flow, and `game-bonus-vulnerable-001` for score explanation. In each round, check bidding legality, opening lead status, dummy reveal, trick winners, score explanation, `Nieuwe hand`, `Zelfde hand`, and feedback copy.
 
 - The player can see clearly whose turn it is.
 - The player understands which bids or calls are currently available.

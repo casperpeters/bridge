@@ -17,12 +17,6 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 2. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
 3. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
 
-## Recente bevindingen
-
-- Beginnerstest 2 op standaardinstellingen is gedraaid op 2026-04-28. Basisflow, biedlegaliteit, dummy, slagwinnaars, score-uitleg, `Nieuwe hand`, `Zelfde hand` en feedback waren voldoende duidelijk; geen apart review-actieblok nodig.
-- Enige echte afhaker was de status bij de openingsuitkomst: die gebruikte ten onrechte "Bekennen". Dit is opgelost met aparte copy voor `Jij komt uit. Kies een kaart.` en een browser-smoketest.
-- Competitief bieden is op 2026-04-29 uitgebreid met kwetsbaarheidsbewuste simpele volgbiedingen, zwakke sprongvolgbiedingen van 6-11 HCP, reacties op partners volgbod, steun na partners zwakke sprongvolgbod, aangescherpte informatiedoubletten en reacties/herbiedingen na partners informatiedoublet met uitleg en fixtures.
-
 ## Korte termijn
 
 ### Product- en testgereedheid
