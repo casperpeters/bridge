@@ -109,7 +109,7 @@ const text = {
   alertAria: "Alertkaart bij je volgende bieding",
   bidExplanationPass: "Geen duidelijke systeemactie of te weinig waarden om te bieden.",
   bidExplanationDouble: "Doublet: voorlopig vooral een informatiedoublet of strafdoublet in duidelijke situaties.",
-  bidExplanationRedouble: "Redoublet: toont extra vertrouwen nadat de tegenpartij heeft gedoubleerd.",
+  bidExplanationRedouble: "Redoublet: toont extra waarden na een doublet van de tegenpartij; mogelijk is er later een strafkans.",
   bidExplanationOpening: "Opening: {detail}.",
   bidExplanationResponse: "Antwoord op partner: {detail}.",
   bidExplanationCompetitive: "Competitieve actie: {detail}.",

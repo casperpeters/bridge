@@ -8,9 +8,9 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains twenty-one valid beginner deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 21);
-  assert.equal(practiceHands.validatePracticeHands(), 21);
+test("practice hand catalog contains twenty-five valid beginner deals", () => {
+  assert.equal(practiceHands.beginnerHands.length, 25);
+  assert.equal(practiceHands.validatePracticeHands(), 25);
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {
@@ -25,7 +25,7 @@ test("practice hand catalog contains twenty-one valid beginner deals", () => {
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 21);
+  assert.equal(ids.size, 25);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {

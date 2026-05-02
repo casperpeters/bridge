@@ -7,10 +7,17 @@
     if (isDouble(result.bid)) {
       const detail = ruleName === "competitive.negativeDouble"
         ? "negatief doublet: toont waarden en minstens een vierkaart in een ongeboden hoge kleur"
-        : "informatiedoublet: openingskracht, kort in hun kleur en steun voor de ongeboden kleuren";
+        : "informatiedoublet: 12+ HCP, hoogstens een doubleton in hun kleur en steun voor alle ongeboden kleuren; met 16+ HCP mag een ongeboden kleur slechts een driekaart zijn";
       return t("bidExplanationCompetitive", { detail: `${detail}. ${ruleReferenceText(ruleName)}` });
     }
     if (isRedouble(result.bid)) {
+      if (ruleName === "competitive.redoubleAfterPartnerOpeningDouble") {
+        const suitText = result.partnerSuit ? ` in ${suitName(result.partnerSuit)}` : "";
+        const supportText = Number.isInteger(result.support) && Number.isInteger(result.supportThreshold)
+          ? `; je hebt ${result.support} kaart(en) mee waar ${result.supportThreshold} nodig is voor fit`
+          : "";
+        return t("bidExplanationCompetitive", { detail: `redoublet nadat partner${suitText} opende en de tegenpartij doubleerde: 10+ HCP en geen fit${supportText}. Je toont waarschijnlijk puntenmeerderheid; mogelijk kunnen jullie de tegenpartij later gedoubleerd voor straf down spelen. Partner moet geen steun in zijn kleur verwachten. ${ruleReferenceText(ruleName)}` });
+      }
       return t("bidExplanationCompetitive", { detail: `redoublet met extra waarden nadat de tegenpartij partner heeft gedoubleerd. ${ruleReferenceText(ruleName)}` });
     }
   
@@ -49,6 +56,8 @@
       "pass.responderAfterFourthSuitAcceptNotrumpGame": `na vierde-kleur-forcing accepteert antwoorder 3SA als eindcontract${factSuffix}`,
       "pass.continuationNoAction": `geen vervolg: geen zinvol herbod binnen de huidige afspraken${factSuffix}`,
       "pass.competitiveNoAction": `geen competitieve actie: geen verantwoord volgbod, steunbod, SA-bod of doublet${factSuffix}`,
+      "competitive.takeoutDoubleRebidPassMinimum": `herbieding na partners antwoord op jouw informatiedoublet: met 12-16 HCP accepteer je partners antwoord en pas je${factSuffix}`,
+      "competitive.takeoutDoubleRebidPassGame": `partner heeft na jouw informatiedoublet al de manche geboden; in deze versie onderzoek je geen slem en pas je${factSuffix}`,
       "pass.noSeat": `geen speler beschikbaar voor de biedengine${factSuffix}`,
       "pass.unknownCall": `de biedengine herkende geen contractactie${factSuffix}`,
       "pass.noAction": `geen duidelijke systeemactie of te weinig waarden om te bieden${factSuffix}`
@@ -296,12 +305,37 @@
         return `sprongvolgbod met beperkte kracht en een goede zeskaart. ${handFactsText({ ruleName, result })}`;
       case "competitive.simpleOvercall":
         return `natuurlijk volgbod met een goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || (result.bid?.level >= 2 ? 10 : 8)}+ HCP. ${handFactsText({ ruleName, result })}`;
+      case "competitive.takeoutDoubleForcedSuit":
+        return `biedplicht na partners informatiedoublet: de rechtertegenstander heeft geen bod gedaan, dus je kiest met een zwakke hand de hoogste nog niet door de tegenpartij geboden kleur. ${handFactsText({ ruleName, result })}`;
+      case "competitive.takeoutDoubleOneNotrump":
+        return `1SA na partners informatiedoublet: 6-9 HCP, SA-verdeling en dekking in ${suitName(result.stopperSuit || result.opponentSuit)}; dit gebeurt alleen zonder betere biedbare vierkaart. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleJumpSuit":
+        return `sprongantwoord na partners informatiedoublet: met 9-11 HCP spring je in de langste nog niet door de tegenpartij geboden kleur; bij gelijke lengte kies je de hoogste. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleGame":
+        return `manche na partners informatiedoublet: vanaf 12 HCP ga je uit van opening tegenover opening en zorg je dat de partij de manche bereikt. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleVoluntarySuit":
+        return `vrijwillig bod na partners informatiedoublet: de tegenpartij heeft na het doublet geboden, dus de biedplicht vervalt; met voldoende HCP bied je een nog niet geboden vierkaart. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleRebidInviteRaise":
+        return `invite na partners antwoord op jouw informatiedoublet: met 17-19 HCP en fit steun je partners kleur met een sprong. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleRebidInviteNotrump":
+        return `2SA na partners antwoord op jouw informatiedoublet: 17-19 HCP, gebalanceerde hand en dekking in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleRebidGameRaise":
+        return `manche na partners antwoord op jouw informatiedoublet: met 20+ HCP en fit verhoog je naar de kleurmanche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleRebidGameNotrump":
+        return `3SA na partners antwoord op jouw informatiedoublet: 20+ HCP, gebalanceerde hand en dekking in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleRebidAfterJumpGame":
+        return `manche na partners sprongantwoord op jouw informatiedoublet: het sprongantwoord is inviterend, dus de doubleerder biedt de manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.takeoutDoubleRebidNatural":
+        return `natuurlijke herbieding na partners antwoord op jouw informatiedoublet: met extra kracht toon je een lange speelbare kleur. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.raisePartnerOvercall":
+        if (result.partnerMinTrumpLength >= 6) {
+          return `steun voor partners zwakke sprongvolgbod: partner belooft een zeskaart ${suitName(result.partnerSuit)}, dus ${result.support || 0} kaart(en) steun kan al fit zijn; kwetsbaarheid stuurt de manchegrens (${result.gameMinimum || 16}+ fitpunten). ${handFactsText({ ruleName, result })}`;
+        }
         return `steun voor partners volgbod met fit in ${suitName(result.partnerSuit)} en ${result.minimumHcp || (result.vulnerable ? 8 : 7)}+ fitpunten${result.vulnerable ? " kwetsbaar" : " niet-kwetsbaar"}. ${handFactsText({ ruleName, result })}`;
       case "competitive.notrumpAfterPartnerOvercall":
-        return `3SA na partners volgbod: genoeg gezamenlijke kracht en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
+        return `${result.bid?.level || ""}SA na partners volgbod: ${result.minimumHcp || 10}+ HCP, gebalanceerde hand en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
       case "competitive.newSuitAfterPartnerOvercall":
-        return `nieuwe kleur na partners volgbod: eigen vijfkaart of langer in ${suitName(result.suit)} en manche-interesse; partner heeft op tweehoogte minstens 10 HCP getoond. ${handFactsText({ ruleName, result })}`;
+        return `nieuwe kleur na partners volgbod: eigen goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || 10}+ HCP. ${handFactsText({ ruleName, result })}`;
       case "competitive.raisePartner":
         return `verhoging van partners kleur. ${handFactsText({ ruleName, result })}`;
       case "competitive.notrump":

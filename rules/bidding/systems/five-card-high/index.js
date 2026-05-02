@@ -160,8 +160,10 @@
   const {
     chooseCompetitiveFiveCardHighBid,
     chooseOvercallFiveCardHigh,
+    describeRedoubleBidChoice,
     describeDoubleBidChoice,
     describeCompetitiveFiveCardHighBidChoice,
+    describeTakeoutDoubleRebidChoice,
     respondAfterPartnerOpenedAndOpponentDoubledFiveCardHigh,
     respondAfterOvercallFiveCardHigh,
     shouldMakeInformationDoubleFiveCardHigh,
@@ -208,11 +210,13 @@
         });
       }
       if (isRedouble(chosenBid)) {
-        return fiveCardHighBidChoiceResult(chosenBid, "competitive.redouble", "basic", "Redouble with extra values after the opponents doubled partner's side.", base);
+        return describeRedoubleBidChoice(chosenBid, shape, auction, seat, base);
       }
       if (isDouble(chosenBid)) {
         return describeDoubleBidChoice(chosenBid, shape, auction, seat, base);
       }
+      const takeoutDoubleRebidResult = describeTakeoutDoubleRebidChoice?.(chosenBid, shape, hand, auction, seat, base);
+      if (takeoutDoubleRebidResult) return takeoutDoubleRebidResult;
       if (isPass(chosenBid)) {
         return describePassBidChoice(shape, hand, auction, seat, base, bidContext);
       }

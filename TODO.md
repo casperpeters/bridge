@@ -21,6 +21,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Beginnerstest 2 op standaardinstellingen is gedraaid op 2026-04-28. Basisflow, biedlegaliteit, dummy, slagwinnaars, score-uitleg, `Nieuwe hand`, `Zelfde hand` en feedback waren voldoende duidelijk; geen apart review-actieblok nodig.
 - Enige echte afhaker was de status bij de openingsuitkomst: die gebruikte ten onrechte "Bekennen". Dit is opgelost met aparte copy voor `Jij komt uit. Kies een kaart.` en een browser-smoketest.
+- Competitief bieden is op 2026-04-29 uitgebreid met kwetsbaarheidsbewuste simpele volgbiedingen, zwakke sprongvolgbiedingen van 6-11 HCP, reacties op partners volgbod, steun na partners zwakke sprongvolgbod, aangescherpte informatiedoubletten en reacties/herbiedingen na partners informatiedoublet met uitleg en fixtures.
 
 ## Korte termijn
 
@@ -53,7 +54,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 - Scheid contract, call-type en betekenis consequent. Voorbeeld: `2D` na `1NT` kan een transfer zijn en dus niet letterlijk ruiten betekenen.
 - Verbeter resterende ongestoorde Vijfkaart Hoog-vervolgen alleen gericht op concrete gaten uit tests of oefenhanden; 1SA-vervolgen met Stayman/Jacoby-transfer hebben nu specifieke uitleg en fixtures.
 - Voeg alleen gebruikerswaarschuwingen toe voor biedingen buiten systeem wanneer de app dat betrouwbaar kan vaststellen.
-- Houd nieuw competitief bieden klein en testbaar; veel basisgevallen zoals eenvoudige volgbiedingen, raises na volgbod, 1SA-volgbodvervolgen en negative doubles bestaan al.
+- Houd nieuw competitief bieden klein en testbaar; veel basisgevallen zoals eenvoudige volgbiedingen, kwetsbaarheidsbewuste volgbodgrenzen, raises na volgbod, steun na zwakke sprongvolgbiedingen, 1SA-volgbodvervolgen, informatiedoubletten en negative doubles bestaan al.
 
 ### Testen
 

@@ -3,6 +3,7 @@ const BridgeGlossary = (() => {
     ["Aftroeven", "Het bijspelen van een troef als je niet kunt bekennen, met de bedoeling de slag daarmee te winnen.", ["introeven"]],
     ["Afgooien", "Een kaart van een andere kleur spelen omdat je niet kunt bekennen. Afgooien wint de slag meestal niet, maar kan wel helpen om een verliezer kwijt te raken.", ["weggooien", "weggooien van een verliezer"]],
     ["Bijbod", "Een bod van de partner van de openaar. Er wordt onderscheid gemaakt tussen het eerste bijbod en het tweede bijbod."],
+    ["Biedplicht", "Een afspraak waarbij je niet mag passen. Na een informatiedoublet van partner moet je een bod doen zolang de rechtertegenstander na dat doublet geen contractbod heeft gedaan.", ["verplicht bieden"]],
     ["Bijkleur", "Een andere kleur dan de troefkleur of de hoofdkleur waar het plan om draait. Een hoge bijkleur kan soms helpen om verliezers weg te gooien."],
     ["Blokkeren", "Een kleur zo spelen dat de hoge kaarten in de ene hand vast komen te zitten omdat je geen entree meer hebt naar die hand.", ["geblokkeerde kleur", "geblokkeerd"]],
     ["Contract", "Het aantal slagen dat de leider moet maken in een bepaalde speelsoort. Bij 2 schoppen moeten er bijvoorbeeld acht slagen worden gemaakt met schoppen als troef."],
