@@ -1410,6 +1410,57 @@
         return isLowLeadCard(play.card);
       }
 
+  function isOpeningHonorSequenceLead(play) {
+      if (!play?.card || !isLeadHonorRank(play.card.rank)) return false;
+      return [
+        "notrumpAceKingLead",
+        "notrumpSequenceLead",
+        "notrumpBrokenSequenceLead",
+        "notrumpInternalSequenceLead",
+        "suitContractSequenceLead",
+        "suitContractInternalSequenceLead"
+      ].includes(play.ruleId);
+    }
+
+  function attitudeSignalSupport(suitedHand) {
+      if (suitedHand.some((card) => isLeadHonorRank(card.rank))) return "honor";
+      if (suitedHand.length >= 4) return "length";
+      return null;
+    }
+
+  function chooseOpeningLeadAttitudeSignal({ hand, legal, currentTrick, trickHistory, seat, declarer }) {
+      if (trickHistory.length || currentTrick.length !== 2) return null;
+      if (!isDefensivePlaySeat(seat, declarer)) return null;
+
+      const leadPlay = currentTrick[0];
+      if (leadPlay.seat !== partnerOf(seat) || !isOpeningHonorSequenceLead(leadPlay)) return null;
+
+      const leadSuit = leadPlay.card.suit;
+      const suitedLegal = cardsInSuit(legal, leadSuit);
+      if (suitedLegal.length <= 1) return null;
+
+      const suitedHand = cardsInSuit(hand, leadSuit);
+      const highSignalCard = highestCard(suitedLegal);
+      const supportReason = attitudeSignalSupport(suitedHand);
+      const signal = supportReason ? "encourage" : "discourage";
+      const card = signal === "encourage" ? highSignalCard : lowestCard(suitedLegal);
+
+      return cardPlayResult(
+        card,
+        "openingLeadAttitudeSignal",
+        "basic",
+        "Signal attitude after partner's opening honor lead from a sequence or broken sequence.",
+        {
+          signal,
+          leadSuit,
+          leadCard: leadPlay.card,
+          partnerSeat: leadPlay.seat,
+          supportReason,
+          action: signal === "encourage" ? "encouragePartnerLeadSuit" : "discouragePartnerLeadSuit"
+        }
+      );
+    }
+
   function chooseThirdHandHighOverLowLead({ legal, currentTrick, seat, declarer, contract, trump, winning, playedCards = [] }) {
       if (contract?.strain !== "NT" || trump || !seat || currentTrick.length !== 2) return null;
       if (!isDefensivePlaySeat(seat, declarer)) return null;
@@ -1661,6 +1712,16 @@
         playedCards
       });
       if (thirdHandHigh) return thirdHandHigh;
+
+      const openingLeadAttitudeSignal = chooseOpeningLeadAttitudeSignal({
+        hand,
+        legal,
+        currentTrick,
+        trickHistory,
+        seat,
+        declarer
+      });
+      if (openingLeadAttitudeSignal) return openingLeadAttitudeSignal;
 
       if (partnerWinning) {
         const harmlessCards = legal.filter((card) => !beats(card, winning.card, leadSuit, trump));

@@ -626,6 +626,144 @@ test("chooseCardPlay makes a defender third hand play the cheapest winning card"
   assert.equal(result.ruleId, "thirdHandHighCheapest");
 });
 
+test("chooseCardPlay encourages after partner's opening honor sequence lead with suit support", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "8H", "2H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("KH"), ruleId: "suitContractSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "AH");
+  assert.equal(result.ruleId, "openingLeadAttitudeSignal");
+  assert.equal(result.signal, "encourage");
+  assert.equal(result.leadSuit, "H");
+  assert.equal(result.partnerSeat, "North");
+  assert.equal(result.supportReason, "honor");
+});
+
+test("chooseCardPlay discourages after partner's opening honor sequence lead without support", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("8H", "5H", "2H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("KH"), ruleId: "suitContractSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "openingLeadAttitudeSignal");
+  assert.equal(result.signal, "discourage");
+  assert.equal(result.supportReason, null);
+});
+
+test("chooseCardPlay signals over partner's opening broken-sequence notrump lead", () => {
+  const encourage = rules.chooseCardPlay({
+    hand: hand("AH", "8H", "2H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("QH"), ruleId: "notrumpBrokenSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+  const discourage = rules.chooseCardPlay({
+    hand: hand("8H", "5H", "2H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("QH"), ruleId: "notrumpBrokenSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(encourage.card.id, "AH");
+  assert.equal(encourage.ruleId, "openingLeadAttitudeSignal");
+  assert.equal(encourage.signal, "encourage");
+  assert.equal(discourage.card.id, "2H");
+  assert.equal(discourage.ruleId, "openingLeadAttitudeSignal");
+  assert.equal(discourage.signal, "discourage");
+});
+
+test("chooseCardPlay does not signal with a singleton in partner's opening lead suit", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QH", "AC", "2S"),
+    currentTrick: [
+      { seat: "North", card: card("KH"), ruleId: "suitContractSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.notEqual(result.ruleId, "openingLeadAttitudeSignal");
+});
+
+test("chooseCardPlay does not signal for the declarer side", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "8H", "2H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("KH"), ruleId: "suitContractSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.notEqual(result.ruleId, "openingLeadAttitudeSignal");
+});
+
+test("chooseCardPlay only applies opening-lead attitude signals on the first trick", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "8H", "2H", "AC"),
+    currentTrick: [
+      { seat: "North", card: card("KH"), ruleId: "suitContractSequenceLead" },
+      { seat: "East", card: card("4H") }
+    ],
+    trickHistory: [{
+      number: 1,
+      winner: "East",
+      cards: [
+        { seat: "East", card: card("AS") },
+        { seat: "South", card: card("2S") },
+        { seat: "West", card: card("3S") },
+        { seat: "North", card: card("4S") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.notEqual(result.ruleId, "openingLeadAttitudeSignal");
+});
+
 test("chooseCardPlay keeps third hand low when partner is already winning", () => {
   const result = rules.chooseCardPlay({
     hand: hand("KH", "2H", "AS"),

@@ -266,6 +266,12 @@ function explainCardPlayResult(result) {
     const preserve = result.higherPlayed?.length ? "; hogere kaarten zijn al zichtbaar gevallen, dus een goedkopere honneur is genoeg" : " en bewaart hogere kaarten als dat kan";
     return `Partner kwam laag uit tegen sans-atout: derde hand probeert de slag in ${suitName(result.leadSuit)} goedkoop te winnen${preserve}.`;
   }
+  if (ruleName === "openingLeadAttitudeSignal") {
+    const attitude = result.signal === "encourage"
+      ? "Speel hoog om aan te moedigen"
+      : "Speel laag om af te signaleren";
+    return `Partner kwam met een plaatje uit een serie. ${attitude} in ${suitName(result.leadSuit)}.`;
+  }
   if (ruleName === "secondHandLow") {
     return `Tweede hand speelt laag in ${suitName(result.leadSuit)}: geen honneur onnodig opofferen als partner nog kan helpen of de dekking niets oplevert.`;
   }
