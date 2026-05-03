@@ -11,6 +11,7 @@ const {
   chooseFiveCardHigh,
   chooseFiveCardHighResult
 } = require("./harness.js");
+const fiveCardHighInternal = require("../../rules/bidding/systems/five-card-high/index.js")._internal;
 
 test("Vijfkaart Hoog responder shows a strong 5-4 major hand after opener rebids 1NT", () => {
   const auction = [
@@ -1140,6 +1141,112 @@ test("Vijfkaart Hoog matches lesson examples for Jacoby transfers over 2NT", () 
   assert.deepEqual(hand3Rebid.bid, bid(3, "NT"));
   assert.equal(hand3Rebid.ruleId, "fiveCardHigh.continuation.responderAfterTransferNotrumpGame");
   assert.equal(hand3Rebid.range, "4+");
+});
+
+test("Vijfkaart Hoog Blackwood helpers count aces and map classic responses", () => {
+  assert.equal(fiveCardHighInternal.countAces(hand("AS", "AH", "2D", "3D")), 2);
+  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(0), bid(5, "C"));
+  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(4), bid(5, "C"));
+  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(1), bid(5, "D"));
+  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(2), bid(5, "H"));
+  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(3), bid(5, "S"));
+  assert.equal(fiveCardHighInternal.agreedTrumpAfterAcceptedNotrumpTransfer(bid(2, "NT"), bid(3, "H"), bid(3, "S")), "S");
+  assert.equal(fiveCardHighInternal.agreedTrumpAfterAcceptedNotrumpTransfer(bid(1, "NT"), bid(2, "D"), bid(2, "H")), "H");
+});
+
+test("Vijfkaart Hoog uses Blackwood after a 2NT transfer lesson hand", () => {
+  const north = [
+    "KS", "QS", "3S",
+    "AH", "QH", "JH",
+    "KD", "JD",
+    "AC", "TC", "9C", "5C", "4C"
+  ];
+  const south = [
+    "JS", "TS", "9S", "8S", "6S", "4S",
+    "KH", "6H",
+    "QD", "4D",
+    "KC", "QC", "JC"
+  ];
+  const auction = [];
+  const act = (seat, ids) => {
+    const result = chooseFiveCardHighResult(ids, auction, seat);
+    auction.push({ seat, bid: result.bid, bidResult: result });
+    return result;
+  };
+  const addPass = (seat) => auction.push({ seat, bid: pass() });
+
+  assert.deepEqual(act("North", north).bid, bid(2, "NT"));
+  addPass("East");
+  assert.deepEqual(act("South", south).bid, bid(3, "H"));
+  addPass("West");
+  assert.deepEqual(act("North", north).bid, bid(3, "S"));
+  addPass("East");
+  const ask = act("South", south);
+  assert.deepEqual(ask.bid, bid(4, "NT"));
+  assert.equal(ask.ruleId, "fiveCardHigh.continuation.blackwoodAsk");
+  addPass("West");
+  const answer = act("North", north);
+  assert.deepEqual(answer.bid, bid(5, "H"));
+  assert.equal(answer.ruleId, "fiveCardHigh.continuation.blackwoodResponse");
+  assert.equal(answer.aceCount, 2);
+  addPass("East");
+  const signoff = act("South", south);
+  assert.deepEqual(signoff.bid, bid(5, "S"));
+  assert.equal(signoff.ruleId, "fiveCardHigh.continuation.blackwoodSignoff");
+  assert.equal(signoff.missingAces, 2);
+});
+
+test("Vijfkaart Hoog chooses slam level after Blackwood by missing aces and strength", () => {
+  const blackwoodWithTwoAcesShown = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(4, "NT"), bidResult: { aceCount: 1 } },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(5, "H"), bidResult: { aceCount: 2 } },
+    { seat: "East", bid: pass() }
+  ];
+  const oneAceThirteen = chooseFiveCardHighResult([
+    "AS", "JS", "TS", "9S", "8S", "6S",
+    "KH", "6H",
+    "QD", "4D",
+    "QC", "JC", "2C"
+  ], blackwoodWithTwoAcesShown);
+  assert.deepEqual(oneAceThirteen.bid, bid(6, "S"));
+  assert.equal(oneAceThirteen.ruleId, "fiveCardHigh.continuation.blackwoodSmallSlam");
+  assert.equal(oneAceThirteen.missingAces, 1);
+
+  const blackwoodWithThreeAcesShown = blackwoodWithTwoAcesShown.map((call) => ({ ...call }));
+  blackwoodWithThreeAcesShown[8] = { seat: "North", bid: bid(5, "S"), bidResult: { aceCount: 3 } };
+  const oneAceSeventeen = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "JS", "TS", "9S",
+    "KH", "QH", "JH",
+    "JD", "4D",
+    "2C", "3C"
+  ], blackwoodWithThreeAcesShown);
+  assert.deepEqual(oneAceSeventeen.bid, bid(7, "S"));
+  assert.equal(oneAceSeventeen.ruleId, "fiveCardHigh.continuation.blackwoodGrandSlam");
+  assert.equal(oneAceSeventeen.missingAces, 0);
+
+  const spadeTransferAccepted = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() }
+  ];
+  const weakSixSpades = chooseFiveCardHighResult([
+    "JS", "TS", "8S", "7S", "5S", "4S",
+    "KH", "JH", "9H",
+    "JD", "9D", "4D",
+    "3C"
+  ], spadeTransferAccepted);
+  assert.deepEqual(weakSixSpades.bid, bid(4, "S"));
+  assert.equal(weakSixSpades.ruleId, "fiveCardHigh.continuation.responderAfterTransferSixCardGame");
 });
 
 test("Vijfkaart Hoog explains opener choices after a Jacoby transfer invite", () => {

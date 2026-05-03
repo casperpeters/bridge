@@ -326,3 +326,75 @@ test("Vijfkaart Hoog uses Stayman over a 2NT opening from 4 HCP", () => {
   assert.equal(stayman.ruleId, "fiveCardHigh.response.stayman");
   assert.equal(stayman.hcp, 4);
 });
+
+test("Vijfkaart Hoog bids direct notrump slams after a natural 2NT opening", () => {
+  const twoNotrumpAuction = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const smallSlam = chooseFiveCardHighResult([
+    "QS", "8S", "7S",
+    "KH", "QH", "5H",
+    "KD", "QD", "6D", "4D", "3D",
+    "JC", "2C"
+  ], twoNotrumpAuction);
+  assert.deepEqual(smallSlam.bid, bid(6, "NT"));
+  assert.equal(smallSlam.ruleId, "fiveCardHigh.response.notrumpSmallSlam");
+  assert.equal(smallSlam.partnershipMinimumHcp, 33);
+
+  const grandSlam = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "AH", "KH", "2H",
+    "2D", "3D", "4D", "5D",
+    "JC", "2C", "3C"
+  ], twoNotrumpAuction);
+  assert.deepEqual(grandSlam.bid, bid(7, "NT"));
+  assert.equal(grandSlam.ruleId, "fiveCardHigh.response.notrumpGrandSlam");
+  assert.equal(grandSlam.partnershipMinimumHcp, 37);
+
+  const game = chooseFiveCardHighResult([
+    "QS", "2S", "3S",
+    "KH", "QH", "2H",
+    "KD", "QD", "2D", "3D",
+    "2C", "3C", "4C"
+  ], twoNotrumpAuction);
+  assert.deepEqual(game.bid, bid(3, "NT"));
+  assert.equal(game.ruleId, "fiveCardHigh.response.notrumpGame");
+
+  const staymanBeforeSlam = chooseFiveCardHighResult([
+    "AS", "KS", "2S", "3S",
+    "QH", "2H", "3H",
+    "KD", "2D", "3D",
+    "JC", "2C", "3C"
+  ], twoNotrumpAuction);
+  assert.deepEqual(staymanBeforeSlam.bid, bid(3, "C"));
+  assert.equal(staymanBeforeSlam.ruleId, "fiveCardHigh.response.stayman");
+});
+
+test("Vijfkaart Hoog bids direct notrump slams after a natural 1NT opening", () => {
+  const oneNotrumpAuction = [
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const smallSlam = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "AH", "KH", "2H",
+    "JD", "2D", "3D", "4D",
+    "JC", "2C", "3C"
+  ], oneNotrumpAuction);
+  assert.deepEqual(smallSlam.bid, bid(6, "NT"));
+  assert.equal(smallSlam.ruleId, "fiveCardHigh.response.notrumpSmallSlam");
+  assert.equal(smallSlam.partnershipMinimumHcp, 33);
+
+  const grandSlam = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "AH", "KH", "QH",
+    "KD", "2D", "3D", "4D",
+    "JC", "2C", "3C"
+  ], oneNotrumpAuction);
+  assert.deepEqual(grandSlam.bid, bid(7, "NT"));
+  assert.equal(grandSlam.ruleId, "fiveCardHigh.response.notrumpGrandSlam");
+  assert.equal(grandSlam.partnershipMinimumHcp, 37);
+});

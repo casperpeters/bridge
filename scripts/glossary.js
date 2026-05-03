@@ -2,6 +2,7 @@ const BridgeGlossary = (() => {
   const entries = [
     ["Aftroeven", "Het bijspelen van een troef als je niet kunt bekennen, met de bedoeling de slag daarmee te winnen.", ["introeven"]],
     ["Afgooien", "Een kaart van een andere kleur spelen omdat je niet kunt bekennen. Afgooien wint de slag meestal niet, maar kan wel helpen om een verliezer kwijt te raken.", ["weggooien", "weggooien van een verliezer"]],
+    ["Azenvragen", "Een conventioneel bod van 4SA waarmee je partner vraagt hoeveel azen hij heeft. In deze app gebruikt partner klassiek 5 klaveren voor 0 of 4 azen, 5 ruiten voor 1 aas, 5 harten voor 2 azen en 5 schoppen voor 3 azen.", ["Blackwood", "4SA azenvragen"]],
     ["Bijbod", "Een bod van de partner van de openaar. Er wordt onderscheid gemaakt tussen het eerste bijbod en het tweede bijbod."],
     ["Biedplicht", "Een afspraak waarbij je niet mag passen. Na een informatiedoublet van partner moet je een bod doen zolang de rechtertegenstander na dat doublet geen contractbod heeft gedaan.", ["verplicht bieden"]],
     ["Bijkleur", "Een andere kleur dan de troefkleur of de hoofdkleur waar het plan om draait. Een hoge bijkleur kan soms helpen om verliezers weg te gooien."],

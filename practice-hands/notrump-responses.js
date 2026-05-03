@@ -87,6 +87,69 @@
         "Transfers zijn oefenhanden waard omdat ze beginners helpen kunstmatige biedingen te herkennen.",
         "De oefenhand legt alleen de situatie vast; de biedregel blijft in rules/."
       ]
+    },
+    {
+      id: "small-slam-after-2nt-001",
+      title: "Kleinslem na een 2SA-opening",
+      level: "beginner",
+      focus: ["bidding", "notrump", "slam"],
+      systemId: "fiveCardHigh",
+      dealer: "North",
+      vulnerability: "none",
+      testGoal: "Noord opent 2SA; Zuid heeft 13 HCP zonder hoge-kleuractie en biedt direct 6SA.",
+      hands: {
+        North: ["AS", "KS", "JS", "AH", "JH", "4H", "AD", "2D", "KC", "QC", "TC", "9C", "8C"],
+        East: ["TS", "9S", "6S", "TH", "9H", "8H", "JD", "TD", "9D", "AC", "7C", "6C", "5C"],
+        South: ["QS", "8S", "7S", "KH", "QH", "5H", "KD", "QD", "6D", "4D", "3D", "JC", "2C"],
+        West: ["5S", "4S", "3S", "2S", "7H", "6H", "3H", "2H", "8D", "7D", "5D", "4C", "3C"]
+      },
+      expectedAuction: [
+        { seat: "North", bid: "2NT", ruleId: "fiveCardHigh.opening.twoNotrump" },
+        { seat: "East", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "South", bid: "6NT", meaning: "Kleinslem in SA", ruleId: "fiveCardHigh.response.notrumpSmallSlam" }
+      ],
+      explanationKeys: ["fiveCardHigh.opening.twoNotrump", "fiveCardHigh.response.notrumpSmallSlam", "score.slamBonus"],
+      teachingPoints: [
+        "Na 2SA toont partner 20-22 HCP.",
+        "Met 13 HCP weet Zuid dat de gezamenlijke ondergrens 33 HCP is.",
+        "Zonder vierkaart hoog of vijfkaart hoog kiest deze eenvoudige regel direct 6SA."
+      ]
+    },
+    {
+      id: "blackwood-after-2nt-transfer-001",
+      title: "Azenvragen na transfer",
+      level: "beginner",
+      focus: ["bidding", "notrump", "transfer", "slam", "blackwood"],
+      systemId: "fiveCardHigh",
+      dealer: "North",
+      vulnerability: "none",
+      testGoal: "Noord opent 2SA; Zuid draagt schoppen over, vraagt azen met 4SA en zwaait af in 5 schoppen na partners twee azen.",
+      hands: {
+        North: ["KS", "QS", "3S", "AH", "QH", "JH", "KD", "JD", "AC", "TC", "9C", "5C", "4C"],
+        East: ["AS", "7S", "5S", "TH", "9H", "8H", "7H", "AD", "TD", "9D", "8C", "7C", "6C"],
+        South: ["JS", "TS", "9S", "8S", "6S", "4S", "KH", "6H", "QD", "4D", "KC", "QC", "JC"],
+        West: ["2S", "5H", "4H", "3H", "2H", "8D", "7D", "6D", "5D", "3D", "2D", "3C", "2C"]
+      },
+      expectedAuction: [
+        { seat: "North", bid: "2NT", ruleId: "fiveCardHigh.opening.twoNotrump" },
+        { seat: "East", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "South", bid: "3H", meaning: "Transfer naar schoppen", ruleId: "fiveCardHigh.response.transferToS" },
+        { seat: "West", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "North", bid: "3S", ruleId: "fiveCardHigh.continuation.acceptTransfer" },
+        { seat: "East", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "South", bid: "4NT", meaning: "Azenvragen", ruleId: "fiveCardHigh.continuation.blackwoodAsk" },
+        { seat: "West", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "North", bid: "5H", meaning: "Twee azen", ruleId: "fiveCardHigh.continuation.blackwoodResponse" },
+        { seat: "East", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "South", bid: "5S", meaning: "Afzwaaien na twee ontbrekende azen", ruleId: "fiveCardHigh.continuation.blackwoodSignoff" }
+      ],
+      explanationKeys: ["fiveCardHigh.opening.twoNotrump", "fiveCardHigh.response.transferToS", "fiveCardHigh.continuation.blackwoodAsk", "fiveCardHigh.continuation.blackwoodResponse", "fiveCardHigh.continuation.blackwoodSignoff"],
+      teachingPoints: [
+        "Zuid heeft genoeg punten om slem te onderzoeken.",
+        "De Jacoby-transfer maakt schoppen de afgesproken troefkleur.",
+        "4SA vraagt hoeveel azen partner heeft.",
+        "5H toont twee azen; omdat Zuid zelf geen aas heeft missen Noord/Zuid samen twee azen en stopt Zuid in 5S."
+      ]
     }
   ];
 });

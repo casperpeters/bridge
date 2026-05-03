@@ -39,16 +39,23 @@
   const { bidChoiceResult } = resultHelpers;
   const {
     notrumpTransferSuit,
+    agreedTrumpAfterAcceptedNotrumpTransfer,
     bestSuitByLength,
+    blackwoodResponseBidForAceCount,
+    blackwoodShownAceCount,
     canBidAtOrBelow,
+    chooseBlackwoodFollowup,
     chooseFiveCardHighNaturalContinuation,
     chooseMajorByLength,
     chooseOpenerSecondSuit,
     chooseSuitByLengthThenRank,
+    countAces,
+    isBlackwoodAsk,
     isOneSuitOpeningFiveCardHigh,
     isOneMinorOpeningFiveCardHigh,
     minimumOpeningLength,
     minimumPreferenceLengthFiveCardHigh,
+    shouldUseBlackwoodAfterAcceptedTransfer,
     supportLengthForOpening
   } = conventionHelpers;
 
@@ -455,10 +462,16 @@
         return bid(shape.hcp >= 15 ? 3 : 2, "NT");
       }
 
+  function notrumpOpeningMinimumHcp(openingBid) {
+        if (bidEquals(openingBid, 2, "NT")) return 20;
+        if (bidEquals(openingBid, 1, "NT")) return 15;
+        return 0;
+      }
+
   function chooseFiveCardHighResponderRebid(hand, openingBid, responseBid, openerRebid) {
         const shape = handShape(hand);
-        if (bidEquals(openingBid, 1, "NT")) return rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid);
-        if (bidEquals(openingBid, 2, "NT")) return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid);
+        if (bidEquals(openingBid, 1, "NT")) return rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid);
+        if (bidEquals(openingBid, 2, "NT")) return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid);
         if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) return respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh(shape);
         if (isSingleRaiseInviteFiveCardHigh(responseBid, openerRebid)) return rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, openerRebid);
         if (isOneMinorOpeningFiveCardHigh(openingBid) && bidEquals(openerRebid, 1, "NT")) {
@@ -556,7 +569,7 @@
         return shape.hcp >= 8 ? bid(gameLevel(openerRebid.strain), openerRebid.strain) : Pass();
       }
 
-  function rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid) {
+  function rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid = bid(1, "NT")) {
         if (bidEquals(responseBid, 2, "C")) {
           const foundFit = (openerRebid.strain === "H" || openerRebid.strain === "S") && shape.counts[openerRebid.strain] >= 4;
           if (foundFit) {
@@ -580,6 +593,7 @@
             if (shape.hcp >= 10) return bid(3, "H");
             return bid(2, "NT");
           }
+          if (shouldUseBlackwoodAfterAcceptedTransfer(shape, openingBid, transferSuit)) return bid(4, "NT");
           if (shape.counts[transferSuit] >= 6) {
             if (shape.hcp >= 10) return bid(4, transferSuit);
             return bid(3, transferSuit);
@@ -590,12 +604,13 @@
         return Pass();
       }
 
-  function rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid) {
+  function rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid = bid(2, "NT")) {
         if (bidEquals(responseBid, 3, "C")) {
           if ((openerRebid.strain === "H" || openerRebid.strain === "S") && shape.counts[openerRebid.strain] >= 4) return bid(4, openerRebid.strain);
           return bid(3, "NT");
         }
         const transferSuit = bidEquals(responseBid, 3, "D") ? "H" : bidEquals(responseBid, 3, "H") ? "S" : null;
+        if (transferSuit && shouldUseBlackwoodAfterAcceptedTransfer(shape, openingBid, transferSuit)) return bid(4, "NT");
         if (transferSuit && shape.counts[transferSuit] >= 6) return bid(4, transferSuit);
         if (transferSuit && shape.hcp >= 4) return bid(3, "NT");
         return Pass();
@@ -607,7 +622,13 @@
         const responseBid = partnershipCalls[1].bid;
         const openerRebid = partnershipCalls[2]?.bid;
         const responderRebid = partnershipCalls[3]?.bid;
+        const openerThirdBid = partnershipCalls[4]?.bid;
         if (!responderRebid) return Pass();
+
+        const blackwoodTrump = agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid);
+        if (!openerThirdBid && blackwoodTrump && isBlackwoodAsk(responderRebid)) {
+          return blackwoodResponseBidForAceCount(countAces(hand)) || Pass();
+        }
 
         if (isFourthSuitForcingBid(openingBid, responseBid, openerRebid, responderRebid)) {
           return rebidOpenerAfterFourthSuitFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid, responderRebid);
@@ -678,6 +699,15 @@
         const openerRebid = partnershipCalls[2]?.bid;
         const responderRebid = partnershipCalls[3]?.bid;
         const openerThirdBid = partnershipCalls[4]?.bid;
+        const blackwoodTrump = agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid);
+        if (blackwoodTrump && isBlackwoodAsk(responderRebid) && openerThirdBid) {
+          return chooseBlackwoodFollowup({
+            trumpSuit: blackwoodTrump,
+            askerAceCount: countAces(hand),
+            partnerAceCount: blackwoodShownAceCount(openerThirdBid, partnershipCalls[4]?.bidResult),
+            partnershipMinimumHcp: shape.hcp + notrumpOpeningMinimumHcp(openingBid)
+          }) || Pass();
+        }
         if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid) && openerThirdBid) {
           return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responderRebid, openerThirdBid);
         }
@@ -935,6 +965,22 @@
             otherMajor,
             otherMajorLength
           };
+          if (isBlackwoodAsk(chosenBid)) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              "continuation.blackwoodAsk",
+              "basic",
+              "Ask for aces with four notrump after a major-suit transfer has established a trump suit.",
+              {
+                ...transferExtra,
+                artificial: true,
+                forcing: true,
+                trumpSuit: transferSuit,
+                aceCount: base.aceCount,
+                partnershipMinimumHcp: shape.hcp + notrumpOpeningMinimumHcp(openingBid)
+              }
+            );
+          }
           if (isOneNotrumpTransfer && transferSuit === "H" && chosenBid.strain === "S" && transferLength === 5 && otherMajorLength >= 4) {
             return fiveCardHighBidChoiceResult(
               chosenBid,
@@ -1104,6 +1150,7 @@
         const openerRebid = partnershipCalls[2]?.bid;
         const responderRebid = partnershipCalls[3]?.bid;
         const fourthSuit = fourthSuitForAuction(openingBid, responseBid, openerRebid);
+        const blackwoodTrump = agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid);
         const extra = {
           ...base,
           category: "continuation",
@@ -1114,6 +1161,16 @@
           openerRebidSuit: openerRebid?.strain || null,
           fourthSuit
         };
+        if (blackwoodTrump && isBlackwoodAsk(responderRebid) && chosenBid.level === 5) {
+          return fiveCardHighBidChoiceResult(chosenBid, "continuation.blackwoodResponse", "basic", "Answer partner's four-notrump ace ask.", {
+            ...extra,
+            convention: "blackwood",
+            artificial: true,
+            forcing: true,
+            trumpSuit: blackwoodTrump,
+            aceCount: base.aceCount
+          });
+        }
         if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) {
           if (isStrongTwoClubsTwoNotrumpStayman(responderRebid)) {
             return fiveCardHighBidChoiceResult(chosenBid, "continuation.strongTwoClubsTwoNotrumpStaymanAnswer", "basic", "Answer Stayman after the strong 2C auction continued with opener's 2NT rebid.", {
@@ -1324,6 +1381,28 @@
         const openerRebid = partnershipCalls[2]?.bid;
         const responderRebid = partnershipCalls[3]?.bid;
         const openerThirdBid = partnershipCalls[4]?.bid;
+        const blackwoodTrump = agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid);
+        if (blackwoodTrump && isBlackwoodAsk(responderRebid) && openerThirdBid) {
+          const partnerAceCount = blackwoodShownAceCount(openerThirdBid, partnershipCalls[4]?.bidResult);
+          const askerAceCount = base.aceCount;
+          const missingAces = Number.isInteger(partnerAceCount) ? 4 - askerAceCount - partnerAceCount : null;
+          const ruleName = chosenBid.level === 7
+            ? "continuation.blackwoodGrandSlam"
+            : chosenBid.level === 6
+              ? "continuation.blackwoodSmallSlam"
+              : "continuation.blackwoodSignoff";
+          return fiveCardHighBidChoiceResult(chosenBid, ruleName, "basic", "Choose the final contract after partner answers the four-notrump ace ask.", {
+            ...base,
+            category: "continuation",
+            convention: "blackwood",
+            trumpSuit: blackwoodTrump,
+            suit: chosenBid.strain,
+            aceCount: askerAceCount,
+            partnerAceCount,
+            missingAces,
+            partnershipMinimumHcp: shape.hcp + notrumpOpeningMinimumHcp(openingBid)
+          });
+        }
         if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid) && openerThirdBid) {
           return describeResponderRebidChoice(chosenBid, shape, bid(2, "NT"), responderRebid, openerThirdBid, {
             ...base,

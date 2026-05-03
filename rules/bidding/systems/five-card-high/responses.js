@@ -29,6 +29,7 @@
   const {
     notrumpTransferSuit,
     chooseMajorByLength,
+    chooseDirectNotrumpSlamResponse,
     chooseResponseSuit,
     chooseSuitByLengthThenRank,
     hasFourCardMajor,
@@ -60,6 +61,8 @@
         if (transferMajor === "H") return bid(2, "D");
         if (transferMajor === "S") return bid(2, "H");
         if (hasFourCardMajor(shape) && shape.hcp >= 8) return bid(2, "C");
+        const slam = chooseDirectNotrumpSlamResponse(shape, 15);
+        if (slam) return slam;
         if (shape.hcp >= 10) return bid(3, "NT");
         if (shape.hcp >= 8) return bid(2, "NT");
         return Pass();
@@ -70,6 +73,8 @@
         if (transferMajor === "H") return bid(3, "D");
         if (transferMajor === "S") return bid(3, "H");
         if (hasFourCardMajor(shape) && shape.hcp >= 4) return bid(3, "C");
+        const slam = chooseDirectNotrumpSlamResponse(shape, 20);
+        if (slam) return slam;
         if (shape.hcp >= 4) return bid(3, "NT");
         return Pass();
       }
@@ -184,7 +189,23 @@
           }
           if (chosenBid.strain === "NT") {
             const invite = chosenBid.level === partnerBid.level + 1 && chosenBid.level < 3;
-            return fiveCardHighBidChoiceResult(chosenBid, invite ? "response.notrumpInvite" : "response.notrumpGame", "basic", "Invite or bid game in notrump with balanced values.", extra);
+            const openerMinimumHcp = partnerBid.level === 2 ? 20 : 15;
+            const openerMaximumHcp = partnerBid.level === 2 ? 22 : 17;
+            const slamExtra = {
+              ...extra,
+              openingLevel: partnerBid.level,
+              openerMinimumHcp,
+              openerMaximumHcp,
+              partnershipMinimumHcp: shape.hcp + openerMinimumHcp,
+              slamTargetHcp: chosenBid.level === 7 ? 37 : chosenBid.level === 6 ? 33 : null
+            };
+            if (chosenBid.level === 7) {
+              return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpGrandSlam", "basic", "Bid a direct notrump grand slam when the partnership is guaranteed enough combined HCP and no major-suit convention is needed.", slamExtra);
+            }
+            if (chosenBid.level === 6) {
+              return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpSmallSlam", "basic", "Bid a direct notrump small slam when the partnership is guaranteed enough combined HCP and no major-suit convention is needed.", slamExtra);
+            }
+            return fiveCardHighBidChoiceResult(chosenBid, invite ? "response.notrumpInvite" : "response.notrumpGame", "basic", "Invite or bid game in notrump with balanced values.", slamExtra);
           }
         }
 

@@ -71,7 +71,7 @@
   function bidChoiceExplanationKey(ruleName) {
     const normalized = ruleName.toLowerCase();
     if (ruleName.startsWith("opening.")) return "bidExplanationOpening";
-    if (normalized.includes("stayman") || normalized.includes("transfer") || normalized.includes("strongtwoclubs") || normalized.includes("fourthsuit")) return "bidExplanationArtificial";
+    if (normalized.includes("stayman") || normalized.includes("transfer") || normalized.includes("strongtwoclubs") || normalized.includes("fourthsuit") || normalized.includes("blackwood")) return "bidExplanationArtificial";
     if (ruleName.startsWith("response.")) return "bidExplanationResponse";
     if (ruleName.startsWith("competitive.")) return "bidExplanationCompetitive";
     return "bidExplanationContinuation";
@@ -107,6 +107,10 @@
         return `inviterend SA-antwoord: geen vijfkaart hoog voor transfer en geen vierkaart hoog voor Stayman, dus SA is de praktische speelsoort. ${handFactsText({ ruleName, result })}`;
       case "response.notrumpGame":
         return `3SA met manchekracht: geen vijfkaart hoog voor transfer en geen vierkaart hoog voor Stayman. Zonder hoge-kleurfit is 3SA meestal praktischer dan 5K/5R, omdat 3SA maar 9 slagen vraagt. ${handFactsText({ ruleName, result })}`;
+      case "response.notrumpSmallSlam":
+        return `${notrumpSlamOpeningText(result)} en antwoorder heeft genoeg evenwichtige kracht om samen minstens 33 HCP te garanderen. Zonder vierkaart hoog voor Stayman en zonder vijfkaart hoog voor transfer kiest de regel direct 6SA als eenvoudige kleinslemroute. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "response.notrumpGrandSlam":
+        return `${notrumpSlamOpeningText(result)} en antwoorder heeft genoeg evenwichtige kracht om samen minstens 37 HCP te garanderen. Zonder vierkaart hoog voor Stayman en zonder vijfkaart hoog voor transfer kiest de regel direct 7SA als eenvoudige grootslemroute. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "response.strongTwoClubsWaiting":
         return `afwachtend antwoord op sterke 2K. ${handFactsText({ ruleName, result })}`;
       case "response.strongTwoClubsPositive":
@@ -151,6 +155,16 @@
         return `tweede bijbod na Jacoby-transfer: met meestal precies een vijfkaart ${suitName(result.transferSuit || result.suit)} en inviterende kracht biedt antwoorder 2SA. Openaar kiest daarna SA of de hoge kleur met steun. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.responderAfterTransferNotrumpGame":
         return `${transferRebidIntro(result)}: met meestal precies een vijfkaart ${suitName(result.transferSuit || result.suit)} kiest antwoorder SA als manche. Na 2SA betekent dit doorgaans: genoeg voor de manche, maar geen zeskaart om zelf 4${result.transferSuit || result.suit} te spelen; openaar mag met driekaart steun nog naar 4${result.transferSuit || result.suit} corrigeren. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
+      case "continuation.blackwoodAsk":
+        return `4SA azenvragen: na de geaccepteerde transfer is ${suitName(result.trumpSuit || result.transferSuit || result.suit)} de afgesproken troefkleur. 4SA is kunstmatig en forcing; partner antwoordt 5K met 0 of 4 azen, 5R met 1 aas, 5H met 2 azen en 5S met 3 azen. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.transferSuit || result.suit, valueMode: "hcp" })}`;
+      case "continuation.blackwoodResponse":
+        return `antwoord op 4SA azenvragen: ${formatBlackwoodResponse(result)}. Partner mag hierop niet passen; de azenvrager kiest daarna afzwaaien, kleinslem of soms grootslem. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
+      case "continuation.blackwoodSignoff":
+        return `afzwaaien na azenvragen: ${blackwoodMissingAcesText(result)} Daarom stopt de regel in 5${result.trumpSuit || result.suit}. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
+      case "continuation.blackwoodSmallSlam":
+        return `kleinslem na azenvragen: er ontbreken niet twee azen, dus de regel biedt 6${result.trumpSuit || result.suit}. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
+      case "continuation.blackwoodGrandSlam":
+        return `grootslem na azenvragen: alle azen zijn bekend aanwezig en de gezamenlijke ondergrens is minstens 37 HCP. Daarom biedt de regel 7${result.trumpSuit || result.suit}. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.openerAfterTransferFiveHeartsFourSpadesChooseMajor":
         return `vervolg na Jacoby-transfer: antwoorder toonde vijf harten en vier schoppen. Openaar kiest een hoge kleur; met maximum kan dat direct de manche zijn. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerAfterTransferFiveHeartsFourSpadesNotrump":
@@ -383,13 +397,46 @@
   }
 
   function notrumpOpeningText(result) {
-    return result?.bid?.level === 3 ? "partners 2SA-opening" : "partners 1SA-opening";
+    return result?.openingLevel === 2 || result?.bid?.level === 3 ? "partners 2SA-opening" : "partners 1SA-opening";
+  }
+
+  function notrumpSlamOpeningText(result) {
+    const openingText = result?.openingLevel === 2 ? "Partner opent 2SA" : "Partner opent 1SA";
+    const rangeText = Number.isInteger(result?.openerMinimumHcp) && Number.isInteger(result?.openerMaximumHcp)
+      ? ` en toont ${result.openerMinimumHcp}-${result.openerMaximumHcp} HCP`
+      : "";
+    const minimumText = Number.isInteger(result?.partnershipMinimumHcp)
+      ? `; de gezamenlijke ondergrens is ${result.partnershipMinimumHcp} HCP`
+      : "";
+    return `${openingText}${rangeText}${minimumText}`;
   }
 
   function transferRebidIntro(result) {
     return result?.openingLevel === 2
       ? "tweede bijbod na Jacoby-transfer over 2SA"
       : "tweede bijbod na Jacoby-transfer";
+  }
+
+  function formatBlackwoodResponse(result) {
+    if (Number.isInteger(result?.aceCount)) {
+      if (result.aceCount === 0 || result.aceCount === 4) return `5K toont ${result.aceCount} azen`;
+      return `${bidLabelNl(5, result.suit)} toont ${result.aceCount} ${result.aceCount === 1 ? "aas" : "azen"}`;
+    }
+    if (result?.bid?.strain === "C") return "5K toont 0 of 4 azen";
+    if (result?.bid?.strain === "D") return "5R toont 1 aas";
+    if (result?.bid?.strain === "H") return "5H toont 2 azen";
+    if (result?.bid?.strain === "S") return "5S toont 3 azen";
+    return "partner toont het aantal azen volgens de 5K/5R/5H/5S-tabel";
+  }
+
+  function bidLabelNl(level, strain) {
+    return `${level}${{ C: "K", D: "R", H: "H", S: "S", NT: "SA" }[strain] || strain || ""}`;
+  }
+
+  function blackwoodMissingAcesText(result) {
+    if (result?.missingAces === 2) return "Samen missen we twee azen.";
+    if (Number.isInteger(result?.missingAces) && result.missingAces > 2) return `Samen missen we ${result.missingAces} azen.`;
+    return "Het antwoord is niet eenduidig genoeg om veilig slem te bieden.";
   }
   
   function openingMinorReason(result) {
@@ -500,6 +547,24 @@
   function artificialBidMeaning(bid, context) {
     const opening = context.openingBid;
     if (!opening) return null;
+    const partnershipCalls = context.partnershipCalls || [];
+    const responseBid = partnershipCalls[1]?.bid || null;
+    const openerRebid = partnershipCalls[2]?.bid || null;
+    const responderRebid = partnershipCalls[3]?.bid || null;
+    const openerThirdBid = partnershipCalls[4]?.bid || null;
+    const blackwoodTrump = acceptedTransferTrumpForMeaning(opening, responseBid, openerRebid);
+    if (blackwoodTrump && bidEquals(bid, 4, "NT")) {
+      return `4SA azenvragen: kunstmatig en forcing met ${suitName(blackwoodTrump)} als afgesproken troefkleur.`;
+    }
+    if (blackwoodTrump && bidEquals(responderRebid, 4, "NT") && bid.level === 5) {
+      if (bid.strain === "C") return "antwoord op 4SA azenvragen: 5K toont 0 of 4 azen.";
+      if (bid.strain === "D") return "antwoord op 4SA azenvragen: 5R toont 1 aas.";
+      if (bid.strain === "H") return "antwoord op 4SA azenvragen: 5H toont 2 azen.";
+      if (bid.strain === "S") return "antwoord op 4SA azenvragen: 5S toont 3 azen.";
+    }
+    if (blackwoodTrump && bidEquals(responderRebid, 4, "NT") && openerThirdBid && bid.strain === blackwoodTrump) {
+      return `eindcontract na azenvragen in ${suitName(blackwoodTrump)}.`;
+    }
     if (bidEquals(opening, 1, "NT")) {
       if (bidEquals(bid, 2, "C")) return "Stayman, vraagt de openaar naar een vierkaart hoog.";
       if (bidEquals(bid, 2, "D")) return "Jacoby-transfer, vraagt de openaar harten te bieden.";
@@ -511,15 +576,24 @@
       if (bidEquals(bid, 3, "H")) return "transfer, vraagt de openaar schoppen te bieden.";
     }
     if (bidEquals(opening, 2, "C") && bidEquals(bid, 2, "D")) return "afwachtend antwoord op sterke 2K.";
-    const partnershipCalls = context.partnershipCalls || [];
-    const responseBid = partnershipCalls[1]?.bid || null;
-    const openerRebid = partnershipCalls[2]?.bid || null;
     const strains = [opening?.strain, responseBid?.strain, openerRebid?.strain];
     const fourthSuit = strains.every((strain) => strain && strain !== "NT") && new Set(strains).size === 3
       ? ["C", "D", "H", "S"].find((suit) => !strains.includes(suit))
       : null;
     if (fourthSuit && bidEquals(bid, cheapestLevelForStrainForMeaning(fourthSuit, openerRebid), fourthSuit)) {
       return `vierde-kleur-forcing: kunstmatig mancheforcing vraagbod in ${suitName(fourthSuit)}; vraagt openaar zijn hand verder te beschrijven.`;
+    }
+    return null;
+  }
+
+  function acceptedTransferTrumpForMeaning(opening, responseBid, openerRebid) {
+    if (bidEquals(opening, 1, "NT")) {
+      if (bidEquals(responseBid, 2, "D") && bidEquals(openerRebid, 2, "H")) return "H";
+      if (bidEquals(responseBid, 2, "H") && bidEquals(openerRebid, 2, "S")) return "S";
+    }
+    if (bidEquals(opening, 2, "NT")) {
+      if (bidEquals(responseBid, 3, "D") && bidEquals(openerRebid, 3, "H")) return "H";
+      if (bidEquals(responseBid, 3, "H") && bidEquals(openerRebid, 3, "S")) return "S";
     }
     return null;
   }

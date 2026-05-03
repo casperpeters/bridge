@@ -77,6 +77,57 @@
         return shape.counts.H >= 4 || shape.counts.S >= 4;
       }
 
+  function chooseDirectNotrumpSlamResponse(shape, openerMinimumHcp) {
+        if (!shape.balanced || hasFourCardMajor(shape)) return null;
+        const partnershipMinimumHcp = shape.hcp + openerMinimumHcp;
+        if (partnershipMinimumHcp >= 37) return bid(7, "NT");
+        if (partnershipMinimumHcp >= 33) return bid(6, "NT");
+        return null;
+      }
+
+  function countAces(hand = []) {
+        return hand.filter((card) => card?.rank === "A").length;
+      }
+
+  function isBlackwoodAsk(candidate) {
+        return bidEquals(candidate, 4, "NT");
+      }
+
+  function blackwoodResponseBidForAceCount(aceCount) {
+        if (!Number.isInteger(aceCount) || aceCount < 0 || aceCount > 4) return null;
+        return bid(5, ["C", "D", "H", "S"][aceCount === 4 ? 0 : aceCount]);
+      }
+
+  function blackwoodShownAceCount(responseBid, bidResult = null) {
+        if (Number.isInteger(bidResult?.aceCount)) return bidResult.aceCount;
+        if (bidEquals(responseBid, 5, "D")) return 1;
+        if (bidEquals(responseBid, 5, "H")) return 2;
+        if (bidEquals(responseBid, 5, "S")) return 3;
+        return null;
+      }
+
+  function agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid) {
+        const transferSuit = notrumpTransferSuit(openingBid, responseBid);
+        if (!transferSuit || !bidEquals(openerRebid, openingBid.level + 1, transferSuit)) return null;
+        return transferSuit;
+      }
+
+  function shouldUseBlackwoodAfterAcceptedTransfer(shape, openingBid, trumpSuit) {
+        if (!trumpSuit || shape.counts[trumpSuit] < 5) return false;
+        if (bidEquals(openingBid, 2, "NT")) return shape.hcp >= 12;
+        if (bidEquals(openingBid, 1, "NT")) return shape.hcp + 17 >= 33;
+        return false;
+      }
+
+  function chooseBlackwoodFollowup({ trumpSuit, askerAceCount, partnerAceCount, partnershipMinimumHcp }) {
+        if (!trumpSuit) return null;
+        if (!Number.isInteger(partnerAceCount)) return bid(5, trumpSuit);
+        const missingAces = 4 - askerAceCount - partnerAceCount;
+        if (missingAces >= 2) return bid(5, trumpSuit);
+        if (missingAces <= 0 && partnershipMinimumHcp >= 37) return bid(7, trumpSuit);
+        return bid(6, trumpSuit);
+      }
+
   function isOneSuitOpeningFiveCardHigh(candidate) {
         return candidate?.level === 1 && candidate.strain !== "NT";
       }
@@ -126,6 +177,14 @@
     chooseSuitByLengthThenRank,
     chooseMajorByLength,
     hasFourCardMajor,
+    chooseDirectNotrumpSlamResponse,
+    countAces,
+    isBlackwoodAsk,
+    blackwoodResponseBidForAceCount,
+    blackwoodShownAceCount,
+    agreedTrumpAfterAcceptedNotrumpTransfer,
+    shouldUseBlackwoodAfterAcceptedTransfer,
+    chooseBlackwoodFollowup,
     isOneSuitOpeningFiveCardHigh,
     isOneMinorOpeningFiveCardHigh,
     isWeakTwoOpeningFiveCardHigh,
