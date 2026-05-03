@@ -225,7 +225,7 @@
         return describeRedoubleBidChoice(chosenBid, shape, auction, seat, base);
       }
       if (isDouble(chosenBid)) {
-        return describeDoubleBidChoice(chosenBid, shape, auction, seat, base);
+        return describeDoubleBidChoice(chosenBid, shape, hand, auction, seat, base);
       }
       const takeoutDoubleRebidResult = describeTakeoutDoubleRebidChoice?.(chosenBid, shape, hand, auction, seat, base);
       if (takeoutDoubleRebidResult) return takeoutDoubleRebidResult;

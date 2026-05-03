@@ -460,6 +460,8 @@
         const lastBid = highestBid(auction);
         if (!lastBid || !isContractBid(lastBid)) return Pass();
         const vulnerable = isTeamVulnerable(teamOf(seat), vulnerability);
+        if (isWeakTwoOpponentOpening(lastBid)) return chooseWeakTwoDefenseFiveCardHigh(shape, hand, lastBid) || Pass();
+        if (isPreemptOpponentOpening(lastBid)) return choosePreemptDefenseFiveCardHigh(shape, hand, lastBid) || Pass();
 
         return chooseFallbackBid([
           () => chooseOneNotrumpOvercall(shape, hand, lastBid),
@@ -467,6 +469,122 @@
           () => canDoubleFromAuction(auction, seat) && shouldMakeInformationDoubleFiveCardHigh(shape, lastBid) ? Double() : null,
           () => chooseSimpleSuitOvercall(shape, hand, lastBid, vulnerable)
         ]);
+      }
+
+  function chooseWeakTwoDefenseFiveCardHigh(shape, hand, opponentBid) {
+        if (!isWeakTwoOpponentOpening(opponentBid)) return null;
+        return chooseFallbackBid([
+          () => chooseWeakTwoDefenseNotrump(shape, hand, opponentBid),
+          () => chooseWeakTwoDefenseSuitOvercall(shape, hand, opponentBid),
+          () => shouldMakeWeakTwoDefenseDouble(shape, hand, opponentBid) ? Double() : null
+        ], null);
+      }
+
+  function isWeakTwoOpponentOpening(candidate) {
+        return candidate?.level === 2 && ["D", "H", "S"].includes(candidate.strain);
+      }
+
+  function chooseWeakTwoDefenseNotrump(shape, hand, opponentBid) {
+        if (!shape.balanced || opponentBid.strain === "NT" || !hasStopper(hand, opponentBid.strain)) return null;
+        if (shape.hcp >= 19) return bid(3, "NT");
+        if (shape.hcp >= 15 && shape.hcp <= 18) return bid(2, "NT");
+        return null;
+      }
+
+  function chooseWeakTwoDefenseSuitOvercall(shape, hand, opponentBid) {
+        if (shape.hcp < 12 || shape.hcp > 15) return null;
+        const overcallSuit = chooseSuitByLengthThenRank(
+          suits.filter((suit) => suit !== opponentBid.strain),
+          shape,
+          5,
+          true,
+          (candidate) => suitQuality(hand, candidate) >= 2
+        );
+        return overcallSuit ? bid(cheapestLevelForStrain(overcallSuit, opponentBid), overcallSuit) : null;
+      }
+
+  function shouldMakeWeakTwoDefenseDouble(shape, hand, opponentBid) {
+        if (!isWeakTwoOpponentOpening(opponentBid)) return false;
+        return hasWeakTwoDefenseTakeoutShape(shape, opponentBid) || hasWeakTwoDefenseStrongOwnSuit(shape, hand, opponentBid);
+      }
+
+  function hasWeakTwoDefenseTakeoutShape(shape, opponentBid) {
+        if (shape.hcp < 12 || (shape.counts[opponentBid.strain] || 0) > 2) return false;
+        return suits
+          .filter((suit) => suit !== opponentBid.strain)
+          .every((suit) => (shape.counts[suit] || 0) >= (suit === "H" || suit === "S" ? 4 : 3));
+      }
+
+  function weakTwoDefenseStrongOwnSuit(shape, hand, opponentBid) {
+        return chooseSuitByLengthThenRank(
+          suits.filter((suit) => suit !== opponentBid.strain),
+          shape,
+          6,
+          true,
+          (candidate) => suitQuality(hand, candidate) >= 2
+        );
+      }
+
+  function hasWeakTwoDefenseStrongOwnSuit(shape, hand, opponentBid) {
+        return shape.hcp >= 16 && Boolean(weakTwoDefenseStrongOwnSuit(shape, hand, opponentBid));
+      }
+
+  function choosePreemptDefenseFiveCardHigh(shape, hand, opponentBid) {
+        if (!isPreemptOpponentOpening(opponentBid)) return null;
+        return chooseFallbackBid([
+          () => choosePreemptDefenseNotrump(shape, hand, opponentBid),
+          () => choosePreemptDefenseSuitOvercall(shape, hand, opponentBid),
+          () => shouldMakePreemptDefenseDouble(shape, hand, opponentBid) ? Double() : null
+        ], null);
+      }
+
+  function isPreemptOpponentOpening(candidate) {
+        return candidate?.level >= 3 && candidate.strain && candidate.strain !== "NT";
+      }
+
+  function choosePreemptDefenseNotrump(shape, hand, opponentBid) {
+        if (opponentBid.level !== 3 || !shape.balanced || shape.hcp < 19) return null;
+        if (!hasStopper(hand, opponentBid.strain)) return null;
+        if (!suits.every((suit) => hasStopper(hand, suit))) return null;
+        return bid(3, "NT");
+      }
+
+  function choosePreemptDefenseSuitOvercall(shape, hand, opponentBid) {
+        if (opponentBid.level !== 3 || shape.hcp < 13 || shape.hcp > 18) return null;
+        const overcallSuit = chooseSuitByLengthThenRank(
+          suits.filter((suit) => suit !== opponentBid.strain),
+          shape,
+          5,
+          true,
+          (candidate) => suitQuality(hand, candidate) >= 2 && cheapestLevelForStrain(candidate, opponentBid) === 3
+        );
+        return overcallSuit ? bid(3, overcallSuit) : null;
+      }
+
+  function shouldMakePreemptDefenseDouble(shape, hand, opponentBid) {
+        if (!isPreemptOpponentOpening(opponentBid)) return false;
+        return hasPreemptDefenseTakeoutShape(shape, opponentBid) || hasPreemptDefenseStrongOwnSuit(shape, hand, opponentBid);
+      }
+
+  function hasPreemptDefenseTakeoutShape(shape, opponentBid) {
+        if (shape.hcp < 13 || (shape.counts[opponentBid.strain] || 0) > 2) return false;
+        return suits
+          .filter((suit) => suit !== opponentBid.strain)
+          .every((suit) => (shape.counts[suit] || 0) >= (suit === "H" || suit === "S" ? 4 : 3));
+      }
+
+  function preemptDefenseStrongOwnSuit(shape, hand, opponentBid) {
+        return chooseSuitByLengthThenRank(
+          suits.filter((suit) => suit !== opponentBid.strain),
+          shape,
+          6,
+          true,
+          (candidate) => suitQuality(hand, candidate) >= 2
+        );
+      }
+
+  function hasPreemptDefenseStrongOwnSuit(shape, hand, opponentBid) {
+        return shape.hcp >= 19 && Boolean(preemptDefenseStrongOwnSuit(shape, hand, opponentBid));
       }
 
   function chooseOneNotrumpOvercall(shape, hand, opponentBid) {
@@ -667,11 +785,31 @@
       }
 
 
-  function describeDoubleBidChoice(chosenBid, shape, auction, seat, base) {
+  function describeDoubleBidChoice(chosenBid, shape, hand, auction, seat, base) {
         const lastBid = highestBid(auction);
         const lastPartnerCall = lastPartnerContractCall(auction, seat);
         if (lastPartnerCall && shouldMakeNegativeDoubleFiveCardHigh(shape, lastPartnerCall.bid, lastBid)) {
           return fiveCardHighBidChoiceResult(chosenBid, "competitive.negativeDouble", "basic", "Negative double with values and an unbid four-card major after interference.", base);
+        }
+        if (shouldMakeWeakTwoDefenseDouble(shape, hand, lastBid)) {
+          return fiveCardHighBidChoiceResult(chosenBid, "competitive.weakTwoDefenseDouble", "basic", "Defend against their weak two with a takeout double, or with a strong hand and a very good own suit.", {
+            ...base,
+            category: "competitive",
+            opponentSuit: lastBid?.strain || null,
+            takeoutShape: hasWeakTwoDefenseTakeoutShape(shape, lastBid),
+            strongOwnSuit: weakTwoDefenseStrongOwnSuit(shape, hand, lastBid),
+            minimumHcp: hasWeakTwoDefenseStrongOwnSuit(shape, hand, lastBid) ? 16 : 12
+          });
+        }
+        if (shouldMakePreemptDefenseDouble(shape, hand, lastBid)) {
+          return fiveCardHighBidChoiceResult(chosenBid, "competitive.preemptDefenseDouble", "basic", "Defend against their preempt with a takeout double, or with a strong hand and a very good own suit.", {
+            ...base,
+            category: "competitive",
+            opponentSuit: lastBid?.strain || null,
+            takeoutShape: hasPreemptDefenseTakeoutShape(shape, lastBid),
+            strongOwnSuit: preemptDefenseStrongOwnSuit(shape, hand, lastBid),
+            minimumHcp: hasPreemptDefenseStrongOwnSuit(shape, hand, lastBid) ? 19 : 13
+          });
         }
         return fiveCardHighBidChoiceResult(chosenBid, "competitive.takeoutDouble", "basic", "Takeout double with 12+ HCP, shortness in their suit, and support for the unbid suits; with 16+ HCP one unbid suit may be only three cards.", base);
       }
@@ -720,6 +858,36 @@
         }
 
         if (!partnershipCalls.length) {
+          if (isWeakTwoOpponentOpening(lastBid)) {
+            if (chosenBid.strain === "NT") {
+              const game = chosenBid.level >= 3;
+              return fiveCardHighBidChoiceResult(chosenBid, game ? "competitive.weakTwoDefenseNotrumpGame" : "competitive.weakTwoDefenseNotrumpInvite", "basic", "Defend against their weak two with notrump, balanced strength, and a stopper in their suit.", {
+                ...extra,
+                minimumHcp: game ? 19 : 15,
+                maximumHcp: game ? undefined : 18,
+                stopperSuit: lastBid.strain
+              });
+            }
+            return fiveCardHighBidChoiceResult(chosenBid, "competitive.weakTwoDefenseSuitOvercall", "basic", "Defend against their weak two with a reasonable five-card suit and 12-15 HCP.", {
+              ...extra,
+              minimumHcp: 12,
+              maximumHcp: 15
+            });
+          }
+          if (isPreemptOpponentOpening(lastBid)) {
+            if (chosenBid.strain === "NT") {
+              return fiveCardHighBidChoiceResult(chosenBid, "competitive.preemptDefenseNotrumpGame", "basic", "Defend against their preempt with 3NT, balanced strength, and stoppers.", {
+                ...extra,
+                minimumHcp: 19,
+                stopperSuit: lastBid.strain
+              });
+            }
+            return fiveCardHighBidChoiceResult(chosenBid, "competitive.preemptDefenseSuitOvercall", "basic", "Defend against their preempt with a five-card suit, two honors, and 13-18 HCP.", {
+              ...extra,
+              minimumHcp: 13,
+              maximumHcp: 18
+            });
+          }
           if (chosenBid.strain === "NT") {
             return fiveCardHighBidChoiceResult(chosenBid, "competitive.oneNotrumpOvercall", "basic", "Overcall in notrump with 15-17 HCP, balanced shape, and a stopper.", extra);
           }

@@ -54,6 +54,209 @@ test("Vijfkaart Hoog requires 10+ HCP for a simple two-level overcall", () => {
   assert.match(result.reason, /10\+ HCP/);
 });
 
+test("Vijfkaart Hoog matches Start met Bridge defense examples after a weak two opening", () => {
+  const overcall = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "KS", "JS", "9S", "8S", "4S",
+      "5H", "4H",
+      "KD", "QD", "3D",
+      "7C", "4C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(2, "H") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(overcall.bid, bid(2, "S"));
+  assert.equal(overcall.ruleId, "fiveCardHigh.competitive.weakTwoDefenseSuitOvercall");
+  assert.equal(overcall.hcp, 13);
+  assert.equal(overcall.minimumHcp, 12);
+  assert.equal(overcall.maximumHcp, 15);
+  assert.equal(overcall.length, 6);
+
+  const tooWeak = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "KS", "TS", "8S", "6S", "4S", "3S",
+      "JH", "9H", "8H",
+      "AD", "7D",
+      "QC", "5C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(2, "H") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(tooWeak.bid, pass());
+  assert.equal(tooWeak.ruleId, "fiveCardHigh.pass.competitiveNoAction");
+  assert.equal(tooWeak.hcp, 10);
+
+  const notrump = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "JS", "7S",
+      "AH", "TH", "9H", "2H",
+      "KD", "QD", "TD",
+      "QC", "JC", "6C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(2, "D") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(notrump.bid, bid(2, "NT"));
+  assert.equal(notrump.ruleId, "fiveCardHigh.competitive.weakTwoDefenseNotrumpInvite");
+  assert.equal(notrump.hcp, 17);
+  assert.equal(notrump.minimumHcp, 15);
+  assert.equal(notrump.maximumHcp, 18);
+  assert.equal(notrump.stopperSuit, "D");
+
+  const takeout = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "7S",
+      "KH", "QH", "8H", "4H",
+      "AD", "JD", "9D", "2D",
+      "KC", "JC", "6C", "5C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(2, "S") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(takeout.bid, double());
+  assert.equal(takeout.ruleId, "fiveCardHigh.competitive.weakTwoDefenseDouble");
+  assert.equal(takeout.hcp, 14);
+  assert.equal(takeout.takeoutShape, true);
+  assert.equal(takeout.opponentSuit, "S");
+});
+
+test("Vijfkaart Hoog bids 3NT with 19+ HCP after a weak two opening and a stopper", () => {
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "JS", "7S",
+      "AH", "KH", "9H", "2H",
+      "KD", "QD", "TD",
+      "QC", "JC", "6C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(2, "D") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "NT"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.weakTwoDefenseNotrumpGame");
+  assert.equal(result.hcp, 20);
+  assert.equal(result.minimumHcp, 19);
+  assert.equal(result.stopperSuit, "D");
+});
+
+test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptive opening", () => {
+  const notrumpAfterThreeHearts = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "QS",
+      "KH", "TH", "9H",
+      "AD", "QD", "8D", "3D",
+      "KC", "JC", "5C", "4C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(3, "H") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(notrumpAfterThreeHearts.bid, bid(3, "NT"));
+  assert.equal(notrumpAfterThreeHearts.ruleId, "fiveCardHigh.competitive.preemptDefenseNotrumpGame");
+  assert.equal(notrumpAfterThreeHearts.hcp, 19);
+  assert.equal(notrumpAfterThreeHearts.minimumHcp, 19);
+  assert.equal(notrumpAfterThreeHearts.stopperSuit, "H");
+
+  const takeoutAfterThreeDiamonds = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "JS", "7S", "4S",
+      "AH", "QH", "TH", "9H",
+      "8D", "7D",
+      "KC", "TC", "6C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(3, "D") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(takeoutAfterThreeDiamonds.bid, double());
+  assert.equal(takeoutAfterThreeDiamonds.ruleId, "fiveCardHigh.competitive.preemptDefenseDouble");
+  assert.equal(takeoutAfterThreeDiamonds.hcp, 14);
+  assert.equal(takeoutAfterThreeDiamonds.takeoutShape, true);
+  assert.equal(takeoutAfterThreeDiamonds.minimumHcp, 13);
+
+  const tooWeakForThreeNotrump = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "KS", "8S", "5S",
+      "KH", "QH", "6H", "4H",
+      "AD", "QD", "9D",
+      "JC", "8C", "6C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(3, "H") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(tooWeakForThreeNotrump.bid, pass());
+  assert.equal(tooWeakForThreeNotrump.ruleId, "fiveCardHigh.pass.competitiveNoAction");
+  assert.equal(tooWeakForThreeNotrump.hcp, 15);
+
+  const notrumpWithTwenty = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "8S", "5S",
+      "KH", "QH", "6H",
+      "AD", "QD", "9D",
+      "AC", "JC", "6C", "4C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(3, "H") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(notrumpWithTwenty.bid, bid(3, "NT"));
+  assert.equal(notrumpWithTwenty.ruleId, "fiveCardHigh.competitive.preemptDefenseNotrumpGame");
+  assert.equal(notrumpWithTwenty.hcp, 20);
+
+  const spadeOvercall = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "KS", "JS", "8S", "2S",
+      "QH", "6H",
+      "6D", "5D",
+      "AC", "TC", "9C", "3C"
+    ),
+    auction: [
+      { seat: "North", bid: bid(3, "D") }
+    ],
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(spadeOvercall.bid, bid(3, "S"));
+  assert.equal(spadeOvercall.ruleId, "fiveCardHigh.competitive.preemptDefenseSuitOvercall");
+  assert.equal(spadeOvercall.hcp, 14);
+  assert.equal(spadeOvercall.minimumHcp, 13);
+  assert.equal(spadeOvercall.maximumHcp, 18);
+  assert.equal(spadeOvercall.length, 5);
+});
+
 test("Vijfkaart Hoog raises simple overcall requirements when vulnerable", () => {
   const oneLevelAuction = [
     { seat: "East", bid: bid(1, "D") }

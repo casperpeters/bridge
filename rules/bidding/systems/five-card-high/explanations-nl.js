@@ -366,6 +366,26 @@
         return `invite na partners SA-volgbod: gebalanceerde hand met inviterende kracht. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.notrumpOvercallGame":
         return `3SA na partners SA-volgbod: genoeg gezamenlijke kracht voor de manche en geen vierkaart hoog om eerst via Stayman te zoeken. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.weakTwoDefenseSuitOvercall":
+        return `volgbod na een zwakke twee van de tegenpartij: een redelijke vijfkaart of langer en 12-15 HCP. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.weakTwoDefenseDouble":
+        if (result.strongOwnSuit) {
+          return `informatiedoublet na een zwakke twee: 16+ HCP en een zeer goede eigen ${suitName(result.strongOwnSuit)}kleur; na partners antwoord kun je die kleur bieden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        }
+        return `informatiedoublet na een zwakke twee: 12+ HCP, kort in ${suitName(result.opponentSuit)}, en aansluiting in de overige kleuren. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.weakTwoDefenseNotrumpInvite":
+        return `2SA-volgbod na een zwakke twee: 15-18 HCP, evenwichtige verdeling en dekking in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.weakTwoDefenseNotrumpGame":
+        return `3SA-volgbod na een zwakke twee: 19+ HCP, evenwichtige verdeling en dekking in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.preemptDefenseSuitOvercall":
+        return `volgbod na een preemptieve opening: op driehoogte met een redelijke vijfkaart of langer, minstens twee honneurs en 13-18 HCP. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.preemptDefenseDouble":
+        if (result.strongOwnSuit) {
+          return `informatiedoublet na een preemptieve opening: 19+ HCP en een zeer goede eigen ${suitName(result.strongOwnSuit)}kleur; na partners antwoord kun je die kleur bieden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        }
+        return `informatiedoublet na een preemptieve opening: 13+ HCP, kort in ${suitName(result.opponentSuit)}, en aansluiting in de overige kleuren. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.preemptDefenseNotrumpGame":
+        return `3SA-volgbod na een preemptieve opening: 19+ HCP, evenwichtige verdeling, dekking in ${suitName(result.stopperSuit || result.opponentSuit)} en redelijke dekking in alle kleuren. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.jumpOvercall":
         return `sprongvolgbod met beperkte kracht en een goede zeskaart. ${handFactsText({ ruleName, result })}`;
       case "competitive.simpleOvercall":
