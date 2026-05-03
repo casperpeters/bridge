@@ -124,6 +124,71 @@ test("Vijfkaart Hoog opens weak twos with 6-10 HCP and a six-card suit", () => {
   ]), bid(2, "D"));
 });
 
+test("Vijfkaart Hoog opens an ugly eleven-count as a weak two", () => {
+  const uglyEleven = chooseFiveCardHighResult([
+    "KS", "JS", "9S", "8S", "7S", "6S",
+    "AH", "QH",
+    "7D", "5D", "2D",
+    "JC", "4C"
+  ]);
+
+  assert.deepEqual(uglyEleven.bid, bid(2, "S"));
+  assert.equal(uglyEleven.ruleId, "fiveCardHigh.opening.weakTwo");
+  assert.equal(uglyEleven.hcp, 11);
+  assert.equal(uglyEleven.length, 6);
+  assert.equal(uglyEleven.ruleOf20Eligible, false);
+
+  const prettyEleven = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "9S", "8S", "7S",
+    "QH", "7H", "6H", "5H",
+    "2D",
+    "3C", "2C"
+  ]);
+
+  assert.deepEqual(prettyEleven.bid, bid(1, "S"));
+  assert.equal(prettyEleven.ruleId, "fiveCardHigh.opening.ruleOf20OneMajor");
+  assert.equal(prettyEleven.hcp, 11);
+  assert.equal(prettyEleven.ruleOf20Eligible, true);
+});
+
+test("Vijfkaart Hoog handles Start met Bridge weak two examples", () => {
+  const goodSpadeSuit = chooseFiveCardHighResult([
+    "AS", "QS", "JS", "5S", "4S", "2S",
+    "7H", "4H",
+    "5D", "2D",
+    "QC", "TC", "6C"
+  ]);
+
+  assert.deepEqual(goodSpadeSuit.bid, bid(2, "S"));
+  assert.equal(goodSpadeSuit.ruleId, "fiveCardHigh.opening.weakTwo");
+  assert.equal(goodSpadeSuit.hcp, 9);
+  assert.equal(goodSpadeSuit.length, 6);
+
+  const goodDiamondSuit = chooseFiveCardHighResult([
+    "9S", "4S", "2S",
+    "AH", "8H", "6H",
+    "KD", "JD", "TD", "9D", "5D", "4D",
+    "7C"
+  ]);
+
+  assert.deepEqual(goodDiamondSuit.bid, bid(2, "D"));
+  assert.equal(goodDiamondSuit.ruleId, "fiveCardHigh.opening.weakTwo");
+  assert.equal(goodDiamondSuit.hcp, 8);
+  assert.equal(goodDiamondSuit.length, 6);
+
+  const poorSpadeSuit = chooseFiveCardHighResult([
+    "KS", "8S", "7S", "5S", "4S", "3S",
+    "QH", "7H",
+    "JD", "TD", "6D",
+    "QC", "7C"
+  ]);
+
+  assert.deepEqual(poorSpadeSuit.bid, pass());
+  assert.equal(poorSpadeSuit.ruleId, "fiveCardHigh.pass.openingNoAction");
+  assert.equal(poorSpadeSuit.hcp, 8);
+  assert.equal(poorSpadeSuit.counts.S, 6);
+});
+
 test("Vijfkaart Hoog opens by the Rule of 20 with fewer than 12 HCP", () => {
   const oneMajor = chooseFiveCardHighResult([
     "AS", "KS", "QS", "2S", "3S",

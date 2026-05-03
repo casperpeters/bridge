@@ -89,6 +89,177 @@ test("Vijfkaart Hoog positive response to strong 2C needs two top honors in the 
   assert.equal(onlyOneTopHonor.topHonors, 0);
 });
 
+test("Vijfkaart Hoog responds to a weak 2D with notrump only with diamond communication and own tricks", () => {
+  const auction = [
+    { seat: "North", bid: bid(2, "D") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const game = chooseFiveCardHighResult([
+    "AS", "8S", "4S",
+    "AH", "7H", "5H",
+    "KD", "3D",
+    "KC", "QC", "9C", "6C", "2C"
+  ], auction);
+  assert.deepEqual(game.bid, bid(3, "NT"));
+  assert.equal(game.ruleId, "fiveCardHigh.response.weakTwoDiamondNotrumpGame");
+  assert.equal(game.ownPlayingTricks, 3);
+  assert.equal(game.partnerSuitHonor, true);
+
+  const invite = chooseFiveCardHighResult([
+    "AS", "8S", "4S",
+    "AH", "7H", "5H",
+    "KD", "3D",
+    "9C", "8C", "6C", "4C", "2C"
+  ], auction);
+  assert.deepEqual(invite.bid, bid(2, "NT"));
+  assert.equal(invite.ruleId, "fiveCardHigh.response.weakTwoDiamondNotrumpInvite");
+  assert.equal(invite.ownPlayingTricks, 2);
+
+  const tooFewTricks = chooseFiveCardHighResult([
+    "AS", "8S", "4S",
+    "7H", "5H", "3H",
+    "KD", "3D",
+    "9C", "8C", "6C", "4C", "2C"
+  ], auction);
+  assert.deepEqual(tooFewTricks.bid, pass());
+  assert.equal(tooFewTricks.ruleId, "fiveCardHigh.pass.responseWeakTwoNoAction");
+  assert.equal(tooFewTricks.ownPlayingTricks, 1);
+});
+
+test("Vijfkaart Hoog raises a weak two major by own playing tricks with fit", () => {
+  const auction = [
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const invite = chooseFiveCardHighResult([
+    "AS", "8S", "4S",
+    "7H", "5H",
+    "AD", "7D", "5D",
+    "AC", "8C", "6C", "4C", "2C"
+  ], auction);
+  assert.deepEqual(invite.bid, bid(3, "H"));
+  assert.equal(invite.ruleId, "fiveCardHigh.response.weakTwoMajorInviteRaise");
+  assert.equal(invite.support, 2);
+  assert.equal(invite.ownPlayingTricks, 3);
+
+  const game = chooseFiveCardHighResult([
+    "AS", "8S", "4S",
+    "AH", "5H",
+    "AD", "7D", "5D",
+    "AC", "8C", "6C", "4C", "2C"
+  ], auction);
+  assert.deepEqual(game.bid, bid(4, "H"));
+  assert.equal(game.ruleId, "fiveCardHigh.response.weakTwoMajorGameRaise");
+  assert.equal(game.support, 2);
+  assert.equal(game.ownPlayingTricks, 4);
+});
+
+test("Vijfkaart Hoog only bids notrump without weak-two fit when every suit is stopped", () => {
+  const auction = [
+    { seat: "North", bid: bid(2, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const allStopped = chooseFiveCardHighResult([
+    "AS",
+    "AH", "7H", "5H",
+    "AD", "7D", "5D",
+    "AC", "8C", "6C", "4C", "3C", "2C"
+  ], auction);
+  assert.deepEqual(allStopped.bid, bid(3, "NT"));
+  assert.equal(allStopped.ruleId, "fiveCardHigh.response.weakTwoNoFitNotrumpGame");
+  assert.equal(allStopped.fit, false);
+  assert.equal(allStopped.allSuitsStopped, true);
+
+  const missingClubStopper = chooseFiveCardHighResult([
+    "AS",
+    "AH", "KH", "5H",
+    "AD", "KD", "5D",
+    "9C", "8C", "6C", "4C", "3C", "2C"
+  ], auction);
+  assert.deepEqual(missingClubStopper.bid, pass());
+  assert.equal(missingClubStopper.ruleId, "fiveCardHigh.pass.responseWeakTwoNoAction");
+  assert.deepEqual(missingClubStopper.missingStoppers, ["C"]);
+});
+
+test("Vijfkaart Hoog matches Start met Bridge weak-two response examples", () => {
+  const examples = [
+    {
+      opening: bid(2, "S"),
+      ids: [
+        "KS", "9S", "4S",
+        "AH", "KH", "JH", "5H",
+        "AD", "7D", "5D", "3D", "2D",
+        "6C"
+      ],
+      expectedBid: bid(4, "S"),
+      expectedRuleId: "fiveCardHigh.response.weakTwoMajorGameRaise",
+      expectedPlayingTricks: 4
+    },
+    {
+      opening: bid(2, "D"),
+      ids: [
+        "AS", "QS", "5S",
+        "KH", "9H", "4H",
+        "QD", "JD", "3D",
+        "AC", "JC", "8C", "7C"
+      ],
+      expectedBid: bid(3, "NT"),
+      expectedRuleId: "fiveCardHigh.response.weakTwoDiamondNotrumpGame",
+      expectedPlayingTricks: 3
+    },
+    {
+      opening: bid(2, "H"),
+      ids: [
+        "AS", "9S", "4S",
+        "8H", "5H", "3H",
+        "KD", "JD", "3D", "2D",
+        "AC", "QC", "6C"
+      ],
+      expectedBid: bid(3, "H"),
+      expectedRuleId: "fiveCardHigh.response.weakTwoMajorInviteRaise",
+      expectedPlayingTricks: 3
+    },
+    {
+      opening: bid(2, "H"),
+      ids: [
+        "AS", "JS", "3S",
+        "5H",
+        "KD", "9D", "7D", "2D",
+        "AC", "QC", "6C", "5C", "4C"
+      ],
+      expectedBid: pass(),
+      expectedRuleId: "fiveCardHigh.pass.responseWeakTwoNoAction",
+      expectedPlayingTricks: 2.5
+    },
+    {
+      opening: bid(2, "S"),
+      ids: [
+        "4S",
+        "KH", "JH", "5H",
+        "AD", "KD", "QD", "JD", "TD", "7D", "5D",
+        "AC", "8C"
+      ],
+      expectedBid: bid(3, "NT"),
+      expectedRuleId: "fiveCardHigh.response.weakTwoNoFitNotrumpGame",
+      expectedPlayingTricks: 8
+    }
+  ];
+
+  examples.forEach(({ opening, ids, expectedBid, expectedRuleId, expectedPlayingTricks }) => {
+    const result = chooseFiveCardHighResult(ids, [
+      { seat: "North", bid: opening },
+      { seat: "East", bid: pass() }
+    ]);
+
+    assert.deepEqual(result.bid, expectedBid);
+    assert.equal(result.ruleId, expectedRuleId);
+    assert.equal(result.ownPlayingTricks, expectedPlayingTricks);
+  });
+});
+
 test("Vijfkaart Hoog responds 4C to 1C with strong unbalanced club support and no new one-level suit", () => {
   const auction = [
     { seat: "North", bid: bid(1, "C") },

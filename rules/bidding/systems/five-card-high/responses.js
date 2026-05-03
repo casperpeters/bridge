@@ -24,7 +24,7 @@
 
   const { suits, biddingSystems, handShape } = core;
   const { Pass, bid, bidEquals, gameLevel, cheapestLevelForStrain } = auction;
-  const { fitStrength, fitValuationContext, optionalFitValuationContext, suitQuality, topHonorQuality } = valuationHelpers;
+  const { fitStrength, fitValuationContext, optionalFitValuationContext, suitQuality, topHonorQuality, hcpInSuit, hasStopper, weakTwoResponsePlayingTricks } = valuationHelpers;
   const { bidChoiceResult } = resultHelpers;
   const {
     notrumpTransferSuit,
@@ -88,16 +88,47 @@
       }
 
   function respondToWeakTwoFiveCardHigh(shape, hand, partnerBid) {
-        const support = shape.counts[partnerBid.strain];
-        const supportStrength = fitStrength(hand, shape, partnerBid.strain, 6);
-        if (supportStrength >= 15) {
-          if (support >= 3) return bid(gameLevel(partnerBid.strain), partnerBid.strain);
-          if (shape.balanced) return bid(2, "NT");
+        const context = weakTwoResponseContext(shape, hand, partnerBid);
+
+        if (partnerBid.strain === "D" && context.usableFit) {
+          if (context.ownPlayingTricks >= 3) return bid(3, "NT");
+          if (context.ownPlayingTricks >= 2) return bid(2, "NT");
+          return Pass();
         }
-        const newSuit = chooseSuitByLengthThenRank(suits.filter((suit) => suit !== partnerBid.strain), shape, 5, true, (candidate) => suitQuality(hand, candidate) >= 2);
-        if (newSuit && shape.hcp >= 10) return bid(cheapestLevelForStrain(newSuit, partnerBid), newSuit);
-        if (support >= 3 && supportStrength >= 10) return bid(partnerBid.level + 1, partnerBid.strain);
+
+        if ((partnerBid.strain === "H" || partnerBid.strain === "S") && context.usableFit) {
+          if (context.ownPlayingTricks >= 4) return bid(4, partnerBid.strain);
+          if (context.ownPlayingTricks >= 3) return bid(3, partnerBid.strain);
+          return Pass();
+        }
+
+        if (context.allSuitsStopped) {
+          if (context.ownPlayingTricks >= 4 || (context.ownPlayingTricks >= 3 && shape.hcp >= 14)) return bid(3, "NT");
+          if (context.ownPlayingTricks >= 3) return bid(2, "NT");
+        }
+
         return Pass();
+      }
+
+  function weakTwoResponseContext(shape, hand, partnerBid) {
+        const support = shape.counts[partnerBid.strain] || 0;
+        const fit = support >= 2;
+        const partnerSuitHonor = partnerBid.strain && partnerBid.strain !== "NT" ? hcpInSuit(hand, partnerBid.strain) > 0 : false;
+        const usableFit = partnerBid.strain === "D" ? fit && partnerSuitHonor : fit;
+        const missingStoppers = suits.filter((suit) => suit !== partnerBid.strain && !hasStopper(hand, suit));
+        return {
+          ownPlayingTricks: weakTwoResponsePlayingTricks(hand, partnerBid.strain, {
+            hasFit: usableFit,
+            countSideKings: usableFit
+          }),
+          support,
+          fit,
+          usableFit,
+          partnerSuitHonor,
+          partnerSuitTreatedAsStopped: true,
+          allSuitsStopped: missingStoppers.length === 0,
+          missingStoppers
+        };
       }
 
   function respondToPreemptFiveCardHigh(shape, hand, partnerBid) {
@@ -219,7 +250,29 @@
           });
         }
 
-        if (isWeakTwoOpeningFiveCardHigh(partnerBid) || (partnerBid?.level >= 3 && partnerBid.strain !== "NT")) {
+        if (isWeakTwoOpeningFiveCardHigh(partnerBid)) {
+          const weakTwoExtra = {
+            ...extra,
+            ...weakTwoResponseContext(shape, hand, partnerBid)
+          };
+          if (chosenBid.strain === partnerBid.strain) {
+            return fiveCardHighBidChoiceResult(
+              chosenBid,
+              chosenBid.level === gameLevel(partnerBid.strain) ? "response.weakTwoMajorGameRaise" : "response.weakTwoMajorInviteRaise",
+              "basic",
+              "Raise partner's weak two major with fit and enough own playing tricks.",
+              weakTwoExtra
+            );
+          }
+          if (chosenBid.strain === "NT") {
+            const ruleName = weakTwoExtra.usableFit && partnerBid.strain === "D"
+              ? (chosenBid.level === 3 ? "response.weakTwoDiamondNotrumpGame" : "response.weakTwoDiamondNotrumpInvite")
+              : (chosenBid.level === 3 ? "response.weakTwoNoFitNotrumpGame" : "response.weakTwoNoFitNotrumpInvite");
+            return fiveCardHighBidChoiceResult(chosenBid, ruleName, "basic", "Choose notrump opposite partner's weak two with enough own playing tricks and the required communication or stoppers.", weakTwoExtra);
+          }
+        }
+
+        if (partnerBid?.level >= 3 && partnerBid.strain !== "NT") {
           if (chosenBid.strain === partnerBid.strain) {
             return fiveCardHighBidChoiceResult(chosenBid, "response.raisePreempt", "basic", "Raise partner's long suit with support and enough strength.", {
               ...extra,
@@ -252,6 +305,7 @@
     respondToTwoNotrumpFiveCardHigh,
     respondToStrongTwoClubsFiveCardHigh,
     respondToWeakTwoFiveCardHigh,
+    weakTwoResponseContext,
     respondToPreemptFiveCardHigh,
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,

@@ -79,7 +79,8 @@
       }
 
   function chooseFiveCardHighWeakTwo(shape, hand) {
-        if (shape.hcp < 6 || shape.hcp > 10) return null;
+        const uglyEleven = shape.hcp === 11 && !ruleOf20OpeningContext(shape, hand).ruleOf20Eligible;
+        if (shape.hcp < 6 || (shape.hcp > 10 && !uglyEleven)) return null;
         const suit = chooseSuitByLengthThenRank(["S", "H", "D"], shape, 6, true, (candidate) => shape.counts[candidate] === 6 && suitQuality(hand, candidate) >= 2);
         return suit ? bid(2, suit) : null;
       }
@@ -106,7 +107,7 @@
           return fiveCardHighBidChoiceResult(chosenBid, "opening.strongTwoClubs", "basic", "Open a strong artificial 2C with a very strong hand or a long suit with at least eight playing tricks.", extra);
         }
         if (chosenBid.level === 2 && ["D", "H", "S"].includes(chosenBid.strain)) {
-          return fiveCardHighBidChoiceResult(chosenBid, "opening.weakTwo", "basic", "Open a weak two with 6-10 HCP and a good six-card suit.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "opening.weakTwo", "basic", "Open a weak two with 6-10 HCP, or an ugly 11 HCP hand, and a good six-card suit.", extra);
         }
         if (chosenBid.level >= 3 && chosenBid.strain !== "NT") {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.preempt", "basic", "Preempt with a long suit and limited strength.", extra);

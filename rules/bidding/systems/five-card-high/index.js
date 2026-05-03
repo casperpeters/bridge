@@ -120,6 +120,7 @@
     respondToTwoNotrumpFiveCardHigh,
     respondToStrongTwoClubsFiveCardHigh,
     respondToWeakTwoFiveCardHigh,
+    weakTwoResponseContext,
     respondToPreemptFiveCardHigh,
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,
@@ -256,6 +257,14 @@
 
         const lastPartnerCall = context.lastPartnerCall;
         if (partnershipCalls.length === 1) {
+          if (isWeakTwoOpeningFiveCardHigh(lastPartnerCall?.bid)) {
+            return fiveCardHighBidChoiceResult(Pass(), "pass.responseWeakTwoNoAction", "basic", "Pass opposite partner's weak two because there is no fit action or safe notrump action.", {
+              ...base,
+              category: "response",
+              partnerSuit: lastPartnerCall.bid.strain,
+              ...weakTwoResponseContext(shape, hand, lastPartnerCall.bid)
+            });
+          }
           return fiveCardHighBidChoiceResult(Pass(), "pass.responseNoAction", "basic", "Pass because there are not enough values or no suitable action opposite partner's opening.", {
             ...base,
             category: "response",

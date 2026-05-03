@@ -45,6 +45,7 @@ const BridgeGlossary = (() => {
     ["Openingskracht", "Een hand die sterk genoeg is om volgens het biedsysteem met een openingsbod te beginnen. In deze app is dat meestal vanaf ongeveer 12 punten, of met een sterke lange kleur volgens de Vijfkaart-Hoog-regels."],
     ["Overslag", "Een slag die extra wordt behaald boven het aantal dat nodig was voor het contract.", ["Overslagen", "overslagpunten"]],
     ["Redoublet", "Een biedactie na een doublet van de tegenpartij. In de score maakt een redoublet gemaakte en downslagen nog duurder dan een doublet.", ["redoubletten", "geredoubleerd"]],
+    ["Regel van 20", "Een vuistregel voor lichte openingen: tel je HCP op bij de lengte van je twee langste kleuren. Kom je op minstens 20 en zitten de meeste punten in die lange kleuren, dan mag je met minder dan 12 HCP toch openen.", ["rule of 20", "regel-van-20"]],
     ["Renonce", "Het hebben van nul kaarten in een kleur."],
     ["Sans-atout", "De speelsoort waarbij er geen troef is.", ["SA", "sans-atouttrek"]],
     ["Serie", "Twee of meer opeenvolgende kaarten in een kleur, zoals AHV5, AH8, HV32, VB1096 of B1084."],

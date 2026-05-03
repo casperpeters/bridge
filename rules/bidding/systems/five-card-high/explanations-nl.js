@@ -41,6 +41,7 @@
     const detail = {
       "pass.openingNoAction": `geen opening: te weinig openingskracht en geen geschikte zwakke twee of preempt${factSuffix}`,
       "pass.responseNoAction": `geen antwoord: te weinig waarden of geen passende actie tegenover partner${factSuffix}`,
+      "pass.responseWeakTwoNoAction": `pas na partners zwakke twee: onvoldoende eigen speelslagen voor de afgesproken actie, geen bruikbare fit/communicatie, of niet in alle kleuren dekking${weakTwoFactsText(result)}${factSuffix}`,
       "pass.openerMajorRaiseMinimum": `geen manchepoging na partners enkele hoge-kleursteun: met 12-15 totaalpunten past openaar${factSuffix}`,
       "pass.openerMinorRaiseMinimum": `geen manchepoging na partners lage-kleursteun: openaar heeft een minimum en past${factSuffix}`,
       "pass.openerMinorAfterOneNtMinimum": `pas na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en openaar heeft een minimum zonder lange lage kleur${factSuffix}`,
@@ -86,7 +87,7 @@
       case "opening.strongTwoClubs":
         return `sterke kunstmatige 2K: ${strongTwoClubsReason(result)}. ${handFactsText({ ruleName, result })}`;
       case "opening.weakTwo":
-        return `zwakke twee in ${suitName(result.suit)}: 6-10 HCP met een goede exacte 6-kaart. ${handFactsText({ ruleName, result })}`;
+        return `zwakke twee in ${suitName(result.suit)}: 6-10 HCP, of een lelijke 11-punter die de Regel van 20 niet haalt, met een goede exacte 6-kaart. ${handFactsText({ ruleName, result })}`;
       case "opening.preempt":
         return `preemptieve opening in ${suitName(result.suit)}: 6-10 HCP met een goede ${result.length >= 8 ? "8+-kaart op vierniveau" : "7+-kaart op drieniveau"}. ${handFactsText({ ruleName, result })}`;
       case "opening.ruleOf20OneMajor":
@@ -115,6 +116,18 @@
         return `afwachtend antwoord op sterke 2K. ${handFactsText({ ruleName, result })}`;
       case "response.strongTwoClubsPositive":
         return `positief antwoord op sterke 2K: toont minstens 8 HCP en een vijfkaart met minstens twee tophonneurs uit Aas, Heer en Vrouw${Number.isInteger(result.topHonors) ? `; hier ${result.topHonors}` : ""}. ${handFactsText({ ruleName, result })}`;
+      case "response.weakTwoDiamondNotrumpInvite":
+        return `2SA na partners zwakke 2R: er is ruitenfit met een ruitenplaatje en genoeg eigen speelslagen om te inviteren${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
+      case "response.weakTwoDiamondNotrumpGame":
+        return `3SA na partners zwakke 2R: er is ruitenfit met een ruitenplaatje en genoeg eigen speelslagen voor de manche${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
+      case "response.weakTwoMajorInviteRaise":
+        return `uitnodigende steun na partners zwakke twee in een hoge kleur: met fit en ongeveer 3 eigen speelslagen ga je naar driehoogte${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
+      case "response.weakTwoMajorGameRaise":
+        return `manchesteun na partners zwakke twee in een hoge kleur: met fit en ongeveer 4+ eigen speelslagen bied je de manche${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
+      case "response.weakTwoNoFitNotrumpInvite":
+        return `2SA zonder bruikbare fit na partners zwakke twee: alleen met voldoende eigen speelslagen en dekking in alle kleuren${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
+      case "response.weakTwoNoFitNotrumpGame":
+        return `3SA zonder bruikbare fit na partners zwakke twee: alleen met voldoende eigen speelslagen en dekking in alle kleuren${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
       case "response.raisePreempt":
         return `steun voor partners preempt. ${handFactsText({ ruleName, result })}`;
       case "response.notrumpOverPreempt":
@@ -455,6 +468,18 @@
     if (!longSuits || !Number.isInteger(result.ruleOf20Score)) return "";
     return `Telling: ${result.hcp} HCP + lengte ${longSuits} = ${result.ruleOf20Score}; daarin zitten ${result.ruleOf20LongSuitHcp} HCP.`;
   }
+
+  function weakTwoFactsText(result) {
+    const parts = [];
+    if (Number.isFinite(result?.ownPlayingTricks)) parts.push(`${result.ownPlayingTricks} eigen speelslag${result.ownPlayingTricks === 1 ? "" : "en"}`);
+    if (Number.isInteger(result?.support) && result.partnerSuit) parts.push(`${result.support} kaart(en) mee in ${suitName(result.partnerSuit)}`);
+    if (result?.partnerSuit === "D") parts.push(result.partnerSuitHonor ? "met ruitenplaatje" : "zonder ruitenplaatje");
+    if (result?.partnerSuitTreatedAsStopped && result?.partnerSuit) parts.push(`partners ${suitName(result.partnerSuit)}kleur telt als dekking/bron`);
+    if (Array.isArray(result?.missingStoppers)) {
+      parts.push(result.missingStoppers.length ? `geen dekking in ${result.missingStoppers.map(suitName).join(", ")}` : "dekking in alle kleuren");
+    }
+    return parts.length ? ` (${parts.join("; ")})` : "";
+  }
   
   function openerAfterNotrumpDetail(ruleName, result, responseText, handType, rangeText, actionText) {
     return `herbieding na partners ${responseText}: ${handType}; met ${rangeText} kiest openaar ${actionText}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
@@ -536,7 +561,7 @@
     if (bid.level === 1 && bid.strain === "NT") return "Vijfkaart Hoog: 15-17 punten, SA-verdeling.";
     if (bid.level === 2 && bid.strain === "NT") return "Vijfkaart Hoog: 20-22 punten, SA-verdeling.";
     if (bid.level === 2 && bid.strain === "C") return "Vijfkaart Hoog: sterke kunstmatige opening, 20+ met een kleur of 23+ met SA-verdeling.";
-    if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, ongeveer 6-10 HCP en een zeskaart.`;
+    if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, meestal 6-10 HCP of een lelijke 11-punter, en een zeskaart.`;
     if (bid.level === 3 && bid.strain !== "NT") return `preemptieve opening in ${suitName(bid.strain)}, meestal een lange kleur en beperkte kracht.`;
     if (bid.level === 1 && (bid.strain === "H" || bid.strain === "S")) return `Vijfkaart Hoog: 12-19 punten met minstens een vijfkaart ${suitName(bid.strain)}; open de langste kleur en met twee vijfkaarten de hoogste.`;
     if (bid.level === 1 && bid.strain === "D") return "Vijfkaart Hoog: 12-19 punten met minstens een vierkaart ruiten; open de langste kleur en met meerdere vierkaarten de laagste.";
@@ -606,6 +631,10 @@
   
   function responseBidMeaning(bid, partnerBid) {
     if (!partnerBid) return continuationBidMeaning(bid);
+    if (partnerBid.level === 2 && ["D", "H", "S"].includes(partnerBid.strain)) {
+      if (bid.strain === partnerBid.strain) return `steun voor partners zwakke twee in ${suitName(partnerBid.strain)}.`;
+      if (bid.strain === "NT") return "SA-antwoord na partners zwakke twee: vraagt genoeg eigen slagen, dekking en/of communicatie.";
+    }
     if (partnerBid.strain !== "NT" && bid.strain === partnerBid.strain) return `steun voor partners ${suitName(partnerBid.strain)}.`;
     if (bid.strain === "NT") return "gebalanceerd antwoord, zonder duidelijke fit of nieuwe kleur.";
     return `natuurlijk antwoord in ${suitName(bid.strain)}.`;

@@ -126,6 +126,66 @@
     return hand.filter((card) => card.suit !== longSuit && card.rank === "A").length;
   }
 
+  function ownPlayingTricks(hand) {
+    return suits.reduce((sum, suit) => sum + ownPlayingTricksInSuit(hand, suit), 0);
+  }
+
+  function ownPlayingTricksInSuit(hand, suit) {
+    const cards = hand.filter((card) => card.suit === suit);
+    const ranks = new Set(cards.map((card) => card.rank));
+    if (ranks.has("A")) {
+      let tricks = 1;
+      if (ranks.has("K")) {
+        tricks += 1;
+        if (ranks.has("Q")) {
+          tricks += 1;
+          if (ranks.has("J")) tricks += 1;
+        }
+      }
+      return Math.min(tricks, cards.length);
+    }
+    if (ranks.has("K") && ranks.has("Q")) {
+      let tricks = 1;
+      if (ranks.has("J")) tricks += 1;
+      return Math.min(tricks, cards.length);
+    }
+    if (ranks.has("Q") && ranks.has("J") && ranks.has("T")) return 1;
+    return 0;
+  }
+
+  function weakTwoResponsePlayingTricks(hand, partnerSuit, options = {}) {
+    const countSideKings = Boolean(options.countSideKings);
+    const hasFit = Boolean(options.hasFit);
+    const sideTricks = suits
+      .filter((suit) => suit !== partnerSuit)
+      .reduce((sum, suit) => sum + weakTwoResponseSideTricksInSuit(hand, suit, { countSideKings }), 0);
+    return sideTricks + weakTwoResponsePartnerSuitTricks(hand, partnerSuit, { hasFit });
+  }
+
+  function weakTwoResponseSideTricksInSuit(hand, suit, { countSideKings = true } = {}) {
+    const cards = hand.filter((card) => card.suit === suit);
+    const length = cards.length;
+    if (!length) return 0;
+    const ranks = new Set(cards.map((card) => card.rank));
+
+    if (ranks.has("A") && ranks.has("K") && ranks.has("Q")) return length;
+    if (ranks.has("A") && ranks.has("K")) return 2;
+    if (ranks.has("A") && ranks.has("Q")) return 1.5;
+    if (ranks.has("A")) return 1;
+    if (ranks.has("K") && ranks.has("Q")) return ranks.has("J") ? 1.5 : 1;
+    if (countSideKings && ranks.has("K") && length >= 3) return 0.5;
+    if (ranks.has("Q") && ranks.has("J") && ranks.has("T")) return 1;
+    return 0;
+  }
+
+  function weakTwoResponsePartnerSuitTricks(hand, partnerSuit, { hasFit = false } = {}) {
+    if (!hasFit || partnerSuit === "D") return 0;
+    const ranks = new Set(hand.filter((card) => card.suit === partnerSuit).map((card) => card.rank));
+    if (ranks.has("A") || ranks.has("K") || ranks.has("Q")) return 1;
+    if (ranks.has("J")) return 0.5;
+    return 0;
+  }
+
   return {
     fitValuationContext,
     hasConservativeFit,
@@ -138,6 +198,9 @@
     hcpInSuit,
     hasStopper,
     strongTwoClubsPlayingTricksContext,
-    playingTricksInLongSuit
+    playingTricksInLongSuit,
+    ownPlayingTricks,
+    ownPlayingTricksInSuit,
+    weakTwoResponsePlayingTricks
   };
 });
