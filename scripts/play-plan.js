@@ -134,15 +134,31 @@ function playPlanPriorityText(priority) {
     return `Houd de ${stopper} in ${suitName(priority.suit)} nog vast; speel laag zolang dat kan, omdat er nog ${priority.needToDevelop} slag${priority.needToDevelop === 1 ? "" : "en"} ontwikkeld moet${priority.needToDevelop === 1 ? "" : "en"} worden.`;
   }
   if (priority.kind === "developLongSuit") {
+    if (priority.timing === "giveUpEarly") {
+      const entries = priority.sameSuitEntryCount
+        ? ` Er blijven ${priority.sameSuitEntryCount} entree${priority.sameSuitEntryCount === 1 ? "" : "s"} in de kleur zelf.`
+        : "";
+      return `Geef in ${suitName(priority.suit)} vroeg een slag af om de communicatie met ${seatName(priority.sourceSeat)} te bewaren.${entries}`;
+    }
     const missing = rankLabel[priority.missingStopper] || priority.missingStopper;
     const entry = priority.entryTiming === "outsideEntry"
       ? ` Entree via ${rankLabel[priority.entryRank] || priority.entryRank} ${suitName(priority.entrySuit)}.`
       : " Geen duidelijke latere entree.";
-    return `Ontwikkel ${suitName(priority.suit)} (${priority.suitLength} kaarten samen); werk de ${missing} eruit.${entry}`;
+    const preserve = priority.preserveEntry
+      ? ` Bewaar die entree voor de vrije ${suitName(priority.suit)}.`
+      : "";
+    const tempo = typeof priority.lossesNeeded === "number"
+      ? ` Tempo: ${priority.lossesNeeded} keer van slag voor ongeveer ${priority.extraTricks} extra slag${priority.extraTricks === 1 ? "" : "en"}; ${priority.tempoSafe ? "dat past bij de huidige uitkomst" : "dat lijkt te traag bij de huidige uitkomst"}.`
+      : "";
+    return `Ontwikkel ${suitName(priority.suit)} (${priority.suitLength} kaarten samen); werk de ${missing} eruit.${entry}${preserve}${tempo}`;
   }
   if (priority.kind === "finesse") {
     const rank = rankLabel[priority.finesseRank] || priority.finesseRank;
     return `Overweeg een snit naar de ${rank} in ${suitName(priority.suit)} als de timing klopt.`;
+  }
+  if (priority.kind === "safeHandFinesse") {
+    const rank = rankLabel[priority.finesseRank] || priority.finesseRank;
+    return `Neem de snit in ${suitName(priority.suit)} naar de ${rank}; als die verliest, komt de veilige hand ${seatName(priority.safeSeat)} aan slag.`;
   }
   if (priority.kind === "doubleFinesse") {
     const rank = rankLabel[priority.finesseRank] || priority.finesseRank;

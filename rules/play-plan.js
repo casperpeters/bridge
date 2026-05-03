@@ -11,6 +11,7 @@
   "use strict";
 
   const {
+    seats,
     suits,
     rankOrder,
     descendingRanks,
@@ -121,9 +122,19 @@
       const neededTricks = contract.level + 6;
       const sureWinners = countSureWinners(declarerHand, dummyHand, playedCards, declarer, dummy);
       const needToDevelop = Math.max(0, neededTricks - sureWinners.total);
-      const holdUpPriorities = notrumpHoldUpPriorities({ declarerHand, dummyHand, declarer, currentTrick, neededTricks, sureWinners });
+      const holdUpPriorities = notrumpHoldUpPriorities({ declarerHand, dummyHand, declarer, trickHistory, currentTrick, neededTricks, sureWinners });
       const developmentPriorities = notrumpDevelopmentPriorities({ declarerHand, dummyHand, declarer, dummy, playedCards });
-      const optionalFinessePenalty = needToDevelop && developmentPriorities.length ? 40 : 0;
+      const tempoWorkPriorities = notrumpTempoWorkSuitPriorities({
+        declarerHand,
+        dummyHand,
+        declarer,
+        dummy,
+        playedCards,
+        currentTrick,
+        sureWinners,
+        needToDevelop
+      });
+      const optionalFinessePenalty = needToDevelop && (developmentPriorities.length || tempoWorkPriorities.length) ? 40 : 0;
       const repeatFinessePriorities = notrumpRepeatFinessePriorities({ declarerHand, dummyHand, declarer, dummy, trickHistory, playedCards })
         .map((priority) => ({
           ...priority,
@@ -135,7 +146,8 @@
           score: priority.score - optionalFinessePenalty
         }));
       const blockedFinesseSuits = new Set([...repeatFinessePriorities, ...twoWayFinessePriorities].map((priority) => priority.suit));
-      const finessePriorities = notrumpFinessePriorities({ declarerHand, dummyHand, declarer, dummy, playedCards })
+      const safeHandContext = notrumpSafeHandContext({ declarer, trickHistory, currentTrick });
+      const finessePriorities = notrumpFinessePriorities({ declarerHand, dummyHand, declarer, dummy, playedCards, safeHandContext })
         .filter((priority) => !blockedFinesseSuits.has(priority.suit))
         .map((priority) => ({
           ...priority,
@@ -146,6 +158,7 @@
         ...cashPriorities,
         ...holdUpPriorities,
         ...developmentPriorities,
+        ...tempoWorkPriorities,
         ...repeatFinessePriorities,
         ...twoWayFinessePriorities,
         ...finessePriorities
@@ -383,7 +396,237 @@
       return candidates;
     }
 
-  function notrumpFinessePriorities({ declarerHand, dummyHand, declarer, dummy, playedCards }) {
+  function notrumpTempoWorkSuitPriorities({
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      playedCards,
+      currentTrick = [],
+      sureWinners,
+      needToDevelop
+    }) {
+      if (!needToDevelop) return [];
+      const tempo = notrumpTempoContext({ declarer, currentTrick, sureWinners });
+      const candidates = [];
+      for (const suit of suits) {
+        if (tempo.attackedSuit) {
+          const tempoCandidate = notrumpTempoWorkSuitCandidate({
+            suit,
+            declarerHand,
+            dummyHand,
+            declarer,
+            dummy,
+            playedCards,
+            sureWinners,
+            needToDevelop,
+            tempo
+          });
+          if (tempoCandidate) candidates.push(tempoCandidate);
+        }
+        const communicationCandidate = notrumpEarlyGiveUpWorkSuitCandidate({
+          suit,
+          declarerHand,
+          dummyHand,
+          declarer,
+          dummy,
+          playedCards,
+          sureWinners,
+          needToDevelop
+        });
+        if (communicationCandidate) candidates.push(communicationCandidate);
+      }
+      return candidates;
+    }
+
+  function notrumpTempoWorkSuitCandidate({
+      suit,
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      playedCards,
+      sureWinners,
+      needToDevelop,
+      tempo
+    }) {
+      const declarerSuitCards = cardsInSuit(declarerHand, suit);
+      const dummySuitCards = cardsInSuit(dummyHand, suit);
+      const playedSuitCards = cardsInSuit(playedCards, suit);
+      const combinedCards = [...declarerSuitCards, ...dummySuitCards];
+      if (combinedCards.length < 5) return null;
+
+      const run = tempoDevelopmentRun(combinedCards, playedSuitCards);
+      if (!run || run.lossesNeeded < 1 || run.lossesNeeded > 2) return null;
+
+      const currentWinners = sureWinners?.bySuit?.[suit] || 0;
+      const extraTricks = Math.min(run.ranks.length, Math.max(0, combinedCards.length - run.lossesNeeded - 3));
+      if (extraTricks <= 0 || currentWinners + extraTricks <= currentWinners) return null;
+
+      const sourceSeat = seatForSuitRank(run.ranks[0], declarerSuitCards, dummySuitCards, declarer, dummy);
+      const sourceHand = sourceSeat === declarer ? declarerHand : dummyHand;
+      const sourceCards = sourceSeat === declarer ? declarerSuitCards : dummySuitCards;
+      if (!sourceSeat || !sourceCards.length) return null;
+
+      const entryPlan = entryPlanForHand(sourceHand, suit);
+      const tempoSafe = run.lossesNeeded <= tempo.defenderEntriesAllowed;
+      const enoughExtraTricks = extraTricks >= needToDevelop;
+      const preserveEntry = Boolean(entryPlan.entryCount === 1 && entryPlan.entrySuit);
+      const communicationRisk = preserveEntry ? "high" : entryPlan.entryCount ? "low" : "medium";
+      const score =
+        extraTricks * 34 +
+        combinedCards.length * 3 +
+        run.ranks.length * 5 -
+        run.lossesNeeded * 14 +
+        (enoughExtraTricks ? 18 : 0) +
+        (entryPlan.entryCount ? 6 : -6) +
+        (tempoSafe ? 40 : -90);
+
+      return {
+        kind: "developLongSuit",
+        confidence: tempoSafe ? "basic" : "uncertain",
+        suit,
+        suitLength: combinedCards.length,
+        sourceSeat,
+        sourceLength: sourceCards.length,
+        sequence: run.ranks.join(""),
+        missingStopper: run.missingHigher[0],
+        missingStoppers: run.missingHigher,
+        lossesNeeded: run.lossesNeeded,
+        extraTricks,
+        tempoSafe,
+        attackedSuit: tempo.attackedSuit,
+        defenderEntriesAllowed: tempo.defenderEntriesAllowed,
+        preserveEntry,
+        communicationRisk,
+        entryType: entryPlan.entryType,
+        entrySuit: entryPlan.entrySuit,
+        entryRank: entryPlan.entryRank,
+        entryTiming: entryPlan.entryTiming,
+        entryCount: entryPlan.entryCount,
+        score
+      };
+    }
+
+  function notrumpEarlyGiveUpWorkSuitCandidate({
+      suit,
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      playedCards,
+      sureWinners,
+      needToDevelop
+    }) {
+      const declarerSuitCards = cardsInSuit(declarerHand, suit);
+      const dummySuitCards = cardsInSuit(dummyHand, suit);
+      const combinedCards = [...declarerSuitCards, ...dummySuitCards];
+      if (combinedCards.length < 7) return null;
+
+      const sides = [
+        { seat: declarer, hand: declarerHand, suitCards: declarerSuitCards },
+        { seat: dummy, hand: dummyHand, suitCards: dummySuitCards }
+      ].sort((a, b) => b.suitCards.length - a.suitCards.length);
+      const longSide = sides[0];
+      const shortSide = sides[1];
+      if (longSide.suitCards.length < 5 || shortSide.suitCards.length < 2) return null;
+
+      const playedSuitCards = cardsInSuit(playedCards, suit);
+      const winnerRanks = visibleTopWinnerRanks(combinedCards, playedSuitCards);
+      const sameSuitEntryRanks = winnerRanks.filter((rank) => hasRank(longSide.suitCards, rank));
+      if (sameSuitEntryRanks.length < 2) return null;
+
+      const currentWinners = sureWinners?.bySuit?.[suit] || 0;
+      if (currentWinners < 2) return null;
+
+      const extraTricks = Math.max(0, Math.min(longSide.suitCards.length - 3, combinedCards.length - currentWinners - 4));
+      if (extraTricks <= 0) return null;
+
+      const outsideEntryPlan = entryPlanForHand(longSide.hand, suit);
+      const score =
+        extraTricks * 30 +
+        combinedCards.length * 3 +
+        sameSuitEntryRanks.length * 12 +
+        (extraTricks >= Math.min(2, needToDevelop) ? 18 : 0) +
+        (outsideEntryPlan.entryCount ? 8 : 0);
+
+      return {
+        kind: "developLongSuit",
+        confidence: "uncertain",
+        suit,
+        suitLength: combinedCards.length,
+        sourceSeat: longSide.seat,
+        sourceLength: longSide.suitCards.length,
+        sequence: sameSuitEntryRanks.join(""),
+        missingStopper: null,
+        missingStoppers: [],
+        lossesNeeded: 1,
+        extraTricks,
+        tempoSafe: true,
+        timing: "giveUpEarly",
+        sameSuitEntryCount: sameSuitEntryRanks.length,
+        sameSuitEntryRanks,
+        preserveEntry: true,
+        communicationRisk: outsideEntryPlan.entryCount ? "low" : "medium",
+        entryType: outsideEntryPlan.entryType,
+        entrySuit: outsideEntryPlan.entrySuit,
+        entryRank: outsideEntryPlan.entryRank,
+        entryTiming: outsideEntryPlan.entryTiming,
+        entryCount: outsideEntryPlan.entryCount,
+        score
+      };
+    }
+
+  function tempoDevelopmentRun(combinedCards, playedSuitCards = []) {
+      const combinedRanks = new Set(combinedCards.map((card) => card.rank));
+      const playedRanks = new Set(playedSuitCards.map((card) => card.rank));
+      const candidates = [];
+      for (let i = 0; i < developmentRanks.length - 1; i++) {
+        const startRank = developmentRanks[i];
+        if (!combinedRanks.has(startRank)) continue;
+
+        const ranks = [];
+        for (let j = i; j < developmentRanks.length; j++) {
+          const rank = developmentRanks[j];
+          if (!combinedRanks.has(rank)) break;
+          ranks.push(rank);
+        }
+        if (ranks.length < 2) continue;
+
+        const missingHigher = developmentRanks
+          .slice(0, i)
+          .filter((rank) => !combinedRanks.has(rank) && !playedRanks.has(rank));
+        if (!missingHigher.length) continue;
+        candidates.push({
+          ranks,
+          missingHigher,
+          lossesNeeded: missingHigher.length,
+          score: ranks.length * 10 - missingHigher.length * 8 - i
+        });
+      }
+      return candidates.sort((a, b) => b.score - a.score)[0] || null;
+    }
+
+  function notrumpTempoContext({ declarer, currentTrick = [], sureWinners }) {
+      const lead = currentTrick[0];
+      if (!lead?.card || !lead.seat || teamOf(lead.seat) === teamOf(declarer)) {
+        return {
+          attackedSuit: null,
+          defenderEntriesAllowed: Number.POSITIVE_INFINITY
+        };
+      }
+
+      const attackedSuit = lead.card.suit;
+      const stopperCount = sureWinners?.bySuit?.[attackedSuit] || 0;
+      const leadConsumesStopper = stopperCount > 0 ? 1 : 0;
+      return {
+        attackedSuit,
+        stopperCount,
+        defenderEntriesAllowed: Math.max(0, stopperCount - leadConsumesStopper)
+      };
+    }
+
+  function notrumpFinessePriorities({ declarerHand, dummyHand, declarer, dummy, playedCards, safeHandContext = null }) {
       const candidates = [];
       for (const suit of suits) {
         const declarerSuitCards = cardsInSuit(declarerHand, suit);
@@ -394,12 +637,14 @@
             currentSuitCards: declarerSuitCards,
             partnerSuitCards: dummySuitCards,
             partnerHand: dummyHand,
+            leadSeat: declarer,
             targetSeat: dummy
           },
           {
             currentSuitCards: dummySuitCards,
             partnerSuitCards: declarerSuitCards,
             partnerHand: declarerHand,
+            leadSeat: dummy,
             targetSeat: declarer
           }
         ].forEach((direction) => {
@@ -412,22 +657,30 @@
             partnerSeat: direction.targetSeat
           });
           if (!candidate) return;
+          const losingSeat = nextSeat(direction.targetSeat);
+          const safeHandFinesse = safeHandContext?.safeSeat && losingSeat === safeHandContext.safeSeat;
           candidates.push({
-            kind: candidate.ruleId === "doubleFinesseTowardHonor" ? "doubleFinesse" : "finesse",
+            kind: safeHandFinesse ? "safeHandFinesse" : candidate.ruleId === "doubleFinesseTowardHonor" ? "doubleFinesse" : "finesse",
             confidence: "uncertain",
             suit,
+            leadSeat: direction.leadSeat,
             targetSeat: candidate.targetSeat,
             finesseRank: candidate.finesseRank,
+            leadRank: safeHandFinesse ? safeHandLeadRank(direction.currentSuitCards, candidate.finesseRank, candidate.card) : null,
             missingHonor: candidate.missingHonor,
             missingHonors: candidate.missingHonors,
-            score: candidate.score - 20
+            losingSeat,
+            safeSeat: safeHandFinesse ? safeHandContext.safeSeat : null,
+            dangerousSeat: safeHandFinesse ? safeHandContext.dangerousSeat : null,
+            attackedSuit: safeHandFinesse ? safeHandContext.attackedSuit : null,
+            score: candidate.score - 20 + (safeHandFinesse ? 100 : 0)
           });
         });
       }
       return candidates;
     }
 
-  function notrumpHoldUpPriorities({ declarerHand, dummyHand, declarer, currentTrick = [], neededTricks, sureWinners }) {
+  function notrumpHoldUpPriorities({ declarerHand, dummyHand, declarer, trickHistory = [], currentTrick = [], neededTricks, sureWinners }) {
       if (!currentTrick.length || sureWinners.total >= neededTricks) return [];
       const lead = currentTrick[0];
       if (!lead?.card || !lead.seat || teamOf(lead.seat) === teamOf(declarer)) return [];
@@ -437,6 +690,16 @@
       const dummySuitCards = cardsInSuit(dummyHand, suit);
       const combinedCards = [...declarerSuitCards, ...dummySuitCards];
       if (!hasRank(combinedCards, "A")) return [];
+
+      const previousDeclarerSideCards = trickHistory
+        .flatMap((trick) => trick.cards || [])
+        .filter((play) => play.card?.suit === suit && teamOf(play.seat) === teamOf(declarer))
+        .length;
+      const originalCombinedLength = combinedCards.length + previousDeclarerSideCards;
+      const holdUpTarget = Math.max(0, Math.min(combinedCards.filter((card) => card.rank !== "A").length, 7 - originalCombinedLength));
+      const holdUpsTaken = notrumpHoldUpsTaken({ trickHistory, suit, declarer });
+      const holdUpsRemaining = Math.max(0, holdUpTarget - holdUpsTaken);
+      if (!holdUpsRemaining) return [];
 
       const playedSuitCards = cardsInSuit(currentTrick.map((play) => play.card), suit);
       const visibleWinners = visibleTopWinnerRanks(combinedCards, playedSuitCards);
@@ -458,9 +721,63 @@
         stopperRank: "A",
         duckRank: duckCard.rank,
         duckSeat: declarerSuitCards.some((card) => card.id === duckCard.id) ? declarer : partnerOf(declarer),
+        holdUpTarget,
+        holdUpsTaken,
+        holdUpsRemaining,
+        dangerousSeat: lead.seat,
+        safeSeat: partnerOf(lead.seat),
         needToDevelop: Math.max(0, neededTricks - sureWinners.total),
         score: 112
       }];
+    }
+
+  function notrumpHoldUpsTaken({ trickHistory = [], suit, declarer }) {
+      return trickHistory.filter((trick) => {
+        const cards = trick.cards || [];
+        const leadPlay = cards[0];
+        return (
+          leadPlay?.card?.suit === suit &&
+          teamOf(leadPlay.seat) !== teamOf(declarer) &&
+          teamOf(trick.winner) !== teamOf(declarer)
+        );
+      }).length;
+    }
+
+  function notrumpSafeHandContext({ declarer, trickHistory = [], currentTrick = [] }) {
+      const firstAttack = [...trickHistory, currentTrick.length ? { cards: currentTrick } : null]
+        .filter(Boolean)
+        .map((trick) => (trick.cards || [])[0])
+        .find((play) => play?.card && teamOf(play.seat) !== teamOf(declarer));
+      if (!firstAttack) return null;
+
+      const attackedSuit = firstAttack.card.suit;
+      const attackTricks = trickHistory.filter((trick) => (trick.cards || [])[0]?.card?.suit === attackedSuit);
+      const firstDeclarerWinIndex = attackTricks.findIndex((trick) => teamOf(trick.winner) === teamOf(declarer));
+      if (firstDeclarerWinIndex < 0) return null;
+
+      const heldUpRounds = attackTricks
+        .slice(0, firstDeclarerWinIndex)
+        .filter((trick) => teamOf(trick.winner) !== teamOf(declarer))
+        .length;
+      if (heldUpRounds < 2) return null;
+
+      return {
+        attackedSuit,
+        dangerousSeat: firstAttack.seat,
+        safeSeat: partnerOf(firstAttack.seat),
+        heldUpRounds
+      };
+    }
+
+  function nextSeat(seat) {
+      const index = seats.indexOf(seat);
+      if (index < 0) return null;
+      return seats[(index + 1) % seats.length];
+    }
+
+  function safeHandLeadRank(cards, finesseRank, fallbackCard) {
+      const below = cards.filter((card) => rankOrder.indexOf(card.rank) < rankOrder.indexOf(finesseRank));
+      return highestCard(below)?.rank || fallbackCard?.rank || null;
     }
 
   function notrumpRepeatFinessePriorities({ declarerHand, dummyHand, declarer, dummy, trickHistory = [], playedCards = [] }) {

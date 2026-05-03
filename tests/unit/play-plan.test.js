@@ -202,6 +202,133 @@ test("createPlayPlan skips notrump hold-up when the safe conditions are missing"
   assert.ok(!declarerLed.priorities.some((item) => item.kind === "holdUpStopper"));
 });
 
+test("createPlayPlan counts repeated notrump hold-up rounds to break defender communication", () => {
+  const contract = { level: 3, strain: "NT" };
+  const firstRound = rules.createPlayPlan({
+    declarerHand: hand("AS", "6S", "5S", "AH", "8H", "3H", "AD", "KD", "8D", "4D", "TC", "8C", "5C"),
+    dummyHand: hand("7S", "4S", "KH", "5H", "4H", "QD", "7D", "6D", "5D", "KC", "QC", "JC", "6C"),
+    contract,
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("KS") }]
+  });
+  const firstHoldUp = firstRound.priorities.find((item) => item.kind === "holdUpStopper");
+  assert.ok(firstHoldUp);
+  assert.equal(firstHoldUp.holdUpTarget, 2);
+  assert.equal(firstHoldUp.holdUpsTaken, 0);
+  assert.equal(firstHoldUp.holdUpsRemaining, 2);
+  assert.equal(firstHoldUp.dangerousSeat, "West");
+  assert.equal(firstHoldUp.safeSeat, "East");
+
+  const secondRound = rules.createPlayPlan({
+    declarerHand: hand("AS", "6S", "AH", "8H", "3H", "AD", "KD", "8D", "4D", "TC", "8C", "5C"),
+    dummyHand: hand("7S", "KH", "5H", "4H", "QD", "7D", "6D", "5D", "KC", "QC", "JC", "6C"),
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("KS") },
+        { seat: "North", card: card("4S") },
+        { seat: "East", card: card("3S") },
+        { seat: "South", card: card("5S") }
+      ]
+    }],
+    currentTrick: [{ seat: "West", card: card("QS") }]
+  });
+  const secondHoldUp = secondRound.priorities.find((item) => item.kind === "holdUpStopper");
+  assert.ok(secondHoldUp);
+  assert.equal(secondHoldUp.holdUpTarget, 2);
+  assert.equal(secondHoldUp.holdUpsTaken, 1);
+  assert.equal(secondHoldUp.holdUpsRemaining, 1);
+
+  const thirdRound = rules.createPlayPlan({
+    declarerHand: hand("AS", "AH", "8H", "3H", "AD", "KD", "8D", "4D", "TC", "8C", "5C"),
+    dummyHand: hand("KH", "5H", "4H", "QD", "7D", "6D", "5D", "KC", "QC", "JC", "6C"),
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [
+      {
+        number: 1,
+        winner: "West",
+        cards: [
+          { seat: "West", card: card("KS") },
+          { seat: "North", card: card("4S") },
+          { seat: "East", card: card("3S") },
+          { seat: "South", card: card("5S") }
+        ]
+      },
+      {
+        number: 2,
+        winner: "West",
+        cards: [
+          { seat: "West", card: card("QS") },
+          { seat: "North", card: card("7S") },
+          { seat: "East", card: card("9S") },
+          { seat: "South", card: card("6S") }
+        ]
+      }
+    ],
+    currentTrick: [{ seat: "West", card: card("JS") }]
+  });
+  assert.ok(!thirdRound.priorities.some((item) => item.kind === "holdUpStopper"));
+});
+
+test("createPlayPlan prefers a notrump finesse that can lose to the safe hand", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("JS", "6S", "AH", "AD", "KD", "8D", "4D", "AC", "JC", "TC", "2C"),
+    dummyHand: hand("AS", "QS", "TS", "9S", "QD", "JD", "6D", "5D", "QC", "5C", "4C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [
+      {
+        number: 1,
+        winner: "East",
+        cards: [
+          { seat: "West", card: card("2H") },
+          { seat: "North", card: card("5H") },
+          { seat: "East", card: card("KH") },
+          { seat: "South", card: card("3H") }
+        ]
+      },
+      {
+        number: 2,
+        winner: "West",
+        cards: [
+          { seat: "East", card: card("4H") },
+          { seat: "South", card: card("8H") },
+          { seat: "West", card: card("QH") },
+          { seat: "North", card: card("TH") }
+        ]
+      },
+      {
+        number: 3,
+        winner: "South",
+        cards: [
+          { seat: "West", card: card("JH") },
+          { seat: "North", card: card("6D") },
+          { seat: "East", card: card("9H") },
+          { seat: "South", card: card("AH") }
+        ]
+      }
+    ]
+  });
+
+  const safeFinesse = plan.priorities.find((item) => item.kind === "safeHandFinesse");
+  assert.ok(safeFinesse);
+  assert.equal(plan.priorities[0].kind, "safeHandFinesse");
+  assert.equal(safeFinesse.suit, "S");
+  assert.equal(safeFinesse.leadSeat, "South");
+  assert.equal(safeFinesse.targetSeat, "North");
+  assert.equal(safeFinesse.safeSeat, "East");
+  assert.equal(safeFinesse.dangerousSeat, "West");
+  assert.equal(safeFinesse.leadRank, "J");
+});
+
 test("createPlayPlan adds a repeat finesse only after the first finesse wins", () => {
   const successfulHistory = [{
     number: 1,
@@ -259,6 +386,119 @@ test("createPlayPlan adds a repeat finesse only after the first finesse wins", (
     ]
   });
   assert.ok(!missingHonorPlayed.priorities.some((item) => item.kind === "repeatFinesse"));
+});
+
+test("createPlayPlan chooses the notrump work suit that has enough tempo after a spade lead", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "5S", "KH", "9H", "3H", "JD", "9D", "8D", "AC", "KC", "JC", "8C", "3C"),
+    dummyHand: hand("AS", "7S", "QH", "JH", "6H", "QD", "TD", "6D", "4D", "3D", "QC", "TC", "2C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QS") }]
+  });
+
+  const heartPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "H");
+  const diamondPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "D");
+  assert.ok(heartPlan);
+  assert.ok(diamondPlan);
+  assert.equal(plan.priorities[0].suit, "H");
+  assert.equal(heartPlan.tempoSafe, true);
+  assert.equal(heartPlan.lossesNeeded, 1);
+  assert.equal(heartPlan.extraTricks, 2);
+  assert.equal(diamondPlan.tempoSafe, false);
+  assert.equal(diamondPlan.lossesNeeded, 2);
+  assert.equal(diamondPlan.extraTricks, 3);
+});
+
+test("createPlayPlan can choose the higher-yield notrump work suit when the lead gives enough tempo", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "5S", "KH", "9H", "3H", "JD", "9D", "8D", "AC", "KC", "JC", "8C", "3C"),
+    dummyHand: hand("AS", "7S", "QH", "JH", "6H", "QD", "TD", "6D", "4D", "3D", "QC", "TC", "2C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("4C") }]
+  });
+
+  const diamondPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "D");
+  const heartPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "H");
+  assert.ok(diamondPlan);
+  assert.ok(heartPlan);
+  assert.equal(plan.priorities[0].suit, "D");
+  assert.equal(diamondPlan.tempoSafe, true);
+  assert.equal(diamondPlan.lossesNeeded, 2);
+  assert.equal(diamondPlan.extraTricks, 3);
+});
+
+test("createPlayPlan keeps the only realistic notrump work suit when tempo leaves no safe alternative", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "3S", "JH", "5H", "AD", "KD", "9D", "3D", "AC", "TC", "8C", "7C"),
+    dummyHand: hand("5S", "4S", "2S", "AH", "8H", "8D", "5D", "4D", "QC", "JC", "9C", "6C", "2C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QS") }]
+  });
+
+  const clubPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "C");
+  assert.ok(clubPlan);
+  assert.equal(plan.sureWinners.total, 6);
+  assert.equal(plan.needToDevelop, 3);
+  assert.equal(plan.priorities[0].suit, "C");
+  assert.equal(clubPlan.tempoSafe, true);
+  assert.equal(clubPlan.lossesNeeded, 1);
+  assert.equal(clubPlan.extraTricks, 3);
+  assert.equal(clubPlan.entrySuit, "H");
+  assert.equal(clubPlan.entryRank, "A");
+});
+
+test("createPlayPlan marks a lone outside entry that must be preserved for a notrump work suit", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "3S", "2S", "AH", "JH", "8H", "5H", "6D", "3D", "AC", "KC", "9C", "3C"),
+    dummyHand: hand("AS", "7S", "9H", "4H", "2H", "KD", "QD", "JD", "TD", "9D", "TC", "8C", "6C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QS") }]
+  });
+
+  const diamondPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "D");
+  assert.ok(diamondPlan);
+  assert.equal(diamondPlan.sourceSeat, "North");
+  assert.equal(diamondPlan.entrySuit, "S");
+  assert.equal(diamondPlan.entryRank, "A");
+  assert.equal(diamondPlan.preserveEntry, true);
+  assert.equal(diamondPlan.communicationRisk, "high");
+});
+
+test("createPlayPlan recognizes a notrump work suit that must be given up early to preserve same-suit entries", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "KS", "2S", "AH", "6H", "4H", "5D", "3D", "2D", "AC", "JC", "8C"),
+    dummyHand: hand("JS", "8S", "7H", "AD", "KD", "8D", "6D", "4D", "9C", "6C", "5C", "4C"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("JH") },
+        { seat: "North", card: card("5H") },
+        { seat: "East", card: card("2H") },
+        { seat: "South", card: card("QH") }
+      ]
+    }]
+  });
+
+  const diamondPlan = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "D");
+  assert.ok(diamondPlan);
+  assert.equal(diamondPlan.sourceSeat, "North");
+  assert.equal(diamondPlan.timing, "giveUpEarly");
+  assert.equal(diamondPlan.lossesNeeded, 1);
+  assert.equal(diamondPlan.sameSuitEntryCount, 2);
+  assert.equal(diamondPlan.extraTricks, 2);
+  assert.equal(diamondPlan.communicationRisk, "medium");
 });
 
 test("createPlayPlan chooses two-way finesse direction by entry, length, then declarer", () => {
