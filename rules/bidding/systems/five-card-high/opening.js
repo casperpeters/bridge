@@ -24,7 +24,7 @@
 
   const { biddingSystems, handShape } = core;
   const { Pass, bid, bidEquals } = auction;
-  const { ruleOf20OpeningContext, suitQuality } = valuationHelpers;
+  const { ruleOf20OpeningContext, suitQuality, strongTwoClubsPlayingTricksContext } = valuationHelpers;
   const { bidChoiceResult } = resultHelpers;
   const { chooseSuitByLengthThenRank } = conventionHelpers;
 
@@ -41,7 +41,8 @@
           if (shape.hcp >= 15 && shape.hcp <= 17) return bid(1, "NT");
         }
 
-        if (shape.hcp >= 20 || shape.points >= 20) return bid(2, "C");
+        const strongTwoClubsTricks = strongTwoClubsPlayingTricksContext(shape, hand);
+        if (shape.hcp >= 20 || shape.points >= 20 || strongTwoClubsTricks.playingTricksEligible) return bid(2, "C");
 
         const weakTwo = chooseFiveCardHighWeakTwo(shape, hand);
         if (weakTwo) return weakTwo;
@@ -93,7 +94,8 @@
 
   function describeOpeningBidChoice(chosenBid, shape, hand, base) {
         const ruleOf20 = ruleOf20OpeningContext(shape, hand);
-        const extra = { ...base, ...ruleOf20, category: "opening", suit: chosenBid.strain, length: shape.counts[chosenBid.strain] || 0 };
+        const strongTwoClubsTricks = strongTwoClubsPlayingTricksContext(shape, hand);
+        const extra = { ...base, ...ruleOf20, ...strongTwoClubsTricks, category: "opening", suit: chosenBid.strain, length: shape.counts[chosenBid.strain] || 0 };
         if (bidEquals(chosenBid, 1, "NT")) {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.oneNotrump", "basic", "Open 1NT with 15-17 HCP and a balanced hand.", extra);
         }
@@ -101,7 +103,7 @@
           return fiveCardHighBidChoiceResult(chosenBid, "opening.twoNotrump", "basic", "Open 2NT with 20-22 HCP and a balanced hand.", extra);
         }
         if (bidEquals(chosenBid, 2, "C")) {
-          return fiveCardHighBidChoiceResult(chosenBid, "opening.strongTwoClubs", "basic", "Open a strong artificial 2C with a very strong hand.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "opening.strongTwoClubs", "basic", "Open a strong artificial 2C with a very strong hand or a long suit with at least eight playing tricks.", extra);
         }
         if (chosenBid.level === 2 && ["D", "H", "S"].includes(chosenBid.strain)) {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.weakTwo", "basic", "Open a weak two with 6-10 HCP and a good six-card suit.", extra);

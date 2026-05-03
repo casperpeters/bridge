@@ -34,6 +34,196 @@ test("Vijfkaart Hoog responder shows a strong 5-4 major hand after opener rebids
   assert.equal(result.ruleId, "fiveCardHigh.continuation.responderStrongSecondMajor");
 });
 
+test("Vijfkaart Hoog opener rebids after a strong 2C opening and 2D waiting response", () => {
+  const strongTwoClubsWaiting = [
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "D") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const longSpades = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "JS", "6S", "4S", "2S",
+    "TH",
+    "QD", "9D",
+    "KC", "QC", "JC"
+  ], strongTwoClubsWaiting);
+  assert.deepEqual(longSpades.bid, bid(2, "S"));
+  assert.equal(longSpades.ruleId, "fiveCardHigh.continuation.strongTwoClubsSuitRebid");
+
+  const extraLongHearts = chooseFiveCardHighResult([
+    "KS", "QS",
+    "AH", "KH", "JH", "TH", "5H", "4H",
+    "AD", "KD", "QD", "8D",
+    "AC"
+  ], strongTwoClubsWaiting);
+  assert.deepEqual(extraLongHearts.bid, bid(3, "H"));
+  assert.equal(extraLongHearts.ruleId, "fiveCardHigh.continuation.strongTwoClubsJumpRebid");
+
+  const balancedTwentyFour = chooseFiveCardHighResult([
+    "AS", "QS", "6S",
+    "AH", "KH", "JH", "9H",
+    "AD", "KD",
+    "QC", "JC", "4C", "3C"
+  ], strongTwoClubsWaiting);
+  assert.deepEqual(balancedTwentyFour.bid, bid(2, "NT"));
+  assert.equal(balancedTwentyFour.ruleId, "fiveCardHigh.continuation.strongTwoClubsNotrumpRebid");
+
+  const balancedThirty = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "8S",
+    "AH", "KH", "7H",
+    "AD", "KD",
+    "AC", "QC", "JC", "7C"
+  ], strongTwoClubsWaiting);
+  assert.deepEqual(balancedThirty.bid, bid(3, "NT"));
+  assert.equal(balancedThirty.ruleId, "fiveCardHigh.continuation.strongTwoClubsNotrumpRebid");
+
+  const ordinarySixHearts = chooseFiveCardHighResult([
+    "AS", "QS",
+    "AH", "KH", "JH", "TH", "5H", "4H",
+    "QD", "8D",
+    "KC", "4C", "3C"
+  ], strongTwoClubsWaiting);
+  assert.deepEqual(ordinarySixHearts.bid, bid(2, "H"));
+  assert.equal(ordinarySixHearts.ruleId, "fiveCardHigh.continuation.strongTwoClubsSuitRebid");
+});
+
+test("Vijfkaart Hoog opener rebids after a strong 2C opening and a positive suit response", () => {
+  const positiveHearts = [
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() }
+  ];
+  const positiveSpades = [
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "S") },
+    { seat: "East", bid: pass() }
+  ];
+  const positiveClubs = [
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "C") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const heartSupport = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "AH", "KH", "2H",
+    "AD", "KD", "QD",
+    "AC", "KC", "QC", "2C"
+  ], positiveHearts);
+  assert.deepEqual(heartSupport.bid, bid(4, "H"));
+  assert.equal(heartSupport.ruleId, "fiveCardHigh.continuation.strongTwoClubsPositiveMajorSupport");
+
+  const spadeSupport = chooseFiveCardHighResult([
+    "AS", "KS", "2S",
+    "AH", "KH", "QH",
+    "AD", "KD", "QD",
+    "AC", "KC", "QC", "2C"
+  ], positiveSpades);
+  assert.deepEqual(spadeSupport.bid, bid(4, "S"));
+  assert.equal(spadeSupport.ruleId, "fiveCardHigh.continuation.strongTwoClubsPositiveMajorSupport");
+
+  const balancedTwentyFour = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "KH", "2H",
+    "AD", "KD", "QD",
+    "QC", "JC", "4C", "3C", "2C"
+  ], positiveHearts);
+  assert.deepEqual(balancedTwentyFour.bid, bid(2, "NT"));
+  assert.equal(balancedTwentyFour.ruleId, "fiveCardHigh.continuation.strongTwoClubsPositiveNotrumpRebid");
+
+  const balancedTwentyFourAfterThreeClubs = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "KH", "JH", "2H",
+    "AD", "KD", "QD",
+    "QC", "4C", "3C", "2C"
+  ], positiveClubs);
+  assert.deepEqual(balancedTwentyFourAfterThreeClubs.bid, bid(3, "NT"));
+  assert.equal(balancedTwentyFourAfterThreeClubs.ruleId, "fiveCardHigh.continuation.strongTwoClubsPositiveNotrumpGame");
+
+  const ownLongHearts = chooseFiveCardHighResult([
+    "AS", "KS",
+    "AH", "KH", "QH", "JH", "5H", "4H",
+    "AD", "KD", "QD",
+    "AC", "2C"
+  ], positiveSpades);
+  assert.deepEqual(ownLongHearts.bid, bid(3, "H"));
+  assert.equal(ownLongHearts.ruleId, "fiveCardHigh.continuation.strongTwoClubsPositiveSuitRebid");
+});
+
+test("Vijfkaart Hoog treats 2NT after a strong 2C positive response like a 2NT opening", () => {
+  const strongTwoClubsThenTwoNotrump = [
+    { seat: "South", bid: bid(2, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const transferToHearts = chooseFiveCardHighResult([
+    "7S", "6S",
+    "AH", "KH", "QH", "7H", "6H",
+    "7D", "6D", "5D",
+    "4C", "3C", "2C"
+  ], strongTwoClubsThenTwoNotrump, "North");
+  assert.deepEqual(transferToHearts.bid, bid(3, "D"));
+  assert.equal(transferToHearts.ruleId, "fiveCardHigh.continuation.strongTwoClubsTwoNotrumpTransferToH");
+
+  const stayman = chooseFiveCardHighResult([
+    "QS", "JS", "7S", "6S",
+    "QH", "7H", "6H",
+    "AD", "7D", "6D",
+    "4C", "3C", "2C"
+  ], strongTwoClubsThenTwoNotrump, "North");
+  assert.deepEqual(stayman.bid, bid(3, "C"));
+  assert.equal(stayman.ruleId, "fiveCardHigh.continuation.strongTwoClubsTwoNotrumpStayman");
+
+  const acceptTransfer = chooseFiveCardHighResult([
+    "AS", "KS", "QS",
+    "KH", "2H",
+    "AD", "KD", "QD",
+    "QC", "JC", "4C", "3C", "2C"
+  ], [
+    ...strongTwoClubsThenTwoNotrump,
+    { seat: "North", bid: bid(3, "D") },
+    { seat: "East", bid: pass() }
+  ], "South");
+  assert.deepEqual(acceptTransfer.bid, bid(3, "H"));
+  assert.equal(acceptTransfer.ruleId, "fiveCardHigh.continuation.strongTwoClubsTwoNotrumpAcceptTransfer");
+
+  const answerStayman = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "2S",
+    "KH", "2H",
+    "AD", "KD", "QD",
+    "QC", "JC", "4C", "3C"
+  ], [
+    ...strongTwoClubsThenTwoNotrump,
+    { seat: "North", bid: bid(3, "C") },
+    { seat: "East", bid: pass() }
+  ], "South");
+  assert.deepEqual(answerStayman.bid, bid(3, "S"));
+  assert.equal(answerStayman.ruleId, "fiveCardHigh.continuation.strongTwoClubsTwoNotrumpStaymanAnswer");
+
+  const responderSecondBid = chooseFiveCardHighResult([
+    "7S", "6S",
+    "AH", "KH", "QH", "7H", "6H",
+    "7D", "6D", "5D",
+    "4C", "3C", "2C"
+  ], [
+    ...strongTwoClubsThenTwoNotrump,
+    { seat: "North", bid: bid(3, "D") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "H") },
+    { seat: "West", bid: pass() }
+  ], "North");
+  assert.deepEqual(responderSecondBid.bid, bid(3, "NT"));
+  assert.equal(responderSecondBid.ruleId, "fiveCardHigh.continuation.responderAfterTransferNotrumpGame");
+});
+
 test("Vijfkaart Hoog opener rebids simply after responder's new suit to a major opening", () => {
   const oneSpadeTwoHearts = [
     { seat: "South", bid: bid(1, "S") },
@@ -823,6 +1013,133 @@ test("Vijfkaart Hoog explains responder rebids after a Jacoby transfer", () => {
   ], oneNotrumpHeartTransfer);
   assert.deepEqual(gameWithSix.bid, bid(4, "H"));
   assert.equal(gameWithSix.ruleId, "fiveCardHigh.continuation.responderAfterTransferSixCardGame");
+});
+
+test("Vijfkaart Hoog explains responder rebids after a Jacoby transfer over 2NT", () => {
+  const twoNotrumpHeartTransfer = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "H") },
+    { seat: "East", bid: pass() }
+  ];
+  const twoNotrumpSpadeTransfer = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const weakFiveHearts = chooseFiveCardHighResult([
+    "2S", "3S", "4S",
+    "2H", "3H", "4H", "5H", "6H",
+    "2D", "3D",
+    "2C", "3C", "4C"
+  ], twoNotrumpHeartTransfer);
+  assert.deepEqual(weakFiveHearts.bid, pass());
+  assert.equal(weakFiveHearts.ruleId, "fiveCardHigh.pass.responderAfterTransferMinimum");
+  assert.equal(weakFiveHearts.range, "0-3");
+
+  const gameFiveHearts = chooseFiveCardHighResult([
+    "AS", "2S", "3S",
+    "2H", "3H", "4H", "5H", "6H",
+    "2D", "3D",
+    "2C", "3C", "4C"
+  ], twoNotrumpHeartTransfer);
+  assert.deepEqual(gameFiveHearts.bid, bid(3, "NT"));
+  assert.equal(gameFiveHearts.ruleId, "fiveCardHigh.continuation.responderAfterTransferNotrumpGame");
+  assert.equal(gameFiveHearts.range, "4+");
+
+  const gameSixHearts = chooseFiveCardHighResult([
+    "2S", "3S",
+    "KH", "JH", "2H", "3H", "4H", "5H",
+    "2D", "3D",
+    "2C", "3C", "4C"
+  ], twoNotrumpHeartTransfer);
+  assert.deepEqual(gameSixHearts.bid, bid(4, "H"));
+  assert.equal(gameSixHearts.ruleId, "fiveCardHigh.continuation.responderAfterTransferSixCardGame");
+  assert.equal(gameSixHearts.range, "4+");
+
+  const fiveSpadesFourHearts = chooseFiveCardHighResult([
+    "AS", "2S", "3S", "4S", "5S",
+    "2H", "3H", "4H", "5H",
+    "2D", "3D",
+    "2C", "3C"
+  ], twoNotrumpSpadeTransfer);
+  assert.deepEqual(fiveSpadesFourHearts.bid, bid(3, "NT"));
+  assert.equal(fiveSpadesFourHearts.ruleId, "fiveCardHigh.continuation.responderAfterTransferNotrumpGame");
+  assert.equal(fiveSpadesFourHearts.otherMajorLength, 4);
+});
+
+test("Vijfkaart Hoog matches lesson examples for Jacoby transfers over 2NT", () => {
+  const twoNotrumpOpening = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+  const heartTransferAccepted = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "H") },
+    { seat: "East", bid: pass() }
+  ];
+  const spadeTransferAccepted = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(3, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const hand1WeakFiveHearts = [
+    "8S", "3S",
+    "TH", "9H", "6H", "5H", "2H",
+    "8D", "7D",
+    "JC", "TC", "8C", "2C"
+  ];
+  const hand1Response = chooseFiveCardHighResult(hand1WeakFiveHearts, twoNotrumpOpening);
+  assert.deepEqual(hand1Response.bid, bid(3, "D"));
+  assert.equal(hand1Response.ruleId, "fiveCardHigh.response.transferToH");
+  assert.equal(hand1Response.length, 5);
+  const hand1Rebid = chooseFiveCardHighResult(hand1WeakFiveHearts, heartTransferAccepted);
+  assert.deepEqual(hand1Rebid.bid, pass());
+  assert.equal(hand1Rebid.ruleId, "fiveCardHigh.pass.responderAfterTransferMinimum");
+  assert.equal(hand1Rebid.range, "0-3");
+
+  const hand2SixSpades = [
+    "JS", "TS", "8S", "7S", "5S", "4S",
+    "KH", "JH", "9H",
+    "JD", "9D", "4D",
+    "3C"
+  ];
+  const hand2Response = chooseFiveCardHighResult(hand2SixSpades, twoNotrumpOpening);
+  assert.deepEqual(hand2Response.bid, bid(3, "H"));
+  assert.equal(hand2Response.ruleId, "fiveCardHigh.response.transferToS");
+  assert.equal(hand2Response.length, 6);
+  const hand2Rebid = chooseFiveCardHighResult(hand2SixSpades, spadeTransferAccepted);
+  assert.deepEqual(hand2Rebid.bid, bid(4, "S"));
+  assert.equal(hand2Rebid.ruleId, "fiveCardHigh.continuation.responderAfterTransferSixCardGame");
+  assert.equal(hand2Rebid.range, "4+");
+
+  const hand3GameFiveHearts = [
+    "9S", "3S",
+    "QH", "JH", "6H", "5H", "2H",
+    "KD", "9D", "8D", "6D",
+    "8C", "2C"
+  ];
+  const hand3Response = chooseFiveCardHighResult(hand3GameFiveHearts, twoNotrumpOpening);
+  assert.deepEqual(hand3Response.bid, bid(3, "D"));
+  assert.equal(hand3Response.ruleId, "fiveCardHigh.response.transferToH");
+  assert.equal(hand3Response.length, 5);
+  const hand3Rebid = chooseFiveCardHighResult(hand3GameFiveHearts, heartTransferAccepted);
+  assert.deepEqual(hand3Rebid.bid, bid(3, "NT"));
+  assert.equal(hand3Rebid.ruleId, "fiveCardHigh.continuation.responderAfterTransferNotrumpGame");
+  assert.equal(hand3Rebid.range, "4+");
 });
 
 test("Vijfkaart Hoog explains opener choices after a Jacoby transfer invite", () => {

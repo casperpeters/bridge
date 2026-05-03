@@ -196,6 +196,30 @@ test("Vijfkaart Hoog bid results expose detailed opening explanation data", () =
   assert.equal(strongTwoClubs.ruleId, "fiveCardHigh.opening.strongTwoClubs");
   assert.equal(strongTwoClubs.points >= 20, true);
 
+  const strongTwoClubsPlayingTricks = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "JS", "TS", "9S", "8S",
+    "AH", "2H",
+    "2D", "3D",
+    "2C", "3C"
+  ]);
+  assert.equal(strongTwoClubsPlayingTricks.ruleId, "fiveCardHigh.opening.strongTwoClubs");
+  assert.equal(strongTwoClubsPlayingTricks.hcp < 20, true);
+  assert.equal(strongTwoClubsPlayingTricks.points < 20, true);
+  assert.equal(strongTwoClubsPlayingTricks.playingTricksEligible, true);
+  assert.equal(strongTwoClubsPlayingTricks.playingTricks, 8);
+  assert.equal(strongTwoClubsPlayingTricks.longSuit, "S");
+  assert.equal(strongTwoClubsPlayingTricks.longSuitLength, 7);
+
+  const notEnoughPlayingTricks = chooseFiveCardHighResult([
+    "AS", "KS", "QS", "JS", "TS", "9S", "8S",
+    "2H", "3H",
+    "2D", "3D",
+    "2C", "3C"
+  ]);
+  assert.equal(notEnoughPlayingTricks.ruleId, "fiveCardHigh.opening.preempt");
+  assert.equal(notEnoughPlayingTricks.playingTricksEligible, false);
+  assert.equal(notEnoughPlayingTricks.playingTricks, 7);
+
   const weakTwo = chooseFiveCardHighResult([
     "2S", "3S", "4S",
     "2H", "3H",

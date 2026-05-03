@@ -24,7 +24,7 @@
 
   const { suits, biddingSystems, handShape } = core;
   const { Pass, bid, bidEquals, gameLevel, cheapestLevelForStrain } = auction;
-  const { fitStrength, fitValuationContext, optionalFitValuationContext, suitQuality } = valuationHelpers;
+  const { fitStrength, fitValuationContext, optionalFitValuationContext, suitQuality, topHonorQuality } = valuationHelpers;
   const { bidChoiceResult } = resultHelpers;
   const {
     notrumpTransferSuit,
@@ -69,14 +69,14 @@
         const transferMajor = chooseMajorByLength(shape, 5);
         if (transferMajor === "H") return bid(3, "D");
         if (transferMajor === "S") return bid(3, "H");
-        if (hasFourCardMajor(shape) && shape.hcp >= 1) return bid(3, "C");
+        if (hasFourCardMajor(shape) && shape.hcp >= 4) return bid(3, "C");
         if (shape.hcp >= 4) return bid(3, "NT");
         return Pass();
       }
 
   function respondToStrongTwoClubsFiveCardHigh(shape, hand) {
         if (shape.hcp <= 7) return bid(2, "D");
-        const suit = chooseSuitByLengthThenRank(["S", "H", "D", "C"], shape, 5, true, (candidate) => suitQuality(hand, candidate) >= 2);
+        const suit = chooseSuitByLengthThenRank(["S", "H", "D", "C"], shape, 5, true, (candidate) => topHonorQuality(hand, candidate) >= 2);
         if (suit === "H" || suit === "S") return bid(2, suit);
         if (suit === "C" || suit === "D") return bid(3, suit);
         return bid(2, "NT");
@@ -192,7 +192,10 @@
           if (bidEquals(chosenBid, 2, "D")) {
             return fiveCardHighBidChoiceResult(chosenBid, "response.strongTwoClubsWaiting", "basic", "Make the waiting response to partner's strong 2C opening.", extra);
           }
-          return fiveCardHighBidChoiceResult(chosenBid, "response.strongTwoClubsPositive", "basic", "Show a positive response to partner's strong 2C opening.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "response.strongTwoClubsPositive", "basic", "Show a positive response to partner's strong 2C opening with a five-card suit and at least two top honors.", {
+            ...extra,
+            topHonors: chosenBid.strain && chosenBid.strain !== "NT" ? topHonorQuality(hand, chosenBid.strain) : 0
+          });
         }
 
         if (isWeakTwoOpeningFiveCardHigh(partnerBid) || (partnerBid?.level >= 3 && partnerBid.strain !== "NT")) {

@@ -41,6 +41,10 @@
     return hand.filter((card) => card.suit === suit && hcpValue[card.rank]).length;
   }
 
+  function topHonorQuality(hand, suit) {
+    return hand.filter((card) => card.suit === suit && (card.rank === "A" || card.rank === "K" || card.rank === "Q")).length;
+  }
+
   function ruleOf20OpeningContext(shape, hand) {
     const longSuits = twoLongestSuitsForRuleOf20(shape, hand);
     const longSuitLength = longSuits.reduce((sum, suit) => sum + (shape.counts[suit] || 0), 0);
@@ -76,15 +80,64 @@
     return ranks.has("A") || (ranks.has("K") && cards.length >= 2) || (ranks.has("Q") && cards.length >= 3) || (ranks.has("J") && cards.length >= 4);
   }
 
+  function strongTwoClubsPlayingTricksContext(shape, hand) {
+    const candidates = [...suits]
+      .filter((suit) => (shape.counts[suit] || 0) >= 6)
+      .map((suit) => ({
+        suit,
+        length: shape.counts[suit] || 0,
+        longSuitPlayingTricks: playingTricksInLongSuit(hand, suit),
+        playingTricks: playingTricksInLongSuit(hand, suit) + outsideAces(hand, suit),
+        suitHcp: hcpInSuit(hand, suit)
+      }))
+      .sort((a, b) => {
+        const playingDiff = b.playingTricks - a.playingTricks;
+        if (playingDiff) return playingDiff;
+        const lengthDiff = b.length - a.length;
+        if (lengthDiff) return lengthDiff;
+        const hcpDiff = b.suitHcp - a.suitHcp;
+        if (hcpDiff) return hcpDiff;
+        return bidStrains.indexOf(b.suit) - bidStrains.indexOf(a.suit);
+      });
+    const best = candidates[0] || null;
+    return {
+      playingTricks: best?.playingTricks || 0,
+      longSuitPlayingTricks: best?.longSuitPlayingTricks || 0,
+      outsideAces: best ? outsideAces(hand, best.suit) : 0,
+      longSuit: best?.suit || null,
+      longSuitLength: best?.length || 0,
+      playingTricksEligible: Boolean(best && best.playingTricks >= 8)
+    };
+  }
+
+  function playingTricksInLongSuit(hand, suit) {
+    const cards = hand.filter((card) => card.suit === suit);
+    const length = cards.length;
+    if (!length) return 0;
+    const ranks = new Set(cards.map((card) => card.rank));
+    let missingTopHonors = 0;
+    if (!ranks.has("A")) missingTopHonors += 1;
+    if (!ranks.has("K")) missingTopHonors += 1;
+    if (!ranks.has("Q")) missingTopHonors += 1;
+    return Math.max(0, length - missingTopHonors);
+  }
+
+  function outsideAces(hand, longSuit) {
+    return hand.filter((card) => card.suit !== longSuit && card.rank === "A").length;
+  }
+
   return {
     fitValuationContext,
     hasConservativeFit,
     fitStrength,
     optionalFitValuationContext,
     suitQuality,
+    topHonorQuality,
     ruleOf20OpeningContext,
     twoLongestSuitsForRuleOf20,
     hcpInSuit,
-    hasStopper
+    hasStopper,
+    strongTwoClubsPlayingTricksContext,
+    playingTricksInLongSuit
   };
 });

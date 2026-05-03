@@ -62,6 +62,33 @@ test("Vijfkaart Hoog does not raise a 1C opening with only four clubs", () => {
   ], auction), bid(1, "NT"));
 });
 
+test("Vijfkaart Hoog positive response to strong 2C needs two top honors in the suit", () => {
+  const auction = [
+    { seat: "North", bid: bid(2, "C") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const twoTopHonors = chooseFiveCardHighResult([
+    "KS", "2S",
+    "AH", "QH", "7H", "5H", "3H",
+    "2D", "3D",
+    "2C", "3C", "4C", "5C"
+  ], auction);
+  assert.deepEqual(twoTopHonors.bid, bid(2, "H"));
+  assert.equal(twoTopHonors.ruleId, "fiveCardHigh.response.strongTwoClubsPositive");
+  assert.equal(twoTopHonors.topHonors, 2);
+
+  const onlyOneTopHonor = chooseFiveCardHighResult([
+    "AS", "2S",
+    "KH", "JH", "7H", "5H", "3H",
+    "KD", "2D", "3D",
+    "2C", "3C", "4C"
+  ], auction);
+  assert.deepEqual(onlyOneTopHonor.bid, bid(2, "NT"));
+  assert.equal(onlyOneTopHonor.ruleId, "fiveCardHigh.response.strongTwoClubsPositive");
+  assert.equal(onlyOneTopHonor.topHonors, 0);
+});
+
 test("Vijfkaart Hoog responds 4C to 1C with strong unbalanced club support and no new one-level suit", () => {
   const auction = [
     { seat: "North", bid: bid(1, "C") },
@@ -272,4 +299,30 @@ test("Vijfkaart Hoog bid results expose detailed response and competitive explan
     { seat: "East", bid: bid(1, "D") }
   ]);
   assert.equal(takeout.ruleId, "fiveCardHigh.competitive.takeoutDouble");
+});
+
+test("Vijfkaart Hoog uses Stayman over a 2NT opening from 4 HCP", () => {
+  const twoNotrumpAuction = [
+    { seat: "North", bid: bid(2, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const tooWeakForStayman = chooseFiveCardHighResult([
+    "QS", "2S", "3S", "4S",
+    "JH", "2H", "3H",
+    "2D", "3D", "4D",
+    "2C", "3C", "4C"
+  ], twoNotrumpAuction);
+  assert.deepEqual(tooWeakForStayman.bid, pass());
+  assert.equal(tooWeakForStayman.ruleId, "fiveCardHigh.pass.responseNoAction");
+
+  const stayman = chooseFiveCardHighResult([
+    "KS", "2S", "3S", "4S",
+    "JH", "2H", "3H",
+    "2D", "3D", "4D",
+    "2C", "3C", "4C"
+  ], twoNotrumpAuction);
+  assert.deepEqual(stayman.bid, bid(3, "C"));
+  assert.equal(stayman.ruleId, "fiveCardHigh.response.stayman");
+  assert.equal(stayman.hcp, 4);
 });

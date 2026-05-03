@@ -54,6 +54,7 @@ const BridgeGlossary = (() => {
     ["Stayman", "Afspraak na een SA-opening: 2 klaveren vraagt partner of hij een vierkaart harten of schoppen heeft. Je gebruikt dit om eerst een 4-4 fit in een hoge kleur te zoeken voordat je SA als eindcontract kiest.", ["Staymanconventie", "Stayman-conventie"]],
     ["Stopper", "Een kaart of combinatie waarmee je voorkomt dat de tegenpartij meteen alle slagen in een kleur kan maken, vooral belangrijk in sans-atout.", ["dekking"]],
     ["Tegenspelers", "De twee spelers van het paar dat probeert te voorkomen dat de leider zijn contract maakt."],
+    ["Tophonneur", "Een van de hoogste honneurs in een kleur: Aas, Heer of Vrouw. Voor sommige biedafspraken telt een goede kleur pas als je minstens twee tophonneurs hebt.", ["tophonneurs"]],
     ["Troef", "De kleur van de speelsoort. Als de speelsoort SA is, is er geen troef.", ["troeven", "troeft"]],
     ["Troef trekken", "Als leider troef spelen totdat de tegenpartij geen of weinig troeven meer heeft. Zo voorkom je vaak dat zij later jouw hoge kaarten kunnen aftroeven.", ["troeftrekken"]],
     ["Tweekleurenspel", "Een hand met twee lange kleuren, minstens een vijfkaart en een vierkaart."],

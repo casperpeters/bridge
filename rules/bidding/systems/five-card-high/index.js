@@ -383,7 +383,7 @@
             });
           }
         }
-        const transferSuit = openingCall?.seat === partnerOf(seat) && bidEquals(openingCall?.bid, 1, "NT")
+        const transferSuit = openingCall?.seat === partnerOf(seat) && (bidEquals(openingCall?.bid, 1, "NT") || bidEquals(openingCall?.bid, 2, "NT"))
           ? notrumpTransferSuit(openingCall.bid, responseCall?.bid)
           : null;
         if (transferSuit) {
@@ -391,10 +391,11 @@
             ...base,
             category: "continuation",
             convention: "jacobyTransfer",
+            openingLevel: openingCall.bid.level,
             transferSuit,
             suit: transferSuit,
             length: shape.counts[transferSuit] || 0,
-            range: "0-7"
+            range: openingCall.bid.level === 2 ? "0-3" : "0-7"
           });
         }
 
