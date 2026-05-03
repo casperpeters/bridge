@@ -21,9 +21,16 @@
   box-sizing: border-box;
 }
 
+html {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(circle at 25% 12%, rgba(96, 197, 185, 0.16), transparent 28%),
     linear-gradient(135deg, #171816 0%, #21241f 52%, #101614 100%);
@@ -333,6 +340,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
   transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
@@ -792,6 +800,7 @@ button:disabled {
   width: 100%;
   border-radius: 8px;
   transition: filter 180ms ease, opacity 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  touch-action: pan-y;
 }
 
 .hand.inactive-play-hand {
@@ -828,6 +837,7 @@ button:disabled {
   padding: 8px;
   flex: 0 0 auto;
   user-select: none;
+  touch-action: pan-y;
   position: relative;
   transform: translateY(18px);
   opacity: 0;
@@ -2380,6 +2390,15 @@ button:disabled {
   .app-shell {
     padding: 10px;
     gap: 10px;
+    display: block;
+    height: auto !important;
+    min-height: 100svh;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .app-shell > * + * {
+    margin-top: 10px;
   }
 
   .topbar {
@@ -2431,6 +2450,10 @@ button:disabled {
     padding: 9px;
     gap: 8px;
     grid-template-rows: auto minmax(210px, auto) auto;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    touch-action: pan-y;
   }
 
   .middle-row {
@@ -2506,6 +2529,7 @@ button:disabled {
   .side-panel {
     grid-template-columns: 1fr;
     gap: 10px;
+    display: grid;
   }
 
   .side-panel:has(.history-panel:not([hidden])) .history-panel,
@@ -2529,6 +2553,28 @@ button:disabled {
   .history-panel,
   .review-panel {
     padding: 11px;
+    overscroll-behavior: auto;
+  }
+
+  .auction-panel,
+  .history-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .history-panel,
+  .history-panel:has(.play-explanations:not([hidden])) {
+    display: block;
+  }
+
+  .history,
+  .play-explanations {
+    overflow: visible;
+  }
+
+  .review-panel {
+    max-height: calc(100svh - 20px);
+    overflow: auto;
   }
 
   .review-row {

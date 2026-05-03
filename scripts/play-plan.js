@@ -110,7 +110,8 @@ function playPlanMetricTexts(plan) {
     const develop = plan.needToDevelop ? `nog ${plan.needToDevelop} ontwikkelen` : "genoeg vaste slagen";
     return [`${t("sureWinners")}: ${plan.sureWinners.total}`, develop];
   }
-  return [`${t("loserCount")}: ${plan.losers.total}`, `ruimte: ${plan.losers.allowed}`];
+  const base = plan.losers?.baseSeat ? `telhand: ${seatName(plan.losers.baseSeat)}` : null;
+  return [`${t("loserCount")}: ${plan.losers.total}`, `ruimte: ${plan.losers.allowed}`, base].filter(Boolean);
 }
 
 function playPlanList(label, items, className = "") {
@@ -174,6 +175,9 @@ function playPlanPriorityText(priority) {
     return `Neem de tweerichtingssnit in ${suitName(priority.suit)} richting ${seatName(priority.targetSeat)} naar de ${rank}; deze richting past nu het best bij entrees en lengte.`;
   }
   if (priority.kind === "ruffShortSuit") {
+    if (priority.timing === "prepareBeforeRuff") {
+      return `Bereid een introever in ${suitName(priority.suit)} voor: speel eerst ${priority.preparationNeeded} ronde${priority.preparationNeeded === 1 ? "" : "s"} uit ${seatName(priority.longSeat)}, bewaar minstens ${priority.preserveTrumpCount || 1} troef bij ${seatName(priority.shortSeat)}, en troef daarna aan de korte kant voor een extra slag.`;
+    }
     return `Gebruik de korte ${suitName(priority.suit)} van ${seatName(priority.shortSeat)} om verliezers te troeven; als die hand aan slag is, zoek eerst een entree naar de andere hand.`;
   }
   if (priority.kind === "establishLongSuitByRuffing") {
@@ -234,29 +238,43 @@ function playPlanWarningText(warning) {
 }
 
 function playPlanReferenceText(result) {
-  const plan = state.playPlan;
-  if (!plan || !result?.ruleId) return "";
+  if (!result?.ruleId) return "";
   if (result.planPriority) return ` Dit volgt het speelplan: ${playPlanPriorityText(result.planPriority)}`;
-  const ruleName = result.ruleId.split(".").pop();
-  const matchingPriority = plan.priorities?.find((priority) => {
-    if (priority.suit && result.suit && priority.suit !== result.suit) return false;
-    if (ruleName === "developLongSuit") return priority.kind === "developLongSuit";
-    if (ruleName === "finesseTowardHonor") return priority.kind === "finesse";
-    if (ruleName === "doubleFinesseTowardHonor") return priority.kind === "doubleFinesse";
-    if (ruleName === "holdUpStopper") return priority.kind === "holdUpStopper";
-    if (ruleName === "repeatFinesse") return priority.kind === "repeatFinesse";
-    if (ruleName === "twoWayFinesse") return priority.kind === "twoWayFinesse";
-    if (ruleName === "drawTrumps") return priority.kind === "drawTrumps";
-    if (ruleName === "discardLoserOnWinner") return priority.kind === "discardLoserOnWinner";
-    if (ruleName === "ruffShortSuit") return priority.kind === "ruffShortSuit";
-    if (ruleName === "enterLongTrumpHand") return priority.kind === "ruffShortSuit";
-    if (ruleName === "establishLongSuitByRuffing") return priority.kind === "establishLongSuitByRuffing";
-    if (ruleName === "enterLongSuitHand") return priority.kind === "establishLongSuitByRuffing";
-    if (ruleName === "ruffOutLongSuit") return priority.kind === "establishLongSuitByRuffing";
-    if (ruleName === "cashWinners") return priority.kind === "cashWinners";
-    if (ruleName === "cashSureWinners") return priority.kind === "cashSureWinners";
-    return false;
-  });
-  if (!matchingPriority) return "";
-  return ` Dit volgt het speelplan: ${playPlanPriorityText(matchingPriority)}`;
+  if (result.planFallback) return ` Speelplan wacht: ${playPlanFallbackText(result.planFallback)}`;
+  return "";
+}
+
+function playPlanFallbackText(fallback) {
+  const priority = fallback.priority;
+  const priorityText = playPlanPriorityBriefText(priority);
+  if (fallback.reason === "followSuit") {
+    return `je moet eerst ${suitName(fallback.leadSuit)} bekennen; ${priorityText} is nu niet legaal.`;
+  }
+  if (fallback.reason === "needsOtherHand") {
+    const seat = fallback.waitingForSeat ? seatName(fallback.waitingForSeat) : "de andere hand";
+    return `${priorityText} vraagt eerst ${seat} aan slag.`;
+  }
+  if (fallback.reason === "noPlanSuitCard") {
+    return `${priorityText} kan niet vanuit deze hand.`;
+  }
+  if (fallback.reason === "finishCurrentTrick") {
+    return `maak deze slag eerst af; ${priorityText} kan pas op een passende slag.`;
+  }
+  return `${priorityText} is nu niet direct speelbaar.`;
+}
+
+function playPlanPriorityBriefText(priority) {
+  if (!priority) return "de zichtbare planregel";
+  if (priority.kind === "holdUpStopper") return `ophouden in ${suitName(priority.suit)}`;
+  if (priority.kind === "developLongSuit") return `ontwikkel ${suitName(priority.suit)}`;
+  if (priority.kind === "finesse" || priority.kind === "safeHandFinesse") return `de snit in ${suitName(priority.suit)}`;
+  if (priority.kind === "doubleFinesse") return `de dubbele snit in ${suitName(priority.suit)}`;
+  if (priority.kind === "repeatFinesse") return `de herhaalde snit in ${suitName(priority.suit)}`;
+  if (priority.kind === "twoWayFinesse") return `de tweerichtingssnit in ${suitName(priority.suit)}`;
+  if (priority.kind === "ruffShortSuit") return `de introever in ${suitName(priority.suit)}`;
+  if (priority.kind === "establishLongSuitByRuffing") return `de lange ${suitName(priority.suit)} vrijtroeven`;
+  if (priority.kind === "drawTrumps") return `troef trekken`;
+  if (priority.kind === "discardLoserOnWinner") return `een verliezer weggooien op ${suitName(priority.suit)}`;
+  if (priority.kind === "cashWinners" || priority.kind === "cashSureWinners") return `zekere slagen incasseren`;
+  return "de zichtbare planregel";
 }

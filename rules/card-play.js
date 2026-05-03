@@ -183,37 +183,95 @@
       playPlan,
       legal
     }) {
-      if (currentTrick.length || !playPlan?.priorities?.length) return null;
-      if (!partnerHand?.length || !declarer || !dummy) return null;
-      if (seat !== declarer && seat !== dummy) return null;
+      const decision = choosePlayPlanAction({
+        hand,
+        partnerHand,
+        currentTrick,
+        trickHistory,
+        seat,
+        declarer,
+        dummy,
+        contract,
+        trump,
+        playPlan,
+        legal,
+        winning: currentTrick.length ? currentWinningPlay(currentTrick, trump) : null
+      });
+      return decision.result;
+    }
+
+  function choosePlayPlanAction({
+      hand,
+      partnerHand,
+      currentTrick,
+      trickHistory,
+      seat,
+      declarer,
+      dummy,
+      contract,
+      trump,
+      playPlan,
+      legal,
+      winning = null
+    }) {
+      if (!playPlan?.priorities?.length) return { result: null, fallback: null };
+      if (!partnerHand?.length || !declarer || !dummy) return { result: null, fallback: null };
+      if (seat !== declarer && seat !== dummy) return { result: null, fallback: null };
 
       for (const priority of playPlan.priorities) {
         const result = chooseCardForPlanPriority({
           priority,
           hand,
           partnerHand,
+          currentTrick,
           trickHistory,
           seat,
           contract,
           trump,
-          legal
+          legal,
+          winning
         });
-        if (result) return result;
+        if (result) return { result, fallback: null };
       }
 
-      return null;
+      return {
+        result: null,
+        fallback: describePlayPlanFallback({
+          priority: playPlan.priorities[0],
+          hand,
+          currentTrick,
+          seat,
+          legal
+        })
+      };
     }
 
   function chooseCardForPlanPriority({
       priority,
       hand,
       partnerHand,
+      currentTrick = [],
       trickHistory,
       seat,
       contract,
       trump,
-      legal
+      legal,
+      winning = null
     }) {
+      if (currentTrick.length) {
+        return chooseCardForPlanPriorityInTrick({
+          priority,
+          hand,
+          partnerHand,
+          currentTrick,
+          trickHistory,
+          seat,
+          contract,
+          trump,
+          legal,
+          winning
+        });
+      }
       if (priority.kind === "developLongSuit") {
         return choosePlanDevelopmentPlay({ priority, hand, partnerHand, seat, legal });
       }
@@ -239,6 +297,114 @@
         return choosePlanCashWinnerPlay({ priority, hand, seat, legal });
       }
       return null;
+    }
+
+  function chooseCardForPlanPriorityInTrick({
+      priority,
+      hand,
+      partnerHand,
+      currentTrick,
+      trickHistory,
+      seat,
+      contract,
+      trump,
+      legal,
+      winning
+    }) {
+      if (priority.kind === "holdUpStopper") {
+        return choosePlanHoldUpPlay({ playPlan: { priorities: [priority] }, hand, currentTrick, seat, trump, legal, winning });
+      }
+      if (priority.kind === "developLongSuit") {
+        const preserveEntry = choosePlanPreserveWorkSuitEntryPlay({
+          playPlan: { priorities: [priority] },
+          hand,
+          partnerHand,
+          currentTrick,
+          seat,
+          trump,
+          legal,
+          winning
+        });
+        if (preserveEntry) return preserveEntry;
+        return choosePlanDevelopmentInTrickPlay({ priority, hand, partnerHand, currentTrick, seat, legal });
+      }
+      if (priority.kind === "finesse" || priority.kind === "doubleFinesse" || priority.kind === "safeHandFinesse") {
+        return choosePlanFinesseInTrickPlay({ priority, currentTrick, seat, trump, legal, winning });
+      }
+      if (priority.kind === "repeatFinesse" || priority.kind === "twoWayFinesse") {
+        return choosePlanDirectionalFinesseInTrickPlay({ priority, currentTrick, seat, trump, legal, winning });
+      }
+      if (priority.kind === "ruffShortSuit" || priority.kind === "establishLongSuitByRuffing") {
+        return choosePlanRuffInTrickPlay({ playPlan: { priorities: [priority] }, hand, currentTrick, seat, trump, legal, winning });
+      }
+      if (priority.kind === "discardLoserOnWinner") {
+        return choosePlanDiscardLoserOnWinnerInTrickPlay({ priority, hand, currentTrick, seat, trump, legal, winning });
+      }
+      if (priority.kind === "drawTrumps") {
+        return choosePlanDrawTrumpsInTrickPlay({ priority, contract, currentTrick, seat, legal, winning });
+      }
+      if (priority.kind === "cashWinners" || priority.kind === "cashSureWinners") {
+        return choosePlanCashWinnerInTrickPlay({ priority, currentTrick, seat, trump, legal, winning });
+      }
+      return null;
+    }
+
+  function describePlayPlanFallback({ priority, hand, currentTrick, seat, legal }) {
+      if (!priority) return null;
+      const fallback = {
+        priority,
+        reason: "notPlayableNow",
+        seat
+      };
+      if (currentTrick.length) {
+        const leadSuit = currentTrick[0].card.suit;
+        fallback.leadSuit = leadSuit;
+        if (cardsInSuit(hand, leadSuit).length && priority.suit && priority.suit !== leadSuit) {
+          fallback.reason = "followSuit";
+          return fallback;
+        }
+        if (priority.leadSeat && priority.leadSeat !== seat) {
+          fallback.reason = "needsOtherHand";
+          fallback.waitingForSeat = priority.leadSeat;
+          return fallback;
+        }
+        if (priority.targetSeat && priority.targetSeat !== seat && priority.kind !== "discardLoserOnWinner") {
+          fallback.reason = "needsOtherHand";
+          fallback.waitingForSeat = priority.targetSeat;
+          return fallback;
+        }
+        fallback.reason = "finishCurrentTrick";
+        return fallback;
+      }
+
+      if (priority.leadSeat && priority.leadSeat !== seat) {
+        fallback.reason = "needsOtherHand";
+        fallback.waitingForSeat = priority.leadSeat;
+        return fallback;
+      }
+      if (priority.firstSeat && priority.firstSeat !== seat) {
+        fallback.reason = "needsOtherHand";
+        fallback.waitingForSeat = priority.firstSeat;
+        return fallback;
+      }
+      if (priority.longSeat && priority.longSeat !== seat && priority.shortSeat !== seat) {
+        fallback.reason = "needsOtherHand";
+        fallback.waitingForSeat = priority.longSeat;
+        return fallback;
+      }
+      if (priority.suit && !cardsInSuit(legal, priority.suit).length) {
+        fallback.reason = "noPlanSuitCard";
+        return fallback;
+      }
+      return fallback;
+    }
+
+  function withPlayPlanFallback(result, decision) {
+      if (!result || result.planPriority || !decision?.fallback) return result;
+      return {
+        ...result,
+        planFallback: decision.fallback
+      };
     }
 
   function choosePlanHoldUpPlay({ playPlan, hand, currentTrick, seat, trump, legal, winning }) {
@@ -446,6 +612,39 @@
       );
     }
 
+  function choosePlanDevelopmentInTrickPlay({ priority, hand, partnerHand, currentTrick, seat, legal }) {
+      if (!currentTrick.length || currentTrick[0].card.suit !== priority.suit) return null;
+      if (priority.sourceSeat !== seat) return null;
+
+      const suitCards = cardsInSuit(hand, priority.suit);
+      const preferred = priority.sequence
+        ? suitCards.find((item) => priority.sequence.startsWith(item.rank))
+        : null;
+      const card = legalPlanCard(preferred || highestCard(suitCards), legal);
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "playPlan.developLongSuit",
+        priority.confidence || "uncertain",
+        "Follow the visible play plan by playing from the long notrump suit after it is led.",
+        {
+          planPriority: priority,
+          suit: priority.suit,
+          suitLength: priority.suitLength,
+          sourceSeat: priority.sourceSeat,
+          sourceLength: priority.sourceLength,
+          sequence: priority.sequence,
+          missingStopper: priority.missingStopper,
+          action: "continueWorkSuit",
+          targetSeat: seat,
+          targetLength: suitCards.length,
+          timing: priority.timing || null,
+          sameSuitEntryCount: priority.sameSuitEntryCount || 0
+        }
+      );
+    }
+
   function choosePlanFinessePlay({ priority, hand, partnerHand, trickHistory, seat, legal }) {
       const partnerSeat = partnerOf(seat);
       if (priority.leadSeat && priority.leadSeat !== seat) return null;
@@ -475,7 +674,7 @@
         card,
         priority.kind === "safeHandFinesse" ? "playPlan.safeHandFinesse" : `playPlan.${candidate.ruleId}`,
         priority.confidence || "uncertain",
-        candidate.reason,
+        priority.reason || candidate.reason,
         {
           planPriority: priority,
           suit: candidate.suit,
@@ -492,6 +691,45 @@
           dangerousSeat: priority.dangerousSeat || null,
           attackedSuit: priority.attackedSuit || null,
           action: candidate.action
+        }
+      );
+    }
+
+  function choosePlanFinesseInTrickPlay({ priority, currentTrick, seat, trump, legal, winning }) {
+      if (!currentTrick.length || currentTrick[0].card.suit !== priority.suit) return null;
+      if (priority.targetSeat !== seat) return null;
+
+      const suitedLegal = cardsInSuit(legal, priority.suit);
+      const finesseCard = legalPlanCard(suitedLegal.find((item) => item.rank === priority.finesseRank), legal);
+      if (!finesseCard) return null;
+      if (winning && teamOf(winning.seat) !== teamOf(seat) && !beats(finesseCard, winning.card, priority.suit, trump)) return null;
+
+      const ruleId = priority.kind === "doubleFinesse"
+        ? "playPlan.doubleFinesseTowardHonor"
+        : priority.kind === "safeHandFinesse"
+          ? "playPlan.safeHandFinesse"
+          : "playPlan.finesseTowardHonor";
+      return cardPlayResult(
+        finesseCard,
+        ruleId,
+        priority.confidence || "uncertain",
+        "Follow the visible play plan by completing the finesse in the target hand.",
+        {
+          planPriority: priority,
+          suit: priority.suit,
+          targetSeat: priority.targetSeat,
+          targetLength: suitedLegal.length,
+          finesseRank: priority.finesseRank,
+          missingHonor: priority.missingHonor,
+          missingHonors: priority.missingHonors,
+          guardRanks: priority.guardRanks,
+          entryType: priority.entryType,
+          entrySuit: priority.entrySuit,
+          entryRank: priority.entryRank,
+          safeSeat: priority.safeSeat || null,
+          dangerousSeat: priority.dangerousSeat || null,
+          attackedSuit: priority.attackedSuit || null,
+          action: "completeFinesse"
         }
       );
     }
@@ -528,10 +766,48 @@
       );
     }
 
+  function choosePlanDirectionalFinesseInTrickPlay({ priority, currentTrick, seat, trump, legal, winning }) {
+      if (!currentTrick.length || currentTrick[0].card.suit !== priority.suit) return null;
+      if (priority.targetSeat !== seat) return null;
+
+      const suitedLegal = cardsInSuit(legal, priority.suit);
+      const finesseCard = legalPlanCard(suitedLegal.find((item) => item.rank === priority.finesseRank), legal);
+      if (!finesseCard) return null;
+      if (winning && teamOf(winning.seat) !== teamOf(seat) && !beats(finesseCard, winning.card, priority.suit, trump)) return null;
+
+      const ruleId = priority.kind === "repeatFinesse" ? "playPlan.repeatFinesse" : "playPlan.twoWayFinesse";
+      const reason = priority.kind === "repeatFinesse"
+        ? "Follow the visible play plan by completing the repeated finesse in the target hand."
+        : "Follow the visible play plan by completing the chosen two-way finesse.";
+      return cardPlayResult(
+        finesseCard,
+        ruleId,
+        priority.confidence || "uncertain",
+        reason,
+        {
+          planPriority: priority,
+          suit: priority.suit,
+          leadSeat: priority.leadSeat,
+          targetSeat: priority.targetSeat,
+          targetLength: suitedLegal.length,
+          finesseRank: priority.finesseRank,
+          missingHonor: priority.missingHonor,
+          previousFinesseRank: priority.previousFinesseRank || null,
+          entryType: priority.entryType || null,
+          entrySuit: priority.entrySuit || null,
+          entryRank: priority.entryRank || null,
+          action: "completeDirectionalFinesse"
+        }
+      );
+    }
+
   function choosePlanRuffPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal }) {
       if (!trump) return null;
       if (priority.shortSeat === seat) {
         return choosePlanRuffEntryPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal });
+      }
+      if (priority.timing === "prepareBeforeRuff" && priority.longSeat === seat) {
+        return choosePlanPrepareShortRuffPlay({ priority, hand, partnerHand, trickHistory, seat, legal });
       }
       if (cardsInSuit(partnerHand, priority.suit).length !== 0) return null;
       if (!cardsInSuit(partnerHand, trump).length) return null;
@@ -549,6 +825,37 @@
           shortSeat: priority.shortSeat,
           trump,
           action: "leadToShortHandRuff"
+        }
+      );
+    }
+
+  function choosePlanPrepareShortRuffPlay({ priority, hand, partnerHand, trickHistory, seat, legal }) {
+      const suitCards = cardsInSuit(hand, priority.suit);
+      const partnerSuitCards = cardsInSuit(partnerHand, priority.suit);
+      if (!suitCards.length || !partnerSuitCards.length) return null;
+
+      const playedSuitCards = cardsInSuit(playedCardsFrom(trickHistory, []), priority.suit);
+      const winnerRanks = visibleTopWinnerRanks([...suitCards, ...partnerSuitCards], playedSuitCards);
+      const winnerCard = winnerRanks
+        .map((rank) => suitCards.find((card) => card.rank === rank))
+        .find(Boolean);
+      const card = legalPlanCard(winnerCard || lowestCard(suitCards), legal);
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "playPlan.prepareShortSuitRuff",
+        priority.confidence || "basic",
+        "Follow the visible play plan by playing the side suit first, so the short trump hand can ruff a later round.",
+        {
+          planPriority: priority,
+          suit: priority.suit,
+          longSeat: seat,
+          shortSeat: priority.shortSeat,
+          preparationNeeded: priority.preparationNeeded || partnerSuitCards.length,
+          shortLength: partnerSuitCards.length,
+          extraTrickValue: true,
+          action: winnerCard ? "cashWinnerBeforeShortRuff" : "loseSideSuitBeforeShortRuff"
         }
       );
     }
@@ -682,8 +989,78 @@
       );
     }
 
+  function choosePlanDiscardLoserOnWinnerInTrickPlay({ priority, hand, currentTrick, seat, trump, legal, winning }) {
+      if (!currentTrick.length || priority.discardSeat !== seat) return null;
+      const leadSuit = currentTrick[0].card.suit;
+      if (priority.suit && leadSuit !== priority.suit) return null;
+      if (cardsInSuit(hand, leadSuit).length) return null;
+      if (!winning || teamOf(winning.seat) !== teamOf(seat)) return null;
+
+      const loserCards = priority.attackedSuit ? cardsInSuit(legal, priority.attackedSuit) : [];
+      const card = lowestCard(loserCards) || lowestCard(legal);
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "playPlan.discardLoserOnWinner",
+        priority.confidence || "basic",
+        "Follow the visible play plan by discarding a loser while partner's side-suit winner is cashing.",
+        {
+          planPriority: priority,
+          suit: priority.suit || leadSuit,
+          cashRanks: priority.cashRanks,
+          attackedSuit: priority.attackedSuit,
+          discardSeat: priority.discardSeat,
+          discardCapacity: priority.discardCapacity,
+          firstSeat: priority.firstSeat,
+          timing: priority.timing,
+          action: "discardLoserOnWinner"
+        }
+      );
+    }
+
+  function choosePlanDrawTrumpsInTrickPlay({ priority, contract, currentTrick, seat, legal, winning }) {
+      const trump = contract?.strain === "NT" ? null : contract?.strain;
+      if (!trump || priority.suit !== trump || !currentTrick.length || currentTrick[0].card.suit !== trump) return null;
+      if (priority.roundLimit && (priority.playedTrumpRounds || 0) >= priority.roundLimit) return null;
+
+      const trumpCards = cardsInSuit(legal, trump);
+      if (!trumpCards.length) return null;
+      if (priority.preserveSeat === seat && trumpCards.length <= (priority.preserveTrumpCount || 0)) return null;
+      if (winning && teamOf(winning.seat) === teamOf(seat)) return null;
+
+      const winningTrumps = winning
+        ? trumpCards.filter((card) => beats(card, winning.card, trump, trump)).sort(compareLowCards)
+        : [];
+      const card = winningTrumps[0] || lowestCard(trumpCards);
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "playPlan.drawTrumps",
+        priority.confidence || "basic",
+        "Follow the visible play plan by continuing the trump-drawing round.",
+        {
+          planPriority: priority,
+          suit: trump,
+          trumpLength: priority.trumpLength,
+          missingHonors: priority.missingHonors,
+          timing: priority.timing,
+          delayReason: priority.delayReason || null,
+          delaySuit: priority.delaySuit || null,
+          roundLimit: priority.roundLimit ?? null,
+          playedTrumpRounds: priority.playedTrumpRounds || 0,
+          preserveSeat: priority.preserveSeat || null,
+          preserveTrumpCount: priority.preserveTrumpCount || 0,
+          trumpControl: priority.trumpControl || null,
+          action: "continueDrawTrumps"
+        }
+      );
+    }
+
   function choosePlanCashWinnerPlay({ priority, hand, seat, legal }) {
       if (priority.firstSeat && priority.firstSeat !== seat) return null;
+      if (priority.kind === "cashSureWinners" && (!priority.suit || !priority.cashRanks?.length)) return null;
       const suitedLegal = priority.suit ? cardsInSuit(legal, priority.suit) : legal;
       const card = priority.cashRanks?.length
         ? priority.cashRanks.map((rank) => suitedLegal.find((item) => item.rank === rank)).find(Boolean)
@@ -695,6 +1072,36 @@
         priority.kind === "cashWinners" ? "playPlan.cashWinners" : "playPlan.cashSureWinners",
         priority.confidence || "basic",
         "Follow the visible play plan by cashing a sure winner.",
+        {
+          planPriority: priority,
+          suit: priority.suit || card.suit,
+          cashRanks: priority.cashRanks,
+          timing: priority.timing,
+          action: priority.timing === "unblockBeforeEntry" ? "unblockSuit" : "cashSureWinner"
+        }
+      );
+    }
+
+  function choosePlanCashWinnerInTrickPlay({ priority, currentTrick, seat, trump, legal, winning }) {
+      if (!currentTrick.length || (priority.firstSeat && priority.firstSeat !== seat)) return null;
+      if (priority.kind === "cashSureWinners" && (!priority.suit || !priority.cashRanks?.length)) return null;
+      const leadSuit = currentTrick[0].card.suit;
+      if (priority.suit && priority.suit !== leadSuit) return null;
+
+      const suitedLegal = cardsInSuit(legal, leadSuit);
+      const preferred = priority.cashRanks?.length
+        ? priority.cashRanks.map((rank) => suitedLegal.find((item) => item.rank === rank)).find(Boolean)
+        : highestCard(suitedLegal);
+      const card = legalPlanCard(preferred, legal);
+      if (!card) return null;
+      if (winning && teamOf(winning.seat) === teamOf(seat)) return null;
+      if (winning && teamOf(winning.seat) !== teamOf(seat) && !beats(card, winning.card, leadSuit, trump)) return null;
+
+      return cardPlayResult(
+        card,
+        priority.kind === "cashWinners" ? "playPlan.cashWinners" : "playPlan.cashSureWinners",
+        priority.confidence || "basic",
+        "Follow the visible play plan by taking the planned winner in the current trick.",
         {
           planPriority: priority,
           suit: priority.suit || card.suit,
@@ -1734,21 +2141,23 @@
       const { legal } = context;
       if (!legal.length) return null;
 
+      const planDecision = choosePlayPlanAction({
+        hand,
+        partnerHand,
+        currentTrick,
+        trickHistory,
+        seat,
+        declarer,
+        dummy,
+        contract,
+        trump,
+        playPlan,
+        legal,
+        winning: context.winning
+      });
+      if (planDecision.result) return planDecision.result;
+
       if (!currentTrick.length) {
-        const planned = chooseCardFromPlayPlan({
-          hand,
-          partnerHand,
-          currentTrick,
-          trickHistory,
-          seat,
-          declarer,
-          dummy,
-          contract,
-          trump,
-          playPlan,
-          legal
-        });
-        if (planned) return planned;
         const finesse = chooseDeclarerFinessePlay({
           hand,
           partnerHand,
@@ -1759,7 +2168,7 @@
           dummy,
           contract
         });
-        if (finesse) return finesse;
+        if (finesse) return withPlayPlanFallback(finesse, planDecision);
         const development = chooseDeclarerDevelopmentPlay({
           hand,
           partnerHand,
@@ -1770,7 +2179,7 @@
           dummy,
           contract
         });
-        if (development) return development;
+        if (development) return withPlayPlanFallback(development, planDecision);
 
         const returnPartnerLeadSuit = chooseReturnPartnerLeadSuit({
           legal,
@@ -1778,7 +2187,7 @@
           seat,
           declarer
         });
-        if (returnPartnerLeadSuit) return returnPartnerLeadSuit;
+        if (returnPartnerLeadSuit) return withPlayPlanFallback(returnPartnerLeadSuit, planDecision);
 
         if (!context.isOpeningLead) {
           const trumpSwitchAgainstDummyRuff = chooseTrumpSwitchAgainstDummyRuff({
@@ -1788,10 +2197,13 @@
             seat,
             declarer
           });
-          if (trumpSwitchAgainstDummyRuff) return trumpSwitchAgainstDummyRuff;
+          if (trumpSwitchAgainstDummyRuff) return withPlayPlanFallback(trumpSwitchAgainstDummyRuff, planDecision);
         }
 
-        return chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead, auction });
+        return withPlayPlanFallback(
+          chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead, auction }),
+          planDecision
+        );
       }
 
       const { leadSuit, winning, partnerWinning, playedCards } = context;
@@ -1806,7 +2218,7 @@
         winning,
         playedCards
       });
-      if (thirdHandHigh) return thirdHandHigh;
+      if (thirdHandHigh) return withPlayPlanFallback(thirdHandHigh, planDecision);
 
       const thirdHandUnblock = chooseThirdHandUnblockHonor({
         legal,
@@ -1818,7 +2230,7 @@
         trump,
         winning
       });
-      if (thirdHandUnblock) return thirdHandUnblock;
+      if (thirdHandUnblock) return withPlayPlanFallback(thirdHandUnblock, planDecision);
 
       const openingLeadAttitudeSignal = chooseOpeningLeadAttitudeSignal({
         hand,
@@ -1829,16 +2241,19 @@
         declarer,
         trump
       });
-      if (openingLeadAttitudeSignal) return openingLeadAttitudeSignal;
+      if (openingLeadAttitudeSignal) return withPlayPlanFallback(openingLeadAttitudeSignal, planDecision);
 
       if (partnerWinning) {
         const harmlessCards = legal.filter((card) => !beats(card, winning.card, leadSuit, trump));
-        return cardPlayResult(
-          lowestCard(harmlessCards.length ? harmlessCards : legal),
-          "partnerWinningLow",
-          "basic",
-          "Partner is currently winning the trick, so play the lowest harmless legal card.",
-          { winningSeat: winning.seat }
+        return withPlayPlanFallback(
+          cardPlayResult(
+            lowestCard(harmlessCards.length ? harmlessCards : legal),
+            "partnerWinningLow",
+            "basic",
+            "Partner is currently winning the trick, so play the lowest harmless legal card.",
+            { winningSeat: winning.seat }
+          ),
+          planDecision
         );
       }
 
@@ -1885,7 +2300,7 @@
         trump,
         playedCards
       });
-      if (secondHandDefense) return secondHandDefense;
+      if (secondHandDefense) return withPlayPlanFallback(secondHandDefense, planDecision);
 
       const thirdHandDefense = chooseThirdHandDefensivePlay({
         legal,
@@ -1896,38 +2311,97 @@
         winning,
         playedCards
       });
-      if (thirdHandDefense) return thirdHandDefense;
+      if (thirdHandDefense) return withPlayPlanFallback(thirdHandDefense, planDecision);
+
+      const avoidLongHandRuff = chooseAvoidLongHandRuff({
+        hand,
+        partnerHand,
+        legal,
+        currentTrick,
+        seat,
+        declarer,
+        dummy,
+        trump,
+        winning
+      });
+      if (avoidLongHandRuff) return withPlayPlanFallback(avoidLongHandRuff, planDecision);
 
       const canBeat = legal
         .filter((card) => beats(card, winning.card, leadSuit, trump))
         .sort(compareLowCards);
 
       if (canBeat.length) {
-        return cardPlayResult(
-          canBeat[0],
-          "cheapestWinner",
-          "basic",
-          "Play the cheapest card that is currently winning the trick.",
-          { winningSeat: winning.seat }
+        return withPlayPlanFallback(
+          cardPlayResult(
+            canBeat[0],
+            "cheapestWinner",
+            "basic",
+            "Play the cheapest card that is currently winning the trick.",
+            { winningSeat: winning.seat }
+          ),
+          planDecision
         );
       }
 
       if (hand.some((card) => card.suit === leadSuit)) {
-        return cardPlayResult(
-          lowestCard(legal),
-          "lowestFollow",
-          "basic",
-          "Follow suit with the lowest legal card because this hand cannot win the trick.",
-          { leadSuit, winningSeat: winning.seat }
+        return withPlayPlanFallback(
+          cardPlayResult(
+            lowestCard(legal),
+            "lowestFollow",
+            "basic",
+            "Follow suit with the lowest legal card because this hand cannot win the trick.",
+            { leadSuit, winningSeat: winning.seat }
+          ),
+          planDecision
         );
       }
 
+      return withPlayPlanFallback(
+        cardPlayResult(
+          lowestCard(legal),
+          "lowestDiscard",
+          "basic",
+          "Discard the lowest legal card because this hand cannot follow suit or win the trick.",
+          { leadSuit, winningSeat: winning.seat }
+        ),
+        planDecision
+      );
+    }
+
+  function chooseAvoidLongHandRuff({ hand, partnerHand, legal, currentTrick, seat, declarer, dummy, trump, winning }) {
+      if (!trump || !currentTrick.length || !partnerHand?.length || !declarer || !dummy || !winning) return null;
+      if (seat !== declarer && seat !== dummy) return null;
+
+      const leadSuit = currentTrick[0].card.suit;
+      if (leadSuit === trump || cardsInSuit(hand, leadSuit).length) return null;
+
+      const trumpCards = cardsInSuit(legal, trump);
+      const discardCards = legal.filter((card) => card.suit !== trump);
+      if (!trumpCards.length || !discardCards.length) return null;
+
+      const ownTrumpLength = cardsInSuit(hand, trump).length;
+      const partnerTrumpLength = cardsInSuit(partnerHand, trump).length;
+      if (ownTrumpLength <= partnerTrumpLength) return null;
+
+      const winningTrumps = trumpCards.filter((card) => beats(card, winning.card, leadSuit, trump));
+      if (!winningTrumps.length) return null;
+
+      const card = lowestCard(discardCards);
+      if (!card) return null;
+
       return cardPlayResult(
-        lowestCard(legal),
-        "lowestDiscard",
+        card,
+        "avoidLongHandRuff",
         "basic",
-        "Discard the lowest legal card because this hand cannot follow suit or win the trick.",
-        { leadSuit, winningSeat: winning.seat }
+        "Avoid ruffing unnecessarily with the long trump hand; that usually does not create an extra trump trick and can reduce control.",
+        {
+          leadSuit,
+          trump,
+          longSeat: seat,
+          ownTrumpLength,
+          partnerTrumpLength,
+          action: "discardInsteadOfLongHandRuff"
+        }
       );
     }
 

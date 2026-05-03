@@ -68,6 +68,72 @@ test("chooseCardPlay follows the play-plan finesse priority", () => {
   assert.equal(result.planPriority.kind, "finesse");
 });
 
+test("chooseCardPlay completes a play-plan finesse in the target hand", () => {
+  const declarerHand = hand("2H", "3H", "AD");
+  const dummyHand = hand("AH", "QH", "7H", "AC");
+  const contract = { level: 3, strain: "NT" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: dummyHand,
+    partnerHand: declarerHand,
+    currentTrick: [
+      { seat: "South", card: card("2H") },
+      { seat: "West", card: card("5H") }
+    ],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.equal(result.ruleId, "playPlan.finesseTowardHonor");
+  assert.equal(result.planPriority.kind, "finesse");
+  assert.equal(result.action, "completeFinesse");
+});
+
+test("chooseCardPlay continues a play-plan long-suit development after partner leads the suit", () => {
+  const declarerHand = hand("AS", "KS", "AD", "2C", "2D");
+  const dummyHand = hand("KC", "QC", "JC", "4C", "3C", "AH");
+  const contract = { level: 3, strain: "NT" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: dummyHand,
+    partnerHand: declarerHand,
+    currentTrick: [
+      { seat: "South", card: card("2C") },
+      { seat: "West", card: card("5C") }
+    ],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(result.card.id, "KC");
+  assert.equal(result.ruleId, "playPlan.developLongSuit");
+  assert.equal(result.planPriority.kind, "developLongSuit");
+  assert.equal(result.action, "continueWorkSuit");
+});
+
 test("chooseCardPlay follows the play-plan hold-up before taking the ace", () => {
   const declarerHand = hand("AH", "2H", "AS", "KS", "AD", "2C");
   const dummyHand = hand("4H", "KC", "QC", "JC", "TC", "3C");
@@ -468,6 +534,38 @@ test("chooseCardPlay follows the play-plan draw-trumps priority", () => {
   assert.equal(result.planPriority.kind, "drawTrumps");
 });
 
+test("chooseCardPlay follows a suit-contract finesse from the trump-length base hand", () => {
+  const declarerHand = hand("AS", "8S", "QH", "TH", "4H", "AD", "QD", "JD", "7D", "KC", "9C", "8C", "5C");
+  const dummyHand = hand("KS", "7S", "2S", "AH", "KH", "JH", "9H", "3H", "5D", "4D", "AC", "7C", "4C");
+  const contract = { level: 4, strain: "H" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+  const finesse = playPlan.priorities.find((item) => item.kind === "finesse" && item.suit === "D");
+
+  const result = rules.chooseCardPlay({
+    hand: dummyHand,
+    partnerHand: declarerHand,
+    currentTrick: [],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "H",
+    playPlan: { priorities: [finesse] }
+  });
+
+  assert.equal(result.card.id, "4D");
+  assert.equal(result.ruleId, "playPlan.finesseTowardHonor");
+  assert.equal(result.planPriority.kind, "finesse");
+  assert.equal(result.targetSeat, "South");
+  assert.equal(result.finesseRank, "Q");
+});
+
 test("chooseCardPlay takes the play-plan dummy ruff before delayed trump drawing", () => {
   const declarerHand = hand("AS", "KS", "QS", "9S", "8S", "JH", "TH", "8H", "3H", "AD", "KD", "AC", "KC");
   const dummyHand = hand("JS", "TS", "7S", "2D", "3D", "4D", "QC", "JC", "TC", "9C");
@@ -495,6 +593,39 @@ test("chooseCardPlay takes the play-plan dummy ruff before delayed trump drawing
   assert.equal(result.card.id, "3H");
   assert.equal(result.ruleId, "playPlan.ruffShortSuit");
   assert.equal(result.planPriority.kind, "ruffShortSuit");
+});
+
+test("chooseCardPlay prepares a short-hand ruff by playing the side suit first", () => {
+  const declarerHand = hand("AS", "TS", "9S", "AH", "QH", "JH", "2H", "KD", "5D", "QC", "TC", "3C");
+  const dummyHand = hand("8S", "3S", "TH", "7H", "3H", "QD", "7D", "6D", "3D", "AC", "JC", "8C", "2C");
+  const contract = { level: 4, strain: "H" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("9H") }]
+  });
+  const ruff = playPlan.priorities.find((item) => item.kind === "ruffShortSuit" && item.suit === "S");
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "H",
+    playPlan: { priorities: [ruff] }
+  });
+
+  assert.equal(result.card.id, "AS");
+  assert.equal(result.ruleId, "playPlan.prepareShortSuitRuff");
+  assert.equal(result.planPriority.kind, "ruffShortSuit");
+  assert.equal(result.action, "cashWinnerBeforeShortRuff");
+  assert.equal(result.extraTrickValue, true);
 });
 
 test("chooseCardPlay draws one limited trump round before a planned ruff", () => {
@@ -619,6 +750,165 @@ test("chooseCardPlay falls back when no plan priority can be played", () => {
 
   assert.equal(result.card.id, "AH");
   assert.equal(result.ruleId, "longestSuitLead");
+  assert.equal(result.planFallback.reason, "noPlanSuitCard");
+  assert.equal(result.planFallback.priority.kind, "drawTrumps");
+  assert.ok(!result.planPriority);
+});
+
+test("chooseCardPlay explains when following suit blocks the visible play plan", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("7H", "2S"),
+    partnerHand: hand("AS", "KS"),
+    currentTrick: [{ seat: "West", card: card("KH") }],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 4, strain: "S" },
+    trump: "S",
+    playPlan: {
+      priorities: [{
+        kind: "drawTrumps",
+        confidence: "basic",
+        suit: "S",
+        trumpLength: 8,
+        timing: "early"
+      }]
+    }
+  });
+
+  assert.equal(result.card.id, "7H");
+  assert.equal(result.ruleId, "lowestFollow");
+  assert.equal(result.planFallback.reason, "followSuit");
+  assert.equal(result.planFallback.leadSuit, "H");
+});
+
+test("chooseCardPlay does not call the spade king a sure winner while the ace is unseen", () => {
+  const contract = { level: 2, strain: "H" };
+  const trickHistory = [
+    {
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("JS") },
+        { seat: "North", card: card("2S") },
+        { seat: "East", card: card("4S") },
+        { seat: "South", card: card("QS") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "South",
+      cards: [
+        { seat: "South", card: card("AH") },
+        { seat: "West", card: card("2H") },
+        { seat: "North", card: card("5H") },
+        { seat: "East", card: card("8H") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "South",
+      cards: [
+        { seat: "South", card: card("KH") },
+        { seat: "West", card: card("6H") },
+        { seat: "North", card: card("7H") },
+        { seat: "East", card: card("9H") }
+      ]
+    },
+    {
+      number: 4,
+      winner: "South",
+      cards: [
+        { seat: "South", card: card("AC") },
+        { seat: "West", card: card("6C") },
+        { seat: "North", card: card("5C") },
+        { seat: "East", card: card("2C") }
+      ]
+    },
+    {
+      number: 5,
+      winner: "South",
+      cards: [
+        { seat: "South", card: card("QH") },
+        { seat: "West", card: card("JH") },
+        { seat: "North", card: card("2D") },
+        { seat: "East", card: card("TH") }
+      ]
+    }
+  ];
+  const declarerHand = hand("KS", "3S", "4H", "TD", "8D", "4D", "3D");
+  const dummyHand = hand("8S", "7S", "5S", "QC", "9C", "8C", "6D", "5D");
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  assert.ok(!playPlan.priorities.some((priority) => priority.suit === "S" && (priority.kind === "cashWinners" || priority.kind === "cashSureWinners")));
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "H",
+    playPlan
+  });
+
+  assert.notEqual(result.ruleId, "playPlan.cashSureWinners");
+  assert.ok(!(result.card.id === "KS" && result.ruleId.startsWith("playPlan.cash")));
+});
+
+test("chooseCardPlay can cash the king after the ace has been played", () => {
+  const contract = { level: 2, strain: "H" };
+  const trickHistory = [{
+    number: 1,
+    winner: "West",
+    cards: [
+      { seat: "West", card: card("AS") },
+      { seat: "North", card: card("2S") },
+      { seat: "East", card: card("4S") },
+      { seat: "South", card: card("3S") }
+    ]
+  }];
+  const declarerHand = hand("KS", "7H", "6H", "3D");
+  const dummyHand = hand("8S", "5H", "4H", "2D");
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+  const spadeCash = playPlan.priorities.find((priority) => priority.kind === "cashWinners" && priority.suit === "S");
+
+  assert.ok(spadeCash);
+  assert.deepEqual(spadeCash.cashRanks, ["K"]);
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "H",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "KS");
+  assert.equal(result.ruleId, "playPlan.cashWinners");
+  assert.deepEqual(result.cashRanks, ["K"]);
 });
 
 test("chooseCardPlay follows the play-plan long-suit ruffing priority from the long hand", () => {
@@ -871,4 +1161,55 @@ test("chooseCardPlay follows the urgent side-winner discard plan before drawing 
   assert.equal(result.planPriority.kind, "discardLoserOnWinner");
   assert.equal(result.attackedSuit, "C");
   assert.equal(result.action, "cashWinnerForDiscard");
+});
+
+test("chooseCardPlay discards the planned loser while partner's side winner is cashing", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QC", "2D", "AS"),
+    partnerHand: hand("AH", "KH"),
+    currentTrick: [
+      { seat: "North", card: card("AH") },
+      { seat: "East", card: card("4H") }
+    ],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 4, strain: "S" },
+    trump: "S",
+    playPlan: {
+      priorities: [{
+        kind: "discardLoserOnWinner",
+        confidence: "basic",
+        suit: "H",
+        attackedSuit: "C",
+        discardSeat: "South",
+        firstSeat: "North",
+        cashRanks: ["A", "K"],
+        timing: "urgentBeforeTrumps"
+      }]
+    }
+  });
+
+  assert.equal(result.card.id, "QC");
+  assert.equal(result.ruleId, "playPlan.discardLoserOnWinner");
+  assert.equal(result.planPriority.kind, "discardLoserOnWinner");
+  assert.equal(result.action, "discardLoserOnWinner");
+});
+
+test("chooseCardPlay avoids an unnecessary ruff with the long trump hand", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AH", "KH", "QH", "2D"),
+    partnerHand: hand("TH", "9H", "3C"),
+    currentTrick: [{ seat: "West", card: card("5C") }],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 4, strain: "H" },
+    trump: "H"
+  });
+
+  assert.equal(result.card.id, "2D");
+  assert.equal(result.ruleId, "avoidLongHandRuff");
+  assert.equal(result.action, "discardInsteadOfLongHandRuff");
+  assert.equal(result.longSeat, "South");
 });

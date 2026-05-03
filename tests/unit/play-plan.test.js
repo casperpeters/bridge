@@ -563,6 +563,30 @@ test("createPlayPlan finds a dummy ruff before drawing all trumps", () => {
   assert.equal(trumps.timing, "afterRuff");
 });
 
+test("createPlayPlan prepares a short-hand ruff before drawing trumps", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "TS", "9S", "AH", "QH", "JH", "2H", "KD", "5D", "QC", "TC", "3C"),
+    dummyHand: hand("8S", "3S", "TH", "7H", "3H", "QD", "7D", "6D", "3D", "AC", "JC", "8C", "2C"),
+    contract: { level: 4, strain: "H" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("9H") }]
+  });
+
+  const ruff = plan.priorities.find((item) => item.kind === "ruffShortSuit" && item.suit === "S");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(ruff);
+  assert.equal(ruff.timing, "prepareBeforeRuff");
+  assert.equal(ruff.longSeat, "South");
+  assert.equal(ruff.shortSeat, "North");
+  assert.equal(ruff.shortLength, 2);
+  assert.equal(ruff.preparationNeeded, 2);
+  assert.equal(ruff.extraTrickValue, true);
+  assert.equal(trumps.timing, "afterRuff");
+  assert.equal(trumps.preserveSeat, "North");
+  assert.equal(trumps.preserveTrumpCount, 1);
+});
+
 test("createPlayPlan skips a dummy ruff when dummy is not the shorter trump hand", () => {
   const plan = rules.createPlayPlan({
     declarerHand: hand("AS", "KS", "QS", "2S", "JH", "TH", "8H", "3H", "AD", "KD", "AC", "KC"),
@@ -572,7 +596,7 @@ test("createPlayPlan skips a dummy ruff when dummy is not the shorter trump hand
     dummy: "North"
   });
 
-  assert.ok(!plan.priorities.some((item) => item.kind === "ruffShortSuit"));
+  assert.ok(!plan.priorities.some((item) => item.kind === "ruffShortSuit" && item.shortSeat === "North"));
   assert.ok(plan.priorities.some((item) => item.kind === "drawTrumps"));
 });
 
@@ -664,6 +688,35 @@ test("createPlayPlan exposes richer loser details for cover cards and ruffs", ()
   const heartDetails = plan.losers.detailsBySuit.H;
   assert.deepEqual(heartDetails.coverCards, ["A"]);
   assert.deepEqual(heartDetails.missingTopHonors, ["Q"]);
+});
+
+test("createPlayPlan counts suit-contract losers from the hand with the most trumps", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "8S", "QH", "TH", "4H", "AD", "QD", "JD", "7D", "KC", "9C", "8C", "5C"),
+    dummyHand: hand("KS", "7S", "2S", "AH", "KH", "JH", "9H", "3H", "5D", "4D", "AC", "7C", "4C"),
+    contract: { level: 4, strain: "H" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  assert.equal(plan.losers.baseSeat, "North");
+  assert.equal(plan.losers.supportSeat, "South");
+  assert.equal(plan.losers.total, 3);
+  assert.equal(plan.losers.bySuit.S, 1);
+  assert.equal(plan.losers.bySuit.D, 1);
+  assert.equal(plan.losers.bySuit.C, 1);
+
+  const diamondDetails = plan.losers.detailsBySuit.D;
+  assert.equal(diamondDetails.baseLength, 2);
+  assert.equal(diamondDetails.supportLength, 4);
+  assert.deepEqual(diamondDetails.coverCards, ["A"]);
+
+  const diamondFinesse = plan.priorities.find((item) => item.kind === "finesse" && item.suit === "D");
+  assert.ok(diamondFinesse);
+  assert.equal(diamondFinesse.leadSeat, "North");
+  assert.equal(diamondFinesse.targetSeat, "South");
+  assert.equal(diamondFinesse.finesseRank, "Q");
+  assert.equal(diamondFinesse.missingHonor, "K");
 });
 
 test("createPlayPlan delays drawing trumps to unblock a side suit first", () => {

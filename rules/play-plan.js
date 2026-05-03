@@ -31,7 +31,7 @@
       guardRanks: ["A"],
       ruleId: "finesseTowardHonor",
       action: "leadTowardFinesse",
-      reason: "Lead low toward a protected honor to try a notrump finesse.",
+      reason: "Speel laag naar een beschermde honneur om een sans-atoutsnit te proberen.",
       score: 90
     },
     {
@@ -40,7 +40,7 @@
       guardRanks: ["A", "K"],
       ruleId: "finesseTowardHonor",
       action: "leadTowardFinesse",
-      reason: "Lead low toward a protected honor to try a notrump finesse.",
+      reason: "Speel laag naar een beschermde honneur om een sans-atoutsnit te proberen.",
       score: 80
     },
     {
@@ -50,7 +50,7 @@
       minLeadCards: 2,
       ruleId: "doubleFinesseTowardHonor",
       action: "leadTowardDoubleFinesse",
-      reason: "Lead low toward the jack to try the first round of a notrump double finesse.",
+      reason: "Speel laag naar de boer voor de eerste ronde van een dubbele sans-atoutsnit.",
       score: 70
     },
     {
@@ -60,7 +60,7 @@
       minLeadCards: 2,
       ruleId: "doubleFinesseTowardHonor",
       action: "leadTowardDoubleFinesse",
-      reason: "Lead low toward the ten to try the first round of a notrump double finesse.",
+      reason: "Speel laag naar de tien voor de eerste ronde van een dubbele sans-atoutsnit.",
       score: 68
     },
     {
@@ -70,7 +70,7 @@
       minLeadCards: 2,
       ruleId: "doubleFinesseTowardHonor",
       action: "leadTowardDoubleFinesse",
-      reason: "Lead low toward the ten to try the first round of a notrump double finesse.",
+      reason: "Speel laag naar de tien voor de eerste ronde van een dubbele sans-atoutsnit.",
       score: 66
     },
     {
@@ -80,7 +80,7 @@
       minLeadCards: 2,
       ruleId: "doubleFinesseTowardHonor",
       action: "leadTowardDoubleFinesse",
-      reason: "Lead low toward the ten to try the first round of a notrump double finesse.",
+      reason: "Speel laag naar de tien voor de eerste ronde van een dubbele sans-atoutsnit.",
       score: 64
     }
   ];
@@ -1003,14 +1003,34 @@
       const neededTricks = contract.level + 6;
       const trump = contract.strain;
       const playedCards = playedCardsFrom(trickHistory, currentTrick);
-      const losers = countSuitContractLosers(declarerHand, dummyHand, trump, neededTricks);
+      const base = suitContractBaseHand({ declarerHand, dummyHand, trump, declarer, dummy });
+      const losers = countSuitContractLosers(base.baseHand, base.supportHand, trump, neededTricks, {
+        baseSeat: base.baseSeat,
+        supportSeat: base.supportSeat
+      });
       const priorities = [];
-      const ruffPriorities = shortSuitRuffPriorities(declarerHand, dummyHand, trump, dummy, losers.detailsBySuit);
+      const ruffPriorities = shortSuitRuffPriorities(
+        base.baseHand,
+        base.supportHand,
+        trump,
+        base.baseSeat,
+        base.supportSeat,
+        losers.detailsBySuit
+      );
       const longRuffPriorities = longSuitRuffDevelopmentPriorities(declarerHand, dummyHand, trump, declarer, dummy, playedCards);
       const directRuffPriorities = ruffPriorities.filter((priority) => {
         return !longRuffPriorities.some((longPriority) => longPriority.suit === priority.suit && longPriority.shortSeat === priority.shortSeat);
       });
       const cashPriorities = suitCashPriorities(declarerHand, dummyHand, trump, declarer, dummy, playedCards);
+      const finessePriorities = suitContractFinessePriorities({
+        declarerHand,
+        dummyHand,
+        trump,
+        declarer,
+        dummy,
+        playedCards,
+        losers
+      });
       const urgentDiscardPriorities = suitUrgentDiscardPriorities({
         declarerHand,
         dummyHand,
@@ -1039,35 +1059,32 @@
       if (trumpPriority?.timing === "afterUrgentDiscard") {
         priorities.push(...urgentDiscardPriorities.slice(0, 1));
         if (trumpPriority) priorities.push(trumpPriority);
+        priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.filter((priority) => priority.timing !== "urgentBeforeTrumps").slice(0, 1));
       } else if (trumpPriority?.timing === "early") {
         if (trumpPriority) priorities.push(trumpPriority);
-        priorities.push(...cashPriorities.slice(0, 2));
+        priorities.push(...finessePriorities.slice(0, 1));
+        priorities.push(...cashPriorities.slice(0, 1));
       } else if (trumpPriority?.timing === "limitedBeforeRuff") {
         if (trumpPriority) priorities.push(trumpPriority);
         priorities.push(...longRuffPriorities.slice(0, 1));
         priorities.push(...directRuffPriorities.slice(0, 2));
+        priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.slice(0, 1));
       } else if (trumpPriority?.timing === "afterUnblock") {
         priorities.push(...cashPriorities.filter((priority) => priority.timing === "unblockBeforeEntry").slice(0, 1));
         priorities.push(...longRuffPriorities.slice(0, 1));
         priorities.push(...directRuffPriorities.slice(0, 2));
         if (trumpPriority) priorities.push(trumpPriority);
+        priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.filter((priority) => priority.timing !== "unblockBeforeEntry").slice(0, 1));
       } else {
         priorities.push(...longRuffPriorities.slice(0, 1));
         priorities.push(...directRuffPriorities.slice(0, 2));
         if (trumpPriority) priorities.push(trumpPriority);
+        priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.slice(0, 1));
       }
-      if (!priorities.length) {
-        priorities.push({
-          kind: "cashSureWinners",
-          confidence: "basic",
-          score: 1
-        });
-      }
-
       const warnings = [];
       if (losers.total > losers.allowed) {
         warnings.push({
@@ -1097,6 +1114,8 @@
         losers,
         needToDevelop: 0,
         timingPlan,
+        baseSeat: base.baseSeat,
+        supportSeat: base.supportSeat,
         priorities: priorities.slice(0, 3),
         warnings,
         declarer,
@@ -1104,18 +1123,34 @@
       };
     }
 
-  function countSuitContractLosers(declarerHand, dummyHand, trump, neededTricks) {
+  function suitContractBaseHand({ declarerHand = [], dummyHand = [], trump, declarer = null, dummy = null }) {
+        const declarerTrumpLength = cardsInSuit(declarerHand, trump).length;
+        const dummyTrumpLength = cardsInSuit(dummyHand, trump).length;
+        const dummyIsBase = dummyTrumpLength > declarerTrumpLength;
+        return {
+          baseSeat: dummyIsBase ? dummy : declarer,
+          supportSeat: dummyIsBase ? declarer : dummy,
+          baseHand: dummyIsBase ? dummyHand : declarerHand,
+          supportHand: dummyIsBase ? declarerHand : dummyHand,
+          baseTrumpLength: Math.max(declarerTrumpLength, dummyTrumpLength),
+          supportTrumpLength: Math.min(declarerTrumpLength, dummyTrumpLength)
+        };
+      }
+
+  function countSuitContractLosers(baseHand, supportHand, trump, neededTricks, { baseSeat = null, supportSeat = null } = {}) {
         const bySuit = {};
         const rawBySuit = {};
         const detailsBySuit = {};
-        const dummyTrumpLength = cardsInSuit(dummyHand, trump).length;
+        const supportTrumpLength = cardsInSuit(supportHand, trump).length;
         for (const suit of suits) {
           const detail = suitLoserEstimate(
-            cardsInSuit(declarerHand, suit),
-            cardsInSuit(dummyHand, suit),
+            cardsInSuit(baseHand, suit),
+            cardsInSuit(supportHand, suit),
             {
               isTrump: suit === trump,
-              dummyTrumpLength
+              supportTrumpLength,
+              baseSeat,
+              supportSeat
             }
           );
           detailsBySuit[suit] = detail;
@@ -1127,12 +1162,14 @@
           bySuit,
           rawBySuit,
           detailsBySuit,
+          baseSeat,
+          supportSeat,
           allowed: 13 - neededTricks
         };
       }
 
-  function suitLoserEstimate(declarerSuitCards, dummySuitCards, { isTrump, dummyTrumpLength }) {
-      if (!declarerSuitCards.length) {
+  function suitLoserEstimate(baseSuitCards, supportSuitCards, { isTrump, supportTrumpLength, baseSeat = null, supportSeat = null }) {
+      if (!baseSuitCards.length) {
         return {
           losers: 0,
           rawLosers: 0,
@@ -1141,22 +1178,26 @@
           coverCards: [],
           ruffReduction: 0,
           trumpLengthCredit: 0,
+          baseSeat,
+          supportSeat,
+          baseLength: 0,
+          supportLength: supportSuitCards.length,
           declarerLength: 0,
-          dummyLength: dummySuitCards.length,
-          combinedLength: dummySuitCards.length
+          dummyLength: supportSuitCards.length,
+          combinedLength: supportSuitCards.length
         };
       }
-      const checks = ["A", "K", "Q"].slice(0, Math.min(3, declarerSuitCards.length));
-      const declarerRanks = new Set(declarerSuitCards.map((card) => card.rank));
-      const dummyRanks = new Set(dummySuitCards.map((card) => card.rank));
-      const visibleRanks = new Set([...declarerRanks, ...dummyRanks]);
+      const checks = ["A", "K", "Q"].slice(0, Math.min(3, baseSuitCards.length));
+      const baseRanks = new Set(baseSuitCards.map((card) => card.rank));
+      const supportRanks = new Set(supportSuitCards.map((card) => card.rank));
+      const visibleRanks = new Set([...baseRanks, ...supportRanks]);
       const missingTopHonors = checks.filter((rank) => !visibleRanks.has(rank));
-      const coverCards = checks.filter((rank) => !declarerRanks.has(rank) && dummyRanks.has(rank));
+      const coverCards = checks.filter((rank) => !baseRanks.has(rank) && supportRanks.has(rank));
       const rawLosers = missingTopHonors.length;
-      const combinedLength = declarerSuitCards.length + dummySuitCards.length;
+      const combinedLength = baseSuitCards.length + supportSuitCards.length;
       const trumpLengthCredit = isTrump && combinedLength >= 9 && rawLosers > 0 ? 1 : 0;
-      const ruffReduction = !isTrump && dummySuitCards.length <= 1 && dummyTrumpLength >= 2
-        ? Math.min(rawLosers, Math.max(0, declarerSuitCards.length - dummySuitCards.length), 1)
+      const ruffReduction = !isTrump && supportSuitCards.length <= 1 && supportTrumpLength >= 2
+        ? Math.min(rawLosers, Math.max(0, baseSuitCards.length - supportSuitCards.length), 1)
         : 0;
       return {
         losers: Math.max(0, rawLosers - trumpLengthCredit - ruffReduction),
@@ -1166,32 +1207,53 @@
         coverCards,
         ruffReduction,
         trumpLengthCredit,
-        declarerLength: declarerSuitCards.length,
-        dummyLength: dummySuitCards.length,
+        baseSeat,
+        supportSeat,
+        baseLength: baseSuitCards.length,
+        supportLength: supportSuitCards.length,
+        declarerLength: baseSuitCards.length,
+        dummyLength: supportSuitCards.length,
         combinedLength
       };
     }
 
-  function shortSuitRuffPriorities(declarerHand, dummyHand, trump, dummy, detailsBySuit) {
-        const dummyTrumps = cardsInSuit(dummyHand, trump);
-        const declarerTrumps = cardsInSuit(declarerHand, trump);
-        if (dummyTrumps.length < 1 || dummyTrumps.length >= declarerTrumps.length) return [];
+  function shortSuitRuffPriorities(baseHand, supportHand, trump, baseSeat, supportSeat, detailsBySuit) {
+        const supportTrumps = cardsInSuit(supportHand, trump);
+        const baseTrumps = cardsInSuit(baseHand, trump);
+        if (supportTrumps.length < 1 || supportTrumps.length >= baseTrumps.length) return [];
         return suits
           .filter((suit) => suit !== trump)
-          .map((suit) => ({
-            kind: "ruffShortSuit",
-            confidence: "basic",
-            suit,
-            shortSeat: dummy,
-            shortLength: cardsInSuit(dummyHand, suit).length,
-            declarerLength: cardsInSuit(declarerHand, suit).length,
-            shortTrumpLength: dummyTrumps.length,
-            longTrumpLength: declarerTrumps.length,
-            losers: detailsBySuit[suit]?.rawLosers || 0,
-            ruffReduction: detailsBySuit[suit]?.ruffReduction || 0,
-            score: (detailsBySuit[suit]?.rawLosers || 0) * 20 - cardsInSuit(dummyHand, suit).length * 3
-          }))
-          .filter((priority) => priority.shortLength <= 1 && priority.declarerLength >= 2 && priority.losers > 0)
+          .map((suit) => {
+            const shortLength = cardsInSuit(supportHand, suit).length;
+            const baseLength = cardsInSuit(baseHand, suit).length;
+            const losers = detailsBySuit[suit]?.rawLosers || 0;
+            const preparationNeeded = shortLength;
+            return {
+              kind: "ruffShortSuit",
+              confidence: "basic",
+              suit,
+              baseSeat,
+              supportSeat,
+              longSeat: baseSeat,
+              shortSeat: supportSeat,
+              shortLength,
+              baseLength,
+              declarerLength: baseLength,
+              preparationNeeded,
+              extraTrickValue: true,
+              timing: preparationNeeded ? "prepareBeforeRuff" : "ruffNow",
+              shortTrumpLength: supportTrumps.length,
+              longTrumpLength: baseTrumps.length,
+              preserveTrumpCount: 1,
+              losers,
+              ruffReduction: detailsBySuit[suit]?.ruffReduction || 0,
+              score: losers * 20 + (preparationNeeded ? 30 : 45) - shortLength * 4 + Math.max(0, baseLength - shortLength) * 3
+            };
+          })
+          .filter((priority) => {
+            if (priority.losers <= 0 || priority.shortLength > 2 || priority.baseLength <= priority.shortLength) return false;
+            return priority.shortTrumpLength > priority.preparationNeeded;
+          })
           .sort((a, b) => b.score - a.score);
       }
 
@@ -1286,6 +1348,68 @@
           entryRank,
           score: longWinnerRanks.length * 20 + winnerRanks.length * 8 + leadCards.length + longSuitCards.length
         };
+      }
+
+  function suitContractFinessePriorities({ declarerHand, dummyHand, trump, declarer, dummy, playedCards = [], losers }) {
+        const candidates = [];
+        for (const suit of suits) {
+          if (suit === trump || !losers?.bySuit?.[suit]) continue;
+          const loserDetail = losers.detailsBySuit?.[suit];
+          const missingTopHonors = loserDetail?.missingTopHonors || [];
+          if (!missingTopHonors.length) continue;
+
+          const declarerSuitCards = cardsInSuit(declarerHand, suit);
+          const dummySuitCards = cardsInSuit(dummyHand, suit);
+          const playedSuitCards = cardsInSuit(playedCards, suit);
+          [
+            {
+              currentSuitCards: declarerSuitCards,
+              partnerSuitCards: dummySuitCards,
+              partnerHand: dummyHand,
+              leadSeat: declarer,
+              targetSeat: dummy
+            },
+            {
+              currentSuitCards: dummySuitCards,
+              partnerSuitCards: declarerSuitCards,
+              partnerHand: declarerHand,
+              leadSeat: dummy,
+              targetSeat: declarer
+            }
+          ].forEach((direction) => {
+            const candidate = finesseCandidate({
+              suit,
+              partnerHand: direction.partnerHand,
+              currentSuitCards: direction.currentSuitCards,
+              partnerSuitCards: direction.partnerSuitCards,
+              playedSuitCards,
+              partnerSeat: direction.targetSeat
+            });
+            if (!candidate) return;
+            if (!candidate.missingHonors?.some((rank) => missingTopHonors.includes(rank))) return;
+
+            candidates.push({
+              kind: candidate.ruleId === "doubleFinesseTowardHonor" ? "doubleFinesse" : "finesse",
+              confidence: "uncertain",
+              suit,
+              leadSeat: direction.leadSeat,
+              targetSeat: candidate.targetSeat,
+              finesseRank: candidate.finesseRank,
+              missingHonor: candidate.missingHonor,
+              missingHonors: candidate.missingHonors,
+              guardRanks: candidate.guardRanks,
+              entryType: candidate.entryType,
+              entrySuit: candidate.entrySuit,
+              entryRank: candidate.entryRank,
+              baseSeat: losers.baseSeat || null,
+              supportSeat: losers.supportSeat || null,
+              loserCount: losers.bySuit[suit],
+              reason: "Speel laag naar een beschermde honneur om een zijkleurverliezer in een kleurcontract weg te werken.",
+              score: 48 + (losers.bySuit[suit] || 0) * 12 + candidate.score / 10
+            });
+          });
+        }
+        return candidates.sort((a, b) => b.score - a.score);
       }
 
   function suitUrgentDiscardPriorities({
@@ -1732,12 +1856,14 @@
     notrumpPlanWarnings,
     clearOutsideEntries,
     createSuitPlayPlan,
+    suitContractBaseHand,
     countSuitContractLosers,
     suitLoserEstimate,
     shortSuitRuffPriorities,
     longSuitRuffDevelopmentPriorities,
     longSuitRuffEntryCandidates,
     longSuitRuffEntryCandidate,
+    suitContractFinessePriorities,
     suitContractTimingPlan,
     suitTrumpControl,
     playedTrumpRoundsFrom,

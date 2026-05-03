@@ -190,6 +190,17 @@ function explainCardPlayResult(result) {
     return `Troef ${suitName(result.suit)} in ${seatName(result.shortSeat)} om de lange kleur van ${seatName(result.longSeat)} vrij te spelen.`;
   }
   if (ruleName === "cashSureWinners") return "Speel een hoge zekere slag uit voordat je een nieuwe kleur openbreekt.";
+  if (ruleName === "cashWinners") return "Incasseer de geplande zekere slag uit het speelplan.";
+  if (ruleName === "preserveWorkSuitEntry") {
+    const rank = rankLabel[result.entryRank] || result.entryRank;
+    return `Bewaar de entree ${rank ? `${rank} ` : ""}${suitName(result.entrySuit)} voor de lange ${suitName(result.suit)}.`;
+  }
+  if (ruleName === "prepareShortSuitRuff") {
+    return `Speel eerst ${suitName(result.suit)} voor om de geplande introever aan de korte troefkant voor te bereiden.`;
+  }
+  if (ruleName === "avoidLongHandRuff") {
+    return "Troef niet onnodig in met de lange troefhand; gooi liever af om troefcontrole te houden.";
+  }
   if (ruleName === "longestSuitLead") {
     return `Speel de hoogste kaart uit de langste kleur (${suitName(result.suit)}, ${result.suitLength} kaarten).`;
   }
@@ -343,7 +354,7 @@ function explainCardPlayResult(result) {
   if (ruleName === "cheapestWinner") return "Win de slag voorlopig met de goedkoopste winnende kaart.";
   if (ruleName === "lowestFollow") return "Bekennen is verplicht; omdat winnen niet kan, speel je de laagste kaart in de gevraagde kleur.";
   if (ruleName === "lowestDiscard") return "Bekennen kan niet en winnen lukt niet, dus gooi de laagste legale kaart af.";
-  return result.reason || "Speel de kaart die deze heuristiek kiest.";
+  return "Speel de kaart die deze heuristiek kiest.";
 }
 
 function finesseEntryText(result) {
