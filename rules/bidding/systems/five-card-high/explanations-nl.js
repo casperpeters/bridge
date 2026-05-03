@@ -42,6 +42,7 @@
       "pass.openingNoAction": `geen opening: te weinig openingskracht en geen geschikte zwakke twee of preempt${factSuffix}`,
       "pass.responseNoAction": `geen antwoord: te weinig waarden of geen passende actie tegenover partner${factSuffix}`,
       "pass.responseWeakTwoNoAction": `pas na partners zwakke twee: onvoldoende eigen speelslagen voor de afgesproken actie, geen bruikbare fit/communicatie, of niet in alle kleuren dekking${weakTwoFactsText(result)}${factSuffix}`,
+      "pass.responsePreemptNoAction": `pas na partners preempt: onvoldoende eigen speelslagen voor de manche, geen bruikbare aansluiting/communicatie, of niet in alle kleuren dekking${weakTwoFactsText(result)}${factSuffix}`,
       "pass.openerMajorRaiseMinimum": `geen manchepoging na partners enkele hoge-kleursteun: met 12-15 totaalpunten past openaar${factSuffix}`,
       "pass.openerMinorRaiseMinimum": `geen manchepoging na partners lage-kleursteun: openaar heeft een minimum en past${factSuffix}`,
       "pass.openerMinorAfterOneNtMinimum": `pas na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en openaar heeft een minimum zonder lange lage kleur${factSuffix}`,
@@ -87,9 +88,15 @@
       case "opening.strongTwoClubs":
         return `sterke kunstmatige 2K: ${strongTwoClubsReason(result)}. ${handFactsText({ ruleName, result })}`;
       case "opening.weakTwo":
+        if (result.exceptionalSixPointPreempt && result.vulnerable) {
+          return `kwetsbare zwakke twee in ${suitName(result.suit)}: de bijzondere 6-punts hand met een sterke 7+-kaart wordt lager geopend dan een preempt op driehoogte. ${handFactsText({ ruleName, result })}`;
+        }
         return `zwakke twee in ${suitName(result.suit)}: 6-10 HCP, of een lelijke 11-punter die de Regel van 20 niet haalt, met een goede exacte 6-kaart. ${handFactsText({ ruleName, result })}`;
       case "opening.preempt":
-        return `preemptieve opening in ${suitName(result.suit)}: 6-10 HCP met een goede ${result.length >= 8 ? "8+-kaart op vierniveau" : "7+-kaart op drieniveau"}. ${handFactsText({ ruleName, result })}`;
+        if (result.exceptionalSixPointPreempt) {
+          return `preemptieve opening in ${suitName(result.suit)}: dit is de uitzonderlijke 6-punts hand, niet kwetsbaar, met een ${result.length >= 8 ? "8+-kaart voor vierhoogte" : "7-kaart voor driehoogte"} waarin alleen de aas ontbreekt. ${handFactsText({ ruleName, result })}`;
+        }
+        return `preemptieve opening in ${suitName(result.suit)}: 7-10 HCP met een goede ${result.length >= 8 ? "8+-kaart op vierniveau" : "7+-kaart op drieniveau"} en minstens twee honneurs in de kleur. ${handFactsText({ ruleName, result })}`;
       case "opening.ruleOf20OneMajor":
         return `Regel van 20: open de langste kleur; met twee vijfkaarten kies je de hoogste. Deze opening toont minstens een vijfkaart ${suitName(result.suit)}. ${ruleOf20FactsText(result)} ${handFactsText({ ruleName, result })}`;
       case "opening.ruleOf20OneMinor":
@@ -129,9 +136,12 @@
       case "response.weakTwoNoFitNotrumpGame":
         return `3SA zonder bruikbare fit na partners zwakke twee: alleen met voldoende eigen speelslagen en dekking in alle kleuren${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
       case "response.raisePreempt":
-        return `steun voor partners preempt. ${handFactsText({ ruleName, result })}`;
+        if (result.partnerSuit === "C" || result.partnerSuit === "D") {
+          return `steun voor partners lage-kleurpreempt: met fit, extreme verdeling en genoeg eigen speelslagen kies je de lage-kleurmanche${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
+        }
+        return `steun voor partners hoge-kleurpreempt: met fit en minstens drie eigen speelslagen verhoog je naar de manche${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
       case "response.notrumpOverPreempt":
-        return `SA-antwoord met extra gebalanceerde kracht tegenover partners preempt. ${handFactsText({ ruleName, result })}`;
+        return `3SA tegenover partners preempt: genoeg eigen speelslagen, dekking in de zijkleuren en communicatie met partners lange kleur${weakTwoFactsText(result)}. ${handFactsText({ ruleName, result })}`;
       case "response.newSuitOverPreempt":
         return `nieuwe kleur tegenover partners preempt, met eigen kleurkwaliteit. ${handFactsText({ ruleName, result })}`;
       case "response.raise":
@@ -561,8 +571,8 @@
     if (bid.level === 1 && bid.strain === "NT") return "Vijfkaart Hoog: 15-17 punten, SA-verdeling.";
     if (bid.level === 2 && bid.strain === "NT") return "Vijfkaart Hoog: 20-22 punten, SA-verdeling.";
     if (bid.level === 2 && bid.strain === "C") return "Vijfkaart Hoog: sterke kunstmatige opening, 20+ met een kleur of 23+ met SA-verdeling.";
-    if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, meestal 6-10 HCP of een lelijke 11-punter, en een zeskaart.`;
-    if (bid.level === 3 && bid.strain !== "NT") return `preemptieve opening in ${suitName(bid.strain)}, meestal een lange kleur en beperkte kracht.`;
+    if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, meestal 6-10 HCP of een lelijke 11-punter, en een goede zeskaart.`;
+    if ((bid.level === 3 || bid.level === 4) && bid.strain !== "NT") return `preemptieve opening in ${suitName(bid.strain)}, meestal een lange kleur en beperkte kracht.`;
     if (bid.level === 1 && (bid.strain === "H" || bid.strain === "S")) return `Vijfkaart Hoog: 12-19 punten met minstens een vijfkaart ${suitName(bid.strain)}; open de langste kleur en met twee vijfkaarten de hoogste.`;
     if (bid.level === 1 && bid.strain === "D") return "Vijfkaart Hoog: 12-19 punten met minstens een vierkaart ruiten; open de langste kleur en met meerdere vierkaarten de laagste.";
     if (bid.level === 1 && bid.strain === "C") return "Vijfkaart Hoog: 12-19 punten, kan vanaf een tweekaart klaveren; 1K is de laagste vierkaart of vangnetopening.";

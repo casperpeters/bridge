@@ -22,9 +22,9 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighOpening(core, auction, valuationHelpers, resultHelpers, conventionHelpers) {
   "use strict";
 
-  const { biddingSystems, handShape } = core;
+  const { biddingSystems, handShape, teamOf, isTeamVulnerable } = core;
   const { Pass, bid, bidEquals } = auction;
-  const { ruleOf20OpeningContext, suitQuality, strongTwoClubsPlayingTricksContext } = valuationHelpers;
+  const { hcpInSuit, ruleOf20OpeningContext, suitQuality, strongTwoClubsPlayingTricksContext } = valuationHelpers;
   const { bidChoiceResult } = resultHelpers;
   const { chooseSuitByLengthThenRank } = conventionHelpers;
 
@@ -32,8 +32,9 @@
     return bidChoiceResult(biddingSystems.fiveCardHigh, bid, ruleName, confidence, reason, extra);
   }
 
-  function chooseFiveCardHighOpening(hand) {
+  function chooseFiveCardHighOpening(hand, options = {}) {
         const shape = handShape(hand);
+        const vulnerable = openingVulnerability(options);
 
         if (shape.balanced) {
           if (shape.hcp >= 23) return bid(2, "C");
@@ -44,10 +45,10 @@
         const strongTwoClubsTricks = strongTwoClubsPlayingTricksContext(shape, hand);
         if (shape.hcp >= 20 || shape.points >= 20 || strongTwoClubsTricks.playingTricksEligible) return bid(2, "C");
 
-        const weakTwo = chooseFiveCardHighWeakTwo(shape, hand);
+        const weakTwo = chooseFiveCardHighWeakTwo(shape, hand, { vulnerable });
         if (weakTwo) return weakTwo;
 
-        const preempt = chooseFiveCardHighPreempt(shape, hand);
+        const preempt = chooseFiveCardHighPreempt(shape, hand, { vulnerable });
         if (preempt) return preempt;
 
         const ruleOf20 = ruleOf20OpeningContext(shape, hand);
@@ -78,25 +79,60 @@
         return "C";
       }
 
-  function chooseFiveCardHighWeakTwo(shape, hand) {
+  function chooseFiveCardHighWeakTwo(shape, hand, options = {}) {
         const uglyEleven = shape.hcp === 11 && !ruleOf20OpeningContext(shape, hand).ruleOf20Eligible;
         if (shape.hcp < 6 || (shape.hcp > 10 && !uglyEleven)) return null;
-        const suit = chooseSuitByLengthThenRank(["S", "H", "D"], shape, 6, true, (candidate) => shape.counts[candidate] === 6 && suitQuality(hand, candidate) >= 2);
+        const vulnerable = Boolean(options.vulnerable);
+        const suit = chooseSuitByLengthThenRank(["S", "H", "D"], shape, 6, true, (candidate) => {
+          if (shape.counts[candidate] === 6 && suitQuality(hand, candidate) >= 2) return true;
+          return vulnerable && isExceptionalSixPointPreemptSuit(shape, hand, candidate);
+        });
         return suit ? bid(2, suit) : null;
       }
 
-  function chooseFiveCardHighPreempt(shape, hand) {
+  function chooseFiveCardHighPreempt(shape, hand, options = {}) {
         if (shape.hcp < 6 || shape.hcp > 10) return null;
-        const suit = chooseSuitByLengthThenRank(["S", "H", "D", "C"], shape, 7, true, (candidate) => shape.counts[candidate] >= 7 && suitQuality(hand, candidate) >= 2);
+        const vulnerable = Boolean(options.vulnerable);
+        const suit = chooseSuitByLengthThenRank(["S", "H", "D", "C"], shape, 7, true, (candidate) => isPreemptSuit(shape, hand, candidate, { vulnerable }));
         if (!suit) return null;
         return bid(shape.counts[suit] >= 8 ? 4 : 3, suit);
+      }
+
+  function isPreemptSuit(shape, hand, suit, { vulnerable = false } = {}) {
+        const length = shape.counts[suit] || 0;
+        if (length < 7 || suitQuality(hand, suit) < 2) return false;
+        if (shape.hcp >= 7 && shape.hcp <= 10) return true;
+        return !vulnerable && isExceptionalSixPointPreemptSuit(shape, hand, suit);
+      }
+
+  function isExceptionalSixPointPreemptSuit(shape, hand, suit) {
+        const length = shape.counts[suit] || 0;
+        if (shape.hcp !== 6 || length < 7 || hcpInSuit(hand, suit) !== 6) return false;
+        const ranks = new Set(hand.filter((card) => card.suit === suit).map((card) => card.rank));
+        return ranks.has("K") && ranks.has("Q") && ranks.has("J") && ranks.has("T") && !ranks.has("A");
+      }
+
+  function openingVulnerability(options = {}) {
+        if (typeof options.vulnerable === "boolean") return options.vulnerable;
+        if (!options.seat) return false;
+        return isTeamVulnerable(teamOf(options.seat), options.vulnerability || "none");
       }
 
 
   function describeOpeningBidChoice(chosenBid, shape, hand, base) {
         const ruleOf20 = ruleOf20OpeningContext(shape, hand);
         const strongTwoClubsTricks = strongTwoClubsPlayingTricksContext(shape, hand);
-        const extra = { ...base, ...ruleOf20, ...strongTwoClubsTricks, category: "opening", suit: chosenBid.strain, length: shape.counts[chosenBid.strain] || 0 };
+        const extra = {
+          ...base,
+          ...ruleOf20,
+          ...strongTwoClubsTricks,
+          category: "opening",
+          suit: chosenBid.strain,
+          length: shape.counts[chosenBid.strain] || 0,
+          exceptionalSixPointPreempt: chosenBid.strain && chosenBid.strain !== "NT"
+            ? isExceptionalSixPointPreemptSuit(shape, hand, chosenBid.strain)
+            : false
+        };
         if (bidEquals(chosenBid, 1, "NT")) {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.oneNotrump", "basic", "Open 1NT with 15-17 HCP and a balanced hand.", extra);
         }
@@ -132,6 +168,8 @@
     chooseFiveCardHighOpeningMinor,
     chooseFiveCardHighWeakTwo,
     chooseFiveCardHighPreempt,
+    isPreemptSuit,
+    isExceptionalSixPointPreemptSuit,
     describeOpeningBidChoice
   };
 });

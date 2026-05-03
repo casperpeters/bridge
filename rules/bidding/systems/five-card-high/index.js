@@ -122,6 +122,7 @@
     respondToWeakTwoFiveCardHigh,
     weakTwoResponseContext,
     respondToPreemptFiveCardHigh,
+    preemptResponseContext,
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,
     respondToOneMajorFiveCardHigh,
@@ -206,6 +207,8 @@
         aceCount: countAces(hand),
         balanced: shape.balanced,
         counts: { ...shape.counts },
+        vulnerability,
+        vulnerable: seat ? isTeamVulnerable(teamOf(seat), vulnerability) : false,
         ...ruleOf20OpeningContext(shape, hand)
       };
 
@@ -263,6 +266,14 @@
               category: "response",
               partnerSuit: lastPartnerCall.bid.strain,
               ...weakTwoResponseContext(shape, hand, lastPartnerCall.bid)
+            });
+          }
+          if (lastPartnerCall?.bid?.level >= 3 && lastPartnerCall.bid.strain !== "NT") {
+            return fiveCardHighBidChoiceResult(Pass(), "pass.responsePreemptNoAction", "basic", "Pass opposite partner's preempt because there are not enough own playing tricks, stoppers, support, or communication for game.", {
+              ...base,
+              category: "response",
+              partnerSuit: lastPartnerCall.bid.strain,
+              ...preemptResponseContext(shape, hand, lastPartnerCall.bid)
             });
           }
           return fiveCardHighBidChoiceResult(Pass(), "pass.responseNoAction", "basic", "Pass because there are not enough values or no suitable action opposite partner's opening.", {
@@ -457,19 +468,19 @@
       if (!seat) return Pass();
       const bidContext = context || auctionContextForFiveCardHigh(auction, seat);
       const target = bidContext.uncontested
-        ? chooseUncontestedFiveCardHighBid(hand, auction, seat, bidContext)
+        ? chooseUncontestedFiveCardHighBid(hand, auction, seat, bidContext, vulnerability)
         : chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
       return normalizeBid(target) || Pass();
     }
 
-  function chooseUncontestedFiveCardHighBid(hand, auction, seat, context = auctionContextForFiveCardHigh(auction, seat)) {
+  function chooseUncontestedFiveCardHighBid(hand, auction, seat, context = auctionContextForFiveCardHigh(auction, seat), vulnerability = "none") {
         const partnershipCalls = context.partnershipCalls;
         const openingCall = context.openingCall;
         const lastPartnerCall = context.lastPartnerCall;
 
         switch (context.phase) {
           case fiveCardHighAuctionPhases.opening:
-            return chooseFiveCardHighOpening(hand);
+            return chooseFiveCardHighOpening(hand, { seat, vulnerability });
           case fiveCardHighAuctionPhases.response:
             return chooseFiveCardHighResponse(hand, openingCall.bid);
           case fiveCardHighAuctionPhases.openerRebid:
@@ -515,6 +526,7 @@
     respondToTwoNotrumpFiveCardHigh,
     respondToStrongTwoClubsFiveCardHigh,
     respondToWeakTwoFiveCardHigh,
+    preemptResponseContext,
     respondToPreemptFiveCardHigh,
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,

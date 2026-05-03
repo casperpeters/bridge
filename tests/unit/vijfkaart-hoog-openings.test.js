@@ -189,6 +189,108 @@ test("Vijfkaart Hoog handles Start met Bridge weak two examples", () => {
   assert.equal(poorSpadeSuit.counts.S, 6);
 });
 
+test("Vijfkaart Hoog handles Start met Bridge preemptive opening examples", () => {
+  const hand1 = chooseFiveCardHighResult([
+    "8S", "7S", "4S",
+    "KD", "JD", "TD", "9D", "7D", "5D", "4D",
+    "QC", "JC", "6C"
+  ]);
+
+  assert.deepEqual(hand1.bid, bid(3, "D"));
+  assert.equal(hand1.ruleId, "fiveCardHigh.opening.preempt");
+  assert.equal(hand1.hcp, 7);
+  assert.equal(hand1.length, 7);
+
+  const hand2 = chooseFiveCardHighResult([
+    "AS", "JS", "TS", "9S", "6S", "4S", "2S",
+    "2H",
+    "KD", "JD", "8D",
+    "7C", "5C"
+  ]);
+
+  assert.deepEqual(hand2.bid, bid(3, "S"));
+  assert.equal(hand2.ruleId, "fiveCardHigh.opening.preempt");
+  assert.equal(hand2.hcp, 9);
+  assert.equal(hand2.length, 7);
+
+  const hand3 = chooseFiveCardHighResult([
+    "4S",
+    "AH", "KH", "JH", "8H", "7H", "5H", "4H", "2H",
+    "9D",
+    "5C", "4C", "3C"
+  ]);
+
+  assert.deepEqual(hand3.bid, bid(4, "H"));
+  assert.equal(hand3.ruleId, "fiveCardHigh.opening.preempt");
+  assert.equal(hand3.hcp, 8);
+  assert.equal(hand3.length, 8);
+
+  const hand4 = chooseFiveCardHighResult([
+    "KS", "JS", "6S",
+    "5H",
+    "9D", "7D",
+    "AC", "QC", "JC", "7C", "5C", "4C", "2C"
+  ]);
+
+  assert.deepEqual(hand4.bid, bid(1, "C"));
+  assert.equal(hand4.ruleId, "fiveCardHigh.opening.ruleOf20OneMinor");
+  assert.equal(hand4.hcp, 11);
+  assert.equal(hand4.counts.C, 7);
+});
+
+test("Vijfkaart Hoog treats the six-point preempt exception as vulnerability-aware", () => {
+  const specialSix = [
+    "KS", "QS", "JS", "TS", "7S", "5S", "4S",
+    "8H", "6H",
+    "9D", "3D",
+    "8C", "2C"
+  ];
+
+  const notVulnerable = chooseFiveCardHighResult(specialSix);
+
+  assert.deepEqual(notVulnerable.bid, bid(3, "S"));
+  assert.equal(notVulnerable.ruleId, "fiveCardHigh.opening.preempt");
+  assert.equal(notVulnerable.hcp, 6);
+  assert.equal(notVulnerable.exceptionalSixPointPreempt, true);
+  assert.equal(notVulnerable.vulnerable, false);
+
+  const vulnerable = rules.chooseFiveCardHighBidResult({
+    hand: hand(...specialSix),
+    auction: [],
+    seat: "South",
+    vulnerability: "NS"
+  });
+
+  assert.deepEqual(vulnerable.bid, bid(2, "S"));
+  assert.equal(vulnerable.ruleId, "fiveCardHigh.opening.weakTwo");
+  assert.equal(vulnerable.hcp, 6);
+  assert.equal(vulnerable.length, 7);
+  assert.equal(vulnerable.exceptionalSixPointPreempt, true);
+  assert.equal(vulnerable.vulnerable, true);
+
+  const specialSixWithEightCards = chooseFiveCardHighResult([
+    "KS", "QS", "JS", "TS", "7S", "5S", "4S", "2S",
+    "8H", "6H",
+    "9D",
+    "8C", "3C"
+  ]);
+
+  assert.deepEqual(specialSixWithEightCards.bid, bid(4, "S"));
+  assert.equal(specialSixWithEightCards.ruleId, "fiveCardHigh.opening.preempt");
+  assert.equal(specialSixWithEightCards.exceptionalSixPointPreempt, true);
+
+  const ordinarySix = chooseFiveCardHighResult([
+    "KS", "QS", "7S", "6S", "5S", "4S", "3S",
+    "8H", "6H",
+    "JD", "9D",
+    "8C", "2C"
+  ]);
+
+  assert.deepEqual(ordinarySix.bid, pass());
+  assert.equal(ordinarySix.ruleId, "fiveCardHigh.pass.openingNoAction");
+  assert.equal(ordinarySix.hcp, 6);
+});
+
 test("Vijfkaart Hoog opens by the Rule of 20 with fewer than 12 HCP", () => {
   const oneMajor = chooseFiveCardHighResult([
     "AS", "KS", "QS", "2S", "3S",

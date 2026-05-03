@@ -132,9 +132,59 @@
       }
 
   function respondToPreemptFiveCardHigh(shape, hand, partnerBid) {
-        if (shape.counts[partnerBid.strain] >= 3 && fitStrength(hand, shape, partnerBid.strain, partnerBid.level >= 4 ? 8 : 7) >= 12) return bid(gameLevel(partnerBid.strain), partnerBid.strain);
-        if (shape.balanced && shape.hcp >= 16) return bid(3, "NT");
+        const context = preemptResponseContext(shape, hand, partnerBid);
+        const gameBid = bid(gameLevel(partnerBid.strain), partnerBid.strain);
+
+        if (
+          (partnerBid.strain === "H" || partnerBid.strain === "S") &&
+          partnerBid.level < gameBid.level &&
+          context.usableFit &&
+          context.ownPlayingTricks >= 3
+        ) {
+          return gameBid;
+        }
+
+        if (partnerBid.level === 3 && context.partnerSuitCommunication && context.allSuitsStopped && context.ownPlayingTricks >= 3) {
+          return bid(3, "NT");
+        }
+
+        if (
+          (partnerBid.strain === "C" || partnerBid.strain === "D") &&
+          context.usableFit &&
+          (context.ownPlayingTricks >= 5 || (context.extremeDistribution && context.ownPlayingTricks >= 3))
+        ) {
+          return gameBid;
+        }
+
         return Pass();
+      }
+
+  function preemptResponseContext(shape, hand, partnerBid) {
+        const support = shape.counts[partnerBid.strain] || 0;
+        const partnerMinTrumpLength = partnerBid.level >= 4 ? 8 : 7;
+        const partnerSuitCommunication = support >= 2;
+        const missingStoppers = suits.filter((suit) => suit !== partnerBid.strain && !hasStopper(hand, suit));
+        return {
+          ownPlayingTricks: weakTwoResponsePlayingTricks(hand, partnerBid.strain, {
+            hasFit: partnerSuitCommunication,
+            countSideKings: partnerSuitCommunication
+          }),
+          support,
+          fit: support + partnerMinTrumpLength >= 8,
+          usableFit: partnerSuitCommunication,
+          partnerMinTrumpLength,
+          partnerSuitCommunication,
+          partnerSuitHonor: partnerBid.strain && partnerBid.strain !== "NT" ? hcpInSuit(hand, partnerBid.strain) > 0 : false,
+          partnerSuitTreatedAsStopped: partnerSuitCommunication,
+          extremeDistribution: hasExtremeMinorPreemptShape(shape, partnerBid.strain),
+          allSuitsStopped: missingStoppers.length === 0,
+          missingStoppers
+        };
+      }
+
+  function hasExtremeMinorPreemptShape(shape, partnerSuit) {
+        if (partnerSuit !== "C" && partnerSuit !== "D") return false;
+        return suits.some((suit) => suit !== partnerSuit && (shape.counts[suit] || 0) <= 1);
       }
 
   function respondToOneClubFiveCardHigh(shape, hand) {
@@ -273,16 +323,20 @@
         }
 
         if (partnerBid?.level >= 3 && partnerBid.strain !== "NT") {
+          const preemptExtra = {
+            ...extra,
+            ...preemptResponseContext(shape, hand, partnerBid)
+          };
           if (chosenBid.strain === partnerBid.strain) {
             return fiveCardHighBidChoiceResult(chosenBid, "response.raisePreempt", "basic", "Raise partner's long suit with support and enough strength.", {
-              ...extra,
-              ...fitValuationContext(hand, shape, partnerBid.strain, partnerBid.level === 2 ? 6 : partnerBid.level >= 4 ? 8 : 7)
+              ...preemptExtra,
+              ...fitValuationContext(hand, shape, partnerBid.strain, partnerBid.level >= 4 ? 8 : 7)
             });
           }
           if (chosenBid.strain === "NT") {
-            return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpOverPreempt", "basic", "Choose notrump with extra balanced strength opposite partner's preempt.", extra);
+            return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpOverPreempt", "basic", "Choose notrump with enough own playing tricks, stoppers and communication opposite partner's preempt.", preemptExtra);
           }
-          return fiveCardHighBidChoiceResult(chosenBid, "response.newSuitOverPreempt", "basic", "Show a strong new suit opposite partner's preempt.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "response.newSuitOverPreempt", "basic", "Show a strong new suit opposite partner's preempt.", preemptExtra);
         }
 
         if (partnerBid?.strain !== "NT" && chosenBid.strain === partnerBid?.strain) {
@@ -307,6 +361,7 @@
     respondToWeakTwoFiveCardHigh,
     weakTwoResponseContext,
     respondToPreemptFiveCardHigh,
+    preemptResponseContext,
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,
     respondToOneMajorFiveCardHigh,

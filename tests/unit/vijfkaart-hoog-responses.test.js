@@ -260,6 +260,92 @@ test("Vijfkaart Hoog matches Start met Bridge weak-two response examples", () =>
   });
 });
 
+test("Vijfkaart Hoog matches Start met Bridge preempt response examples", () => {
+  const raiseSpades = chooseFiveCardHighResult([
+    "KS", "6S",
+    "AH", "TH", "7H",
+    "KD", "QD", "8D", "7D", "6D",
+    "AC", "8C", "5C"
+  ], [
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() }
+  ]);
+
+  assert.deepEqual(raiseSpades.bid, bid(4, "S"));
+  assert.equal(raiseSpades.ruleId, "fiveCardHigh.response.raisePreempt");
+  assert.equal(raiseSpades.support, 2);
+  assert.equal(raiseSpades.partnerSuitCommunication, true);
+  assert.equal(raiseSpades.ownPlayingTricks, 4);
+
+  const threeNotrump = chooseFiveCardHighResult([
+    "AS", "KS", "7S",
+    "JH", "TH", "9H", "3H",
+    "KD", "JD", "8D",
+    "AC", "6C", "4C"
+  ], [
+    { seat: "North", bid: bid(3, "C") },
+    { seat: "East", bid: pass() }
+  ]);
+
+  assert.deepEqual(threeNotrump.bid, bid(3, "NT"));
+  assert.equal(threeNotrump.ruleId, "fiveCardHigh.response.notrumpOverPreempt");
+  assert.equal(threeNotrump.support, 3);
+  assert.equal(threeNotrump.partnerSuitCommunication, true);
+  assert.equal(threeNotrump.allSuitsStopped, true);
+  assert.equal(threeNotrump.ownPlayingTricks, 3.5);
+
+  const noHeartCommunication = chooseFiveCardHighResult([
+    "AS", "9S", "8S",
+    "5H",
+    "KD", "JD", "8D", "7D",
+    "KC", "QC", "9C", "3C", "2C"
+  ], [
+    { seat: "North", bid: bid(3, "H") },
+    { seat: "East", bid: pass() }
+  ]);
+
+  assert.deepEqual(noHeartCommunication.bid, pass());
+  assert.equal(noHeartCommunication.ruleId, "fiveCardHigh.pass.responsePreemptNoAction");
+  assert.equal(noHeartCommunication.support, 1);
+  assert.equal(noHeartCommunication.partnerSuitCommunication, false);
+  assert.equal(noHeartCommunication.ownPlayingTricks, 2);
+
+  const minorGameWithExtremeShape = chooseFiveCardHighResult([
+    "4S",
+    "AH", "5H", "4H",
+    "AD", "KD", "JD", "8D", "3D",
+    "KC", "JC", "8C", "5C"
+  ], [
+    { seat: "North", bid: bid(3, "C") },
+    { seat: "East", bid: pass() }
+  ]);
+
+  assert.deepEqual(minorGameWithExtremeShape.bid, bid(5, "C"));
+  assert.equal(minorGameWithExtremeShape.ruleId, "fiveCardHigh.response.raisePreempt");
+  assert.equal(minorGameWithExtremeShape.support, 4);
+  assert.equal(minorGameWithExtremeShape.partnerSuitCommunication, true);
+  assert.equal(minorGameWithExtremeShape.extremeDistribution, true);
+  assert.equal(minorGameWithExtremeShape.allSuitsStopped, false);
+  assert.equal(minorGameWithExtremeShape.ownPlayingTricks, 4);
+});
+
+test("Vijfkaart Hoog raises a major preempt to game from three own playing tricks with fit", () => {
+  const result = chooseFiveCardHighResult([
+    "KS", "6S",
+    "AH", "TH", "7H",
+    "KD", "QD", "8D", "7D", "6D",
+    "8C", "5C", "2C"
+  ], [
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() }
+  ]);
+
+  assert.deepEqual(result.bid, bid(4, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.response.raisePreempt");
+  assert.equal(result.support, 2);
+  assert.equal(result.ownPlayingTricks, 3);
+});
+
 test("Vijfkaart Hoog responds 4C to 1C with strong unbalanced club support and no new one-level suit", () => {
   const auction = [
     { seat: "North", bid: bid(1, "C") },
