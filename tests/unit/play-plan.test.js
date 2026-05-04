@@ -776,3 +776,295 @@ test("createPlayPlan delays trumps to discard an attacked-suit loser on side win
   assert.equal(trumps.timing, "afterUrgentDiscard");
   assert.equal(trumps.delayReason, "discardLoserOnWinner");
 });
+
+test("createPlayPlan chooses a cross ruff before drawing trumps", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    dummyHand: hand("AS", "JS", "TS", "8S", "AH", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QH") }]
+  });
+
+  const crossRuff = plan.priorities.find((item) => item.kind === "crossRuff");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(crossRuff);
+  assert.equal(plan.priorities[0].kind, "crossRuff");
+  assert.equal(crossRuff.trump, "S");
+  assert.deepEqual(crossRuff.trumpWinnerRanks.slice(0, 3), ["A", "K", "Q"]);
+  assert.ok(crossRuff.crossSuits.some((item) => item.suit === "H" && item.longSeat === "North" && item.shortSeat === "South"));
+  assert.ok(crossRuff.crossSuits.some((item) => item.suit === "D" && item.longSeat === "South" && item.shortSeat === "North"));
+  assert.equal(trumps.timing, "afterCrossRuff");
+  assert.equal(trumps.delayReason, "crossRuff");
+});
+
+test("createPlayPlan skips cross ruff without high trump control", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    dummyHand: hand("JS", "TS", "8S", "6S", "AH", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  assert.ok(!plan.priorities.some((item) => item.kind === "crossRuff"));
+});
+
+test("createPlayPlan skips cross ruff without shortness in both hands", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    dummyHand: hand("AS", "JS", "TS", "8S", "AH", "8H", "6H", "4H", "2H", "KD", "3D", "AC", "7C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  assert.ok(!plan.priorities.some((item) => item.kind === "crossRuff"));
+});
+
+test("createPlayPlan delays trumps for the immediate diamond finesse lesson hand", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "TS", "9S", "6S", "3S", "AH", "5H", "2H", "QD", "7D", "KC", "QC", "4C"),
+    dummyHand: hand("QS", "JS", "7S", "5S", "9H", "4H", "3H", "AD", "JD", "TD", "JC", "7C", "2C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("KH") },
+        { seat: "North", card: card("3H") },
+        { seat: "East", card: card("6H") },
+        { seat: "South", card: card("AH") }
+      ]
+    }]
+  });
+
+  const finesse = plan.priorities.find((item) => item.kind === "establishSideSuitForDiscard");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(finesse);
+  assert.equal(plan.priorities[0].kind, "establishSideSuitForDiscard");
+  assert.equal(finesse.suit, "D");
+  assert.equal(finesse.leadSeat, "South");
+  assert.equal(finesse.sourceSeat, "North");
+  assert.equal(finesse.leadRank, "Q");
+  assert.equal(finesse.missingStopper, "K");
+  assert.equal(finesse.discardSuit, "H");
+  assert.equal(trumps.timing, "afterDevelopedDiscard");
+});
+
+test("createPlayPlan matches the lesson example for discarding a club loser on high hearts", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("QS", "JS", "TS", "5S", "4S", "QH", "8H", "AD", "QD", "5D", "6C", "5C"),
+    dummyHand: hand("KS", "9S", "8S", "3S", "AH", "KH", "7H", "3H", "JD", "3D", "9C", "8C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("KC") },
+        { seat: "North", card: card("2C") },
+        { seat: "East", card: card("3C") },
+        { seat: "South", card: card("AC") }
+      ]
+    }]
+  });
+
+  const discard = plan.priorities.find((item) => item.kind === "discardLoserOnWinner");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(discard);
+  assert.equal(discard.suit, "H");
+  assert.equal(discard.attackedSuit, "C");
+  assert.equal(discard.discardSeat, "South");
+  assert.equal(discard.firstSeat, "North");
+  assert.deepEqual(discard.cashRanks, ["A", "K", "Q"]);
+  assert.equal(plan.priorities[0].kind, "discardLoserOnWinner");
+  assert.equal(trumps.timing, "afterUrgentDiscard");
+});
+
+test("createPlayPlan matches the lesson example for developing spades before drawing trumps", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("JS", "2S", "JH", "TH", "9H", "8H", "4H", "5D", "4D", "KC", "QC", "JC"),
+    dummyHand: hand("KS", "QS", "5S", "KH", "QH", "7H", "3H", "KD", "6D", "7C", "6C", "5C"),
+    contract: { level: 4, strain: "H" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("QD") },
+        { seat: "North", card: card("3D") },
+        { seat: "East", card: card("2D") },
+        { seat: "South", card: card("AD") }
+      ]
+    }]
+  });
+
+  const develop = plan.priorities.find((item) => item.kind === "establishSideSuitForDiscard");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(develop);
+  assert.equal(plan.priorities[0].kind, "establishSideSuitForDiscard");
+  assert.equal(develop.suit, "S");
+  assert.equal(develop.discardSuit, "D");
+  assert.equal(develop.leadSeat, "South");
+  assert.equal(develop.sourceSeat, "North");
+  assert.equal(develop.discardSeat, "South");
+  assert.equal(develop.leadRank, "J");
+  assert.equal(develop.missingStopper, "A");
+  assert.deepEqual(develop.futureWinnerRanks, ["K", "Q"]);
+  assert.equal(develop.entrySuit, "D");
+  assert.equal(develop.entryRank, "K");
+  assert.equal(trumps.timing, "afterDevelopedDiscard");
+  assert.equal(trumps.delayReason, "establishSideSuitForDiscard");
+});
+
+test("createPlayPlan does not delay trumps for a high-card discard without a clear entry", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("JS", "2S", "JH", "TH", "9H", "8H", "4H", "5D", "4D", "KC", "QC", "JC"),
+    dummyHand: hand("KS", "QS", "5S", "KH", "QH", "7H", "3H", "9D", "6D", "7C", "6C", "5C"),
+    contract: { level: 4, strain: "H" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("QD") },
+        { seat: "North", card: card("3D") },
+        { seat: "East", card: card("2D") },
+        { seat: "South", card: card("AD") }
+      ]
+    }]
+  });
+
+  assert.ok(!plan.priorities.some((item) => item.kind === "establishSideSuitForDiscard"));
+  assert.equal(plan.priorities[0].kind, "drawTrumps");
+  assert.equal(plan.priorities[0].timing, "early");
+});
+
+test("createPlayPlan uses trump entries before a repeated suit-contract finesse", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "QS", "JS", "JH", "7H", "5H", "3H", "2H", "AD", "KD", "QD", "JC", "9C"),
+    dummyHand: hand("9S", "7S", "4S", "AH", "KH", "8H", "8D", "6D", "3D", "7C", "4C", "3C", "2C"),
+    contract: { level: 4, strain: "H" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("JD") },
+        { seat: "North", card: card("3D") },
+        { seat: "East", card: card("2D") },
+        { seat: "South", card: card("QD") }
+      ]
+    }]
+  });
+
+  const entry = plan.priorities.find((item) => item.kind === "useTrumpEntriesForRepeatedFinesse");
+  const finesse = plan.priorities.find((item) => item.kind === "finesse" && item.suit === "S");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(entry);
+  assert.equal(plan.priorities[0].kind, "useTrumpEntriesForRepeatedFinesse");
+  assert.equal(entry.trump, "H");
+  assert.equal(entry.entrySeat, "North");
+  assert.equal(entry.entryRank, "A");
+  assert.equal(entry.finesseSuit, "S");
+  assert.equal(entry.finesseRank, "Q");
+  assert.equal(entry.repeatFinesseRank, "J");
+  assert.equal(finesse.leadSeat, "North");
+  assert.equal(finesse.targetSeat, "South");
+  assert.equal(trumps.timing, "afterTrumpEntryFinesse");
+});
+
+test("createPlayPlan uses the next trump entry after the first suit-contract finesse wins", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "JS", "JH", "7H", "5H", "3H", "AD", "KD", "JC", "9C"),
+    dummyHand: hand("9S", "7S", "KH", "8H", "8D", "6D", "7C", "4C", "3C", "2C"),
+    contract: { level: 4, strain: "H" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [
+      {
+        number: 1,
+        winner: "South",
+        cards: [
+          { seat: "West", card: card("JD") },
+          { seat: "North", card: card("3D") },
+          { seat: "East", card: card("2D") },
+          { seat: "South", card: card("QD") }
+        ]
+      },
+      {
+        number: 2,
+        winner: "North",
+        cards: [
+          { seat: "South", card: card("2H") },
+          { seat: "West", card: card("4H") },
+          { seat: "North", card: card("AH") },
+          { seat: "East", card: card("6H") }
+        ]
+      },
+      {
+        number: 3,
+        winner: "South",
+        cards: [
+          { seat: "North", card: card("4S") },
+          { seat: "East", card: card("2S") },
+          { seat: "South", card: card("QS") },
+          { seat: "West", card: card("3S") }
+        ]
+      }
+    ]
+  });
+
+  const entry = plan.priorities.find((item) => item.kind === "useTrumpEntriesForRepeatedFinesse");
+  const repeat = plan.priorities.find((item) => item.kind === "repeatFinesse" && item.suit === "S");
+  assert.ok(entry);
+  assert.ok(repeat);
+  assert.equal(entry.entryRank, "K");
+  assert.equal(entry.finesseRank, "J");
+  assert.equal(repeat.leadSeat, "North");
+  assert.equal(repeat.targetSeat, "South");
+  assert.equal(repeat.finesseRank, "J");
+});
+
+test("createPlayPlan develops a work suit before using dummy's only trump entry", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("KS", "QS", "8S", "7S", "2S", "KH", "6H", "AD", "5D", "4D", "KC", "3C"),
+    dummyHand: hand("AS", "6S", "5S", "8H", "4H", "7D", "6D", "3D", "QC", "JC", "TC", "8C"),
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North",
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("QH") },
+        { seat: "North", card: card("2H") },
+        { seat: "East", card: card("3H") },
+        { seat: "South", card: card("AH") }
+      ]
+    }]
+  });
+
+  const workSuit = plan.priorities.find((item) => item.kind === "developSideSuitBeforeTrumpEntry");
+  const trumps = plan.priorities.find((item) => item.kind === "drawTrumps");
+  assert.ok(workSuit);
+  assert.equal(plan.priorities[0].kind, "developSideSuitBeforeTrumpEntry");
+  assert.equal(workSuit.suit, "C");
+  assert.equal(workSuit.leadSeat, "South");
+  assert.equal(workSuit.sourceSeat, "North");
+  assert.equal(workSuit.leadRank, "K");
+  assert.equal(workSuit.missingStopper, "A");
+  assert.deepEqual(workSuit.futureWinnerRanks, ["Q", "J", "T"]);
+  assert.equal(workSuit.entrySuit, "S");
+  assert.equal(workSuit.entryRank, "A");
+  assert.deepEqual(workSuit.discardSuits, ["D"]);
+  assert.equal(trumps.timing, "afterWorkSuitBeforeTrumpEntry");
+});

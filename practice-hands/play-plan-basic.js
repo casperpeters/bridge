@@ -130,6 +130,83 @@
       ]
     },
     {
+      id: "cross-ruff-001",
+      title: "Cross ruff in een schoppencontract",
+      level: "beginner",
+      focus: ["play", "play-plan", "trump", "cross-ruff"],
+      systemId: "fiveCardHigh",
+      dealer: "North",
+      vulnerability: "none",
+      testGoal: "Bij 4 schoppen moet het speelplan niet meteen troef trekken, maar harten in Zuid en ruiten in Noord troeven.",
+      hands: {
+        North: ["AS", "JS", "TS", "8S", "AH", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C"],
+        East: ["4S", "3S", "2S", "KH", "TH", "5H", "9D", "8D", "7D", "6D", "TC", "4C", "2C"],
+        South: ["KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"],
+        West: ["6S", "5S", "QH", "JH", "9H", "7H", "KD", "QD", "JD", "TD", "KC", "QC", "JC"]
+      },
+      expectedContract: { contract: "4S", declarer: "South" },
+      expectedPlayPlan: {
+        currentTrick: [{ seat: "West", card: "QH" }],
+        priorityKind: "crossRuff",
+        suit: "D",
+        firstPriorityKind: "crossRuff",
+        also: [
+          { priorityKind: "drawTrumps", suit: "S", timing: "afterCrossRuff", delayReason: "crossRuff" }
+        ]
+      },
+      explanationKeys: ["playPlan.crossRuff", "playPlan.drawTrumps"],
+      teachingPoints: [
+        "Bij een cross ruff trek je niet meteen troef, omdat beide handen troeven nodig hebben.",
+        "Cash kwetsbare hoge zijkleurkaarten eerst en troef daarna om-en-om in de korte hand."
+      ]
+    },
+    {
+      id: "pre-trump-finesse-discard-001",
+      title: "Ruitensnit voordat troef wordt getrokken",
+      level: "beginner",
+      focus: ["play", "play-plan", "trump", "finesse", "discard-loser"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Na de hartenuitkomst moet Zuid direct ruiten vrouw spelen voor een mogelijke hartenafgooi voordat troef wordt getrokken.",
+      hands: {
+        North: ["QS", "JS", "7S", "5S", "9H", "4H", "3H", "AD", "JD", "TD", "JC", "7C", "2C"],
+        East: ["4S", "2S", "8H", "7H", "6H", "5D", "4D", "3D", "2D", "8C", "6C", "5C", "3C"],
+        South: ["KS", "TS", "9S", "6S", "3S", "AH", "5H", "2H", "QD", "7D", "KC", "QC", "4C"],
+        West: ["AS", "8S", "KH", "QH", "JH", "TH", "KD", "9D", "8D", "6D", "AC", "TC", "9C"]
+      },
+      expectedContract: { contract: "4S", declarer: "South" },
+      expectedPlayPlan: {
+        trickHistory: [{
+          number: 1,
+          winner: "South",
+          cards: [
+            { seat: "West", card: "KH" },
+            { seat: "North", card: "3H" },
+            { seat: "East", card: "6H" },
+            { seat: "South", card: "AH" }
+          ]
+        }],
+        priorityKind: "establishSideSuitForDiscard",
+        suit: "D",
+        discardSuit: "H",
+        leadSeat: "South",
+        sourceSeat: "North",
+        leadRank: "Q",
+        missingStopper: "K",
+        timing: "beforeDrawTrumps",
+        firstPriorityKind: "establishSideSuitForDiscard",
+        also: [
+          { priorityKind: "drawTrumps", suit: "S", timing: "afterDevelopedDiscard", delayReason: "establishSideSuitForDiscard" }
+        ]
+      },
+      explanationKeys: ["playPlan.establishSideSuitForDiscard", "playPlan.drawTrumps"],
+      teachingPoints: [
+        "Soms moet een kans in een zijkleur meteen genomen worden voordat troef wordt getrokken.",
+        "Als de ruitensnit goed zit, kan later een hartenverliezer op de derde ruiten van Noord weg."
+      ]
+    },
+    {
       id: "notrump-develop-long-suit-001",
       title: "Slagen ontwikkelen in sans-atout",
       level: "beginner",

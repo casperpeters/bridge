@@ -8,9 +8,9 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains twenty-seven valid beginner deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 27);
-  assert.equal(practiceHands.validatePracticeHands(), 27);
+test("practice hand catalog contains twenty-nine valid beginner deals", () => {
+  assert.equal(practiceHands.beginnerHands.length, 29);
+  assert.equal(practiceHands.validatePracticeHands(), 29);
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {
@@ -25,7 +25,7 @@ test("practice hand catalog contains twenty-seven valid beginner deals", () => {
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 27);
+  assert.equal(ids.size, 29);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {
@@ -72,6 +72,7 @@ test("practice hand play-plan targets expose their expected priority", () => {
       contract,
       declarer,
       dummy,
+      trickHistory: tricksFromSpecs(expected.trickHistory),
       currentTrick: playsFromSpecs(expected.currentTrick)
     });
 
@@ -167,7 +168,13 @@ function assertPlanPriority(plan, expected, scenarioId) {
     "discardSeat",
     "firstSeat",
     "longSeat",
-    "shortSeat"
+    "shortSeat",
+    "leadSeat",
+    "sourceSeat",
+    "discardSuit",
+    "leadRank",
+    "finesseRank",
+    "trump"
   ].forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(expected, key)) {
       assert.equal(priority[key], expected[key], `${scenarioId} ${expected.priorityKind} ${key}`);

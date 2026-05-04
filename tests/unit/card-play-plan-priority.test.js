@@ -1163,6 +1163,420 @@ test("chooseCardPlay follows the urgent side-winner discard plan before drawing 
   assert.equal(result.action, "cashWinnerForDiscard");
 });
 
+test("chooseCardPlay wins the opening lead for a planned cross ruff", () => {
+  const declarerHand = hand("KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C");
+  const dummyHand = hand("AS", "JS", "TS", "8S", "AH", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C");
+  const contract = { level: 4, strain: "S" };
+  const currentTrick = [{ seat: "West", card: card("QH") }];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    currentTrick
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: dummyHand,
+    partnerHand: declarerHand,
+    currentTrick,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "AH");
+  assert.equal(result.ruleId, "playPlan.crossRuff");
+  assert.equal(result.planPriority.kind, "crossRuff");
+  assert.equal(result.action, "winSideSuitForCrossRuff");
+});
+
+test("chooseCardPlay leads the next side suit for a planned cross ruff", () => {
+  const contract = { level: 4, strain: "S" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hand("KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    dummyHand: hand("AS", "JS", "TS", "8S", "AH", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C"),
+    contract,
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QH") }]
+  });
+  const trickHistory = [{
+    number: 1,
+    winner: "North",
+    cards: [
+      { seat: "West", card: card("QH") },
+      { seat: "North", card: card("AH") },
+      { seat: "East", card: card("5H") },
+      { seat: "South", card: card("3H") }
+    ]
+  }];
+
+  const result = rules.chooseCardPlay({
+    hand: hand("AS", "JS", "TS", "8S", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C"),
+    partnerHand: hand("KS", "QS", "9S", "7S", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    currentTrick: [],
+    trickHistory,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "playPlan.crossRuff");
+  assert.equal(result.planPriority.kind, "crossRuff");
+  assert.equal(result.action, "leadCrossRuff");
+});
+
+test("chooseCardPlay cashes a side ace before continuing a planned cross ruff", () => {
+  const contract = { level: 4, strain: "S" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hand("KS", "QS", "9S", "7S", "3H", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    dummyHand: hand("AS", "JS", "TS", "8S", "AH", "8H", "6H", "4H", "2H", "3D", "AC", "7C", "6C"),
+    contract,
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QH") }]
+  });
+  const trickHistory = [
+    {
+      number: 1,
+      winner: "North",
+      cards: [
+        { seat: "West", card: card("QH") },
+        { seat: "North", card: card("AH") },
+        { seat: "East", card: card("5H") },
+        { seat: "South", card: card("3H") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("2H") },
+        { seat: "East", card: card("7H") },
+        { seat: "South", card: card("7S") },
+        { seat: "West", card: card("9H") }
+      ]
+    }
+  ];
+
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "QS", "9S", "AD", "5D", "4D", "2D", "9C", "8C", "5C", "3C"),
+    partnerHand: hand("AS", "JS", "TS", "8S", "8H", "6H", "4H", "3D", "AC", "7C", "6C"),
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "AD");
+  assert.equal(result.ruleId, "playPlan.crossRuff");
+  assert.equal(result.action, "cashWinnerBeforeCrossRuff");
+});
+
+test("chooseCardPlay takes the diamond finesse before drawing trumps in the lesson hand", () => {
+  const declarerHand = hand("KS", "TS", "9S", "6S", "3S", "AH", "5H", "2H", "QD", "7D", "KC", "QC", "4C");
+  const dummyHand = hand("QS", "JS", "7S", "5S", "9H", "4H", "3H", "AD", "JD", "TD", "JC", "7C", "2C");
+  const contract = { level: 4, strain: "S" };
+  const trickHistory = [{
+    number: 1,
+    winner: "South",
+    cards: [
+      { seat: "West", card: card("KH") },
+      { seat: "North", card: card("3H") },
+      { seat: "East", card: card("6H") },
+      { seat: "South", card: card("AH") }
+    ]
+  }];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "QD");
+  assert.equal(result.ruleId, "playPlan.establishSideSuitForDiscard");
+  assert.equal(result.planPriority.kind, "establishSideSuitForDiscard");
+  assert.equal(result.action, "forceHighCardForDiscard");
+});
+
+test("chooseCardPlay matches the lesson example by playing the short-side heart picture first", () => {
+  const declarerHand = hand("QS", "JS", "TS", "5S", "4S", "QH", "8H", "AD", "QD", "5D", "6C", "5C");
+  const dummyHand = hand("KS", "9S", "8S", "3S", "AH", "KH", "7H", "3H", "JD", "3D", "9C", "8C");
+  const contract = { level: 4, strain: "S" };
+  const trickHistory = [{
+    number: 1,
+    winner: "South",
+    cards: [
+      { seat: "West", card: card("KC") },
+      { seat: "North", card: card("2C") },
+      { seat: "East", card: card("3C") },
+      { seat: "South", card: card("AC") }
+    ]
+  }];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "QH");
+  assert.equal(result.ruleId, "playPlan.discardLoserOnWinner");
+  assert.equal(result.planPriority.kind, "discardLoserOnWinner");
+  assert.equal(result.action, "unblockShortHonorForDiscard");
+});
+
+test("chooseCardPlay matches the lesson example by developing spades before drawing trumps", () => {
+  const declarerHand = hand("JS", "2S", "JH", "TH", "9H", "8H", "4H", "5D", "4D", "KC", "QC", "JC");
+  const dummyHand = hand("KS", "QS", "5S", "KH", "QH", "7H", "3H", "KD", "6D", "7C", "6C", "5C");
+  const contract = { level: 4, strain: "H" };
+  const trickHistory = [{
+    number: 1,
+    winner: "South",
+    cards: [
+      { seat: "West", card: card("QD") },
+      { seat: "North", card: card("3D") },
+      { seat: "East", card: card("2D") },
+      { seat: "South", card: card("AD") }
+    ]
+  }];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "H",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "JS");
+  assert.equal(result.ruleId, "playPlan.establishSideSuitForDiscard");
+  assert.equal(result.planPriority.kind, "establishSideSuitForDiscard");
+  assert.equal(result.action, "forceHighCardForDiscard");
+});
+
+test("chooseCardPlay plays a high spade from dummy to force out the missing ace", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "QS", "5S", "KH", "QH", "7H", "3H", "KD", "6D", "7C", "6C", "5C"),
+    partnerHand: hand("2S", "JH", "TH", "9H", "8H", "4H", "5D", "4D", "KC", "QC", "JC"),
+    currentTrick: [
+      { seat: "South", card: card("JS") },
+      { seat: "West", card: card("4S") }
+    ],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("QD") },
+        { seat: "North", card: card("3D") },
+        { seat: "East", card: card("2D") },
+        { seat: "South", card: card("AD") }
+      ]
+    }],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 4, strain: "H" },
+    trump: "H",
+    playPlan: {
+      priorities: [{
+        kind: "establishSideSuitForDiscard",
+        confidence: "basic",
+        suit: "S",
+        discardSuit: "D",
+        leadSeat: "South",
+        sourceSeat: "North",
+        discardSeat: "South",
+        leadRank: "J",
+        missingStopper: "A",
+        futureWinnerRanks: ["K", "Q"],
+        entrySuit: "D",
+        entryRank: "K"
+      }]
+    }
+  });
+
+  assert.equal(result.card.id, "KS");
+  assert.equal(result.ruleId, "playPlan.establishSideSuitForDiscard");
+  assert.equal(result.action, "forceMissingHighCard");
+});
+
+test("chooseCardPlay uses a trump entry before a repeated suit-contract finesse", () => {
+  const declarerHand = hand("AS", "QS", "JS", "JH", "7H", "5H", "3H", "2H", "AD", "KD", "QD", "JC", "9C");
+  const dummyHand = hand("9S", "7S", "4S", "AH", "KH", "8H", "8D", "6D", "3D", "7C", "4C", "3C", "2C");
+  const contract = { level: 4, strain: "H" };
+  const trickHistory = [{
+    number: 1,
+    winner: "South",
+    cards: [
+      { seat: "West", card: card("JD") },
+      { seat: "North", card: card("3D") },
+      { seat: "East", card: card("2D") },
+      { seat: "South", card: card("QD") }
+    ]
+  }];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "H",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "2H");
+  assert.equal(result.ruleId, "playPlan.useTrumpEntriesForRepeatedFinesse");
+  assert.equal(result.planPriority.kind, "useTrumpEntriesForRepeatedFinesse");
+  assert.equal(result.entryRank, "A");
+  assert.equal(result.action, "leadTrumpEntryToFinesseHand");
+});
+
+test("chooseCardPlay takes the planned trump entry for a repeated finesse", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("9S", "7S", "4S", "AH", "KH", "8H", "8D", "6D", "3D", "7C", "4C", "3C", "2C"),
+    partnerHand: hand("AS", "QS", "JS", "JH", "7H", "5H", "3H", "AD", "KD", "QD", "JC", "9C"),
+    currentTrick: [
+      { seat: "South", card: card("2H") },
+      { seat: "West", card: card("4H") }
+    ],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 4, strain: "H" },
+    trump: "H",
+    playPlan: {
+      priorities: [{
+        kind: "useTrumpEntriesForRepeatedFinesse",
+        confidence: "basic",
+        trump: "H",
+        entrySeat: "North",
+        entryRank: "A",
+        fromSeat: "South",
+        finesseSuit: "S",
+        finesseRank: "Q",
+        repeatFinesseRank: "J",
+        missingHonor: "K"
+      }]
+    }
+  });
+
+  assert.equal(result.card.id, "AH");
+  assert.equal(result.ruleId, "playPlan.useTrumpEntriesForRepeatedFinesse");
+  assert.equal(result.action, "takeTrumpEntryForFinesse");
+});
+
+test("chooseCardPlay develops a work suit before using dummy's only trump entry", () => {
+  const declarerHand = hand("KS", "QS", "8S", "7S", "2S", "KH", "6H", "AD", "5D", "4D", "KC", "3C");
+  const dummyHand = hand("AS", "6S", "5S", "8H", "4H", "7D", "6D", "3D", "QC", "JC", "TC", "8C");
+  const contract = { level: 4, strain: "S" };
+  const trickHistory = [{
+    number: 1,
+    winner: "South",
+    cards: [
+      { seat: "West", card: card("QH") },
+      { seat: "North", card: card("2H") },
+      { seat: "East", card: card("3H") },
+      { seat: "South", card: card("AH") }
+    ]
+  }];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "S",
+    playPlan
+  });
+
+  assert.equal(result.card.id, "KC");
+  assert.equal(result.ruleId, "playPlan.developSideSuitBeforeTrumpEntry");
+  assert.equal(result.planPriority.kind, "developSideSuitBeforeTrumpEntry");
+  assert.equal(result.action, "forceWorkSuitStopperBeforeTrumpEntry");
+});
+
 test("chooseCardPlay discards the planned loser while partner's side winner is cashing", () => {
   const result = rules.chooseCardPlay({
     hand: hand("QC", "2D", "AS"),

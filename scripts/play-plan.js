@@ -187,6 +187,39 @@ function playPlanPriorityText(priority) {
     const entries = typeof priority.entryCount === "number" ? ` Er zijn ${priority.entryCount} duidelijke entree${priority.entryCount === 1 ? "" : "s"}.` : "";
     return `Ontwikkel de lange ${suitName(priority.suit)} van ${seatName(priority.longSeat)} door die kleur te spelen en in ${seatName(priority.shortSeat)} te troeven; verwacht ongeveer ${priority.maxUsefulRuffs || priority.estimatedRuffsNeeded} introever${(priority.maxUsefulRuffs || priority.estimatedRuffsNeeded) === 1 ? "" : "s"}.${entry}${entries}`;
   }
+  if (priority.kind === "crossRuff") {
+    const suitsText = (priority.crossSuits || [])
+      .map((item) => `${suitName(item.suit)} in ${seatName(item.shortSeat)}`)
+      .join(" en ");
+    const cash = priority.cashFirst?.length
+      ? ` Incasseer eerst de hoge zijkleurkaart${priority.cashFirst.length === 1 ? "" : "en"} die anders kwetsbaar ${priority.cashFirst.length === 1 ? "is" : "zijn"}.`
+      : "";
+    return `Trek nu geen troef: dit lijkt op een cross ruff. Je wilt om-en-om ${suitsText} troeven, zolang de hoge troeven controle geven.${cash}`;
+  }
+  if (priority.kind === "useTrumpEntriesForRepeatedFinesse") {
+    const entry = rankLabel[priority.entryRank] || priority.entryRank;
+    const lead = rankLabel[priority.entryLeadRank] || priority.entryLeadRank;
+    const finesse = rankLabel[priority.finesseRank] || priority.finesseRank;
+    const repeat = rankLabel[priority.repeatFinesseRank] || priority.repeatFinesseRank;
+    const missing = rankLabel[priority.missingHonor] || priority.missingHonor;
+    return `Optimaal benutten van entrees: trek troef in etappes. Speel ${lead} ${suitName(priority.trump)} naar ${entry} ${suitName(priority.trump)} bij ${seatName(priority.entrySeat)}, neem daarna de snit in ${suitName(priority.finesseSuit)} naar de ${finesse} en probeer die snit later te herhalen naar de ${repeat}. Wacht met volledig troeftrekken; je hebt de troefentrees nodig zolang de ${missing} nog niet gevallen is.`;
+  }
+  if (priority.kind === "establishSideSuitForDiscard") {
+    const lead = rankLabel[priority.leadRank] || priority.leadRank;
+    const missing = rankLabel[priority.missingStopper] || priority.missingStopper;
+    const winners = priority.futureWinnerRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
+    const entry = priority.entrySuit
+      ? ` Bewaar de entree via ${rankLabel[priority.entryRank] || priority.entryRank} ${suitName(priority.entrySuit)} naar ${seatName(priority.sourceSeat)}.`
+      : "";
+    return `Verliezers wegwerken op hoge kaarten: speel eerst ${lead} ${suitName(priority.suit)} vanuit ${seatName(priority.leadSeat)} naar de plaatjes${winners ? ` (${winners})` : ""} bij ${seatName(priority.sourceSeat)}, zodat de ${missing} eruit moet.${entry} Daarna kan een verliezer in ${suitName(priority.discardSuit)} weg; wacht daarom met troeftrekken.`;
+  }
+  if (priority.kind === "developSideSuitBeforeTrumpEntry") {
+    const lead = rankLabel[priority.leadRank] || priority.leadRank;
+    const missing = rankLabel[priority.missingStopper] || priority.missingStopper;
+    const winners = priority.futureWinnerRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
+    const discards = priority.discardSuits?.map(suitName).join(", ");
+    return `Optimaal benutten van entrees: ontwikkel eerst de ${suitName(priority.suit)}. Speel ${lead} ${suitName(priority.suit)} vanuit ${seatName(priority.leadSeat)}; zo moet de ${missing} eruit en blijven de plaatjes${winners ? ` (${winners})` : ""} bij ${seatName(priority.sourceSeat)} liggen. Bewaar ${rankLabel[priority.entryRank] || priority.entryRank} ${suitName(priority.entrySuit)} als enige troefentree naar ${seatName(priority.sourceSeat)}, zodat je later de vrije ${suitName(priority.suit)} kunt incasseren en verliezers${discards ? ` in ${discards}` : ""} kunt weggooien.`;
+  }
   if (priority.kind === "drawTrumps") {
     const missing = priority.missingHonors?.length
       ? ` Ontbrekend hoog: ${priority.missingHonors.map((rank) => rankLabel[rank] || rank).join(", ")}.`
@@ -200,9 +233,17 @@ function playPlanPriorityText(priority) {
         ? "nadat de lange zijkleur is vrijgetroefd"
         : priority.timing === "afterUnblock"
           ? `nadat ${suitName(priority.delaySuit)} is gedeblokkeerd`
-          : priority.timing === "afterUrgentDiscard"
-            ? `nadat eerst een verliezer op ${suitName(priority.delaySuit)} is weggegooid`
-            : "vroeg";
+          : priority.timing === "afterDevelopedDiscard"
+            ? `nadat ${suitName(priority.delaySuit)} is ontwikkeld voor een afgooi op een hoge kaart`
+            : priority.timing === "afterTrumpEntryFinesse"
+              ? `nadat de troefentrees zijn benut voor de herhaalde snit in ${suitName(priority.delaySuit)}`
+              : priority.timing === "afterWorkSuitBeforeTrumpEntry"
+                ? `nadat de werkkleur ${suitName(priority.delaySuit)} is ontwikkeld vóór de enige troefentree`
+                : priority.timing === "afterCrossRuff"
+                  ? "nadat de cross ruff is uitgevoerd"
+                  : priority.timing === "afterUrgentDiscard"
+                    ? `nadat eerst een verliezer op ${suitName(priority.delaySuit)} is weggegooid`
+                    : "vroeg";
     return `Trek ${suitName(priority.suit)} ${timing}; jullie hebben ${priority.trumpLength} troeven samen.${missing}`;
   }
   if (priority.kind === "discardLoserOnWinner") {
@@ -273,6 +314,10 @@ function playPlanPriorityBriefText(priority) {
   if (priority.kind === "twoWayFinesse") return `de tweerichtingssnit in ${suitName(priority.suit)}`;
   if (priority.kind === "ruffShortSuit") return `de introever in ${suitName(priority.suit)}`;
   if (priority.kind === "establishLongSuitByRuffing") return `de lange ${suitName(priority.suit)} vrijtroeven`;
+  if (priority.kind === "crossRuff") return `cross ruff in ${suitName(priority.suit)}`;
+  if (priority.kind === "useTrumpEntriesForRepeatedFinesse") return `troefentrees benutten voor de herhaalde snit`;
+  if (priority.kind === "establishSideSuitForDiscard") return `${suitName(priority.suit)} ontwikkelen voor afgooien op hoge kaart`;
+  if (priority.kind === "developSideSuitBeforeTrumpEntry") return `${suitName(priority.suit)} ontwikkelen voor de enige troefentree`;
   if (priority.kind === "drawTrumps") return `troef trekken`;
   if (priority.kind === "discardLoserOnWinner") return `een verliezer weggooien op ${suitName(priority.suit)}`;
   if (priority.kind === "cashWinners" || priority.kind === "cashSureWinners") return `zekere slagen incasseren`;

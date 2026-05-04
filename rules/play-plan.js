@@ -1031,6 +1031,18 @@
         playedCards,
         losers
       });
+      const trumpEntryFinessePriorities = suitTrumpEntryFinessePriorities({
+        declarerHand,
+        dummyHand,
+        trump,
+        declarer,
+        dummy,
+        trickHistory,
+        currentTrick,
+        playedCards,
+        losers,
+        finessePriorities
+      });
       const urgentDiscardPriorities = suitUrgentDiscardPriorities({
         declarerHand,
         dummyHand,
@@ -1042,6 +1054,33 @@
         losers,
         cashPriorities
       });
+      const developDiscardPriorities = suitDevelopDiscardPriorities({
+        declarerHand,
+        dummyHand,
+        trump,
+        declarer,
+        dummy,
+        currentTrick,
+        playedCards,
+        losers
+      });
+      const workSuitTrumpEntryPriorities = suitWorkSuitBeforeTrumpEntryPriorities({
+        declarerHand,
+        dummyHand,
+        trump,
+        declarer,
+        dummy,
+        playedCards,
+        losers
+      });
+      const crossRuffPriorities = suitCrossRuffPriorities({
+        declarerHand,
+        dummyHand,
+        trump,
+        declarer,
+        dummy,
+        playedCards
+      });
       const timingPlan = suitContractTimingPlan({
         declarerHand,
         dummyHand,
@@ -1052,32 +1091,54 @@
         currentTrick,
         ruffPriorities: [...longRuffPriorities, ...directRuffPriorities],
         cashPriorities,
-        urgentDiscardPriorities
+        urgentDiscardPriorities,
+        developDiscardPriorities,
+        trumpEntryFinessePriorities,
+        workSuitTrumpEntryPriorities,
+        crossRuffPriorities
       });
       const trumpPriority = drawTrumpPriority(declarerHand, dummyHand, trump, timingPlan);
+      const trumpTiming = trumpPriority?.timing || timingPlan?.timing || null;
 
-      if (trumpPriority?.timing === "afterUrgentDiscard") {
+      if (trumpTiming === "afterUrgentDiscard") {
         priorities.push(...urgentDiscardPriorities.slice(0, 1));
         if (trumpPriority) priorities.push(trumpPriority);
         priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.filter((priority) => priority.timing !== "urgentBeforeTrumps").slice(0, 1));
-      } else if (trumpPriority?.timing === "early") {
+      } else if (trumpTiming === "early") {
         if (trumpPriority) priorities.push(trumpPriority);
         priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.slice(0, 1));
-      } else if (trumpPriority?.timing === "limitedBeforeRuff") {
+      } else if (trumpTiming === "limitedBeforeRuff") {
         if (trumpPriority) priorities.push(trumpPriority);
         priorities.push(...longRuffPriorities.slice(0, 1));
         priorities.push(...directRuffPriorities.slice(0, 2));
         priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.slice(0, 1));
-      } else if (trumpPriority?.timing === "afterUnblock") {
+      } else if (trumpTiming === "afterUnblock") {
         priorities.push(...cashPriorities.filter((priority) => priority.timing === "unblockBeforeEntry").slice(0, 1));
         priorities.push(...longRuffPriorities.slice(0, 1));
         priorities.push(...directRuffPriorities.slice(0, 2));
         if (trumpPriority) priorities.push(trumpPriority);
         priorities.push(...finessePriorities.slice(0, 1));
         priorities.push(...cashPriorities.filter((priority) => priority.timing !== "unblockBeforeEntry").slice(0, 1));
+      } else if (trumpTiming === "afterDevelopedDiscard") {
+        priorities.push(...developDiscardPriorities.slice(0, 1));
+        if (trumpPriority) priorities.push(trumpPriority);
+        priorities.push(...finessePriorities.slice(0, 1));
+        priorities.push(...cashPriorities.slice(0, 1));
+      } else if (trumpTiming === "afterTrumpEntryFinesse") {
+        priorities.push(...trumpEntryFinessePriorities.slice(0, 2));
+        priorities.push(...finessePriorities.slice(0, 1));
+        if (trumpPriority) priorities.push(trumpPriority);
+      } else if (trumpTiming === "afterWorkSuitBeforeTrumpEntry") {
+        priorities.push(...workSuitTrumpEntryPriorities.slice(0, 1));
+        if (trumpPriority) priorities.push(trumpPriority);
+        priorities.push(...cashPriorities.slice(0, 1));
+      } else if (trumpTiming === "afterCrossRuff") {
+        priorities.push(...crossRuffPriorities.slice(0, 1));
+        if (trumpPriority) priorities.push(trumpPriority);
+        priorities.push(...cashPriorities.slice(0, 1));
       } else {
         priorities.push(...longRuffPriorities.slice(0, 1));
         priorities.push(...directRuffPriorities.slice(0, 2));
@@ -1320,6 +1381,97 @@
           .sort((a, b) => b.score - a.score);
       }
 
+  function suitCrossRuffPriorities({ declarerHand, dummyHand, trump, declarer, dummy, playedCards = [] }) {
+        if (!trump) return [];
+        const declarerTrumps = cardsInSuit(declarerHand, trump);
+        const dummyTrumps = cardsInSuit(dummyHand, trump);
+        const trumpLength = declarerTrumps.length + dummyTrumps.length;
+        if (trumpLength < 8 || declarerTrumps.length < 3 || dummyTrumps.length < 3) return [];
+
+        const trumpWinners = visibleTopWinnerRanks([...declarerTrumps, ...dummyTrumps], cardsInSuit(playedCards, trump));
+        const hasHighTrumpControl = ["A", "K", "Q"].every((rank) => trumpWinners.includes(rank));
+        if (!hasHighTrumpControl) return [];
+
+        const sides = [
+          { seat: declarer, hand: declarerHand, trumps: declarerTrumps },
+          { seat: dummy, hand: dummyHand, trumps: dummyTrumps }
+        ];
+        const shortSuits = suits
+          .filter((suit) => suit !== trump)
+          .map((suit) => {
+            const first = sides[0];
+            const second = sides[1];
+            const firstCards = cardsInSuit(first.hand, suit);
+            const secondCards = cardsInSuit(second.hand, suit);
+            const firstShort = firstCards.length <= 1 && secondCards.length >= 3;
+            const secondShort = secondCards.length <= 1 && firstCards.length >= 3;
+            if (!firstShort && !secondShort) return null;
+            const shortSide = firstShort ? first : second;
+            const longSide = firstShort ? second : first;
+            const shortCards = firstShort ? firstCards : secondCards;
+            const longCards = firstShort ? secondCards : firstCards;
+            const longWinnerRanks = visibleTopWinnerRanks([...longCards, ...shortCards], cardsInSuit(playedCards, suit))
+              .filter((rank) => hasRank(longCards, rank));
+            if (!longWinnerRanks.length) return null;
+            const remainingShortCards = shortCards.filter((card) => !cardsInSuit(playedCards, suit).some((played) => played.id === card.id));
+            return {
+              suit,
+              longSeat: longSide.seat,
+              shortSeat: shortSide.seat,
+              longLength: longCards.length,
+              shortLength: shortCards.length,
+              remainingShortLength: remainingShortCards.length,
+              shortTrumpLength: shortSide.trumps.length,
+              longWinnerRanks,
+              ruffCount: Math.min(shortSide.trumps.length, Math.max(1, longCards.length - shortCards.length))
+            };
+          })
+          .filter(Boolean);
+
+        const crossPairs = [];
+        for (const first of shortSuits) {
+          for (const second of shortSuits) {
+            if (first.suit === second.suit) continue;
+            if (first.shortSeat === second.shortSeat) continue;
+            crossPairs.push([first, second]);
+          }
+        }
+        const pair = crossPairs
+          .sort((a, b) => crossRuffPairScore(b, trumpLength, trumpWinners) - crossRuffPairScore(a, trumpLength, trumpWinners))[0];
+        if (!pair) return [];
+
+        const cashFirst = pair
+          .flatMap((item) => item.longWinnerRanks.map((rank) => ({
+            suit: item.suit,
+            rank,
+            seat: item.longSeat,
+            beforeRuffSeat: item.shortSeat
+          })))
+          .filter((item) => {
+            const alreadyPlayed = cardsInSuit(playedCards, item.suit).some((card) => card.rank === item.rank);
+            return !alreadyPlayed && ["A", "K"].includes(item.rank);
+          });
+
+        return [{
+          kind: "crossRuff",
+          confidence: "basic",
+          suit: pair[0].suit,
+          trump,
+          trumpLength,
+          trumpWinnerRanks: trumpWinners,
+          crossSuits: pair,
+          cashFirst,
+          timing: "beforeDrawTrumps",
+          score: 135 + trumpWinners.length * 8 + pair.reduce((total, item) => total + item.ruffCount * 12 + item.longLength, 0)
+        }];
+      }
+
+  function crossRuffPairScore(pair, trumpLength, trumpWinners) {
+        return trumpLength * 4 + trumpWinners.length * 8 + pair.reduce((total, item) => {
+          return total + item.ruffCount * 12 + item.longLength * 2 + item.longWinnerRanks.length * 4 - item.shortLength * 3;
+        }, 0);
+      }
+
   function longSuitRuffEntryCandidates({ shortHand, longHand, playedCards, trump, ruffSuit }) {
         return suits
           .filter((suit) => suit !== trump && suit !== ruffSuit)
@@ -1412,6 +1564,495 @@
         return candidates.sort((a, b) => b.score - a.score);
       }
 
+  function suitTrumpEntryFinessePriorities({
+      declarerHand,
+      dummyHand,
+      trump,
+      declarer,
+      dummy,
+      trickHistory = [],
+      currentTrick = [],
+      playedCards = [],
+      losers,
+      finessePriorities = []
+    }) {
+        if (!trump || !losers || losers.total <= losers.allowed) return [];
+        const sides = [
+          { seat: declarer, hand: declarerHand },
+          { seat: dummy, hand: dummyHand }
+        ];
+        const candidates = [];
+
+        finessePriorities
+          .filter((priority) => priority.kind === "finesse" && priority.missingHonor === "K" && priority.finesseRank === "Q")
+          .forEach((priority) => {
+            const targetSide = sides.find((side) => side.seat === priority.targetSeat);
+            const leadSide = sides.find((side) => side.seat === priority.leadSeat);
+            if (!targetSide || !leadSide) return;
+            const targetSuitCards = cardsInSuit(targetSide.hand, priority.suit);
+            const leadSuitCards = cardsInSuit(leadSide.hand, priority.suit);
+            if (!hasRank(targetSuitCards, "A") || !hasRank(targetSuitCards, "Q") || !hasRank(targetSuitCards, "J")) return;
+            if (leadSuitCards.filter((card) => rankOrder.indexOf(card.rank) < rankOrder.indexOf("Q")).length < 2) return;
+
+            const entry = trumpEntryCandidateForSeat({
+              declarerHand,
+              dummyHand,
+              trump,
+              playedCards,
+              entrySeat: priority.leadSeat,
+              fromSeat: priority.targetSeat,
+              declarer,
+              dummy
+            });
+            if (!entry) return;
+
+            candidates.push({
+              entry: {
+                kind: "useTrumpEntriesForRepeatedFinesse",
+                confidence: "basic",
+                trump,
+                entrySeat: priority.leadSeat,
+                fromSeat: priority.targetSeat,
+                entryRank: entry.entryRank,
+                entryLeadRank: entry.leadRank,
+                finesseSuit: priority.suit,
+                finesseRank: priority.finesseRank,
+                repeatFinesseRank: "J",
+                missingHonor: "K",
+                timing: "beforeRepeatedFinesse",
+                score: 118 + entry.remainingEntries * 12
+              },
+              followup: null,
+              score: 118 + entry.remainingEntries * 12
+            });
+          });
+
+        for (const suit of suits) {
+          if (suit === trump || !losers.bySuit?.[suit]) continue;
+          [
+            { leadSeat: declarer, targetSeat: dummy, leadHand: declarerHand, targetHand: dummyHand },
+            { leadSeat: dummy, targetSeat: declarer, leadHand: dummyHand, targetHand: declarerHand }
+          ].forEach((direction) => {
+            const repeat = repeatFinesseCandidate({
+              suit,
+              trickHistory,
+              playedSuitCards: cardsInSuit(playedCards, suit),
+              leadSeat: direction.leadSeat,
+              targetSeat: direction.targetSeat,
+              leadSuitCards: cardsInSuit(direction.leadHand, suit),
+              targetSuitCards: cardsInSuit(direction.targetHand, suit),
+              targetHand: direction.targetHand
+            });
+            if (!repeat || repeat.missingHonor !== "K" || repeat.finesseRank !== "J") return;
+            const entry = trumpEntryCandidateForSeat({
+              declarerHand,
+              dummyHand,
+              trump,
+              playedCards,
+              entrySeat: repeat.leadSeat,
+              fromSeat: repeat.targetSeat,
+              declarer,
+              dummy
+            });
+            if (!entry) return;
+
+            candidates.push({
+              entry: {
+                kind: "useTrumpEntriesForRepeatedFinesse",
+                confidence: "basic",
+                trump,
+                entrySeat: repeat.leadSeat,
+                fromSeat: repeat.targetSeat,
+                entryRank: entry.entryRank,
+                entryLeadRank: entry.leadRank,
+                finesseSuit: repeat.suit,
+                finesseRank: repeat.finesseRank,
+                repeatFinesseRank: repeat.finesseRank,
+                missingHonor: repeat.missingHonor,
+                timing: "beforeRepeatedFinesse",
+                score: 132 + entry.remainingEntries * 12
+              },
+              followup: repeat,
+              score: 132 + entry.remainingEntries * 12
+            });
+          });
+        }
+
+        const best = candidates.sort((a, b) => b.score - a.score)[0];
+        return best ? [best.entry, best.followup].filter(Boolean) : [];
+      }
+
+  function trumpEntryCandidateForSeat({
+      declarerHand,
+      dummyHand,
+      trump,
+      playedCards = [],
+      entrySeat,
+      fromSeat,
+      declarer,
+      dummy
+    }) {
+        const entryHand = entrySeat === declarer ? declarerHand : entrySeat === dummy ? dummyHand : [];
+        const fromHand = fromSeat === declarer ? declarerHand : fromSeat === dummy ? dummyHand : [];
+        const entryTrumps = cardsInSuit(entryHand, trump);
+        const fromTrumps = cardsInSuit(fromHand, trump);
+        if (!entryTrumps.length || !fromTrumps.length) return null;
+
+        const winnerRanks = visibleTopWinnerRanks([...entryTrumps, ...fromTrumps], cardsInSuit(playedCards, trump));
+        const entryWinnerRanks = winnerRanks.filter((rank) => hasRank(entryTrumps, rank));
+        if (!entryWinnerRanks.length) return null;
+        const leadCard = lowestCard(fromTrumps);
+        if (!leadCard) return null;
+
+        return {
+          entryRank: entryWinnerRanks[0],
+          leadRank: leadCard.rank,
+          leadCard,
+          remainingEntries: entryWinnerRanks.length
+        };
+      }
+
+  function suitWorkSuitBeforeTrumpEntryPriorities({
+      declarerHand,
+      dummyHand,
+      trump,
+      declarer,
+      dummy,
+      playedCards = [],
+      losers
+    }) {
+        if (!trump || !losers || losers.total <= losers.allowed) return [];
+        const sides = [
+          { seat: declarer, hand: declarerHand },
+          { seat: dummy, hand: dummyHand }
+        ];
+        const candidates = [];
+
+        for (const suit of suits) {
+          if (suit === trump) continue;
+          const playedSuitCards = cardsInSuit(playedCards, suit);
+          for (const sourceSide of sides) {
+            const leadSide = sides.find((side) => side.seat !== sourceSide.seat);
+            const sourceSuitCards = cardsInSuit(sourceSide.hand, suit);
+            const leadSuitCards = cardsInSuit(leadSide.hand, suit);
+            if (sourceSuitCards.length < 4 || leadSuitCards.length < 2) continue;
+            if (hasRank([...sourceSuitCards, ...leadSuitCards], "A") || hasRank(playedSuitCards, "A")) continue;
+            if (!hasRank(leadSuitCards, "K")) continue;
+            if (!hasRank(sourceSuitCards, "Q") || !hasRank(sourceSuitCards, "J")) continue;
+
+            const entry = trumpEntryCandidateForSeat({
+              declarerHand,
+              dummyHand,
+              trump,
+              playedCards,
+              entrySeat: sourceSide.seat,
+              fromSeat: leadSide.seat,
+              declarer,
+              dummy
+            });
+            if (!entry) continue;
+            if (nonTrumpEntryCandidate(sourceSide.hand, leadSide.hand, playedCards, suit, trump)) continue;
+
+            const futureWinnerRanks = ["Q", "J", "T"].filter((rank) => hasRank(sourceSuitCards, rank));
+            const discardCapacity = Math.max(0, futureWinnerRanks.length - Math.max(0, leadSuitCards.length - 1));
+            const discardSuits = realDiscardSuitsForSeat({ hand: leadSide.hand, trump, workSuit: suit, playedCards, losers });
+            if (!discardSuits.length || discardCapacity < 1) continue;
+
+            candidates.push({
+              kind: "developSideSuitBeforeTrumpEntry",
+              confidence: "basic",
+              suit,
+              leadSeat: leadSide.seat,
+              sourceSeat: sourceSide.seat,
+              leadRank: "K",
+              missingStopper: "A",
+              futureWinnerRanks,
+              discardSuits,
+              discardCapacity: Math.min(discardCapacity, discardSuits.reduce((total, discardSuit) => total + (losers.bySuit[discardSuit] || 0), 0)),
+              entrySuit: trump,
+              entryRank: entry.entryRank,
+              entrySeat: sourceSide.seat,
+              timing: "beforeTrumpEntry",
+              score: 110 + discardCapacity * 16 + futureWinnerRanks.length * 8 + sourceSuitCards.length
+            });
+          }
+        }
+
+        return candidates.sort((a, b) => b.score - a.score);
+      }
+
+  function nonTrumpEntryCandidate(targetHand, partnerHand, playedCards = [], excludedSuit, trump) {
+        return suits
+          .filter((suit) => suit !== excludedSuit && suit !== trump)
+          .some((suit) => {
+            const targetSuitCards = cardsInSuit(targetHand, suit);
+            const partnerSuitCards = cardsInSuit(partnerHand, suit);
+            const winnerRanks = visibleTopWinnerRanks([...targetSuitCards, ...partnerSuitCards], cardsInSuit(playedCards, suit));
+            return winnerRanks.some((rank) => hasRank(targetSuitCards, rank));
+          });
+      }
+
+  function realDiscardSuitsForSeat({ hand, trump, workSuit, playedCards = [], losers }) {
+        return suits.filter((suit) => {
+          if (suit === trump || suit === workSuit || !losers.bySuit?.[suit]) return false;
+          if (!cardsInSuit(hand, suit).length) return false;
+          const missing = losers.detailsBySuit?.[suit]?.missingTopHonors || [];
+          return missing.some((rank) => !hasRank(cardsInSuit(playedCards, suit), rank));
+        });
+      }
+
+  function suitDevelopDiscardPriorities({
+      declarerHand,
+      dummyHand,
+      trump,
+      declarer,
+      dummy,
+      currentTrick = [],
+      playedCards = [],
+      losers
+    }) {
+        const candidates = [];
+        for (const discardSuit of suits) {
+          if (discardSuit === trump || !losers?.bySuit?.[discardSuit]) continue;
+          const discardDetail = losers.detailsBySuit?.[discardSuit];
+          if (discardDetail?.ruffReduction) continue;
+
+          for (const suit of suits) {
+            if (suit === trump || suit === discardSuit) continue;
+            const candidate = sideSuitDiscardDevelopmentCandidate({
+              suit,
+              discardSuit,
+              trump,
+              declarerHand,
+              dummyHand,
+              declarer,
+              dummy,
+              currentTrick,
+              playedCards,
+              loserCount: losers.bySuit[discardSuit]
+            });
+            if (candidate) candidates.push(candidate);
+            const finesseCandidate = sideSuitFinesseDiscardCandidate({
+              suit,
+              discardSuit,
+              trump,
+              declarerHand,
+              dummyHand,
+              declarer,
+              dummy,
+              currentTrick,
+              playedCards,
+              loserCount: losers.bySuit[discardSuit]
+            });
+            if (finesseCandidate) candidates.push(finesseCandidate);
+          }
+        }
+        return candidates.sort((a, b) => b.score - a.score);
+      }
+
+  function sideSuitFinesseDiscardCandidate({
+      suit,
+      discardSuit,
+      trump,
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      currentTrick = [],
+      playedCards = [],
+      loserCount = 0
+    }) {
+        const playedSuitCards = cardsInSuit(playedCards, suit);
+        if (hasRank(playedSuitCards, "K")) return null;
+
+        const sides = [
+          { seat: declarer, hand: declarerHand, suitCards: cardsInSuit(declarerHand, suit) },
+          { seat: dummy, hand: dummyHand, suitCards: cardsInSuit(dummyHand, suit) }
+        ];
+
+        const candidates = sides.map((leadSide) => {
+          const sourceSide = sides.find((side) => side.seat !== leadSide.seat);
+          if (!hasRank(leadSide.suitCards, "Q") || leadSide.suitCards.length < 2) return null;
+          if (!hasRank(sourceSide.suitCards, "A") || !hasRank(sourceSide.suitCards, "J")) return null;
+          if (hasRank([...leadSide.suitCards, ...sourceSide.suitCards], "K")) return null;
+
+          const leadContext = sideSuitHonorLeadContext({ suit, leadSide, leadRank: "Q", currentTrick });
+          if (!leadContext) return null;
+
+          const futureWinnerRanks = ["A", "J", "T"].filter((rank) => hasRank(sourceSide.suitCards, rank));
+          const discardCapacity = Math.max(0, futureWinnerRanks.length - leadContext.remainingLeadSuitLength);
+          const discardCount = Math.min(discardCapacity, loserCount);
+          if (discardCount < 1 || !cardsInSuit(leadSide.hand, discardSuit).length) return null;
+
+          return {
+            kind: "establishSideSuitForDiscard",
+            confidence: "uncertain",
+            suit,
+            discardSuit,
+            leadSeat: leadSide.seat,
+            sourceSeat: sourceSide.seat,
+            discardSeat: leadSide.seat,
+            leadRank: "Q",
+            leadCard: leadContext.card,
+            missingStopper: "K",
+            futureWinnerRanks,
+            discardCapacity,
+            discardCount,
+            entrySuit: suit,
+            entryRank: "A",
+            entryType: "sameSuitAce",
+            finesseRank: "Q",
+            timing: "beforeDrawTrumps",
+            score: 126 + discardCount * 20 + futureWinnerRanks.length * 8 + sourceSide.suitCards.length
+          };
+        }).filter(Boolean);
+
+        return candidates.sort((a, b) => b.score - a.score)[0] || null;
+      }
+
+  function sideSuitDiscardDevelopmentCandidate({
+      suit,
+      discardSuit,
+      trump,
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      currentTrick = [],
+      playedCards = [],
+      loserCount = 0
+    }) {
+        const playedSuitCards = cardsInSuit(playedCards, suit);
+        const declarerSuitCards = cardsInSuit(declarerHand, suit);
+        const dummySuitCards = cardsInSuit(dummyHand, suit);
+        const combinedCards = [...declarerSuitCards, ...dummySuitCards];
+        if (hasRank(combinedCards, "A") || hasRank(playedSuitCards, "A")) return null;
+
+        const sides = [
+          { seat: declarer, hand: declarerHand, suitCards: declarerSuitCards },
+          { seat: dummy, hand: dummyHand, suitCards: dummySuitCards }
+        ];
+
+        const candidates = sides.map((sourceSide) => {
+          if (!hasRank(sourceSide.suitCards, "K") || !hasRank(sourceSide.suitCards, "Q")) return null;
+          const leadSide = sides.find((side) => side.seat !== sourceSide.seat);
+          const leadContext = sideSuitDiscardLeadContext({ suit, leadSide, currentTrick });
+          if (!leadContext) return null;
+          if (sourceSide.suitCards.length <= leadContext.remainingLeadSuitLength) return null;
+
+          const futureWinnerRanks = ["K", "Q"].filter((rank) => hasRank(sourceSide.suitCards, rank));
+          const discardCapacity = Math.max(0, futureWinnerRanks.length - leadContext.remainingLeadSuitLength);
+          const discardCount = Math.min(discardCapacity, loserCount);
+          if (discardCount < 1 || !cardsInSuit(leadSide.hand, discardSuit).length) return null;
+
+          const entry = sideSuitDiscardEntryCandidate({
+            targetSide: sourceSide,
+            leadSide,
+            playedCards,
+            excludedSuit: suit,
+            trump,
+            discardSuit
+          });
+          if (!entry) return null;
+
+          return {
+            kind: "establishSideSuitForDiscard",
+            confidence: "basic",
+            suit,
+            discardSuit,
+            leadSeat: leadSide.seat,
+            sourceSeat: sourceSide.seat,
+            discardSeat: leadSide.seat,
+            leadRank: leadContext.rank,
+            leadCard: leadContext.card,
+            missingStopper: "A",
+            futureWinnerRanks,
+            discardCapacity,
+            discardCount,
+            entrySuit: entry.suit,
+            entryRank: entry.entryRank,
+            entryType: "visibleWinner",
+            timing: "beforeDrawTrumps",
+            score: 102 + discardCount * 20 + futureWinnerRanks.length * 8 + sourceSide.suitCards.length * 2 + (entry.suit === discardSuit ? 6 : 0)
+          };
+        }).filter(Boolean);
+
+        return candidates.sort((a, b) => b.score - a.score)[0] || null;
+      }
+
+  function sideSuitDiscardLeadContext({ suit, leadSide, currentTrick = [] }) {
+        const leadSuitCards = cardsInSuit(leadSide.hand, suit);
+        if (currentTrick.length) {
+          const lead = currentTrick[0];
+          if (lead?.seat !== leadSide.seat || lead.card?.suit !== suit || lead.card.rank !== "J") return null;
+          return {
+            card: lead.card,
+            rank: "J",
+            remainingLeadSuitLength: leadSuitCards.length,
+            inProgress: true
+          };
+        }
+
+        const leadCard = leadSuitCards.find((card) => card.rank === "J");
+        if (!leadCard) return null;
+        return {
+          card: leadCard,
+          rank: "J",
+          remainingLeadSuitLength: Math.max(0, leadSuitCards.length - 1),
+          inProgress: false
+        };
+      }
+
+  function sideSuitHonorLeadContext({ suit, leadSide, leadRank, currentTrick = [] }) {
+        const leadSuitCards = cardsInSuit(leadSide.hand, suit);
+        if (currentTrick.length) {
+          const lead = currentTrick[0];
+          if (lead?.seat !== leadSide.seat || lead.card?.suit !== suit || lead.card.rank !== leadRank) return null;
+          return {
+            card: lead.card,
+            rank: leadRank,
+            remainingLeadSuitLength: leadSuitCards.length,
+            inProgress: true
+          };
+        }
+
+        const leadCard = leadSuitCards.find((card) => card.rank === leadRank);
+        if (!leadCard) return null;
+        return {
+          card: leadCard,
+          rank: leadRank,
+          remainingLeadSuitLength: Math.max(0, leadSuitCards.length - 1),
+          inProgress: false
+        };
+      }
+
+  function sideSuitDiscardEntryCandidate({ targetSide, leadSide, playedCards = [], excludedSuit, trump, discardSuit }) {
+        return suits
+          .filter((suit) => suit !== excludedSuit && suit !== trump)
+          .map((suit) => {
+            const targetSuitCards = cardsInSuit(targetSide.hand, suit);
+            const leadSuitCards = cardsInSuit(leadSide.hand, suit);
+            if (!targetSuitCards.length || !leadSuitCards.length) return null;
+            if (suit === discardSuit && leadSuitCards.length < 2) return null;
+
+            const winnerRanks = visibleTopWinnerRanks(
+              [...targetSuitCards, ...leadSuitCards],
+              cardsInSuit(playedCards, suit)
+            );
+            const targetWinnerRanks = winnerRanks.filter((rank) => hasRank(targetSuitCards, rank));
+            if (!targetWinnerRanks.length) return null;
+
+            return {
+              suit,
+              entryRank: targetWinnerRanks[0],
+              winnerCount: targetWinnerRanks.length,
+              score: (suit === discardSuit ? 30 : 10) + targetWinnerRanks.length * 8 + targetSuitCards.length
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => b.score - a.score)[0] || null;
+      }
+
   function suitUrgentDiscardPriorities({
       declarerHand,
       dummyHand,
@@ -1485,7 +2126,11 @@
       currentTrick = [],
       ruffPriorities = [],
       cashPriorities = [],
-      urgentDiscardPriorities = []
+      urgentDiscardPriorities = [],
+      developDiscardPriorities = [],
+      trumpEntryFinessePriorities = [],
+      workSuitTrumpEntryPriorities = [],
+      crossRuffPriorities = []
     }) {
         const trumpControl = suitTrumpControl({
           declarerHand,
@@ -1515,6 +2160,55 @@
             timing: "afterUnblock",
             delayReason: "blockedSideSuit",
             delaySuit: unblock.suit,
+            trumpControl,
+            roundLimit: null,
+            preserveSeat: null,
+            preserveTrumpCount: 0
+          };
+        }
+        const developDiscard = developDiscardPriorities[0] || null;
+        if (developDiscard) {
+          return {
+            timing: "afterDevelopedDiscard",
+            delayReason: "establishSideSuitForDiscard",
+            delaySuit: developDiscard.suit,
+            discardSuit: developDiscard.discardSuit,
+            trumpControl,
+            roundLimit: null,
+            preserveSeat: null,
+            preserveTrumpCount: 0
+          };
+        }
+        const trumpEntryFinesse = trumpEntryFinessePriorities[0] || null;
+        if (trumpEntryFinesse) {
+          return {
+            timing: "afterTrumpEntryFinesse",
+            delayReason: "useTrumpEntriesForRepeatedFinesse",
+            delaySuit: trumpEntryFinesse.finesseSuit,
+            trumpControl,
+            roundLimit: null,
+            preserveSeat: null,
+            preserveTrumpCount: 0
+          };
+        }
+        const workSuitTrumpEntry = workSuitTrumpEntryPriorities[0] || null;
+        if (workSuitTrumpEntry) {
+          return {
+            timing: "afterWorkSuitBeforeTrumpEntry",
+            delayReason: "developSideSuitBeforeTrumpEntry",
+            delaySuit: workSuitTrumpEntry.suit,
+            trumpControl,
+            roundLimit: null,
+            preserveSeat: null,
+            preserveTrumpCount: 0
+          };
+        }
+        const crossRuff = crossRuffPriorities[0] || null;
+        if (crossRuff) {
+          return {
+            timing: "afterCrossRuff",
+            delayReason: "crossRuff",
+            delaySuit: crossRuff.suit,
             trumpControl,
             roundLimit: null,
             preserveSeat: null,
@@ -1861,9 +2555,22 @@
     suitLoserEstimate,
     shortSuitRuffPriorities,
     longSuitRuffDevelopmentPriorities,
+    suitCrossRuffPriorities,
+    crossRuffPairScore,
     longSuitRuffEntryCandidates,
     longSuitRuffEntryCandidate,
     suitContractFinessePriorities,
+    suitTrumpEntryFinessePriorities,
+    trumpEntryCandidateForSeat,
+    suitWorkSuitBeforeTrumpEntryPriorities,
+    nonTrumpEntryCandidate,
+    realDiscardSuitsForSeat,
+    suitDevelopDiscardPriorities,
+    sideSuitFinesseDiscardCandidate,
+    sideSuitDiscardDevelopmentCandidate,
+    sideSuitDiscardLeadContext,
+    sideSuitHonorLeadContext,
+    sideSuitDiscardEntryCandidate,
     suitContractTimingPlan,
     suitTrumpControl,
     playedTrumpRoundsFrom,
