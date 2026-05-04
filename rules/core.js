@@ -21,7 +21,6 @@
       conventionDefaults: {
         stayman: true,
         transfers: true,
-        negativeDoubles: true,
         weakTwoOpenings: true
       }
     }

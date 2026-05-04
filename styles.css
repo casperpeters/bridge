@@ -2098,6 +2098,21 @@ button:disabled {
   font-weight: 900;
 }
 
+.review-trick-keyboard-help {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.review-trick-row.is-review-selected th,
+.review-trick-row.is-review-selected td {
+  background: rgba(118, 214, 255, 0.14);
+}
+
+.review-trick-row.is-review-selected .review-trick-number {
+  color: var(--ink);
+}
+
 .review-trick-table tbody tr:last-child th,
 .review-trick-table tbody tr:last-child td {
   border-bottom: 0;
@@ -2151,6 +2166,11 @@ button:disabled {
 
 .review-card-pill.red {
   color: var(--red);
+}
+
+.play-explanation.is-review-selected {
+  border-color: rgba(118, 214, 255, 0.55);
+  background: rgba(118, 214, 255, 0.1);
 }
 
 @media (min-width: 1360px) {

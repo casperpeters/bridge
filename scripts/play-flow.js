@@ -18,20 +18,8 @@ function autoPlayCard(seat, card) {
 
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
-  state.hands[seat] = state.hands[seat].filter((item) => item.id !== card.id);
-  state.currentTrick.push({ seat, card, ruleId: ruleResult?.ruleId || null });
+  Object.assign(state, BridgeStateTransitions.applyCardPlayTransition(state, { seat, card, ruleResult, explanation }));
   ensurePlayPlan();
-  if (explanation) {
-    state.playExplanations.push({
-      trick: state.trickHistory.length + 1,
-      seat,
-      card,
-      ruleId: ruleResult?.ruleId || null,
-      confidence: ruleResult?.confidence || null,
-      recommendedCard: ruleResult?.card || null,
-      text: explanation
-    });
-  }
 
   if (state.currentTrick.length === 4) {
     const winner = currentWinningPlay()?.seat;
@@ -411,21 +399,9 @@ function playCard(seat, cardId) {
   renderIllegalActionFeedback();
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
-  state.hands[seat] = state.hands[seat].filter((item) => item.id !== cardId);
-  state.currentTrick.push({ seat, card, ruleId: ruleResult?.ruleId || null });
+  Object.assign(state, BridgeStateTransitions.applyCardPlayTransition(state, { seat, card, cardId, ruleResult, explanation }));
   ensurePlayPlan();
   renderPlayPlan();
-  if (explanation) {
-    state.playExplanations.push({
-      trick: state.trickHistory.length + 1,
-      seat,
-      card,
-      ruleId: ruleResult?.ruleId || null,
-      confidence: ruleResult?.confidence || null,
-      recommendedCard: ruleResult?.card || null,
-      text: explanation
-    });
-  }
   renderHands();
   renderPlayedCard(seat, card);
   setStatus("played", { seat, card: cardText(card) });
@@ -461,19 +437,12 @@ function pauseCompletedTrick() {
 function advanceCompletedTrick() {
   if (!state.awaitingTrickAdvance || !state.currentTrick.length) return;
   const winner = state.pendingTrickWinner || currentWinningPlay().seat;
-  state.awaitingTrickAdvance = false;
-  state.trickAdvanceArmed = false;
-  state.pendingTrickWinner = null;
-  const team = teamOf(winner);
-  state.tricks[team] += 1;
-  state.trickHistory.push({
+  Object.assign(state, BridgeStateTransitions.advanceCompletedTrickTransition(state, {
     winner,
-    cards: [...state.currentTrick],
-    number: state.trickHistory.length + 1
-  });
-  state.currentTrick = [];
+    winningTeam: teamOf(winner),
+    seats
+  }));
   clearTrickSlots();
-  state.turnIndex = seats.indexOf(winner);
   setStatus("winsTrick", { seat: winner, number: state.trickHistory.length });
   renderAll();
   continuePlay();

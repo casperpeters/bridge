@@ -87,6 +87,7 @@ const text = {
   auction: "Biedverloop",
   hands: "Handen",
   trickOverview: "Slagenoverzicht",
+  reviewTrickKeyboardHelp: "Developermodus: gebruik \u2190 en \u2192 om door de slagen te lopen.",
   trickLegendLead: "Uit",
   trickLegendNSWin: "Noord/Zuid wint",
   trickLegendEWWin: "Oost/West wint",

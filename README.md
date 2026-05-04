@@ -71,7 +71,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Random bridge deals.
 - Dealer rotation and vulnerability cycle.
 - Basic NBB Vijfkaart Hoog auction behavior.
-- Simple competitive bidding fallback, including natural overcalls, vulnerability-aware simple overcall thresholds, weak jump overcalls, 1NT overcalls, basic takeout doubles, responses and simple rebids after partner's takeout double, negative doubles, and selected advancer actions after partner's overcall.
+- Simple competitive bidding fallback, including natural overcalls, vulnerability-aware simple overcall thresholds, weak jump overcalls, 1NT overcalls, basic takeout doubles, responses and simple rebids after partner's takeout double, and selected advancer actions after partner's overcall.
 - Bidding-box order for calls: `NT`, spades, hearts, diamonds, clubs.
 - Pass, Stop, Alert, Doublet, and Redoublet controls.
 - South bidding controls.
@@ -101,6 +101,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Bidding AI is heuristic and incomplete.
 - AI suggestions are simple heuristics, not authoritative teaching advice.
 - Vijfkaart Hoog agreements are implemented in a testable rules module, with deeper competitive and slam continuations still heuristic.
+- Negative doubles are not currently implemented; the previous simplified version was removed until the NBB-style conditions and opener continuations can be modeled reliably.
 - Cue-bid and penalty-pass continuations after partner's takeout double are not implemented yet.
 - Card-play AI remains heuristic and lacks deep contract-aware planning, but includes basic declarer plan priorities, notrump development rules, and beginner defense heuristics.
 - No dedicated lesson-mode UI yet for selecting curated practice hands.

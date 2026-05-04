@@ -59,32 +59,6 @@
       ]
     },
     {
-      id: "negative-double-001",
-      title: "Negative double na tussenbieding",
-      level: "beginner",
-      focus: ["bidding", "competitive", "negative-double"],
-      systemId: "fiveCardHigh",
-      dealer: "North",
-      vulnerability: "none",
-      testGoal: "Na 1 klaveren van partner en 1 ruiten tussenbieding moet Zuid met beide vierkaarten hoog een negative double gebruiken.",
-      hands: {
-        North: ["AS", "7S", "4S", "AH", "7H", "KC", "QC", "JC", "TC", "5C", "8D", "5D", "4D"],
-        East: ["8S", "6S", "5S", "QH", "JH", "AD", "KD", "TD", "9D", "7D", "9C", "8C", "7C"],
-        South: ["QS", "JS", "3S", "2S", "KH", "4H", "3H", "2H", "4C", "3C", "2C", "3D", "2D"],
-        West: ["KS", "TS", "9S", "TH", "9H", "8H", "6H", "5H", "AC", "6C", "QD", "JD", "6D"]
-      },
-      expectedAuction: [
-        { seat: "North", bid: "1C", ruleId: "fiveCardHigh.opening.oneMinor" },
-        { seat: "East", bid: "1D", ruleId: "fiveCardHigh.competitive.simpleOvercall" },
-        { seat: "South", bid: "DOUBLE", ruleId: "fiveCardHigh.competitive.negativeDouble" }
-      ],
-      explanationKeys: ["fiveCardHigh.opening.oneMinor", "fiveCardHigh.competitive.negativeDouble"],
-      teachingPoints: [
-        "Een doublet na partners opening en een tussenbod is hier niet voor straf, maar toont speelbare hoge kleuren.",
-        "Deze hand bewaakt dat beginnersconventies als negative double herkenbaar blijven in de engine."
-      ]
-    },
-    {
       id: "takeout-double-response-forced-001",
       title: "Biedplicht na partners informatiedoublet",
       level: "beginner",

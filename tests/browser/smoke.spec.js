@@ -650,6 +650,12 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await expect(page.locator("#review-summary")).not.toContainText("Handseed");
   await expect(page.locator("#review-summary")).not.toContainText("Contractdoel");
   await expect(page.locator("#review-tricks tbody tr")).toHaveCount(13);
+  await expect(page.locator("#review-tricks")).toContainText("gebruik \u2190 en \u2192");
+  await expect(page.locator("#review-tricks tbody tr").first()).toHaveClass(/is-review-selected/);
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#review-tricks tbody tr").nth(1)).toHaveClass(/is-review-selected/);
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#review-tricks tbody tr").first()).toHaveClass(/is-review-selected/);
   await expect(page.locator("#review-tricks .play-explanation").first()).toBeVisible();
   await expect(page.locator("#review-tricks .play-explanation").first()).toContainText("Slag");
   await expect

@@ -705,7 +705,6 @@
           () => chooseRaiseAfterPartnerOpenedAndOpponentOvercalled(shape, hand, partnerBid, opponentBid),
           () => chooseOnlyUnbidOneLevelMajor(shape, partnerBid, opponentBid),
           () => options.partnerMadeOvercall ? chooseNewSuitAfterPartnerOvercallInterference(shape, newSuit, opponentBid) : null,
-          () => shouldMakeNegativeDoubleFiveCardHigh(shape, partnerBid, opponentBid) ? Double() : null,
           () => chooseNewSuitAfterOpponentOvercall(shape, newSuit, opponentBid),
           () => chooseNotrumpAfterOpponentOvercall(shape, hand, opponentBid)
         ]);
@@ -779,18 +778,8 @@
           shape.counts[missingSupport[0]] >= 3;
       }
 
-  function shouldMakeNegativeDoubleFiveCardHigh(shape, partnerBid, opponentBid) {
-        if (!partnerBid || !opponentBid || opponentBid.strain === "NT" || opponentBid.level > 2 || shape.hcp < 6) return false;
-        return ["H", "S"].some((suit) => suit !== partnerBid.strain && suit !== opponentBid.strain && shape.counts[suit] >= 4);
-      }
-
-
   function describeDoubleBidChoice(chosenBid, shape, hand, auction, seat, base) {
         const lastBid = highestBid(auction);
-        const lastPartnerCall = lastPartnerContractCall(auction, seat);
-        if (lastPartnerCall && shouldMakeNegativeDoubleFiveCardHigh(shape, lastPartnerCall.bid, lastBid)) {
-          return fiveCardHighBidChoiceResult(chosenBid, "competitive.negativeDouble", "basic", "Negative double with values and an unbid four-card major after interference.", base);
-        }
         if (shouldMakeWeakTwoDefenseDouble(shape, hand, lastBid)) {
           return fiveCardHighBidChoiceResult(chosenBid, "competitive.weakTwoDefenseDouble", "basic", "Defend against their weak two with a takeout double, or with a strong hand and a very good own suit.", {
             ...base,
@@ -1120,7 +1109,6 @@
     respondToPartnerNotrumpOvercallFiveCardHigh,
     respondAfterOvercallFiveCardHigh,
     shouldMakeInformationDoubleFiveCardHigh,
-    shouldMakeNegativeDoubleFiveCardHigh,
     describeRedoubleBidChoice,
     describeDoubleBidChoice,
     describeCompetitiveFiveCardHighBidChoice,

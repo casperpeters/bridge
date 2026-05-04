@@ -14,8 +14,9 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 ## Voorgestelde implementatievolgorde
 
 1. Gebruik de eerste `practice-hands/` catalogus in beginnerstests en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
-2. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
-3. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
+2. Houd de codebase onderhoudbaar met kleine architectuurrefactors wanneer een bestand of flow anders te groot wordt voor overzichtelijk vibe-coden.
+3. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
+4. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
 
 ## Korte termijn
 
@@ -48,7 +49,8 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 - Scheid contract, call-type en betekenis consequent. Voorbeeld: `2D` na `1NT` kan een transfer zijn en dus niet letterlijk ruiten betekenen.
 - Verbeter resterende ongestoorde Vijfkaart Hoog-vervolgen alleen gericht op concrete gaten uit tests of oefenhanden; 1SA-vervolgen met Stayman/Jacoby-transfer hebben nu specifieke uitleg en fixtures.
 - Voeg alleen gebruikerswaarschuwingen toe voor biedingen buiten systeem wanneer de app dat betrouwbaar kan vaststellen.
-- Houd nieuw competitief bieden klein en testbaar; veel basisgevallen zoals eenvoudige volgbiedingen, kwetsbaarheidsbewuste volgbodgrenzen, raises na volgbod, steun na zwakke sprongvolgbiedingen, 1SA-volgbodvervolgen, informatiedoubletten en negative doubles bestaan al.
+- Houd nieuw competitief bieden klein en testbaar; veel basisgevallen zoals eenvoudige volgbiedingen, kwetsbaarheidsbewuste volgbodgrenzen, raises na volgbod, steun na zwakke sprongvolgbiedingen, 1SA-volgbodvervolgen en informatiedoubletten bestaan al.
+- Herintroduceer negative doubles pas met NBB-passende voorwaarden, opener-reacties alsof partner de hoge kleur bood, passende minimumkracht/safe-spot-logica, uitleg en fixtures.
 
 ### Testen
 
@@ -56,6 +58,14 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 - Voeg fixtures toe voor elke nieuwe biedregel: minimale punten/lengtes, prioriteit tussen alternatieven en legale vervolgbiedingen.
 - Voeg fixtures toe voor elke nieuwe speelregel: uitkomst, tweede/derde hand, kleur bekennen, troeven, afgooien, leiderplan en verdediging.
 - Voeg periodiek een browser-smoketest toe voor de echte beginnerflow op desktop en mobiel.
+
+### Architectuur en onderhoudbaarheid
+
+- Splits `scripts/app.js` geleidelijk op zodra nieuwe UI-flow wordt toegevoegd: denk aan `state`, `dom`, `render-all`, `game-actions`, `feedback-flow` en gedeelde formatting/helpers. Geen grote rewrite; houd tijdelijk compatibele globals waar dat migratie veilig maakt.
+- Introduceer pure state-transitions voor kernacties zoals hand starten, bod toepassen, veiling afronden, kaart spelen en slag doorschuiven. UI-code roept transitions aan en rendert daarna opnieuw.
+- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` naar uitkomsten, verdediging, leiderplan-volgen en snits; `play-plan` naar sans-atout en kleurcontract; Vijfkaart-Hoog rebids/competitive naar auction families.
+- Houd bestaande public API's via `bridge-rules.js` en index/aggregator-bestanden stabiel tijdens refactors.
+- Voeg dekking toe die controleert dat belangrijke `ruleId`s ook uitleg hebben, zodat toekomstige leerfeedback niet losraakt van de engine.
 
 ## Lange termijn
 
@@ -86,7 +96,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Sterkere bridge-engine
 
-- Bouw het resterende competitieve bieden stapsgewijs uit: supportdoubletten, responsive doubles, balancing, cue-bids, Michaels, Unusual NT en Lebensohl.
+- Bouw het resterende competitieve bieden stapsgewijs uit: negative doubles, supportdoubletten, responsive doubles, balancing, cue-bids, Michaels, Unusual NT en Lebensohl.
 - Voeg verborgen-hand-inferentie toe bovenop de gespeelde kaarten: renonces, resterende lengtes en waarschijnlijke hoge-kaartlocaties.
 - Laat leider en verdedigers contractbewuster spelen: eerst contract maken/verslaan, daarna overslagen/extra downslagen.
 - Voeg pas simulatie of double-dummy-ondersteuning toe wanneer die snel, betrouwbaar en uitlegbaar genoeg is om de standaardheuristieken te verbeteren.

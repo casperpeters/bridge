@@ -20,6 +20,7 @@ const expectedScripts = [
   "rules/bidding/index.js",
   "rules/play-mechanics.js",
   "rules/play-plan.js",
+  "rules/card-play/opening-leads.js",
   "rules/card-play.js",
   "bridge-rules.js",
   "practice-hands/five-card-high-openings.js",
@@ -40,6 +41,7 @@ const expectedScripts = [
   "scripts/render-hands.js",
   "scripts/render-auction.js",
   "scripts/render-review.js",
+  "scripts/state-transitions.js",
   "scripts/auction-flow.js",
   "scripts/play-flow.js",
   "scripts/app.js"

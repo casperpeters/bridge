@@ -771,20 +771,6 @@ test("Vijfkaart Hoog bids game with 16 fit points after a vulnerable weak jump o
   assert.equal(result.vulnerable, true);
 });
 
-test("Vijfkaart Hoog uses a negative double with four-card majors after interference", () => {
-  const auction = [
-    { seat: "North", bid: bid(1, "C") },
-    { seat: "East", bid: bid(1, "D") }
-  ];
-
-  assert.deepEqual(chooseFiveCardHigh([
-    "QS", "JS", "2S", "3S",
-    "KH", "2H", "3H", "4H",
-    "2D", "3D",
-    "2C", "3C", "4C"
-  ], auction), double());
-});
-
 test("Vijfkaart Hoog makes a takeout double with 12+ HCP, shortness, and support for every unbid suit", () => {
   const auction = [
     { seat: "East", bid: bid(1, "D") }
@@ -1399,32 +1385,6 @@ test("Vijfkaart Hoog takeout double rebid uses notrump with balanced extra stren
   assert.deepEqual(game.bid, bid(3, "NT"));
   assert.equal(game.ruleId, "fiveCardHigh.competitive.takeoutDoubleRebidGameNotrump");
   assert.equal(game.stopperSuit, "D");
-});
-
-test("Vijfkaart Hoog allows a minimum six-HCP negative double after 1C over 1H", () => {
-  const auction = [
-    { seat: "East", bid: pass() },
-    { seat: "South", bid: pass() },
-    { seat: "West", bid: bid(1, "C") },
-    { seat: "North", bid: bid(1, "H") }
-  ];
-
-  const result = rules.chooseFiveCardHighBidResult({
-    hand: hand(
-      "TS", "8S", "7S", "2S",
-      "TH", "9H", "3H",
-      "KC", "JC", "3C", "2C",
-      "QD", "4D"
-    ),
-    auction,
-    seat: "East",
-    vulnerability: "EW"
-  });
-
-  assert.deepEqual(result.bid, double());
-  assert.equal(result.ruleId, "fiveCardHigh.competitive.negativeDouble");
-  assert.equal(result.hcp, 6);
-  assert.equal(result.counts.S, 4);
 });
 
 test("Vijfkaart Hoog redoubles after partner opens and right-hand opponent doubles with 10+ HCP and no fit", () => {

@@ -9,6 +9,8 @@ const rankLabel = { T: "10", J: "J", Q: "Q", K: "K", A: "A" };
 const settingsStorageKey = "bridge-app-settings";
 const bridgeRules = globalThis.BridgeRules;
 if (!bridgeRules) throw new Error("bridge-rules.js must load before app.js");
+const stateTransitions = globalThis.BridgeStateTransitions;
+if (!stateTransitions) throw new Error("state-transitions.js must load before app.js");
 const defaultBiddingSystem = bridgeRules.biddingSystems.fiveCardHigh;
 const seatEls = {
   North: document.querySelector("#north-hand"),
@@ -39,6 +41,7 @@ const state = {
   pendingTrickWinner: null,
   tricks: { NS: 0, EW: 0 },
   trickHistory: [],
+  reviewTrickCursor: null,
   playExplanations: [],
   playPlan: null,
   playPlanKey: null,
@@ -207,6 +210,10 @@ els.tableArea.addEventListener("click", () => {
 });
 document.addEventListener("keydown", (event) => {
   if (isControlTarget(event.target)) return;
+  if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && moveReviewTrickCursor(event.key === "ArrowRight" ? 1 : -1)) {
+    event.preventDefault();
+    return;
+  }
   if (event.key === "Enter" && state.awaitingTrickAdvance && state.trickAdvanceArmed) {
     event.preventDefault();
     advanceCompletedTrick();
@@ -251,37 +258,17 @@ function startPracticeHand(handId, { preserveBoard = false, skipFlow = false } =
 }
 
 function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null, clearSeedMessage = false, skipFlow = false }) {
-  state.dealerIndex = dealerIndex;
-  state.vulnerability = vulnerability;
-  state.hands = hands;
-  state.originalHands = cloneHands(state.hands);
-  state.practice = practice;
-  state.phase = "bidding";
-  state.turnIndex = state.dealerIndex;
-  state.auction = [];
-  state.contract = null;
-  state.declarer = null;
-  state.dummy = null;
-  state.leader = null;
-  state.currentTrick = [];
-  state.awaitingTrickAdvance = false;
-  state.trickAdvanceArmed = false;
-  state.pendingTrickWinner = null;
-  state.tricks = { NS: 0, EW: 0 };
-  state.trickHistory = [];
-  state.playExplanations = [];
-  state.playPlan = null;
-  state.playPlanKey = null;
-  state.animateDeal = true;
-  state.finalScore = null;
-  state.feedbackStatus = null;
-  state.illegalActionFeedback = null;
+  Object.assign(state, stateTransitions.startPreparedHandTransition({
+    dealerIndex,
+    vulnerability,
+    hands,
+    originalHands: cloneHands(hands),
+    practice
+  }));
   if (illegalActionFeedbackTimer) {
     window.clearTimeout(illegalActionFeedbackTimer);
     illegalActionFeedbackTimer = null;
   }
-  state.pendingStop = false;
-  state.pendingAlert = false;
   if (clearSeedMessage) state.seedMessage = null;
   clearTrickSlots();
   if (skipFlow) {
@@ -335,6 +322,33 @@ function jumpToTrickOverview() {
 function scrollReviewToTricks() {
   if (!els.reviewTricks || els.reviewPanel.hidden) return;
   els.reviewPanel.scrollTop = Math.max(0, els.reviewTricks.offsetTop - els.reviewPanel.offsetTop);
+}
+
+function moveReviewTrickCursor(delta) {
+  if (!state.developerMode || state.phase !== "complete" || !state.trickHistory.length || els.reviewPanel.hidden) return false;
+  const maxIndex = state.trickHistory.length - 1;
+  const current = Number.isInteger(state.reviewTrickCursor) ? state.reviewTrickCursor : (delta > 0 ? -1 : state.trickHistory.length);
+  state.reviewTrickCursor = Math.max(0, Math.min(maxIndex, current + delta));
+  renderAll();
+  window.setTimeout(scrollSelectedReviewTrickIntoView, 0);
+  return true;
+}
+
+function ensureReviewTrickCursor() {
+  if (!state.developerMode || state.phase !== "complete" || !state.trickHistory.length) {
+    state.reviewTrickCursor = null;
+    return null;
+  }
+  const maxIndex = state.trickHistory.length - 1;
+  if (!Number.isInteger(state.reviewTrickCursor)) state.reviewTrickCursor = 0;
+  state.reviewTrickCursor = Math.max(0, Math.min(maxIndex, state.reviewTrickCursor));
+  return state.trickHistory[state.reviewTrickCursor]?.number || null;
+}
+
+function scrollSelectedReviewTrickIntoView() {
+  if (!els.reviewPanel || els.reviewPanel.hidden) return;
+  const selectedRow = els.reviewPanel.querySelector(".review-trick-row.is-review-selected");
+  selectedRow?.scrollIntoView({ block: "nearest" });
 }
 
 function dealHands(seed = state.dealSeed) {

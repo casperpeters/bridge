@@ -5,9 +5,7 @@
     const ruleName = bidRuleName(result);
     if (isPass(result.bid)) return explainPassChoiceResult(ruleName, result);
     if (isDouble(result.bid)) {
-      const detail = ruleName === "competitive.negativeDouble"
-        ? "negatief doublet: toont waarden en minstens een vierkaart in een ongeboden hoge kleur"
-        : "informatiedoublet: 12+ HCP, hoogstens een doubleton in hun kleur en steun voor alle ongeboden kleuren; met 16+ HCP mag een ongeboden kleur slechts een driekaart zijn";
+      const detail = "informatiedoublet: 12+ HCP, hoogstens een doubleton in hun kleur en steun voor alle ongeboden kleuren; met 16+ HCP mag een ongeboden kleur slechts een driekaart zijn";
       return t("bidExplanationCompetitive", { detail: `${detail}. ${ruleReferenceText(ruleName)}` });
     }
     if (isRedouble(result.bid)) {

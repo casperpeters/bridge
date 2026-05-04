@@ -74,11 +74,20 @@ function renderReview() {
 
   els.reviewTricks.innerHTML = "";
   els.reviewTricks.appendChild(reviewSectionTitle(t("trickOverview")));
+  const selectedTrickNumber = ensureReviewTrickCursor();
+  if (state.developerMode && state.trickHistory.length) {
+    const hint = document.createElement("p");
+    hint.className = "review-trick-keyboard-help";
+    hint.textContent = t("reviewTrickKeyboardHelp");
+    els.reviewTricks.appendChild(hint);
+  }
   els.reviewTricks.appendChild(reviewTricksTable());
   if (state.developerMode && state.playExplanations.length) {
     els.reviewTricks.appendChild(reviewSectionTitle(t("playExplanations")));
     state.playExplanations.forEach((explanation) => {
-      els.reviewTricks.appendChild(playExplanationEl(explanation));
+      const explanationEl = playExplanationEl(explanation);
+      if (explanation.trick === selectedTrickNumber) explanationEl.classList.add("is-review-selected");
+      els.reviewTricks.appendChild(explanationEl);
     });
   }
 }
@@ -216,8 +225,15 @@ function reviewTricksTable() {
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
+  const selectedTrickNumber = state.phase === "complete" ? ensureReviewTrickCursor() : null;
   state.trickHistory.forEach((trick) => {
     const row = document.createElement("tr");
+    row.className = "review-trick-row";
+    row.dataset.reviewTrick = String(trick.number);
+    if (trick.number === selectedTrickNumber) {
+      row.classList.add("is-review-selected");
+      row.setAttribute("aria-current", "true");
+    }
     const numberCell = document.createElement("th");
     numberCell.scope = "row";
     numberCell.className = "review-trick-number";
