@@ -21,3 +21,13 @@ test("play-plan finesse reasons used by AI card suggestions are Dutch", () => {
   assert.doesNotMatch(playPlan, /notrump double finesse/);
   assert.doesNotMatch(playPlan, /side-suit loser/);
 });
+
+test("notrump opening-lead explanation covers refined suit-selection reasons", () => {
+  const playFlow = readRepoFile("scripts/play-flow.js");
+
+  assert.match(playFlow, /partnerSuitAvoidSingleton/);
+  assert.match(playFlow, /Partners kleur/);
+  assert.match(playFlow, /Bij gelijkwaardige kleuren krijgt een hoge kleur de voorkeur/);
+  assert.match(playFlow, /Zonder duidelijke rentree/);
+  assert.match(playFlow, /Tegen slem is actief/);
+});

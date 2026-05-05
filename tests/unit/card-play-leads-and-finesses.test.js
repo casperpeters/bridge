@@ -335,6 +335,107 @@ test("chooseCardPlay matches the Start met Bridge notrump card-choice examples",
   });
 });
 
+test("chooseCardPlay prefers a major when notrump lead suits are otherwise equal", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("8S", "7S", "6S", "2S", "8C", "7C", "6C", "2C", "9H", "5H", "2H", "9D", "2D"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "8S");
+  assert.equal(result.suit, "S");
+  assert.equal(result.ruleId, "notrumpTopOfNothingLead");
+  assert.equal(result.leadSelection, "majorTieBreak");
+  assert.equal(result.tieBreak, "majorSuit");
+});
+
+test("chooseCardPlay avoids a singleton in partner's suit against notrump when a work suit is available", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QS", "JS", "TS", "4S", "2H", "9D", "6D", "4D", "8C", "7C", "5C", "3C", "2C"),
+    currentTrick: [],
+    seat: "South",
+    declarer: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null,
+    auction: [
+      { seat: "West", bid: bid(1, "C") },
+      { seat: "North", bid: bid(1, "H") },
+      { seat: "East", bid: bid(3, "NT") },
+      { seat: "South", bid: pass() },
+      { seat: "West", bid: pass() },
+      { seat: "North", bid: pass() }
+    ]
+  });
+
+  assert.equal(result.card.id, "QS");
+  assert.equal(result.suit, "S");
+  assert.equal(result.ruleId, "notrumpSequenceLead");
+  assert.equal(result.leadSelection, "partnerSuitAvoidSingleton");
+  assert.equal(result.avoidedPartnerSingleton, "H");
+});
+
+test("chooseCardPlay still leads partner's suit against notrump with two-card support", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "2H", "QS", "JS", "TS", "4S", "9D", "6D", "4D", "8C", "7C", "5C", "3C"),
+    currentTrick: [],
+    seat: "South",
+    declarer: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null,
+    auction: [
+      { seat: "West", bid: bid(1, "C") },
+      { seat: "North", bid: bid(1, "H") },
+      { seat: "East", bid: bid(3, "NT") },
+      { seat: "South", bid: pass() },
+      { seat: "West", bid: pass() },
+      { seat: "North", bid: pass() }
+    ]
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.suit, "H");
+  assert.equal(result.ruleId, "notrumpDoubletonLead");
+  assert.equal(result.leadSelection, "partnerSuit");
+});
+
+test("chooseCardPlay chooses a short notrump lead when a weak long suit has no entry", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("9S", "8S", "9C", "8C", "7C", "6C", "5C", "4C", "TH", "7H", "TD", "8D", "3D"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "9S");
+  assert.equal(result.suit, "S");
+  assert.equal(result.ruleId, "notrumpDoubletonLead");
+  assert.equal(result.leadSelection, "shortSuitNoEntry");
+  assert.equal(result.hasEntry, false);
+  assert.equal(result.entryCount, 0);
+});
+
+test("chooseCardPlay chooses an active honor lead against a notrump slam", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KS", "QS", "JS", "9C", "8C", "7C", "6C", "5C", "4C", "TH", "7H", "8D", "3D"),
+    currentTrick: [],
+    seat: "West",
+    declarer: "South",
+    contract: { level: 6, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KS");
+  assert.equal(result.suit, "S");
+  assert.equal(result.ruleId, "notrumpSequenceLead");
+  assert.equal(result.leadSelection, "slamActiveLead");
+  assert.equal(result.slamLead, true);
+});
+
 test("chooseCardPlay leads the highest card from a suit-contract honor sequence", () => {
   const result = rules.chooseCardPlay({
     hand: hand("KH", "QH", "8H", "2H", "AC", "8D", "4D"),

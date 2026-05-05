@@ -192,9 +192,45 @@
         return descendingRanks.filter((rank) => hcpValue[rank] && cards.some((card) => card.rank === rank));
       }
 
+  function notrumpOutsideEntries(hand, suit) {
+        return suits
+          .filter((candidateSuit) => candidateSuit !== suit)
+          .reduce((entries, candidateSuit) => {
+            const cards = cardsInSuit(hand, candidateSuit);
+            const ranks = new Set(cards.map((card) => card.rank));
+            let suitEntries = 0;
+            if (ranks.has("A")) suitEntries += 1;
+            if (ranks.has("K") && (ranks.has("Q") || cards.length >= 4)) suitEntries += 1;
+            return entries + suitEntries;
+          }, 0);
+      }
+
+  function notrumpSuitTextureScore(cards) {
+        if (!cards.length) return 0;
+        const pattern = notrumpLeadPattern(cards);
+        const honors = highCardRanks(cards);
+        const tenNineBonus = ["T", "9"].reduce((sum, rank) => (
+          cards.some((card) => card.rank === rank) ? sum + 2 : sum
+        ), 0);
+        const honorScore = honors.reduce((sum, rank) => sum + (hcpValue[rank] || 0) * 4, 0);
+        return (pattern ? pattern.score : 0) + honorScore + tenNineBonus;
+      }
+
+  function notrumpSuitTieBreakScore(suit) {
+        return suit === "S" ? 4 : suit === "H" ? 3 : suit === "D" ? 2 : suit === "C" ? 1 : 0;
+      }
+
   function hasUnsupportedAce(cards) {
         const ranks = new Set(cards.map((card) => card.rank));
         return cards.length > 1 && ranks.has("A") && !ranks.has("K");
+      }
+
+  function isPoorPartnerSuitLead(cards) {
+        return cards.length === 1;
+      }
+
+  function isNotrumpSlamContract(contract) {
+        return contract?.strain === "NT" && contract.level >= 6;
       }
 
   function leadAgreement(card, ruleId, confidence, reason, extra = {}) {
@@ -383,27 +419,66 @@
 
   function notrumpSuitLeadScore(cards) {
         if (!cards.length) return -1;
-        const pattern = notrumpLeadPattern(cards);
-        const honors = highCardRanks(cards);
-        const topHonorIndex = honors.length ? descendingRanks.indexOf(honors[0]) : descendingRanks.length;
-        return (
-          cards.length * 20 +
-          (pattern ? pattern.score : 0) +
-          (honors.length ? 12 - topHonorIndex : 0)
+        return cards.length * 20 + notrumpSuitTextureScore(cards);
+      }
+
+  function notrumpLeadCandidates(hand, candidateSuits = suits, context = {}) {
+        const {
+          bidSuits = [],
+          unbidSuits = [],
+          partnerSuits = [],
+          dummySecondSuits = []
+        } = context;
+        return candidateSuits
+          .map((suit) => {
+            const cards = cardsInSuit(hand, suit);
+            const entryCount = notrumpOutsideEntries(hand, suit);
+            const textureScore = notrumpSuitTextureScore(cards);
+            return {
+              suit,
+              cards,
+              length: cards.length,
+              score: notrumpSuitLeadScore(cards),
+              textureScore,
+              entryCount,
+              hasEntry: entryCount > 0,
+              isBidSuit: bidSuits.includes(suit),
+              isUnbidSuit: unbidSuits.includes(suit),
+              isPartnerSuit: partnerSuits.includes(suit),
+              isDummySecondSuit: dummySecondSuits.includes(suit),
+              tieBreakScore: notrumpSuitTieBreakScore(suit),
+              pattern: notrumpLeadPattern(cards),
+              honors: highCardRanks(cards)
+            };
+          })
+          .filter((candidate) => candidate.cards.length);
+      }
+
+  function compareNotrumpLeadCandidates(a, b) {
+        const scoreDiff = b.score - a.score;
+        if (scoreDiff) return scoreDiff;
+        const lengthDiff = b.length - a.length;
+        if (lengthDiff) return lengthDiff;
+        const tieBreakDiff = b.tieBreakScore - a.tieBreakScore;
+        if (tieBreakDiff) return tieBreakDiff;
+        return suits.indexOf(a.suit) - suits.indexOf(b.suit);
+      }
+
+  function bestNotrumpLeadCandidate(hand, candidateSuits, context = {}) {
+        return notrumpLeadCandidates(hand, candidateSuits, context)
+          .sort(compareNotrumpLeadCandidates)[0] || null;
+      }
+
+  function hasClearNotrumpDevelopmentValue(candidate) {
+        return Boolean(
+          candidate &&
+          candidate.length >= 4 &&
+          (candidate.pattern || candidate.honors.length || candidate.textureScore >= 8)
         );
       }
 
   function bestNotrumpLeadSuitByQuality(hand, candidateSuits) {
-        return candidateSuits
-          .map((suit) => ({ suit, cards: cardsInSuit(hand, suit) }))
-          .filter((candidate) => candidate.cards.length)
-          .sort((a, b) => {
-            const scoreDiff = notrumpSuitLeadScore(b.cards) - notrumpSuitLeadScore(a.cards);
-            if (scoreDiff) return scoreDiff;
-            const lengthDiff = b.cards.length - a.cards.length;
-            if (lengthDiff) return lengthDiff;
-            return suits.indexOf(a.suit) - suits.indexOf(b.suit);
-          })[0]?.suit || null;
+        return bestNotrumpLeadCandidate(hand, candidateSuits)?.suit || null;
       }
 
   function weakUnbidNotrumpLeadOptions(hand, unbidSuits) {
@@ -429,55 +504,130 @@
         return dummySuits.slice(1);
       }
 
-  function notrumpLeadSuitForAuction(hand, auction = [], seat = null, declarer = null) {
+  function notrumpLeadSuitForAuction(hand, auction = [], seat = null, declarer = null, contract = null) {
         const shownSuitCalls = shownSuitCallsForLead(auction);
         const bidSuits = uniqueSuits(shownSuitCalls.map((call) => call.suit));
         const unbidSuits = suits.filter((suit) => !bidSuits.includes(suit));
         const partnerSuits = seat
           ? uniqueSuits(shownSuitCalls.filter((call) => call.seat === partnerOf(seat)).map((call) => call.suit))
           : [];
+        const dummySecondSuits = dummySecondSuitsForLead(shownSuitCalls, declarer);
+        const context = { bidSuits, unbidSuits, partnerSuits, dummySecondSuits };
         const playablePartnerSuits = partnerSuits.filter((suit) => cardsInSuit(hand, suit).length);
         if (playablePartnerSuits.length) {
+          const partnerCandidate = bestNotrumpLeadCandidate(hand, playablePartnerSuits, context);
+          const alternativeSuits = (unbidSuits.length ? unbidSuits : suits)
+            .filter((suit) => !playablePartnerSuits.includes(suit));
+          const alternativeCandidate = bestNotrumpLeadCandidate(hand, alternativeSuits, context);
+          if (
+            partnerCandidate &&
+            isPoorPartnerSuitLead(partnerCandidate.cards) &&
+            hasClearNotrumpDevelopmentValue(alternativeCandidate)
+          ) {
+            return {
+              suit: alternativeCandidate.suit,
+              bidSuits,
+              unbidSuits,
+              partnerSuits,
+              dummySecondSuits,
+              leadSelection: "partnerSuitAvoidSingleton",
+              avoidedPartnerSingleton: partnerCandidate.suit,
+              hasEntry: alternativeCandidate.hasEntry,
+              entryCount: alternativeCandidate.entryCount
+            };
+          }
           return {
-            suit: bestNotrumpLeadSuitByQuality(hand, playablePartnerSuits) || longestAvailableSuitForLead(hand, playablePartnerSuits),
-            bidSuits,
-            unbidSuits,
-            partnerSuits,
-            leadSelection: "partnerSuit"
-          };
-        }
-
-        const dummySecondSuits = dummySecondSuitsForLead(shownSuitCalls, declarer);
-        const playableDummySecondSuits = dummySecondSuits.filter((suit) => cardsInSuit(hand, suit).length);
-        if (playableDummySecondSuits.length && weakUnbidNotrumpLeadOptions(hand, unbidSuits)) {
-          return {
-            suit: bestNotrumpLeadSuitByQuality(hand, playableDummySecondSuits) || longestAvailableSuitForLead(hand, playableDummySecondSuits),
+            suit: partnerCandidate?.suit || longestAvailableSuitForLead(hand, playablePartnerSuits),
             bidSuits,
             unbidSuits,
             partnerSuits,
             dummySecondSuits,
+            hasEntry: partnerCandidate?.hasEntry || false,
+            entryCount: partnerCandidate?.entryCount || 0,
+            leadSelection: "partnerSuit"
+          };
+        }
+
+        const playableDummySecondSuits = dummySecondSuits.filter((suit) => cardsInSuit(hand, suit).length);
+        if (playableDummySecondSuits.length && weakUnbidNotrumpLeadOptions(hand, unbidSuits)) {
+          const dummyCandidate = bestNotrumpLeadCandidate(hand, playableDummySecondSuits, context);
+          return {
+            suit: dummyCandidate?.suit || longestAvailableSuitForLead(hand, playableDummySecondSuits),
+            bidSuits,
+            unbidSuits,
+            partnerSuits,
+            dummySecondSuits,
+            hasEntry: dummyCandidate?.hasEntry || false,
+            entryCount: dummyCandidate?.entryCount || 0,
             leadSelection: "throughDummySecondSuit"
           };
         }
 
         const candidateSuits = unbidSuits.length ? unbidSuits : suits;
+        const candidates = notrumpLeadCandidates(hand, candidateSuits, context);
         const longestCandidate = longestAvailableSuitForLead(hand, candidateSuits);
-        const bestQualityCandidate = bestNotrumpLeadSuitByQuality(hand, candidateSuits);
-        const choseQuality = bestQualityCandidate && longestCandidate && bestQualityCandidate !== longestCandidate;
+        const bestQualityCandidate = bestNotrumpLeadCandidate(hand, candidateSuits, context);
+        const longestLeadCandidate = bestNotrumpLeadCandidate(hand, [longestCandidate].filter(Boolean), context);
+        const slamCandidate = isNotrumpSlamContract(contract)
+          ? notrumpLeadCandidates(hand, candidateSuits, context)
+            .filter((candidate) => candidate.pattern || candidate.honors.length)
+            .sort((a, b) => {
+              const textureDiff = b.textureScore - a.textureScore;
+              if (textureDiff) return textureDiff;
+              return compareNotrumpLeadCandidates(a, b);
+            })[0] || null
+          : null;
+        const nextLongestLength = candidates
+          .filter((candidate) => candidate.suit !== longestLeadCandidate?.suit)
+          .reduce((max, candidate) => Math.max(max, candidate.length), 0);
+        const weakLongNoEntry = longestLeadCandidate &&
+          longestLeadCandidate.length >= 4 &&
+          longestLeadCandidate.length >= nextLongestLength + 2 &&
+          !longestLeadCandidate.pattern &&
+          !longestLeadCandidate.honors.length &&
+          !longestLeadCandidate.hasEntry;
+        const shortNoEntryCandidate = weakLongNoEntry
+          ? notrumpLeadCandidates(hand, candidateSuits, context)
+            .filter((candidate) => candidate.suit !== longestLeadCandidate.suit && candidate.length >= 2 && candidate.length <= 3)
+            .sort((a, b) => {
+              const tieBreakDiff = b.tieBreakScore - a.tieBreakScore;
+              if (tieBreakDiff) return tieBreakDiff;
+              return compareNotrumpLeadCandidates(a, b);
+            })[0] || null
+          : null;
+        const selectedCandidate = slamCandidate || shortNoEntryCandidate || bestQualityCandidate;
+        const choseQuality = selectedCandidate && longestCandidate && selectedCandidate.suit !== longestCandidate;
+        const tiedWithLowerSuit = selectedCandidate && candidates.some((candidate) => (
+          candidate.suit !== selectedCandidate.suit &&
+          candidate.score === selectedCandidate.score &&
+          candidate.length === selectedCandidate.length &&
+          candidate.tieBreakScore < selectedCandidate.tieBreakScore
+        ));
+        const leadSelection = slamCandidate
+          ? "slamActiveLead"
+          : shortNoEntryCandidate
+            ? "shortSuitNoEntry"
+            : tiedWithLowerSuit
+              ? "majorTieBreak"
+              : bidSuits.length && unbidSuits.length
+                ? (choseQuality ? "qualityUnbidSuit" : "longestUnbidSuit")
+                : (choseQuality ? "qualitySuit" : "longestSuit");
         return {
-          suit: bestQualityCandidate || longestCandidate || longestSuitForLead(hand),
+          suit: selectedCandidate?.suit || longestCandidate || longestSuitForLead(hand),
           bidSuits,
           unbidSuits,
           partnerSuits,
           dummySecondSuits,
-          leadSelection: bidSuits.length && unbidSuits.length
-            ? (choseQuality ? "qualityUnbidSuit" : "longestUnbidSuit")
-            : (choseQuality ? "qualitySuit" : "longestSuit")
+          hasEntry: selectedCandidate?.hasEntry || false,
+          entryCount: selectedCandidate?.entryCount || 0,
+          tieBreak: leadSelection === "majorTieBreak" ? "majorSuit" : null,
+          slamLead: leadSelection === "slamActiveLead",
+          leadSelection
         };
       }
 
-  function chooseNotrumpLeadCardPlay(hand, legal, auction = [], seat = null, declarer = null) {
-        const leadSuit = notrumpLeadSuitForAuction(hand, auction, seat, declarer);
+  function chooseNotrumpLeadCardPlay(hand, legal, auction = [], seat = null, declarer = null, contract = null) {
+        const leadSuit = notrumpLeadSuitForAuction(hand, auction, seat, declarer, contract);
         const longestSuit = leadSuit.suit;
         const longestSuitCards = legal.filter((card) => card.suit === longestSuit);
         if (!longestSuitCards.length) return null;
@@ -497,6 +647,11 @@
             partnerSuits: leadSuit.partnerSuits,
             dummySecondSuits: leadSuit.dummySecondSuits,
             leadSelection: leadSuit.leadSelection,
+            hasEntry: leadSuit.hasEntry,
+            entryCount: leadSuit.entryCount,
+            avoidedPartnerSingleton: leadSuit.avoidedPartnerSingleton,
+            tieBreak: leadSuit.tieBreak,
+            slamLead: leadSuit.slamLead,
             ...agreement.extra
           }
         );
@@ -664,7 +819,7 @@
 
   function chooseLeadCardPlay(hand, legal, { contract = null, seat = null, declarer = null, isOpeningLead = true, auction = [] } = {}) {
       if (isOpeningLead && contract?.strain === "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
-        const notrumpLead = chooseNotrumpLeadCardPlay(hand, legal, auction, seat, declarer);
+        const notrumpLead = chooseNotrumpLeadCardPlay(hand, legal, auction, seat, declarer, contract);
         if (notrumpLead) return notrumpLead;
       }
       if (isOpeningLead && contract?.strain && contract.strain !== "NT" && canUseDefensiveLeadAgreement(seat, declarer)) {
@@ -708,7 +863,12 @@
     internalLeadSequence,
     notrumpLeadPattern,
     highCardRanks,
+    notrumpOutsideEntries,
+    notrumpSuitTextureScore,
+    notrumpSuitTieBreakScore,
     hasUnsupportedAce,
+    isPoorPartnerSuitLead,
+    isNotrumpSlamContract,
     leadAgreement,
     openingLeadAgreementForSuit,
     ruleIdSuffix,
@@ -718,6 +878,7 @@
     shownSuitCallsForLead,
     uniqueSuits,
     longestAvailableSuitForLead,
+    notrumpLeadCandidates,
     notrumpSuitLeadScore,
     bestNotrumpLeadSuitByQuality,
     weakUnbidNotrumpLeadOptions,

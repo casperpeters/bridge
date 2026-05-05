@@ -132,11 +132,31 @@ function explainCardPlay(seat, card, result = chooseCardPlayResult(seat)) {
 
 function notrumpLeadSelectionText(result) {
   if (result.leadSelection === "partnerSuit") return "partners kleur";
+  if (result.leadSelection === "partnerSuitAvoidSingleton") return "een betere ontwikkelkleur";
   if (result.leadSelection === "throughDummySecondSuit") return "door dummy's tweede kleur heen";
   if (result.leadSelection === "qualityUnbidSuit") return "beste serie in een ongeboden kleur";
   if (result.leadSelection === "qualitySuit") return "beste seriekleur";
   if (result.leadSelection === "longestUnbidSuit") return "langste ongeboden kleur";
+  if (result.leadSelection === "majorTieBreak") return "hoge kleur bij gelijke opties";
+  if (result.leadSelection === "shortSuitNoEntry") return "korte kleur omdat je geen duidelijke rentree hebt";
+  if (result.leadSelection === "slamActiveLead") return "actieve slemuitkomst";
   return "langste kleur";
+}
+
+function notrumpLeadSelectionReasonText(result) {
+  if (result.leadSelection === "partnerSuitAvoidSingleton") {
+    return ` Partners kleur ${suitName(result.avoidedPartnerSingleton)} is hier maar een singleton, dus ontwikkelt ${suitName(result.suit)} beter.`;
+  }
+  if (result.leadSelection === "majorTieBreak") {
+    return " Bij gelijkwaardige kleuren krijgt een hoge kleur de voorkeur.";
+  }
+  if (result.leadSelection === "shortSuitNoEntry") {
+    return " Zonder duidelijke rentree is een korte ongeboden kleur praktischer dan een zwakke lengte.";
+  }
+  if (result.leadSelection === "slamActiveLead") {
+    return " Tegen slem is actief een honneur of serie aanvallen vaak nuttiger dan rustig lengteslagen ontwikkelen.";
+  }
+  return "";
 }
 
 function explainCardPlayResult(result) {
@@ -194,33 +214,33 @@ function explainCardPlayResult(result) {
   }
   if (ruleName === "notrumpSequenceLead") {
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout met de hoogste kaart uit de serie in je ${suitText}: ${suitName(result.suit)}.`;
+    return `Kom tegen sans-atout met de hoogste kaart uit de serie in je ${suitText}: ${suitName(result.suit)}.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "notrumpAceKingLead") {
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout met het aas uit AH in je ${suitText}: ${suitName(result.suit)}.`;
+    return `Kom tegen sans-atout met het aas uit AH in je ${suitText}: ${suitName(result.suit)}.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "notrumpBrokenSequenceLead") {
     const missing = rankLabel[result.missingRank] || result.missingRank;
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout met de hoogste kaart uit de gebroken serie in je ${suitText}: ${suitName(result.suit)}${missing ? `; de ${missing} ontbreekt` : ""}.`;
+    return `Kom tegen sans-atout met de hoogste kaart uit de gebroken serie in je ${suitText}: ${suitName(result.suit)}${missing ? `; de ${missing} ontbreekt` : ""}.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "notrumpInternalSequenceLead") {
     const sequence = result.sequence ? ` (${result.sequence})` : "";
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout met de hoogste kaart van je interne serie${sequence} in je ${suitText}: ${suitName(result.suit)}.`;
+    return `Kom tegen sans-atout met de hoogste kaart van je interne serie${sequence} in je ${suitText}: ${suitName(result.suit)}.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "notrumpDoubletonLead") {
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout met de hoogste kaart van je doubleton in je ${suitText}: ${suitName(result.suit)}.`;
+    return `Kom tegen sans-atout met de hoogste kaart van je doubleton in je ${suitText}: ${suitName(result.suit)}.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "notrumpLowPromisesHonor") {
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout laag uit je ${suitText}: kleintje belooft plaatje.`;
+    return `Kom tegen sans-atout laag uit je ${suitText}: kleintje belooft plaatje.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "notrumpTopOfNothingLead" || ruleName === "notrumpHighMiddleDeniesHonor") {
     const suitText = notrumpLeadSelectionText(result);
-    return `Kom tegen sans-atout met top of nothing uit je ${suitText}: de hoogste kaart ontkent een plaatje.`;
+    return `Kom tegen sans-atout met top of nothing uit je ${suitText}: de hoogste kaart ontkent een plaatje.${notrumpLeadSelectionReasonText(result)}`;
   }
   if (ruleName === "suitContractSequenceLead") {
     return `Kom tegen een kleurcontract met de hoogste kaart uit de honneurserie in ${suitName(result.suit)}.`;

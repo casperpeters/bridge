@@ -8,9 +8,9 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains twenty-nine valid beginner deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 29);
-  assert.equal(practiceHands.validatePracticeHands(), 29);
+test("practice hand catalog contains thirty valid beginner deals", () => {
+  assert.equal(practiceHands.beginnerHands.length, 30);
+  assert.equal(practiceHands.validatePracticeHands(), 30);
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {
@@ -25,7 +25,7 @@ test("practice hand catalog contains twenty-nine valid beginner deals", () => {
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 29);
+  assert.equal(ids.size, 30);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {
@@ -114,7 +114,8 @@ test("practice hand defensive card-play targets expose their expected rule", () 
       "partnerSeat",
       "dummyShortSuit",
       "dummyShortLength",
-      "dummyTrumpLength"
+      "dummyTrumpLength",
+      "leadSelection"
     ].forEach((key) => {
       if (Object.prototype.hasOwnProperty.call(expected, key)) {
         assert.equal(result[key], expected[key], `${prepared.id} ${key}`);

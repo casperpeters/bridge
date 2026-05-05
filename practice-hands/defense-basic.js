@@ -170,6 +170,36 @@
         "Met een honneur doubleton in partners lange kleur speel je de hoge kaart meteen, anders kan die kleur blokkeren.",
         "Deze regel geldt hier omdat partner tegen sans-atout met een plaatje uit een serie is uitgekomen."
       ]
+    },
+    {
+      id: "notrump-lead-major-tiebreak-001",
+      title: "Hoge kleur bij gelijke SA-uitkomsten",
+      level: "beginner",
+      focus: ["defense", "opening-lead", "notrump", "major-tiebreak"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Tegen sans-atout moet de verdediging bij gelijkwaardige lengtekleuren de hoge kleur kiezen.",
+      hands: {
+        North: ["AS", "KS", "QS", "JS", "TS", "AH", "KH", "QH", "AD", "KD", "QD", "AC", "KC"],
+        East: ["9S", "5S", "4S", "3S", "JH", "TH", "8H", "7H", "JD", "TD", "8D", "QC", "JC"],
+        South: ["6H", "4H", "3H", "7D", "6D", "5D", "4D", "3D", "TC", "9C", "5C", "4C", "3C"],
+        West: ["8S", "7S", "6S", "2S", "9H", "5H", "2H", "9D", "2D", "8C", "7C", "6C", "2C"]
+      },
+      expectedContract: { contract: "3NT", declarer: "South" },
+      expectedCardPlay: {
+        seat: "West",
+        ruleId: "notrumpTopOfNothingLead",
+        card: "8S",
+        suit: "S",
+        isOpeningLead: true,
+        leadSelection: "majorTieBreak"
+      },
+      explanationKeys: ["cardPlay.notrumpTopOfNothingLead"],
+      teachingPoints: [
+        "Als twee uitkomstkleuren even lang en even sterk zijn, kies je tegen sans-atout liever een hoge kleur.",
+        "De tegenpartij heeft in een SA-contract vaak geen duidelijke hoge-kleurfit gevonden."
+      ]
     }
   ];
 });
