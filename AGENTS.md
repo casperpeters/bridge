@@ -89,6 +89,10 @@ Belangrijke plekken:
 - `scripts/play-plan.js` - zichtbaar speelplan en tekst daarover.
 - `scripts/auction-flow.js` - biedverloop en biedbeslissingen.
 - `scripts/play-flow.js` - kaartspel, automatisch spel, legaliteit en slagvoortgang.
+- `rules/play-plan.js` - compatibele ingang/aggregator voor speelplanlogica.
+- `rules/play-plan/` - gesplitste speelplanmodules: gedeelde helpers, sans-atout en kleurcontract.
+- `rules/card-play.js` - compatibele ingang/orchestrator voor kaartkeuzes.
+- `rules/card-play/` - gesplitste kaartspelmodules: gedeelde helpers, uitkomsten en basisverdediging.
 - `rules/bidding/systems/five-card-high/explanations-nl.js` - Nederlandse uitlegtekst gekoppeld aan het huidige Vijfkaart-Hoog-profiel.
 - `rules/` - testbare bridge-regels, scoring, biedheuristiek, kaartspel en speelplanlogica.
 - `tests/` - unit tests en Playwright-smoketests.
@@ -117,11 +121,12 @@ Belangrijke plekken:
 
 ## Roadmapprioriteit
 
-Volg de implementatievolgorde bovenaan `TODO.md`. Huidige korte-termijnfocus is product- en beginner-UX:
+Volg de implementatievolgorde bovenaan `TODO.md`. Korte samenvatting van de huidige volgorde:
 
-1. Gebruik de eerste `practice-hands/` catalogus in beginnerstests en regressietests.
-2. Breid reproduceerbare oefenhanden alleen gericht uit waar testers of bugs extra vaste situaties vragen.
-3. Pak daarna bewezen zwakke plekken in speelplan, basisverdediging of biedcontext aan.
+1. Houd de eerste `practice-hands/` catalogus actief in beginnerstests en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
+2. Houd de codebase onderhoudbaar met kleine architectuurrefactors wanneer een bestand of flow anders te groot wordt voor overzichtelijk vibe-coden.
+3. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
+4. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
 
 ## Veiligheid en onderhoud
 

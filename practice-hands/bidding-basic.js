@@ -8,6 +8,58 @@
 
   return [
     {
+      id: "response-raise-after-1s-001",
+      title: "Steun partners 1 schoppen-opening",
+      level: "beginner",
+      focus: ["bidding", "response", "raise", "major-fit"],
+      systemId: "fiveCardHigh",
+      dealer: "North",
+      vulnerability: "none",
+      testGoal: "Na 1 schoppen van partner moet Zuid met 6 punten en drie schoppen naar 2 schoppen steunen.",
+      hands: {
+        North: ["AS", "KS", "QS", "7S", "4S", "AH", "6H", "5H", "4H", "KC", "5D", "4D", "3D"],
+        East: ["6S", "5S", "3S", "9H", "8H", "2H", "7D", "6D", "6C", "5C", "4C", "3C", "2C"],
+        South: ["JS", "8S", "2S", "KH", "7H", "3H", "9C", "8C", "7C", "QD", "9D", "8D", "2D"],
+        West: ["TS", "9S", "QH", "JH", "TH", "AD", "KD", "JD", "TD", "AC", "QC", "JC", "TC"]
+      },
+      expectedAuction: [
+        { seat: "North", bid: "1S", ruleId: "fiveCardHigh.opening.oneMajor" },
+        { seat: "East", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "South", bid: "2S", ruleId: "fiveCardHigh.response.raise" }
+      ],
+      explanationKeys: ["fiveCardHigh.opening.oneMajor", "fiveCardHigh.response.raise"],
+      teachingPoints: [
+        "Omdat 1 schoppen een vijfkaart belooft, is driekaart steun al genoeg voor een 5-3 fit.",
+        "Met 6-9 punten blijft Zuid rustig op tweeniveau."
+      ]
+    },
+    {
+      id: "minor-opening-find-major-001",
+      title: "Na 1 klaveren een vierkaart hoog tonen",
+      level: "beginner",
+      focus: ["bidding", "response", "minor-opening", "major-search"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "Na een 1 klaveren-opening moet Noord met 6 punten en een vierkaart harten 1 harten antwoorden.",
+      hands: {
+        North: ["KS", "8S", "7S", "QH", "JH", "TH", "9H", "TC", "9C", "8C", "9D", "7D", "6D"],
+        East: ["QS", "JS", "TS", "9S", "AH", "8H", "7H", "AD", "KD", "KC", "QC", "JC", "5D"],
+        South: ["AS", "KH", "AC", "QD", "JD", "TD", "8D", "7C", "6C", "5C", "4C", "3C", "2C"],
+        West: ["6S", "5S", "4S", "3S", "2S", "6H", "5H", "4H", "3H", "2H", "4D", "3D", "2D"]
+      },
+      expectedAuction: [
+        { seat: "South", bid: "1C", ruleId: "fiveCardHigh.opening.oneMinor" },
+        { seat: "West", bid: "PASS", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+        { seat: "North", bid: "1H", ruleId: "fiveCardHigh.response.newSuit" }
+      ],
+      explanationKeys: ["fiveCardHigh.opening.oneMinor", "fiveCardHigh.response.newSuit"],
+      teachingPoints: [
+        "Een lage-kleur opening sluit een hoge-kleur fit nog niet uit.",
+        "Met 6+ punten toont responder een biedbare vierkaart hoog, zodat de partij een 4-4 fit kan vinden."
+      ]
+    },
+    {
       id: "response-new-suit-after-1h-001",
       title: "Nieuwe kleur na partners 1 harten-opening",
       level: "beginner",

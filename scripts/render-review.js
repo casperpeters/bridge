@@ -53,6 +53,8 @@ function renderReview() {
     [t("openingLead"), openingPlay ? `${seatName(openingPlay.seat)} ${cardText(openingPlay.card)}` : t("none")]
   ].forEach(([label, value]) => els.reviewSummary.appendChild(reviewRow(label, value)));
   appendScoreExplanation(passOut, resultText);
+  appendLessonFeedback(passOut, resultText);
+  appendLessonPoints();
   [
     [t("board"), state.dealNumber],
     [t("seed"), state.dealSeed || t("none")]
@@ -90,6 +92,87 @@ function renderReview() {
       els.reviewTricks.appendChild(explanationEl);
     });
   }
+}
+
+function appendLessonPoints() {
+  if (!state.practice?.teachingPoints?.length) return;
+  els.reviewSummary.appendChild(reviewSectionTitle(t("lessonPoints")));
+  const list = document.createElement("ul");
+  list.className = "lesson-points-list";
+  state.practice.teachingPoints.forEach((point) => {
+    const item = document.createElement("li");
+    item.appendChild(BridgeGlossary.linkifyText(point));
+    list.appendChild(item);
+  });
+  els.reviewSummary.appendChild(list);
+}
+
+function appendLessonFeedback(passOut, resultText) {
+  if (!state.practice?.lessonId) return;
+  const feedbackItems = lessonFeedbackItems(passOut, resultText);
+  const bidItems = lessonAuctionFeedbackItems();
+  if (!feedbackItems.length && !bidItems.length) return;
+
+  els.reviewSummary.appendChild(reviewSectionTitle(t("lessonFeedback")));
+  const panel = document.createElement("div");
+  panel.className = "lesson-feedback-panel";
+
+  if (feedbackItems.length) {
+    const list = document.createElement("ul");
+    list.className = "lesson-feedback-list";
+    feedbackItems.forEach((text) => list.appendChild(lessonFeedbackItem(text)));
+    panel.appendChild(list);
+  }
+
+  if (bidItems.length) {
+    const title = document.createElement("strong");
+    title.className = "lesson-feedback-subtitle";
+    title.textContent = t("lessonBidFeedback");
+    const list = document.createElement("ul");
+    list.className = "lesson-feedback-list";
+    bidItems.forEach((text) => list.appendChild(lessonFeedbackItem(text)));
+    panel.append(title, list);
+  }
+
+  els.reviewSummary.appendChild(panel);
+}
+
+function lessonFeedbackItems(passOut, resultText) {
+  const items = [];
+  if (state.practice.lessonId === "les-01-wat-is-bridge") {
+    const openingPlay = state.trickHistory[0]?.cards[0] || null;
+    if (openingPlay) {
+      items.push(`${seatName(openingPlay.seat)} kwam uit met ${cardText(openingPlay.card)}. Daarna verscheen ${seatName(state.dummy)} als dummy.`);
+    }
+    if (!passOut && state.contract) {
+      items.push(`${seatName(state.declarer)} was leider in ${formatBid(state.contract)}. De leider speelt de eigen hand en dummy samen.`);
+    }
+    items.push(`Er zijn ${state.trickHistory.length} slagen gespeeld: Noord/Zuid won ${state.tricks.NS}, Oost/West won ${state.tricks.EW}.`);
+    items.push(`Resultaat van dit bord: ${resultText}. Dat is nu vooral een meetlint; de les ging om het herkennen van het tafelritme.`);
+  }
+  return [...items, ...(state.practice.lessonReviewFeedback || [])];
+}
+
+function lessonAuctionFeedbackItems() {
+  if (!state.practice?.lessonId || !state.auction.length) return [];
+  return state.auction
+    .map((call, index) => ({ call, index }))
+    .filter(({ call }) => call.bidResult || isContractBid(call.bid))
+    .slice(0, 4)
+    .map(({ call, index }) => `${seatName(call.seat)} ${formatCall(call.bid)}: ${cleanLessonExplanation(explainBid(call, index))}`);
+}
+
+function lessonFeedbackItem(text) {
+  const item = document.createElement("li");
+  item.appendChild(BridgeGlossary.linkifyText(text));
+  return item;
+}
+
+function cleanLessonExplanation(text) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*zekerheid: [^.]+\.?/i, "")
+    .trim();
 }
 
 function appendScoreExplanation(passOut, resultText) {

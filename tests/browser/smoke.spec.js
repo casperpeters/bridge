@@ -124,6 +124,176 @@ test("loads curated practice hands through the repeat-code field", async ({ page
   await expect(page.locator("#seed-description")).toContainText("Code geladen");
 });
 
+test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
+  await openFreshApp(page);
+
+  await clickMenuButton(page, "#open-lessons");
+  await expect(page.locator("#lessons-dialog")).toBeVisible();
+  await expect(page.locator(".lesson-card")).toHaveCount(12);
+  await expect(page.locator(".lesson-card").first()).toContainText("Wat is bridge?");
+  await expect(page.locator("#lessons-list")).toContainText("Reviewles: hele spellen");
+  await page.locator(".lesson-card-featured .lesson-mini-option", { hasText: "Slagen" }).click();
+  await expect(page.locator(".lesson-card-featured")).toContainText("Een slag is een rondje");
+
+  await page.locator(".lesson-card-featured .lesson-start").click();
+  await expect(page.locator("#lessons-dialog")).toBeHidden();
+  await expect(page.locator("#lesson-banner")).toContainText("Les 1: Wat is bridge?");
+  await expect(page.locator("#lesson-banner")).toContainText("dummy");
+
+  const lessonSnapshot = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      seed: state.dealSeed,
+      practiceId: state.practice?.id,
+      lessonId: state.practice?.lessonId,
+      challenge: state.practice?.challenge,
+      phase: state.phase,
+      contract: state.contract ? `${state.contract.level}${state.contract.strain}` : null,
+      declarer: state.declarer
+    };
+  });
+
+  expect(lessonSnapshot).toEqual({
+    seed: "draw-trumps-001",
+    practiceId: "draw-trumps-001",
+    lessonId: "les-01-wat-is-bridge",
+    challenge: "Win slagen samen met partner en ontdek wanneer dummy verschijnt.",
+    phase: "playing",
+    contract: "4S",
+    declarer: "South"
+  });
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const lesson = window.BridgeLessons.findLesson("les-01-wat-is-bridge");
+    app.startLesson(lesson, lesson.handIds[0]);
+    app.autoCompletePlay();
+    app.renderAll();
+  });
+
+  await expect(page.locator("#review-panel")).toBeVisible();
+  await expect(page.locator("#review-summary")).toContainText("Lesfeedback");
+  await expect(page.locator("#review-summary")).toContainText("verscheen Noord als dummy");
+  await expect(page.locator("#review-summary")).toContainText("Lespunten");
+  await expect(page.locator("#review-summary")).toContainText("Een bridgebord bestaat uit 13 slagen");
+});
+
+test("runs curated beginner practice hands through fixed UI checkpoints", async ({ page }) => {
+  await openFreshApp(page);
+
+  const biddingSnapshot = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const bidText = (bid) => {
+      if (app.rules.isPass(bid)) return "Pas";
+      if (app.rules.isDouble(bid)) return "Doublet";
+      if (app.rules.isRedouble(bid)) return "Redoublet";
+      return `${bid.level}${bid.strain}`;
+    };
+    app.startPracticeHand("response-new-suit-after-1h-001", { skipFlow: true });
+    app.autoCompleteAuction();
+    app.renderAll();
+    const state = app.getState();
+    return {
+      practiceId: state.practice?.id,
+      contract: document.querySelector("#contract").textContent,
+      firstCalls: state.auction.slice(0, 3).map((call) => ({
+        seat: call.seat,
+        bid: bidText(call.bid),
+        ruleId: call.bidResult?.ruleId || null
+      }))
+    };
+  });
+
+  expect(biddingSnapshot.practiceId).toBe("response-new-suit-after-1h-001");
+  expect(biddingSnapshot.contract).toContain("2♥ door Noord");
+  expect(biddingSnapshot.firstCalls).toEqual([
+    { seat: "North", bid: "1H", ruleId: "fiveCardHigh.opening.oneMajor" },
+    { seat: "East", bid: "Pas", ruleId: "fiveCardHigh.pass.competitiveNoAction" },
+    { seat: "South", bid: "1S", ruleId: "fiveCardHigh.response.newSuit" }
+  ]);
+  await expect(page.locator("#auction-log")).toContainText("1♥");
+  await expect(page.locator("#auction-log")).toContainText("1♠");
+
+  const playSnapshot = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const bidText = (bid) => `${bid.level}${bid.strain}`;
+    app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(4, "S"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 3
+    });
+    app.setDeveloperMode(true);
+    const leader = app.seatAt(app.getState().turnIndex);
+    app.autoPlayCard(leader, app.chooseCard(leader));
+    app.renderAll();
+    const state = app.getState();
+    return {
+      practiceId: state.practice?.id,
+      contract: bidText(state.contract),
+      declarer: state.declarer,
+      dummy: state.dummy,
+      currentTrickLength: state.currentTrick.length,
+      playPlanPriority: state.playPlan?.priorities?.[0]?.kind || null,
+      playPlanSuit: state.playPlan?.priorities?.[0]?.suit || null
+    };
+  });
+
+  expect(playSnapshot).toEqual({
+    practiceId: "draw-trumps-001",
+    contract: "4S",
+    declarer: "South",
+    dummy: "North",
+    currentTrickLength: 1,
+    playPlanPriority: "drawTrumps",
+    playPlanSuit: "S"
+  });
+  await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
+  await expect(page.locator("#dummy-notice")).toContainText("dummy");
+  await expect(page.locator("#play-plan-panel")).toContainText("Trek schoppen");
+
+  const scoringSnapshot = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const bidText = (bid) => `${bid.level}${bid.strain}`;
+    app.startPracticeHand("game-bonus-vulnerable-001", { skipFlow: true });
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(4, "H"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 3
+    });
+    app.autoCompletePlay();
+    app.renderAll();
+    const state = app.getState();
+    return {
+      practiceId: state.practice?.id,
+      phase: state.phase,
+      contract: bidText(state.contract),
+      declarer: state.declarer,
+      score: state.finalScore?.score,
+      gameBonus: state.finalScore?.gameBonus,
+      tricksMade: state.finalScore?.made
+    };
+  });
+
+  expect(scoringSnapshot).toEqual({
+    practiceId: "game-bonus-vulnerable-001",
+    phase: "complete",
+    contract: "4H",
+    declarer: "South",
+    score: 620,
+    gameBonus: 500,
+    tricksMade: 10
+  });
+  await expect(page.locator("#review-summary")).toContainText("Waarom deze score?");
+  await expect(page.locator("#review-summary")).toContainText("620");
+});
+
 test("stores South convention metadata without showing an AI suggestion", async ({ page }) => {
   await openFreshApp(page);
 
@@ -286,6 +456,8 @@ test("glossary opens from the toolbar and linked explanation terms", async ({ pa
   await expect(page.locator("#glossary-term")).toHaveText("Vierde-kleur-forcing");
   await page.locator("#glossary-search").fill("openingskracht");
   await expect(page.locator("#glossary-list")).toContainText("Openingskracht");
+  await page.locator(".glossary-list-button", { hasText: "Openingskracht" }).click();
+  await expect(page.locator("#glossary-term")).toHaveText("Openingskracht");
   await expect(page.locator("#glossary-definition")).toContainText("sterk genoeg");
   await page.locator("#glossary-search").fill("verliezer");
   await expect(page.locator("#glossary-list")).toContainText("Verliezers");

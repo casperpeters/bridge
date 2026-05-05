@@ -2,9 +2,17 @@
   "scripts": {
     "test": "npm run test:unit && npm run test:browser",
     "test:unit": "node tests/run-tests.js",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "video:studio": "remotion studio video/src/index.ts",
+    "video:still": "remotion still video/src/index.ts BridgetafelPromo --scale=0.25 --frame=150 video/out/bridgetafel-promo-frame.png",
+    "video:render": "remotion render video/src/index.ts BridgetafelPromo video/out/bridgetafel-promo.mp4"
   },
   "devDependencies": {
-    "@playwright/test": "^1.59.1"
+    "@playwright/test": "^1.59.1",
+    "@remotion/cli": "^4.0.457",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "remotion": "^4.0.457",
+    "typescript": "^6.0.3"
   }
 }

@@ -33,6 +33,7 @@
                 </section>
                 <section class="menu-section" aria-labelledby="help-menu-title">
                   <p id="help-menu-title" class="menu-section-title">Hulp</p>
+                  <button id="open-lessons" type="button">Lessen</button>
                   <button id="open-glossary" type="button">Woordenlijst</button>
                   <button id="open-score-table" type="button">Scoretabel</button>
                 </section>
@@ -105,6 +106,7 @@
             <div class="table-help-stack">
               <div id="status" class="status sr-only" aria-live="polite">Deel een nieuwe hand om te starten.</div>
               <div id="dummy-notice" class="table-note" aria-live="polite" hidden></div>
+              <div id="lesson-banner" class="lesson-banner" aria-live="polite" hidden></div>
               <div id="table-feedback" class="table-feedback" aria-live="polite" hidden></div>
               <div id="guidance-panel" class="guidance-panel" hidden></div>
               <div id="trick-advance-hint" class="trick-advance-hint" hidden>Klik ergens of druk op Enter voor de volgende slag.</div>
@@ -253,6 +255,20 @@
       </section>
     </dialog>
 
+    <dialog id="lessons-dialog" class="lessons-dialog" aria-labelledby="lessons-title">
+      <section class="lessons-panel" aria-label="Lessen">
+        <div class="feedback-head">
+          <div>
+            <p id="lessons-eyebrow" class="review-section-title">Vijfkaart Hoog</p>
+            <h2 id="lessons-title">Lessen</h2>
+          </div>
+          <button id="close-lessons" class="feedback-close" type="button" aria-label="Sluiten">x</button>
+        </div>
+        <p id="lessons-intro" class="lessons-intro"></p>
+        <div id="lessons-list" class="lessons-list" aria-label="Oefeningen"></div>
+      </section>
+    </dialog>
+
     <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title">
       <section id="feedback-panel" class="feedback-panel" aria-label="Feedback">
         <div class="feedback-head">
@@ -303,8 +319,13 @@
     <script src="rules/bidding/systems/five-card-high/index.js"></script>
     <script src="rules/bidding/index.js"></script>
     <script src="rules/play-mechanics.js"></script>
+    <script src="rules/play-plan/common.js"></script>
+    <script src="rules/play-plan/notrump.js"></script>
+    <script src="rules/play-plan/suit-contract.js"></script>
     <script src="rules/play-plan.js"></script>
     <script src="rules/card-play/opening-leads.js"></script>
+    <script src="rules/card-play/common.js"></script>
+    <script src="rules/card-play/defense.js"></script>
     <script src="rules/card-play.js"></script>
     <script src="bridge-rules.js"></script>
     <script src="practice-hands/five-card-high-openings.js"></script>
@@ -318,6 +339,7 @@
     <script src="rules/bidding/systems/five-card-high/explanations-nl.js"></script>
     <script src="scripts/bid-explanations.js"></script>
     <script src="scripts/glossary.js"></script>
+    <script src="scripts/lessons.js"></script>
     <script src="scripts/settings.js"></script>
     <script src="scripts/seed.js"></script>
     <script src="scripts/score-table.js"></script>

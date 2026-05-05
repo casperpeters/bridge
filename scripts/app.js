@@ -86,6 +86,13 @@ const els = {
   playHistoryModeDescription: document.querySelector("#play-history-mode-description"),
   hintButton: document.querySelector("#hint-button"),
   openFeedback: document.querySelector("#open-feedback"),
+  openLessons: document.querySelector("#open-lessons"),
+  lessonsDialog: document.querySelector("#lessons-dialog"),
+  closeLessons: document.querySelector("#close-lessons"),
+  lessonsEyebrow: document.querySelector("#lessons-eyebrow"),
+  lessonsTitle: document.querySelector("#lessons-title"),
+  lessonsIntro: document.querySelector("#lessons-intro"),
+  lessonsList: document.querySelector("#lessons-list"),
   openGlossary: document.querySelector("#open-glossary"),
   glossaryDialog: document.querySelector("#glossary-dialog"),
   closeGlossary: document.querySelector("#close-glossary"),
@@ -146,6 +153,7 @@ const els = {
   status: document.querySelector("#status"),
   guidancePanel: document.querySelector("#guidance-panel"),
   dummyNotice: document.querySelector("#dummy-notice"),
+  lessonBanner: document.querySelector("#lesson-banner"),
   tableFeedback: document.querySelector("#table-feedback"),
   trickAdvanceHint: document.querySelector("#trick-advance-hint"),
   scoreline: document.querySelector("#scoreline"),
@@ -168,6 +176,17 @@ BridgeGlossary.init({
   list: els.glossaryList,
   term: els.glossaryTerm,
   definition: els.glossaryDefinition
+});
+BridgeLessons.init({
+  dialog: els.lessonsDialog,
+  openButton: els.openLessons,
+  closeButton: els.closeLessons,
+  list: els.lessonsList,
+  closeMenu: () => els.appMenu?.removeAttribute("open"),
+  labels: {
+    start: t("lessonStart")
+  },
+  startLesson: startLesson
 });
 els.openScoreTable.addEventListener("click", openScoreTableDialog);
 els.closeScoreTable.addEventListener("click", closeScoreTableDialog);
@@ -241,7 +260,7 @@ function startHand({ replay = false, seed = null, preserveBoard = false, skipFlo
   });
 }
 
-function startPracticeHand(handId, { preserveBoard = false, skipFlow = false } = {}) {
+function startPracticeHand(handId, { preserveBoard = false, skipFlow = false, lesson = null } = {}) {
   if (!globalThis.PracticeHands) throw new Error("practice-hands/index.js must load before practice hands can be used");
   const scenario = globalThis.PracticeHands.preparePracticeHand(handId);
   if (!preserveBoard || state.dealNumber === 0) state.dealNumber += 1;
@@ -251,9 +270,31 @@ function startPracticeHand(handId, { preserveBoard = false, skipFlow = false } =
     dealerIndex: seats.indexOf(scenario.dealer),
     vulnerability: scenario.vulnerability,
     hands: scenario.hands,
-    practice: practiceStateFromScenario(scenario),
+    practice: practiceStateFromScenario(scenario, lesson),
     skipFlow
   });
+  return scenario;
+}
+
+function startLesson(lesson, handId) {
+  if (!lesson?.id || !handId) return;
+  const startAtPlay = lesson.startMode === "play";
+  const scenario = startPracticeHand(handId, { lesson, skipFlow: startAtPlay });
+  if (!startAtPlay) return scenario;
+
+  const expected = scenario.expectedContract;
+  if (!expected) return scenario;
+  const contract = globalThis.PracticeHands.contractFromText(expected.contract);
+  state.phase = "playing";
+  state.contract = contract;
+  state.declarer = expected.declarer;
+  state.dummy = partnerOf(state.declarer);
+  state.leader = leftOf(state.declarer);
+  state.turnIndex = seats.indexOf(state.leader);
+  if (lesson.enableGuidance) state.guidanceMode = true;
+  renderAll();
+  setStatus("lead", { leader: state.leader, declarer: state.declarer, dummy: state.dummy });
+  continuePlay();
   return scenario;
 }
 
@@ -290,7 +331,7 @@ function replayHand() {
   startHand({ replay: true });
 }
 
-function practiceStateFromScenario(scenario) {
+function practiceStateFromScenario(scenario, lesson = null) {
   return {
     id: scenario.id,
     title: scenario.title,
@@ -301,9 +342,16 @@ function practiceStateFromScenario(scenario) {
     expectedContract: scenario.expectedContract || null,
     expectedPlayPlan: scenario.expectedPlayPlan || null,
     expectedScore: scenario.expectedScore || null,
-    teachingPoints: scenario.teachingPoints || [],
+    teachingPoints: lesson?.teachingPoints ? [...lesson.teachingPoints] : (scenario.teachingPoints || []),
     explanationKeys: scenario.explanationKeys || [],
-    testGoal: scenario.testGoal || ""
+    testGoal: scenario.testGoal || "",
+    lessonId: lesson?.id || null,
+    lessonNumber: lesson?.number || null,
+    lessonTitle: lesson?.title || "",
+    challenge: lesson?.challenge || "",
+    lessonFocus: lesson?.focus ? [...lesson.focus] : [],
+    lessonIntro: lesson?.intro || "",
+    lessonReviewFeedback: lesson?.reviewFeedback ? [...lesson.reviewFeedback] : []
   };
 }
 
@@ -398,6 +446,7 @@ function renderAll() {
   renderReview();
   renderContract();
   renderGuidance();
+  renderLessonBanner();
   renderFeedbackStatus();
   renderIllegalActionFeedback();
   renderReplayPanel();
@@ -443,6 +492,11 @@ function applyStaticText() {
   els.settingsSummary.setAttribute("aria-label", "Menu");
   els.settingsSummary.title = "Menu";
   els.openFeedback.textContent = t("openFeedback");
+  els.openLessons.textContent = t("openLessons");
+  els.lessonsEyebrow.textContent = t("lessonsEyebrow");
+  els.lessonsTitle.textContent = t("lessonsTitle");
+  els.lessonsIntro.textContent = t("lessonsIntro");
+  els.closeLessons.setAttribute("aria-label", t("closeLessons"));
   els.openGlossary.textContent = t("openGlossary");
   els.openScoreTable.textContent = t("openScoreTable");
   els.developerModeLabel.textContent = t("developerMode");
@@ -544,6 +598,20 @@ function renderGuidance() {
   reason.appendChild(BridgeGlossary.linkifyText(guidance.reason));
   els.guidancePanel.append(title, reason);
   els.guidancePanel.hidden = false;
+}
+
+function renderLessonBanner() {
+  if (!els.lessonBanner) return;
+  els.lessonBanner.hidden = !state.practice?.challenge;
+  els.lessonBanner.innerHTML = "";
+  if (els.lessonBanner.hidden) return;
+
+  const label = document.createElement("strong");
+  const lessonPrefix = state.practice.lessonNumber ? `${t("lesson")} ${state.practice.lessonNumber}` : t("lesson");
+  label.textContent = state.practice.lessonTitle ? `${lessonPrefix}: ${state.practice.lessonTitle}` : lessonPrefix;
+  const challenge = document.createElement("span");
+  challenge.textContent = state.practice.challenge;
+  els.lessonBanner.append(label, challenge);
 }
 
 function currentGuidance() {
@@ -835,6 +903,7 @@ const BridgeApp = {
   actions: {
     startHand,
     startPracticeHand,
+    startLesson,
     autoCompleteAuction,
     autoCompletePlay,
     continuePlay,
@@ -902,6 +971,7 @@ function createBridgeAppTestHooks() {
     rules: bridgeRules,
     startHand,
     startPracticeHand,
+    startLesson,
     autoCompleteAuction,
     autoCompletePlay,
     renderAll,

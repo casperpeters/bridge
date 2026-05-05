@@ -49,9 +49,15 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - `bridge-rules.js`: browser-facing aggregator that exposes the rule modules in dependency order.
 - `practice-hands/`: curated fixed beginner deals and scenario metadata for lessons, debugging, and regression tests.
 - `rules/`: testable bridge rules, scoring, bidding heuristics, card-play heuristics, and play-plan data.
+- `rules/scoring.js`: ordinary bridge score calculation.
+- `rules/score-table.js`: score-table data derived from the scoring rules.
 - `rules/bidding/common/`: shared bidding context, valuation, legality, and result helpers for system profiles.
 - `rules/bidding/index.js`: bidding-system dispatcher that selects the active convention profile.
 - `rules/bidding/systems/five-card-high/`: current NBB/Barry's Vijfkaart Hoog profile, split into opening, responses, rebids, competitive bidding, conventions, explanations, and the profile entrypoint.
+- `rules/play-plan.js`: compatibility entrypoint that exposes the split play-plan modules.
+- `rules/play-plan/`: split play-plan logic for shared helpers, notrump plans, and suit-contract plans.
+- `rules/card-play.js`: compatibility entrypoint and orchestrator for card-play choices.
+- `rules/card-play/`: split card-play helpers, opening-lead logic, and beginner defense rules.
 - `scripts/app.js`: app bootstrap, shared state, DOM references, shared formatting/status helpers, and top-level orchestration.
 - `scripts/text-nl.js`: Dutch UI copy and labels.
 - `scripts/settings.js`: saved settings.
@@ -63,6 +69,10 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - `scripts/render-review.js`: trick history, play explanations, and final hand review.
 - `scripts/auction-flow.js`: auction flow and bidding decisions.
 - `scripts/play-flow.js`: card-play flow, automatic play, legal play handling, and trick advancement.
+- `scripts/glossary.js`: Dutch glossary entries and lookup helpers.
+- `scripts/lessons.js`: compact lesson catalog and validation against practice hands.
+- `scripts/score-table.js`: score-table rendering.
+- `scripts/state-transitions.js`: pure state-transition helpers for core game actions.
 - `rules/bidding/systems/five-card-high/explanations-nl.js`: Dutch explanation text for the current Vijfkaart Hoog system profile.
 
 ## Current Features
@@ -84,6 +94,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Replay the same hand without advancing the board.
 - Copy or load a hand seed to replay a specific card distribution.
 - Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
+- Compact lesson picker that launches curated practice hands and shows lesson guidance or review points where available.
 - Trick history and full hand review after completion.
 - Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, auction, tricks, score, settings, current phase, and optional tester notes.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
@@ -104,7 +115,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Negative doubles are not currently implemented; the previous simplified version was removed until the NBB-style conditions and opener continuations can be modeled reliably.
 - Cue-bid and penalty-pass continuations after partner's takeout double are not implemented yet.
 - Card-play AI remains heuristic and lacks deep contract-aware planning, but includes basic declarer plan priorities, notrump development rules, and beginner defense heuristics.
-- No dedicated lesson-mode UI yet for selecting curated practice hands.
+- Lesson mode is still compact: richer choice feedback, undo/retry flows, and broader lesson coverage are not implemented yet.
 
 ## Beginners Acceptance Checklist
 

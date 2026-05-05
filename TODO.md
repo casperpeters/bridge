@@ -13,7 +13,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ## Voorgestelde implementatievolgorde
 
-1. Gebruik de eerste `practice-hands/` catalogus in beginnerstests en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
+1. Houd de eerste `practice-hands/` catalogus actief in beginnerstests en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
 2. Houd de codebase onderhoudbaar met kleine architectuurrefactors wanneer een bestand of flow anders te groot wordt voor overzichtelijk vibe-coden.
 3. Breid daarna alleen bewezen zwakke plekken uit: speelplan-randgevallen, basisverdediging, of biedcontext waar tests/gemist gedrag om vragen.
 4. Pas later conventie-instellingen, personalisatie en simulatie/double-dummy toe.
@@ -28,6 +28,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Oefenhanden en leerbare situaties
 
+- Breid de compacte lesroute gericht uit met extra vaste situaties, meer uitgewerkte instapmissies en betrouwbaardere keuze-feedback.
 - Breid de eerste `practice-hands/` catalogus verder uit met extra dummyspel en concrete bied-/speelmissers uit testgebruik.
 - Houd oefenspellen reproduceerbaar met oefenhand-id en kort testdoel.
 - Houd uitleg buiten de basisgame; oefenmodus, AI-suggesties en developermodus mogen meer tekst bevatten.
@@ -63,7 +64,8 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Splits `scripts/app.js` geleidelijk op zodra nieuwe UI-flow wordt toegevoegd: denk aan `state`, `dom`, `render-all`, `game-actions`, `feedback-flow` en gedeelde formatting/helpers. Geen grote rewrite; houd tijdelijk compatibele globals waar dat migratie veilig maakt.
 - Introduceer pure state-transitions voor kernacties zoals hand starten, bod toepassen, veiling afronden, kaart spelen en slag doorschuiven. UI-code roept transitions aan en rendert daarna opnieuw.
-- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` naar uitkomsten, verdediging, leiderplan-volgen en snits; `play-plan` naar sans-atout en kleurcontract; Vijfkaart-Hoog rebids/competitive naar auction families.
+- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` heeft losse uitkomst- en verdedigingsmodules; resterend werk zit vooral in leiderplan-volgen en snits. Splits Vijfkaart-Hoog rebids/competitive later naar auction families.
+- Houd de gesplitste `rules/play-plan/` modules per domein klein: gedeelde helpers in `common`, sans-atout in `notrump`, kleurcontract in `suit-contract`.
 - Houd bestaande public API's via `bridge-rules.js` en index/aggregator-bestanden stabiel tijdens refactors.
 - Voeg dekking toe die controleert dat belangrijke `ruleId`s ook uitleg hebben, zodat toekomstige leerfeedback niet losraakt van de engine.
 
@@ -71,7 +73,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Lessen en oefenmodus
 
-- Voeg korte lessen toe voor openingsbiedingen, antwoorden op partner, kleur bekennen, troeven, dummyspel, uitkomsten, basisverdediging en scoren.
+- Werk lessen 2-12 later net zo rijk uit als les 1, met interactieve vragen, gerichte oefenstart en betrouwbare reviewfeedback per lesdoel.
 - Voeg ongedaan maken/herhalen toe voor de leermodus, minstens voor de meest recente kaart.
 - Voeg keuze-feedback toe in lessen, niet in de rustige basisgame, en alleen wanneer de engine de uitleg betrouwbaar kan onderbouwen.
 
