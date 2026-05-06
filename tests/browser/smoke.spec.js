@@ -705,6 +705,69 @@ test("pauses completed tricks without previewing the next AI card suggestion", a
   await expect(page.locator("#trick-advance-hint")).toContainText("West wint slag 1.");
 });
 
+test("keeps North's played card readable in the trick area", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const plays = [
+      { seat: "West", card: app.makeCard("2H") },
+      { seat: "North", card: app.makeCard("AS") },
+      { seat: "East", card: app.makeCard("3H") },
+      { seat: "South", card: app.makeCard("4H") }
+    ];
+
+    app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(4, "S"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 2,
+      currentTrick: plays,
+      awaitingTrickAdvance: true,
+      trickAdvanceArmed: true,
+      pendingTrickWinner: "North"
+    });
+    app.clearTrickSlots();
+    plays.forEach((play) => app.renderPlayedCard(play.seat, play.card));
+    app.renderAll();
+  });
+
+  await page.waitForTimeout(420);
+  const layout = await page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const area = (rect) => rect.width * rect.height;
+    const intersectionRatio = (a, b) => {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      return (width * height) / area(a);
+    };
+    const north = rectFor(".trick-north .card.played");
+    const others = [".trick-west .card.played", ".trick-east .card.played", ".trick-south .card.played"].map(rectFor);
+    return {
+      north,
+      trickArea: rectFor("#trick-area"),
+      overlapRatios: others.map((other) => intersectionRatio(north, other))
+    };
+  });
+
+  expect(Math.max(...layout.overlapRatios)).toBeLessThan(0.08);
+  expect(layout.north.top).toBeGreaterThanOrEqual(layout.trickArea.top - 1);
+  expect(layout.north.bottom).toBeLessThanOrEqual(layout.trickArea.bottom + 1);
+});
+
 test("keeps dummy hidden until the opening lead and shows the play plan only in developer mode", async ({ page }) => {
   await openFreshApp(page);
   await prepareNorthSouthDeclarerHand(page);

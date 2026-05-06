@@ -757,6 +757,7 @@ button:disabled {
   height: 133px;
   display: grid;
   place-items: center;
+  z-index: 1;
 }
 
 .trick-slot::after {
@@ -791,10 +792,16 @@ button:disabled {
     0 0 0 3px rgba(224, 194, 95, 0.92);
 }
 
+.trick-slot.active-trick-slot,
+.trick-slot.pending-trick-winner {
+  z-index: 5;
+}
+
 .trick-north {
   left: 50%;
   top: 6%;
   transform: translateX(-50%);
+  z-index: 3;
 }
 
 .trick-south {
@@ -807,12 +814,14 @@ button:disabled {
   left: 13%;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 2;
 }
 
 .trick-east {
   right: 13%;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 2;
 }
 
 .hand {
@@ -2804,11 +2813,29 @@ button:disabled {
 
   .trick-area {
     width: min(100%, 340px);
+    aspect-ratio: auto;
+    height: clamp(178px, 48vw, 220px);
   }
 
   .trick-slot {
     width: 65px;
     height: 96px;
+  }
+
+  .trick-north {
+    top: 0;
+  }
+
+  .trick-south {
+    bottom: 0;
+  }
+
+  .trick-west {
+    left: 0;
+  }
+
+  .trick-east {
+    right: 0;
   }
 
   .side-panel {
