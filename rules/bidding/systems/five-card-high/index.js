@@ -96,6 +96,8 @@
     blackwoodResponseBidForAceCount,
     blackwoodShownAceCount,
     agreedTrumpAfterAcceptedNotrumpTransfer,
+    auctionAgreementFromAuction,
+    agreedTrumpFromAuction,
     shouldUseBlackwoodAfterAcceptedTransfer,
     chooseBlackwoodFollowup,
     isOneSuitOpeningFiveCardHigh,
@@ -106,6 +108,7 @@
     chooseOpenerSecondSuit,
     bestSuitByLength
   } = conventionHelpers;
+  const auctionAgreementFromAuctionForFiveCardHigh = auctionAgreementFromAuction || agreedTrumpFromAuction;
   const {
     chooseFiveCardHighOpening,
     chooseFiveCardHighOpeningMajor,
@@ -219,6 +222,19 @@
         return fiveCardHighBidChoiceResult(chosenBid, "legalize.pass", "basic", "The preferred target was not legal in the current auction, so the engine passes.", {
           ...base,
           targetBid: target
+        });
+      }
+      const blackwoodAgreement = agreementForPartnerBlackwoodAsk(auction, seat);
+      if (blackwoodAgreement && chosenBid.level === 5) {
+        return fiveCardHighBidChoiceResult(chosenBid, "continuation.blackwoodResponse", "basic", "Answer partner's four-notrump ace ask.", {
+          ...base,
+          category: "continuation",
+          convention: "blackwood",
+          trumpSuit: blackwoodAgreement.trumpSuit,
+          agreementSource: blackwoodAgreement.source,
+          agreementConfidence: blackwoodAgreement.confidence,
+          suit: chosenBid.strain,
+          aceCount: base.aceCount
         });
       }
       if (isRedouble(chosenBid)) {
@@ -466,11 +482,23 @@
 
   function chooseFiveCardHighBidTarget({ hand = [], auction = [], seat, vulnerability = "none", context } = {}) {
       if (!seat) return Pass();
+      const blackwoodAgreement = agreementForPartnerBlackwoodAsk(auction, seat);
+      if (blackwoodAgreement) return blackwoodResponseBidForAceCount(countAces(hand));
       const bidContext = context || auctionContextForFiveCardHigh(auction, seat);
       const target = bidContext.uncontested
         ? chooseUncontestedFiveCardHighBid(hand, auction, seat, bidContext, vulnerability)
         : chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
       return normalizeBid(target) || Pass();
+    }
+
+  function agreementForPartnerBlackwoodAsk(auction = [], seat) {
+      const lastPartnerCall = lastPartnerContractCall(auction, seat);
+      if (!isBlackwoodAsk(lastPartnerCall?.bid)) return null;
+      return auctionAgreementFromAuctionForFiveCardHigh(auction, seat);
+    }
+
+  function agreedTrumpForPartnerBlackwoodAsk(auction = [], seat) {
+      return agreementForPartnerBlackwoodAsk(auction, seat)?.trumpSuit || null;
     }
 
   function chooseUncontestedFiveCardHighBid(hand, auction, seat, context = auctionContextForFiveCardHigh(auction, seat), vulnerability = "none") {
@@ -572,6 +600,8 @@
     blackwoodResponseBidForAceCount,
     blackwoodShownAceCount,
     agreedTrumpAfterAcceptedNotrumpTransfer,
+    auctionAgreementFromAuction,
+    agreedTrumpFromAuction,
     shouldUseBlackwoodAfterAcceptedTransfer,
     chooseBlackwoodFollowup,
     isOneSuitOpeningFiveCardHigh,

@@ -28,10 +28,23 @@ function auctionCallContent(call) {
   wrapper.className = "auction-call";
   if (call.stop) wrapper.appendChild(auctionBadge(t("stop"), "stop"));
   const textEl = document.createElement("span");
-  textEl.textContent = formatCall(call.bid);
+  textEl.className = `auction-call-token ${auctionCallStyleClasses(call.bid)}`;
+  if (isContractBid(call.bid)) {
+    appendBidContent(textEl, call.bid, "auction-strain-symbol");
+  } else {
+    textEl.textContent = formatCall(call.bid);
+  }
   wrapper.appendChild(textEl);
   if (call.alert) wrapper.appendChild(auctionBadge(t("alert"), "alert"));
   return wrapper;
+}
+
+function auctionCallStyleClasses(bid) {
+  if (isContractBid(bid)) return `bid strain-${bid.strain.toLowerCase()}`;
+  if (isPass(bid)) return "pass";
+  if (isRedouble(bid)) return "redouble";
+  if (isDouble(bid)) return "double";
+  return "";
 }
 
 function auctionBadge(label, kind) {
@@ -85,7 +98,8 @@ function renderBidControls() {
   for (let level = 1; level <= 7; level++) {
     for (const strain of biddingBoxStrains) {
       const bid = bridgeRules.Bid(level, strain);
-      const button = biddingButton(formatBid(bid), "bid");
+      const button = biddingButton("", "bid");
+      appendBidContent(button, bid, "bid-symbol");
       button.classList.add(`strain-${strain.toLowerCase()}`);
       button.disabled = !isBidHigher(bid, highestBid());
       if (sameCall(recommendedBid, bid)) button.classList.add("recommended-action");
@@ -155,4 +169,17 @@ function biddingButton(label, className) {
   button.className = className;
   button.textContent = label;
   return button;
+}
+
+function appendBidContent(parent, bid, symbolClassName) {
+  parent.append(document.createTextNode(String(bid.level)));
+  const symbol = document.createElement("span");
+  symbol.className = symbolClassName;
+  symbol.textContent = suitSymbols[bid.strain];
+  parent.appendChild(symbol);
+  if (bid.redoubled) {
+    parent.append(document.createTextNode(" xx"));
+  } else if (bid.doubled) {
+    parent.append(document.createTextNode(" x"));
+  }
 }

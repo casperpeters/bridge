@@ -43,7 +43,7 @@
         }
 
         const strongTwoClubsTricks = strongTwoClubsPlayingTricksContext(shape, hand);
-        if (shape.hcp >= 20 || shape.points >= 20 || strongTwoClubsTricks.playingTricksEligible) return bid(2, "C");
+        if (shape.hcp >= 20 || strongTwoClubsTricks.playingTricksEligible) return bid(2, "C");
 
         const weakTwo = chooseFiveCardHighWeakTwo(shape, hand, { vulnerable });
         if (weakTwo) return weakTwo;

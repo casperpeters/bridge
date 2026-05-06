@@ -14,7 +14,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighConventions(core, auction, valuationHelpers) {
   "use strict";
 
-  const { suits, bidStrains, handShape } = core;
+  const { suits, bidStrains, handShape, teamOf } = core;
   const {
     Pass,
     bid,
@@ -22,7 +22,8 @@
     gameLevel,
     cheapestLevelForStrain,
     nextAvailableBid,
-    isBidHigher
+    isBidHigher,
+    isContractBid
   } = auction;
   const { fitStrength } = valuationHelpers;
 
@@ -112,6 +113,143 @@
         return transferSuit;
       }
 
+  function auctionAgreementFromAuction(auction = [], seat = null) {
+        const partnershipCalls = seat
+          ? partnershipContractCallsWithIndexes(auction, seat)
+          : inferLastPartnershipContractCalls(auction);
+        return auctionAgreementFromPartnershipCalls(partnershipCalls);
+      }
+
+  function auctionAgreementFromPartnershipCalls(partnershipCalls = []) {
+        return agreementFromAcceptedTransferCalls(partnershipCalls)
+          || agreementFromStaymanFitCalls(partnershipCalls)
+          || agreementFromOpenerRaiseCalls(partnershipCalls)
+          || agreementFromSameSuitCalls(partnershipCalls)
+          || null;
+      }
+
+  function agreedTrumpFromAuction(auction = [], seat = null) {
+        return auctionAgreementFromAuction(auction, seat);
+      }
+
+  function agreedTrumpFromPartnershipCalls(partnershipCalls = []) {
+        return auctionAgreementFromPartnershipCalls(partnershipCalls);
+      }
+
+  function agreementResult(trumpSuit, source, call, extra = {}) {
+        if (!trumpSuit || trumpSuit === "NT") return null;
+        return {
+          trumpSuit,
+          source,
+          confidence: "explicit",
+          bySeat: call?.seat || null,
+          afterCallIndex: Number.isInteger(call?.callIndex) ? call.callIndex : null,
+          ...extra
+        };
+      }
+
+  function partnershipContractCallsWithIndexes(auction = [], seat) {
+        return auction
+          .map((call, callIndex) => ({ ...call, callIndex }))
+          .filter((call) => isContractBid(call.bid) && teamOf(call.seat) === teamOf(seat));
+      }
+
+  function inferLastPartnershipContractCalls(auction = []) {
+        const contractCalls = auction
+          .map((call, callIndex) => ({ ...call, callIndex }))
+          .filter((call) => isContractBid(call.bid));
+        const lastContractCall = contractCalls[contractCalls.length - 1] || null;
+        if (!lastContractCall) return [];
+        return contractCalls.filter((call) => teamOf(call.seat) === teamOf(lastContractCall.seat));
+      }
+
+  function agreementFromAcceptedTransferCalls(partnershipCalls = []) {
+        for (let index = 0; index + 2 < partnershipCalls.length; index++) {
+          const openingBid = partnershipCalls[index]?.bid;
+          const responseBid = partnershipCalls[index + 1]?.bid;
+          const openerRebid = partnershipCalls[index + 2]?.bid;
+          const trumpSuit = agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid);
+          if (trumpSuit) return agreementResult(trumpSuit, "acceptedTransfer", partnershipCalls[index + 2], {
+            openingCallIndex: partnershipCalls[index]?.callIndex ?? null,
+            responseCallIndex: partnershipCalls[index + 1]?.callIndex ?? null
+          });
+        }
+        return null;
+      }
+
+  function agreementFromStaymanFitCalls(partnershipCalls = []) {
+        for (let index = 0; index + 3 < partnershipCalls.length; index++) {
+          const opening = partnershipCalls[index];
+          const stayman = partnershipCalls[index + 1];
+          const openerMajor = partnershipCalls[index + 2];
+          const responderRaise = partnershipCalls[index + 3];
+          const major = openerMajor?.bid?.strain;
+          const staymanLevel = opening?.bid?.level === 2 ? 3 : 2;
+          if (
+            (bidEquals(opening?.bid, 1, "NT") || bidEquals(opening?.bid, 2, "NT")) &&
+            bidEquals(stayman?.bid, staymanLevel, "C") &&
+            (major === "H" || major === "S") &&
+            responderRaise?.seat !== openerMajor?.seat &&
+            responderRaise?.bid?.strain === major
+          ) {
+            return agreementResult(major, "staymanFit", responderRaise, {
+              openingCallIndex: opening?.callIndex ?? null,
+              responseCallIndex: stayman?.callIndex ?? null
+            });
+          }
+        }
+        return null;
+      }
+
+  function agreementFromOpenerRaiseCalls(partnershipCalls = []) {
+        for (let index = 0; index + 2 < partnershipCalls.length; index++) {
+          const opening = partnershipCalls[index];
+          const response = partnershipCalls[index + 1];
+          const openerRebid = partnershipCalls[index + 2];
+          const responseSuit = response?.bid?.strain;
+          if (
+            opening?.seat === openerRebid?.seat &&
+            response?.seat !== opening?.seat &&
+            (responseSuit === "H" || responseSuit === "S") &&
+            openerRebid?.bid?.strain === responseSuit
+          ) {
+            return agreementResult(responseSuit, "openerRaisesResponderMajor", openerRebid, {
+              openingCallIndex: opening?.callIndex ?? null,
+              responseCallIndex: response?.callIndex ?? null
+            });
+          }
+        }
+        return null;
+      }
+
+  function agreementFromSameSuitCalls(partnershipCalls = []) {
+        let agreement = null;
+        for (let index = 0; index < partnershipCalls.length; index++) {
+          const call = partnershipCalls[index];
+          const strain = call?.bid?.strain;
+          if (!strain || strain === "NT") continue;
+          const earlierPartnerCall = partnershipCalls
+            .slice(0, index)
+            .find((candidate) => candidate.seat !== call.seat && candidate.bid?.strain === strain);
+          if (!earlierPartnerCall) continue;
+          const source = sameSuitAgreementSource(earlierPartnerCall.bid, call.bid, strain);
+          if (source) agreement = agreementResult(strain, source, call, {
+            firstSuitCallIndex: earlierPartnerCall.callIndex ?? null
+          });
+        }
+        return agreement;
+      }
+
+  function sameSuitAgreementSource(firstBid, laterBid, strain) {
+        if (strain === "H" || strain === "S") {
+          if (firstBid?.level >= 2) return "preemptRaise";
+          return "majorRaise";
+        }
+        if (firstBid?.level >= 2) return "preemptRaise";
+        if (laterBid?.level >= 3) return "minorRaise";
+        return null;
+      }
+
   function shouldUseBlackwoodAfterAcceptedTransfer(shape, openingBid, trumpSuit) {
         if (!trumpSuit || shape.counts[trumpSuit] < 5) return false;
         if (bidEquals(openingBid, 2, "NT")) return shape.hcp >= 12;
@@ -183,6 +321,10 @@
     blackwoodResponseBidForAceCount,
     blackwoodShownAceCount,
     agreedTrumpAfterAcceptedNotrumpTransfer,
+    auctionAgreementFromAuction,
+    auctionAgreementFromPartnershipCalls,
+    agreedTrumpFromAuction,
+    agreedTrumpFromPartnershipCalls,
     shouldUseBlackwoodAfterAcceptedTransfer,
     chooseBlackwoodFollowup,
     isOneSuitOpeningFiveCardHigh,

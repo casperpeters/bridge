@@ -1154,6 +1154,123 @@ test("Vijfkaart Hoog Blackwood helpers count aces and map classic responses", ()
   assert.equal(fiveCardHighInternal.agreedTrumpAfterAcceptedNotrumpTransfer(bid(1, "NT"), bid(2, "D"), bid(2, "H")), "H");
 });
 
+test("Vijfkaart Hoog detects agreed trump conservatively from the auction", () => {
+  const competitiveRaise = fiveCardHighInternal.agreedTrumpFromAuction([
+    { seat: "South", bid: bid(1, "S") },
+    { seat: "West", bid: bid(3, "D") },
+    { seat: "North", bid: bid(4, "S") },
+    { seat: "East", bid: pass() }
+  ], "South");
+  assert.equal(competitiveRaise.trumpSuit, "S");
+  assert.equal(competitiveRaise.source, "majorRaise");
+  assert.equal(competitiveRaise.confidence, "explicit");
+  assert.equal(competitiveRaise.bySeat, "North");
+
+  const acceptedTransfer = fiveCardHighInternal.agreedTrumpFromAuction([
+    { seat: "North", bid: bid(1, "NT") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "H") }
+  ], "South");
+  assert.equal(acceptedTransfer.trumpSuit, "H");
+  assert.equal(acceptedTransfer.source, "acceptedTransfer");
+  assert.equal(acceptedTransfer.bySeat, "North");
+
+  assert.equal(fiveCardHighInternal.agreedTrumpFromAuction([
+    { seat: "South", bid: bid(1, "NT") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "NT") }
+  ], "South"), null);
+});
+
+test("Vijfkaart Hoog auction agreement helper distinguishes conservative fit sources", () => {
+  const staymanFit = fiveCardHighInternal.auctionAgreementFromAuction([
+    { seat: "South", bid: bid(1, "NT") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(2, "C") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "S") }
+  ], "South");
+  assert.equal(staymanFit.trumpSuit, "S");
+  assert.equal(staymanFit.source, "staymanFit");
+
+  const openerRaise = fiveCardHighInternal.auctionAgreementFromAuction([
+    { seat: "South", bid: bid(1, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "S") }
+  ], "North");
+  assert.equal(openerRaise.trumpSuit, "S");
+  assert.equal(openerRaise.source, "openerRaisesResponderMajor");
+
+  const preemptRaise = fiveCardHighInternal.auctionAgreementFromAuction([
+    { seat: "South", bid: bid(2, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "H") }
+  ], "South");
+  assert.equal(preemptRaise.trumpSuit, "H");
+  assert.equal(preemptRaise.source, "preemptRaise");
+
+  const minorRaise = fiveCardHighInternal.auctionAgreementFromAuction([
+    { seat: "South", bid: bid(1, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "D") }
+  ], "North");
+  assert.equal(minorRaise.trumpSuit, "D");
+  assert.equal(minorRaise.source, "minorRaise");
+
+  const ambiguousMinorPreference = fiveCardHighInternal.auctionAgreementFromAuction([
+    { seat: "South", bid: bid(1, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "D") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "D") }
+  ], "South");
+  assert.equal(ambiguousMinorPreference, null);
+});
+
+test("Vijfkaart Hoog answers Blackwood only after an agreed trump", () => {
+  const competitiveSpadeRaise = [
+    { seat: "South", bid: bid(1, "S") },
+    { seat: "West", bid: bid(3, "D") },
+    { seat: "North", bid: bid(4, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(4, "NT") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const answer = chooseFiveCardHighResult([
+    "KS", "JS", "TS", "8S", "5S",
+    "KH", "8H", "4H",
+    "QC",
+    "AD", "QD", "9D", "5D"
+  ], competitiveSpadeRaise, "North");
+
+  assert.deepEqual(answer.bid, bid(5, "D"));
+  assert.equal(answer.ruleId, "fiveCardHigh.continuation.blackwoodResponse");
+  assert.equal(answer.trumpSuit, "S");
+  assert.equal(answer.aceCount, 1);
+
+  const quantitativeNotrump = [
+    { seat: "South", bid: bid(1, "NT") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "NT") },
+    { seat: "East", bid: pass() }
+  ];
+  const notBlackwood = chooseFiveCardHighResult([
+    "AS", "QS", "6S",
+    "KH", "JH", "9H",
+    "AD", "TD", "8D",
+    "KC", "9C", "5C", "2C"
+  ], quantitativeNotrump, "South");
+
+  assert.notEqual(notBlackwood.ruleId, "fiveCardHigh.continuation.blackwoodResponse");
+});
+
 test("Vijfkaart Hoog uses Blackwood after a 2NT transfer lesson hand", () => {
   const north = [
     "KS", "QS", "3S",

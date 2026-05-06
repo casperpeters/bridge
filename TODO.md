@@ -52,6 +52,15 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 - Voeg alleen gebruikerswaarschuwingen toe voor biedingen buiten systeem wanneer de app dat betrouwbaar kan vaststellen.
 - Houd nieuw competitief bieden klein en testbaar; veel basisgevallen zoals eenvoudige volgbiedingen, kwetsbaarheidsbewuste volgbodgrenzen, raises na volgbod, steun na zwakke sprongvolgbiedingen, 1SA-volgbodvervolgen en informatiedoubletten bestaan al.
 - Herintroduceer negative doubles pas met NBB-passende voorwaarden, opener-reacties alsof partner de hoge kleur bood, passende minimumkracht/safe-spot-logica, uitleg en fixtures.
+- Breid `agreedTrumpFromAuction` later conservatief uit met nog ontbrekende fit-scenario's voordat extra Blackwood-routes worden toegevoegd:
+  - Stayman-fit: 1SA-2K-2H/2S en responder kiest/verhoogt die hoge kleur.
+  - Opener steunt responders hoge kleur na een nieuwe-kleurantwoord, bijvoorbeeld 1R-1S-2S.
+  - Responder steunt openaars tweede kleur of reverse-kleur expliciet.
+  - Sterke 2K-vervolgen waarbij een positieve kleur of openaars herbiedkleur expliciet wordt gesteund.
+  - Zwakke twee- en preemptsteun, inclusief situaties waar twee kaarten tegenover een bekende 6+/7+-kaart al een fit is.
+  - Volgbod- en sprongvolgbodsteun na competitie.
+  - Antwoorden en herbiedingen na informatiedoublet waarbij partners kleur als troef wordt gekozen.
+  - Lage-kleurfits alleen toevoegen als de betekenis betrouwbaar is; vermijd vage minor-preferenties als Blackwood-trigger.
 
 ### Testen
 

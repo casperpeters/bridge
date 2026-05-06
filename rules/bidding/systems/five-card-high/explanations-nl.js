@@ -177,7 +177,7 @@
       case "continuation.responderAfterTransferNotrumpGame":
         return `${transferRebidIntro(result)}: met meestal precies een vijfkaart ${suitName(result.transferSuit || result.suit)} kiest antwoorder SA als manche. Na 2SA betekent dit doorgaans: genoeg voor de manche, maar geen zeskaart om zelf 4${result.transferSuit || result.suit} te spelen; openaar mag met driekaart steun nog naar 4${result.transferSuit || result.suit} corrigeren. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.blackwoodAsk":
-        return `4SA azenvragen: na de geaccepteerde transfer is ${suitName(result.trumpSuit || result.transferSuit || result.suit)} de afgesproken troefkleur. 4SA is kunstmatig en forcing; partner antwoordt 5K met 0 of 4 azen, 5R met 1 aas, 5H met 2 azen en 5S met 3 azen. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.transferSuit || result.suit, valueMode: "hcp" })}`;
+        return `4SA azenvragen: ${suitName(result.trumpSuit || result.transferSuit || result.suit)} is de afgesproken troefkleur. 4SA is kunstmatig en forcing; partner antwoordt 5K met 0 of 4 azen, 5R met 1 aas, 5H met 2 azen en 5S met 3 azen. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.transferSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.blackwoodResponse":
         return `antwoord op 4SA azenvragen: ${formatBlackwoodResponse(result)}. Partner mag hierop niet passen; de azenvrager kiest daarna afzwaaien, kleinslem of soms grootslem. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.blackwoodSignoff":
@@ -433,8 +433,7 @@
   function strongTwoClubsReason(result) {
     if (result.balanced && result.hcp >= 23) return "23+ HCP met een gebalanceerde hand";
     if (result.playingTricksEligible) return `${result.playingTricks} speelslagen met een lange ${suitName(result.longSuit)}kleur`;
-    if (result.hcp >= 20 && result.points !== result.hcp) return "20+ HCP of totaalpunten met een sterke hand";
-    return "20+ HCP of totaalpunten met een sterke hand";
+    return "20+ HCP met een sterke hand";
   }
 
   function notrumpOpeningText(result) {
@@ -605,17 +604,19 @@
     const openerRebid = partnershipCalls[2]?.bid || null;
     const responderRebid = partnershipCalls[3]?.bid || null;
     const openerThirdBid = partnershipCalls[4]?.bid || null;
-    const blackwoodTrump = acceptedTransferTrumpForMeaning(opening, responseBid, openerRebid);
+    const blackwoodTrump = agreedTrumpForMeaning(partnershipCalls) || acceptedTransferTrumpForMeaning(opening, responseBid, openerRebid);
     if (blackwoodTrump && bidEquals(bid, 4, "NT")) {
       return `4SA azenvragen: kunstmatig en forcing met ${suitName(blackwoodTrump)} als afgesproken troefkleur.`;
     }
-    if (blackwoodTrump && bidEquals(responderRebid, 4, "NT") && bid.level === 5) {
+    const blackwoodAskIndex = partnershipCalls.findIndex((call) => bidEquals(call?.bid, 4, "NT"));
+    const blackwoodAsk = blackwoodAskIndex >= 0 ? partnershipCalls[blackwoodAskIndex]?.bid : responderRebid;
+    if (blackwoodTrump && bidEquals(blackwoodAsk, 4, "NT") && bid.level === 5) {
       if (bid.strain === "C") return "antwoord op 4SA azenvragen: 5K toont 0 of 4 azen.";
       if (bid.strain === "D") return "antwoord op 4SA azenvragen: 5R toont 1 aas.";
       if (bid.strain === "H") return "antwoord op 4SA azenvragen: 5H toont 2 azen.";
       if (bid.strain === "S") return "antwoord op 4SA azenvragen: 5S toont 3 azen.";
     }
-    if (blackwoodTrump && bidEquals(responderRebid, 4, "NT") && openerThirdBid && bid.strain === blackwoodTrump) {
+    if (blackwoodTrump && bidEquals(blackwoodAsk, 4, "NT") && openerThirdBid && bid.strain === blackwoodTrump) {
       return `eindcontract na azenvragen in ${suitName(blackwoodTrump)}.`;
     }
     if (bidEquals(opening, 1, "NT")) {
@@ -637,6 +638,30 @@
       return `vierde-kleur-forcing: kunstmatig mancheforcing vraagbod in ${suitName(fourthSuit)}; vraagt openaar zijn hand verder te beschrijven.`;
     }
     return null;
+  }
+
+  function agreedTrumpForMeaning(partnershipCalls = []) {
+    const auctionAgreement = root.BridgeRulesParts?.biddingFiveCardHighConventions?.auctionAgreementFromPartnershipCalls?.(partnershipCalls);
+    if (auctionAgreement?.trumpSuit) return auctionAgreement.trumpSuit;
+
+    const transferTrump = acceptedTransferTrumpForMeaning(
+      partnershipCalls[0]?.bid,
+      partnershipCalls[1]?.bid,
+      partnershipCalls[2]?.bid
+    );
+    if (transferTrump) return transferTrump;
+
+    let agreedMajor = null;
+    for (let index = 0; index < partnershipCalls.length; index++) {
+      const call = partnershipCalls[index];
+      const strain = call?.bid?.strain;
+      if (strain !== "H" && strain !== "S") continue;
+      const earlierPartnerCall = partnershipCalls
+        .slice(0, index)
+        .find((candidate) => candidate.seat !== call.seat && candidate.bid?.strain === strain);
+      if (earlierPartnerCall) agreedMajor = strain;
+    }
+    return agreedMajor;
   }
 
   function acceptedTransferTrumpForMeaning(opening, responseBid, openerRebid) {
