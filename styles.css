@@ -511,6 +511,12 @@ button:disabled {
   align-self: center;
 }
 
+.seat-label-name.is-vulnerable-team {
+  color: #ff5b5b;
+  font-weight: 800;
+  text-shadow: 0 0 14px rgba(255, 64, 64, 0.34);
+}
+
 .felt {
   position: relative;
   display: grid;

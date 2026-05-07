@@ -97,6 +97,28 @@ test("loads the live table and lets South make an auction call", async ({ page }
   expect(pageErrors).toEqual([]);
 });
 
+test("marks vulnerable seats red on the table", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    window.BridgeAppTestHooks.setState({ vulnerability: "NS" });
+    window.BridgeAppTestHooks.renderAll();
+  });
+  await expect(page.locator("#north-label .seat-label-name")).toHaveClass(/is-vulnerable-team/);
+  await expect(page.locator("#south-label .seat-label-name")).toHaveClass(/is-vulnerable-team/);
+  await expect(page.locator("#east-label .seat-label-name")).not.toHaveClass(/is-vulnerable-team/);
+  await expect(page.locator("#west-label .seat-label-name")).not.toHaveClass(/is-vulnerable-team/);
+
+  await page.evaluate(() => {
+    window.BridgeAppTestHooks.setState({ vulnerability: "EW" });
+    window.BridgeAppTestHooks.renderAll();
+  });
+  await expect(page.locator("#north-label .seat-label-name")).not.toHaveClass(/is-vulnerable-team/);
+  await expect(page.locator("#south-label .seat-label-name")).not.toHaveClass(/is-vulnerable-team/);
+  await expect(page.locator("#east-label .seat-label-name")).toHaveClass(/is-vulnerable-team/);
+  await expect(page.locator("#west-label .seat-label-name")).toHaveClass(/is-vulnerable-team/);
+});
+
 test("loads curated practice hands through the repeat-code field", async ({ page }) => {
   await openFreshApp(page);
 

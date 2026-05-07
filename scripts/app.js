@@ -428,6 +428,10 @@ function isTeamVulnerable(team, vulnerability = state.vulnerability) {
   return bridgeRules.isTeamVulnerable(team, vulnerability);
 }
 
+function isSeatVulnerable(seat, vulnerability = state.vulnerability) {
+  return isTeamVulnerable(bridgeRules.teamOf(seat), vulnerability);
+}
+
 function compareCards(a, b) {
   return bridgeRules.compareCards(a, b);
 }
@@ -520,10 +524,10 @@ function applyStaticText() {
   els.seedLabel.textContent = t("seed");
   els.loadSeed.textContent = t("loadSeed");
   els.copySeed.textContent = t("copySeed");
-  els.northLabel.textContent = `${seatName("North")} ${roleSeparator} ${t("partner")}`;
-  els.eastLabel.textContent = seatName("East");
-  els.southLabel.textContent = `${seatName("South")} ${roleSeparator} ${t("you")}`;
-  els.westLabel.textContent = seatName("West");
+  renderSeatLabel(els.northLabel, "North", t("partner"));
+  renderSeatLabel(els.eastLabel, "East");
+  renderSeatLabel(els.southLabel, "South", t("you"));
+  renderSeatLabel(els.westLabel, "West");
   els.biddingTitle.textContent = t("bidding");
   els.historyTitle.textContent = t("history");
   els.reviewTitle.textContent = t("review");
@@ -598,6 +602,17 @@ function renderGuidance() {
   reason.appendChild(BridgeGlossary.linkifyText(guidance.reason));
   els.guidancePanel.append(title, reason);
   els.guidancePanel.hidden = false;
+}
+
+function renderSeatLabel(label, seat, role = "") {
+  if (!label) return;
+  const name = document.createElement("span");
+  name.className = "seat-label-name";
+  name.textContent = seatName(seat);
+  name.classList.toggle("is-vulnerable-team", isSeatVulnerable(seat));
+  label.replaceChildren(name);
+  if (!role) return;
+  label.append(` ${roleSeparator} `, role);
 }
 
 function renderLessonBanner() {
