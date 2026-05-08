@@ -18,6 +18,11 @@ test("situation codec round-trips a valid payload with UTF-8 seed text", () => {
     dealer: "S",
     vul: "both",
     phase: "playing",
+    lesson: "les-01-wat-is-bridge",
+    contract: "4S",
+    declarer: "S",
+    dummy: "N",
+    leader: "W",
     turn: "N",
     auction: [
       { s: "S", b: "1S", o: 1 },
@@ -67,6 +72,8 @@ test("situation codec validates payload shape before restore code runs", () => {
   assert.throws(() => codec.validateSituationPayload({ ...valid, dealer: "Z" }), /seat dealer/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, vul: "all" }), /vulnerability/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, phase: "review" }), /phase/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, contract: "8S" }), /contract/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, declarer: "Z" }), /declarer/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, auction: [{ s: "N", b: "8S" }] }), /auction\[0\]\.b/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, tricks: [[{ s: "N", c: "AS" }]] }), /must contain four plays/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, current: [{ s: "N", c: "1S" }] }), /current\[0\]\.c/);

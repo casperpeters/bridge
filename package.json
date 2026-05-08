@@ -3,6 +3,8 @@
     "test": "npm run test:unit && npm run test:browser",
     "test:unit": "node tests/run-tests.js",
     "test:browser": "playwright test",
+    "test:feedback-live": "node tests/check-feedback-endpoint.js",
+    "test:feedback-triage-live": "node tests/check-feedback-triage-endpoint.js",
     "video:studio": "remotion studio video/src/index.ts",
     "video:still": "remotion still video/src/index.ts BridgetafelPromo --scale=0.25 --frame=150 video/out/bridgetafel-promo-frame.png",
     "video:render": "remotion render video/src/index.ts BridgetafelPromo video/out/bridgetafel-promo.mp4"

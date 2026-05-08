@@ -13,6 +13,7 @@
   const validVulnerabilities = new Set(["none", "NS", "EW", "both"]);
   const validPhases = new Set(["idle", "bidding", "playing", "complete"]);
   const validCallPattern = /^(?:P|PASS|PAS|X|DOUBLE|DBL|XX|REDOUBLE|RDBL|[1-7](?:C|D|H|S|NT|SA))$/;
+  const validContractPattern = /^[1-7](?:C|D|H|S|NT|SA)(?:XX|X)?$/;
   const validCardPattern = /^(?:10|[2-9TJQKA])(?:C|D|H|S)$/;
 
   function normalizeSeed(seed) {
@@ -55,6 +56,16 @@
     }
     if (payload.phase !== undefined && payload.phase !== null && payload.phase !== "" && !validPhases.has(payload.phase)) {
       throw new Error("Situation phase is invalid");
+    }
+    if (payload.contract !== undefined && payload.contract !== null && payload.contract !== "") {
+      const contractText = String(payload.contract).trim().toUpperCase();
+      if (!validContractPattern.test(contractText)) throw new Error("Situation contract is invalid");
+    }
+    validateOptionalSeat(payload.declarer, "declarer");
+    validateOptionalSeat(payload.dummy, "dummy");
+    validateOptionalSeat(payload.leader, "leader");
+    if (payload.lesson !== undefined && payload.lesson !== null && typeof payload.lesson !== "string") {
+      throw new Error("Situation lesson must be a string");
     }
     validateArrayField(payload.auction, "auction", validateSituationCall);
     validateArrayField(payload.tricks, "tricks", validateSituationTrick);

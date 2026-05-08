@@ -96,6 +96,11 @@ function createSituationSeed() {
     current: state.currentTrick.map(encodeSituationPlay),
     awaiting: state.awaitingTrickAdvance ? 1 : 0
   };
+  if (state.contract) payload.contract = contractToSituationText(state.contract);
+  if (state.declarer) payload.declarer = seatCode(state.declarer);
+  if (state.dummy) payload.dummy = seatCode(state.dummy);
+  if (state.leader) payload.leader = seatCode(state.leader);
+  if (state.practice?.lessonId) payload.lesson = state.practice.lessonId;
   return situationCodec.encodeSituationPayload(payload);
 }
 
@@ -111,7 +116,8 @@ function startSituationSeed(seed) {
     ? globalThis.PracticeHands.preparePracticeHand(state.dealSeed)
     : null;
   const hands = scenario ? scenario.hands : dealHands(state.dealSeed);
-  const practice = scenario ? practiceStateFromScenario(scenario) : null;
+  const lesson = scenario && situation.lesson ? globalThis.BridgeLessons?.findLesson?.(String(situation.lesson)) || null : null;
+  const practice = scenario ? practiceStateFromScenario(scenario, lesson) : null;
 
   startPreparedHand({
     dealerIndex: seats.indexOf(dealer),
@@ -124,6 +130,7 @@ function startSituationSeed(seed) {
   state.seedMessage = t("situationSeedLoaded");
 
   restoreSituationAuction(situation.auction || []);
+  restoreSituationContractContext(situation);
   restoreSituationPlay(situation);
   setSituationStatus(situation.phase);
   renderRestoredSituation();
@@ -175,6 +182,22 @@ function restoreSituationAuction(auction) {
   state.declarer = findDeclarer(bid);
   state.dummy = partnerOf(state.declarer);
   state.leader = leftOf(state.declarer);
+  state.turnIndex = seats.indexOf(state.leader);
+  state.phase = "playing";
+}
+
+function restoreSituationContractContext(situation) {
+  if (state.phase === "playing" || state.phase === "complete") return;
+  const explicitContract = contractFromSituationText(situation.contract);
+  if (!explicitContract || !["playing", "complete"].includes(situation.phase)) return;
+
+  const declarer = seatFromCode(situation.declarer);
+  if (!declarer) throw new Error("Situation declarer is missing for explicit contract restore");
+
+  state.contract = explicitContract;
+  state.declarer = declarer;
+  state.dummy = seatFromCode(situation.dummy) || partnerOf(declarer);
+  state.leader = seatFromCode(situation.leader) || leftOf(declarer);
   state.turnIndex = seats.indexOf(state.leader);
   state.phase = "playing";
 }
@@ -318,6 +341,28 @@ function bidFromSituationText(text) {
   const match = call.match(/^([1-7])(C|D|H|S|NT|SA)$/);
   if (!match) throw new Error("Invalid situation call");
   return bridgeRules.Bid(Number(match[1]), match[2] === "SA" ? "NT" : match[2]);
+}
+
+function contractToSituationText(contract) {
+  if (!contract) return "";
+  let call = `${contract.level}${contract.strain}`;
+  if (contract.redoubled) call += "XX";
+  else if (contract.doubled) call += "X";
+  return call;
+}
+
+function contractFromSituationText(text) {
+  const call = String(text || "").trim().toUpperCase();
+  if (!call) return null;
+  const match = call.match(/^([1-7])(C|D|H|S|NT|SA)(XX|X)?$/);
+  if (!match) throw new Error("Invalid situation contract");
+  const contract = bridgeRules.Bid(Number(match[1]), match[2] === "SA" ? "NT" : match[2]);
+  if (match[3] === "X") contract.doubled = true;
+  if (match[3] === "XX") {
+    contract.doubled = true;
+    contract.redoubled = true;
+  }
+  return contract;
 }
 
 function normalizeCardId(id) {

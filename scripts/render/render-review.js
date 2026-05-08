@@ -379,8 +379,6 @@ function reviewTrickLegend() {
   return legend;
 }
 
-const feedbackMailRecipient = "casper.peters@gmail.com";
-
 async function copyFeedbackReport() {
   try {
     await copyText(buildFeedbackReport());
@@ -391,39 +389,77 @@ async function copyFeedbackReport() {
   renderFeedbackStatus();
 }
 
-function mailFeedbackReport(event) {
+async function submitFeedbackReport(event) {
   event?.preventDefault();
+  const endpoint = feedbackSubmitEndpoint();
+  if (!endpoint) {
+    state.feedbackStatus = t("feedbackSubmitMissingEndpoint");
+    renderFeedbackStatus();
+    return;
+  }
+
+  setFeedbackSubmitting(true);
+  state.feedbackStatus = t("feedbackSubmitSending");
+  renderFeedbackStatus();
+
   try {
-    const url = buildFeedbackMailtoUrl();
-    openFeedbackMailClient(url);
-    state.feedbackStatus = t("feedbackMailOpening");
+    await sendFeedbackReport(endpoint, buildFeedbackPayload());
+    state.feedbackStatus = t("feedbackSubmitSent");
   } catch {
-    state.feedbackStatus = t("feedbackMailFailed");
+    state.feedbackStatus = t("feedbackSubmitFailed");
+  } finally {
+    setFeedbackSubmitting(false);
   }
   renderFeedbackStatus();
 }
 
-function refreshFeedbackMailLink() {
+function feedbackSubmitEndpoint() {
+  return String(globalThis.BridgeFeedbackConfig?.endpoint || "").trim();
+}
+
+function setFeedbackSubmitting(isSubmitting) {
   if (!els.mailFeedback) return;
-  els.mailFeedback.dataset.mailto = buildFeedbackMailtoUrl();
+  els.mailFeedback.disabled = isSubmitting;
+  els.mailFeedback.textContent = isSubmitting ? t("feedbackSubmitting") : t("mailFeedback");
 }
 
-function buildFeedbackMailtoUrl() {
-  const subject = `Bridgetafel feedback - bord ${state.dealNumber || "-"} - ${phaseName(state.phase)}`;
-  return mailtoUrl(subject, buildFeedbackReport());
+async function sendFeedbackReport(endpoint, payload) {
+  await fetch(endpoint, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify(payload)
+  });
 }
 
-function mailtoUrl(subject, body) {
-  return `mailto:${feedbackMailRecipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
-
-function openFeedbackMailClient(url) {
-  const link = document.createElement("a");
-  link.href = url;
-  link.style.display = "none";
-  document.body.append(link);
-  link.click();
-  link.remove();
+function buildFeedbackPayload() {
+  const feedbackTypes = t("feedbackTypes");
+  const type = els.feedbackType.value;
+  const typeLabel = feedbackTypes[type] || type;
+  const repeatCode = currentRepeatCode() || "";
+  return {
+    source: "bridge-app",
+    type,
+    typeLabel,
+    message: els.feedbackMessage.value.trim(),
+    report: buildFeedbackReport(),
+    repeatCode,
+    phase: state.phase,
+    phaseLabel: phaseName(state.phase),
+    dealNumber: state.dealNumber || "",
+    vulnerability: state.vulnerability || "",
+    vulnerabilityLabel: vulnerabilityName(),
+    contract: feedbackContractText(),
+    declarer: state.declarer || "",
+    turnSeat: currentFeedbackTurnSeat(),
+    dummyVisible: feedbackDummyVisibility(),
+    lessonId: state.practice?.lessonId || "",
+    practiceHandId: state.practice?.id || "",
+    startMode: currentFeedbackStartMode(),
+    pageUrl: globalThis.location?.href || "",
+    userAgent: globalThis.navigator?.userAgent || "",
+    language: globalThis.navigator?.language || "",
+    createdAt: new Date().toISOString()
+  };
 }
 
 function renderFeedbackStatus() {
@@ -445,6 +481,12 @@ function buildFeedbackReport() {
   ].join("\n").trimEnd();
 }
 
+function feedbackContractText() {
+  if (state.finalScore?.passOut) return t("passedOut");
+  if (!state.contract) return "";
+  return `${formatBid(state.contract)} ${t("by")} ${seatName(state.declarer)}`;
+}
+
 function phaseName(phase) {
   return {
     idle: "Start",
@@ -452,4 +494,24 @@ function phaseName(phase) {
     playing: "Spelen",
     complete: t("review")
   }[phase] || phase;
+}
+
+function currentFeedbackTurnSeat() {
+  if (!["bidding", "playing"].includes(state.phase)) return "";
+  return seatAt(state.turnIndex);
+}
+
+function feedbackDummyVisibility() {
+  if (!state.contract || !state.dummy) return "N.v.t.";
+  if (state.phase === "complete") return "Ja";
+  if (state.phase !== "playing") return "N.v.t.";
+  return openingLeadHasBeenMade() ? "Ja" : "Nee";
+}
+
+function currentFeedbackStartMode() {
+  if (state.practice?.lessonStartMode === "play") return "direct-play";
+  if (state.practice?.lessonStartMode) return String(state.practice.lessonStartMode);
+  if (state.phase === "playing" && state.contract && !state.auction.length) return "direct-play";
+  if (state.phase === "bidding") return "auction";
+  return "";
 }

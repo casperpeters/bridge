@@ -42,6 +42,21 @@ npm run test:unit
 npm run test:browser
 ```
 
+To verify the live tester-feedback pipeline against the configured Google Apps Script endpoint:
+
+```powershell
+npm run test:feedback-live
+```
+
+This posts a canary row to the feedback spreadsheet, removes canary rows after a successful run, and fails if the Apps Script endpoint returns an error.
+After deploying Apps Script changes that affect triage columns, also run:
+
+```powershell
+npm run test:feedback-triage-live
+```
+
+This posts a canary row, verifies that `Oorzaak`, `Fixvoorstel`, and `Fix geimplementeerd` are written correctly, and removes canary rows after a successful run.
+
 ## Code Structure
 
 The app stays build-free: `index.html` loads plain browser scripts in dependency order.
@@ -67,10 +82,10 @@ See [docs/architecture.md](./docs/architecture.md) for the technical architectur
 - Replay the same hand without advancing the board.
 - Developer mode exposes a repeat-code field that copies a situation code by default, restoring the board, auction, played cards, and current turn where available.
 - Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the developer repeat-code field or `startPracticeHand(id)`.
-- Compact lesson picker that launches curated practice hands and shows lesson guidance or review points where available.
+- Dedicated lesson page with chapter-based lesson content that launches curated practice hands and shows lesson guidance or review points where available.
 - Trick history and full hand review after completion.
-- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including the tester message and repeat code.
-- Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
+- Always-available tester feedback report that can be submitted to a configured feedback endpoint or copied manually, including the tester message and repeat code.
+- Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy/submit.
 - Ordinary bridge score calculation with vulnerability and contract bonuses.
 - Settings menu with saved AI-suggestion mode, play-history mode, and developer mode.
 - Optional AI-suggestion mode with heuristic bid/card suggestions and short reasons.
@@ -88,7 +103,7 @@ See [docs/architecture.md](./docs/architecture.md) for the technical architectur
 - Negative doubles are not currently implemented; the previous simplified version was removed until the NBB-style conditions and opener continuations can be modeled reliably.
 - Cue-bid and penalty-pass continuations after partner's takeout double are not implemented yet.
 - Card-play AI remains heuristic and lacks deep contract-aware planning, but includes basic declarer plan priorities, notrump development rules, and beginner defense heuristics.
-- Lesson mode is still compact: richer choice feedback, undo/retry flows, and broader lesson coverage are not implemented yet.
+- Lesson mode has a separate reading page, but richer choice feedback, undo/retry flows, and broader lesson coverage are not implemented yet.
 
 ## Beginners Acceptance Checklist
 
@@ -117,12 +132,16 @@ Use this checklist with someone who does not already know the app. Let the playe
 - Confirm each completed trick pauses until the table is clicked or Enter is pressed.
 - Confirm clicking settings does not advance a paused trick.
 - Inspect the hand review after the hand ends.
-- Open feedback during bidding or play and confirm the copied report includes the repeat code and tester message.
+- Open feedback during bidding or play and confirm the feedback can be submitted, or copied as fallback, with the repeat code and tester message.
 - Toggle developer mode and confirm extra explanations appear.
 
 ## Deployment
 
 The app can be deployed as a static site. See [DEPLOY.md](./DEPLOY.md) for GitHub Pages and generic static hosting instructions.
+
+For direct tester feedback, deploy the Google Apps Script in [integrations/google-apps-script/feedback.gs](./integrations/google-apps-script/feedback.gs) as a Web app and paste its `/exec` URL into [scripts/feedback-config.js](./scripts/feedback-config.js). The copy button remains available as a fallback when no endpoint is configured.
+
+The feedback sheet includes triage columns for `Oorzaak`, `Fixvoorstel`, and `Fix geimplementeerd`. After updating the Apps Script, deploy a new version and open the `/exec` URL once to migrate existing sheets.
 
 ## Roadmap
 

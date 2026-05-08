@@ -33,7 +33,7 @@
                 </section>
                 <section class="menu-section" aria-labelledby="help-menu-title">
                   <p id="help-menu-title" class="menu-section-title">Hulp</p>
-                  <button id="open-lessons" type="button">Lessen</button>
+                  <a id="open-lessons" class="button-link" href="lessons.html">Lessen</a>
                   <button id="open-glossary" type="button">Woordenlijst</button>
                   <button id="open-score-table" type="button">Scoretabel</button>
                 </section>
@@ -43,21 +43,27 @@
                 </section>
               </div>
               <div class="settings-panel">
-                <label for="developer-mode" class="developer-toggle">
-                  <input id="developer-mode" type="checkbox" />
-                  <span id="developer-mode-label">Developermodus</span>
-                </label>
-                <p id="developer-mode-description" class="setting-description"></p>
-                <label for="guidance-mode" class="developer-toggle">
-                  <input id="guidance-mode" type="checkbox" />
-                  <span id="guidance-mode-label">AI-suggesties</span>
-                </label>
-                <p id="guidance-mode-description" class="setting-description"></p>
-                <label for="play-history-mode" class="developer-toggle">
-                  <input id="play-history-mode" type="checkbox" />
-                  <span id="play-history-mode-label">Speelgeschiedenis</span>
-                </label>
-                <p id="play-history-mode-description" class="setting-description"></p>
+                <div class="setting-toggle-row">
+                  <label for="play-history-mode" class="developer-toggle">
+                    <input id="play-history-mode" type="checkbox" />
+                    <span id="play-history-mode-label">Speelgeschiedenis</span>
+                  </label>
+                  <span id="play-history-mode-description" class="setting-info" tabindex="0" aria-label="Uitleg">i</span>
+                </div>
+                <div class="setting-toggle-row">
+                  <label for="guidance-mode" class="developer-toggle">
+                    <input id="guidance-mode" type="checkbox" />
+                    <span id="guidance-mode-label">AI-suggesties</span>
+                  </label>
+                  <span id="guidance-mode-description" class="setting-info" tabindex="0" aria-label="Uitleg">i</span>
+                </div>
+                <div class="setting-toggle-row">
+                  <label for="developer-mode" class="developer-toggle">
+                    <input id="developer-mode" type="checkbox" />
+                    <span id="developer-mode-label">Developermodus</span>
+                  </label>
+                  <span id="developer-mode-description" class="setting-info" tabindex="0" aria-label="Uitleg">i</span>
+                </div>
                 <div class="setting-field repeat-code-field" data-developer-only hidden>
                   <label id="seed-label" for="seed-input">Herhaalcode</label>
                   <input id="seed-input" type="text" autocomplete="off" spellcheck="false" />
@@ -293,7 +299,7 @@
         </div>
         <div class="feedback-actions">
           <button id="copy-feedback" type="button">Kopieer feedback</button>
-          <button id="mail-feedback" type="button">Mail feedback</button>
+          <button id="mail-feedback" type="button">Verstuur feedback</button>
         </div>
         <p id="feedback-description" class="setting-description"></p>
       </section>
@@ -334,6 +340,7 @@
     <script src="practice-hands/catalog/scoring-basic.js"></script>
     <script src="practice-hands/index.js"></script>
     <script src="scripts/copy/text-nl.js"></script>
+    <script src="scripts/feedback-config.js"></script>
     <script src="rules/bidding/systems/five-card-high/explanations-nl.js"></script>
     <script src="scripts/learning/bid-explanations.js"></script>
     <script src="scripts/learning/glossary.js"></script>

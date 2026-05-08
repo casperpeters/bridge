@@ -29,7 +29,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Oefenhanden en leerbare situaties
 
-- Breid de compacte lesroute gericht uit met extra vaste situaties, meer uitgewerkte instapmissies en betrouwbaardere keuze-feedback.
+- Breid de aparte lespagina gericht uit met extra vaste situaties, meer uitgewerkte instapmissies en betrouwbaardere keuze-feedback.
 - Breid de eerste `practice-hands/` catalogus verder uit met extra dummyspel en concrete bied-/speelmissers uit testgebruik.
 - Houd oefenspellen reproduceerbaar met oefenhand-id en kort testdoel.
 - Houd uitleg buiten de basisgame; oefenmodus, AI-suggesties en developermodus mogen meer tekst bevatten.

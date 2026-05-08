@@ -175,17 +175,12 @@ BridgeGlossary.init({
   term: els.glossaryTerm,
   definition: els.glossaryDefinition
 });
-BridgeLessons.init({
-  dialog: els.lessonsDialog,
-  openButton: els.openLessons,
-  closeButton: els.closeLessons,
-  list: els.lessonsList,
-  closeMenu: () => els.appMenu?.removeAttribute("open"),
-  labels: {
-    start: t("lessonStart")
-  },
-  startLesson: startLesson
+els.openLessons?.addEventListener("click", () => {
+  els.appMenu?.removeAttribute("open");
 });
+if (els.openLessons && new URLSearchParams(globalThis.location?.search || "").has("testHooks")) {
+  els.openLessons.href = "lessons.html?testHooks=1";
+}
 els.openScoreTable.addEventListener("click", openScoreTableDialog);
 els.closeScoreTable.addEventListener("click", closeScoreTableDialog);
 els.loadSeed.addEventListener("click", loadSeedFromInput);
@@ -193,9 +188,7 @@ els.copySeed.addEventListener("click", copyCurrentSeed);
 els.openFeedback.addEventListener("click", openFeedbackDialog);
 els.closeFeedback.addEventListener("click", closeFeedbackDialog);
 els.copyFeedback.addEventListener("click", copyFeedbackReport);
-els.mailFeedback.addEventListener("click", mailFeedbackReport);
-els.feedbackType.addEventListener("change", refreshFeedbackMailLink);
-els.feedbackMessage.addEventListener("input", refreshFeedbackMailLink);
+els.mailFeedback.addEventListener("click", submitFeedbackReport);
 els.feedbackDialog.addEventListener("click", (event) => {
   if (event.target === els.feedbackDialog) closeFeedbackDialog();
 });
@@ -295,6 +288,19 @@ function startLesson(lesson, handId) {
   return scenario;
 }
 
+function startLessonFromUrl() {
+  const params = new URLSearchParams(globalThis.location?.search || "");
+  const lessonId = params.get("lesson");
+  const handId = params.get("hand");
+  if (!lessonId || !handId) return false;
+
+  const lesson = globalThis.BridgeLessons?.findLesson?.(lessonId);
+  if (!lesson) return false;
+
+  startLesson(lesson, handId);
+  return true;
+}
+
 function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null, clearSeedMessage = false, skipFlow = false }) {
   Object.assign(state, stateTransitions.startPreparedHandTransition({
     dealerIndex,
@@ -346,6 +352,7 @@ function practiceStateFromScenario(scenario, lesson = null) {
     lessonNumber: lesson?.number || null,
     lessonTitle: lesson?.title || "",
     challenge: lesson?.challenge || "",
+    lessonStartMode: lesson?.startMode || "",
     lessonFocus: lesson?.focus ? [...lesson.focus] : [],
     lessonIntro: lesson?.intro || "",
     lessonReviewFeedback: lesson?.reviewFeedback ? [...lesson.reviewFeedback] : []
@@ -502,13 +509,13 @@ function applyStaticText() {
   els.openScoreTable.textContent = t("openScoreTable");
   els.developerModeLabel.textContent = t("developerMode");
   els.developerMode.checked = state.developerMode;
-  els.developerModeDescription.textContent = t("developerModeHelp");
   els.guidanceModeLabel.textContent = t("guidanceMode");
   els.guidanceMode.checked = state.guidanceMode;
-  els.guidanceModeDescription.textContent = t("guidanceModeHelp");
   els.playHistoryModeLabel.textContent = t("playHistoryMode");
   els.playHistoryMode.checked = state.showPlayHistory;
-  els.playHistoryModeDescription.textContent = t("playHistoryModeHelp");
+  setSettingInfo(els.playHistoryModeDescription, t("playHistoryModeHelp"));
+  setSettingInfo(els.guidanceModeDescription, t("guidanceModeHelp"));
+  setSettingInfo(els.developerModeDescription, t("developerModeHelp"));
   els.newHand.textContent = t("newHand");
   els.sameHand.textContent = t("sameHand");
   els.replayTitle.textContent = t("replayTitle");
@@ -546,6 +553,14 @@ function applyStaticText() {
   els.hintButton.setAttribute("aria-label", t("hint"));
 }
 
+function setSettingInfo(element, tooltip) {
+  if (!element) return;
+  element.textContent = "i";
+  element.dataset.tooltip = tooltip;
+  element.title = tooltip;
+  element.setAttribute("aria-label", tooltip);
+}
+
 function openScoreTableDialog() {
   if (typeof els.scoreTableDialog.showModal === "function") {
     els.scoreTableDialog.showModal();
@@ -566,7 +581,6 @@ function closeScoreTableDialog() {
 function openFeedbackDialog() {
   state.feedbackStatus = null;
   els.appMenu?.removeAttribute("open");
-  refreshFeedbackMailLink();
   renderFeedbackStatus();
   if (typeof els.feedbackDialog.showModal === "function") {
     els.feedbackDialog.showModal();
@@ -1018,4 +1032,4 @@ function makeCard(id) {
   return { id, rank: id.slice(0, -1), suit: id.slice(-1) };
 }
 
-startHand();
+if (!startLessonFromUrl()) startHand();

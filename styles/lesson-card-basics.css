@@ -1,0 +1,747 @@
+.card-lesson-body {
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(15, 48, 36, 0.96), rgba(9, 16, 14, 0.98)),
+    var(--bg);
+}
+
+.card-lesson-shell {
+  width: min(1120px, calc(100vw - 32px));
+  margin: 0 auto;
+  padding: 18px 0 34px;
+}
+
+.card-lesson-topbar,
+.card-lesson-brand {
+  display: flex;
+  align-items: center;
+}
+
+.card-lesson-topbar {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.card-lesson-brand,
+.card-lesson-back {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.card-lesson-brand {
+  gap: 12px;
+  min-width: 0;
+}
+
+.card-lesson-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
+
+.card-lesson-brand strong {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1.12;
+}
+
+.card-lesson-kicker {
+  display: block;
+  margin: 0 0 5px;
+  color: var(--accent-2);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.card-lesson-back {
+  min-height: 38px;
+  border: 1px solid rgba(247, 244, 232, 0.18);
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(247, 244, 232, 0.86);
+  padding: 0 12px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.card-lesson-hero,
+.lesson-player,
+.lesson-stage {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+}
+
+.card-lesson-hero {
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: clamp(18px, 4vw, 34px);
+  background:
+    linear-gradient(135deg, rgba(224, 194, 95, 0.13), rgba(96, 197, 185, 0.08)),
+    rgba(31, 52, 43, 0.82);
+}
+
+.card-lesson-hero h1 {
+  max-width: 720px;
+  color: var(--ink);
+  font-size: clamp(2rem, 4vw, 3.7rem);
+}
+
+.card-lesson-hero p:not(.card-lesson-kicker) {
+  max-width: 640px;
+  margin: 12px 0 0;
+  color: rgba(247, 244, 232, 0.84);
+  font-size: 1.05rem;
+  font-weight: 560;
+  line-height: 1.5;
+}
+
+.hero-card-fan {
+  position: relative;
+  width: 178px;
+  height: 150px;
+}
+
+.mini-card,
+.choice-card,
+.deal-card {
+  border: 2px solid rgba(176, 125, 46, 0.9);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #fffefa, #dad9d2);
+  color: #151515;
+  font-weight: 950;
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
+}
+
+.mini-card {
+  position: absolute;
+  width: 82px;
+  height: 112px;
+  font-size: 1.7rem;
+}
+
+.spade-card {
+  left: 0;
+  bottom: 4px;
+  transform: rotate(-13deg);
+}
+
+.heart-card {
+  left: 34px;
+  top: 8px;
+  color: var(--red);
+  transform: rotate(-4deg);
+}
+
+.diamond-card {
+  right: 30px;
+  top: 15px;
+  color: var(--red);
+  transform: rotate(6deg);
+}
+
+.club-card {
+  right: 0;
+  bottom: 0;
+  transform: rotate(14deg);
+}
+
+.lesson-player {
+  display: grid;
+  grid-template-columns: 245px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  background: rgba(10, 18, 15, 0.34);
+  padding: 16px;
+}
+
+.lesson-progress {
+  position: sticky;
+  top: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.progress-step {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ink);
+  font-weight: 760;
+}
+
+.progress-step[aria-current="true"] {
+  border-color: rgba(224, 194, 95, 0.78);
+  background: rgba(224, 194, 95, 0.12);
+}
+
+.progress-step span,
+.seat-demo em {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(96, 197, 185, 0.48);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent-2);
+  font-style: normal;
+  font-weight: 950;
+}
+
+.lesson-stage {
+  min-height: 640px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  background: rgba(22, 29, 25, 0.82);
+  padding: clamp(18px, 4vw, 34px);
+}
+
+.lesson-slide {
+  display: none;
+}
+
+.lesson-slide.is-active {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  animation: slide-in 260ms ease both;
+}
+
+.lesson-slide h2 {
+  color: var(--ink);
+  font-size: clamp(1.55rem, 3vw, 2.55rem);
+}
+
+.lesson-slide p {
+  max-width: 720px;
+  margin: 0;
+  color: rgba(247, 244, 232, 0.86);
+  font-size: 1rem;
+  font-weight: 560;
+  line-height: 1.55;
+}
+
+.suit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.suit-tile {
+  min-height: 150px;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  align-content: center;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.suit-tile span {
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 1;
+}
+
+.suit-tile strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.red-suit span,
+.red-rank,
+.choice-card {
+  color: var(--red);
+}
+
+.lesson-feedback,
+.lesson-summary {
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 8px 8px 0;
+  background: rgba(20, 55, 45, 0.72);
+  padding: 10px 12px;
+}
+
+.deck-equation {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(90px, 1fr)) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.suit-count-card,
+.equation-total {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 16px 10px;
+}
+
+.suit-count-card {
+  min-height: 104px;
+  cursor: pointer;
+}
+
+.suit-count-card[aria-pressed="true"] {
+  border-color: rgba(224, 194, 95, 0.78);
+  background: rgba(224, 194, 95, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(224, 194, 95, 0.12);
+}
+
+.equation-symbol {
+  font-size: 2.2rem;
+}
+
+.suit-count-card[data-suit-target="H"] .equation-symbol,
+.suit-count-card[data-suit-target="D"] .equation-symbol {
+  color: var(--red);
+}
+
+.deck-equation strong,
+.equation-total {
+  color: var(--ink);
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.rank-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2px 0 14px;
+  min-height: 104px;
+}
+
+.suit-count-feedback {
+  justify-self: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.lesson-rank-card.card {
+  width: 72px;
+  height: 102px;
+  margin-left: -28px;
+  padding: 6px;
+  font-size: 0.88rem;
+  cursor: default;
+}
+
+.lesson-rank-card.card:first-child {
+  margin-left: 0;
+}
+
+.lesson-rank-card.card .suit-big {
+  font-size: 2rem;
+}
+
+.compact-ranks .lesson-rank-card.card {
+  width: 62px;
+  height: 88px;
+  margin-left: -24px;
+  font-size: 0.78rem;
+}
+
+.compact-ranks .lesson-rank-card.card .suit-big {
+  font-size: 1.65rem;
+}
+
+.mini-question {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+}
+
+.mini-question h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.choice-card {
+  width: 82px;
+  height: 112px;
+  font-size: 1.5rem;
+}
+
+.choice-card.is-correct {
+  border-color: rgba(85, 213, 126, 0.86);
+  box-shadow: 0 0 0 3px rgba(85, 213, 126, 0.18), 0 14px 26px rgba(0, 0, 0, 0.22);
+}
+
+.choice-card.is-missed {
+  border-color: rgba(231, 97, 97, 0.78);
+  transform: translateY(2px);
+}
+
+.table-demo {
+  position: relative;
+  min-height: 440px;
+  border: 1px solid rgba(96, 197, 185, 0.24);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(130px, 1.2fr) minmax(110px, 1fr);
+  grid-template-rows: 1fr 1fr 1fr auto;
+  gap: 12px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    rgba(6, 44, 30, 0.46);
+  background-size: 28px 28px;
+  padding: 14px;
+}
+
+.seat-demo {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 4px;
+  place-items: center;
+  background: rgba(13, 22, 18, 0.68);
+  color: var(--ink);
+  text-align: center;
+  padding: 12px;
+}
+
+.seat-demo-copy {
+  display: grid;
+  gap: 4px;
+  min-height: 42px;
+  place-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.seat-demo span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 620;
+}
+
+.seat-stack {
+  position: relative;
+  width: min(154px, 100%);
+  height: 66px;
+  margin: 2px 0;
+  z-index: 1;
+}
+
+.north-seat {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.west-seat {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.east-seat {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.south-seat {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.deck-button {
+  grid-column: 2;
+  grid-row: 2;
+  place-self: center;
+  min-width: 150px;
+  min-height: 58px;
+  border-color: rgba(224, 194, 95, 0.64);
+  background: rgba(224, 194, 95, 0.16);
+  font-weight: 950;
+}
+
+.deal-card {
+  position: absolute;
+  left: calc(50% - 17px);
+  top: calc(50% - 25px);
+  width: 34px;
+  height: 48px;
+  border: 1px solid rgba(176, 125, 46, 0.9);
+  border-radius: 5px;
+  display: grid;
+  place-items: start;
+  background: linear-gradient(135deg, #fffefa, #dad9d2);
+  color: #151515;
+  font-size: 0.64rem;
+  font-weight: 950;
+  line-height: 1;
+  padding: 4px;
+  pointer-events: none;
+  transform: translate(var(--deal-x), var(--deal-y)) rotate(var(--deal-rot));
+  animation: dealt-card-pop 180ms ease both;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+}
+
+.deal-card.red {
+  color: var(--red);
+}
+
+.lesson-summary {
+  display: grid;
+  gap: 4px;
+  color: rgba(247, 244, 232, 0.88);
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+.deal-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 720;
+  text-align: center;
+}
+
+.lesson-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 18px;
+}
+
+.lesson-controls button {
+  min-width: 130px;
+  font-weight: 900;
+}
+
+#next-step {
+  border-color: rgba(224, 194, 95, 0.58);
+  background: rgba(224, 194, 95, 0.14);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-pop {
+  from {
+    opacity: 0;
+    transform: translateY(12px) rotate(-2deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0);
+  }
+}
+
+@keyframes dealt-card-pop {
+  from {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.72) rotate(0);
+  }
+  to {
+    opacity: 1;
+    transform: translate(var(--deal-x), var(--deal-y)) rotate(var(--deal-rot));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-slide.is-active,
+  .lesson-rank-card.card,
+  .deal-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .card-lesson-hero,
+  .lesson-player {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-card-fan {
+    display: none;
+  }
+
+  .lesson-progress {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lesson-stage {
+    min-height: 0;
+  }
+
+  .suit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .deck-equation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .equation-total {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .card-lesson-shell {
+    width: min(100vw - 20px, 1120px);
+    padding-top: 10px;
+  }
+
+  .card-lesson-topbar {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-lesson-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .card-lesson-brand strong {
+    font-size: 1rem;
+  }
+
+  .card-lesson-back {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  .lesson-player {
+    padding: 10px;
+  }
+
+  .lesson-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .suit-grid,
+  .deck-equation,
+  .choice-row {
+    grid-template-columns: 1fr;
+  }
+
+  .suit-tile {
+    min-height: 112px;
+  }
+
+  .choice-row {
+    display: grid;
+  }
+
+  .choice-card {
+    width: 100%;
+    height: 74px;
+  }
+
+  .lesson-rank-card.card,
+  .compact-ranks .lesson-rank-card.card {
+    width: 100%;
+    height: 64px;
+    margin-left: 0;
+    padding: 5px;
+    font-size: 0.66rem;
+  }
+
+  .rank-row {
+    display: grid;
+    grid-template-columns: repeat(7, 42px);
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .lesson-rank-card.card .suit-big,
+  .compact-ranks .lesson-rank-card.card .suit-big {
+    font-size: 1.08rem;
+  }
+
+  .table-demo {
+    min-height: 560px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto auto;
+  }
+
+  .north-seat,
+  .south-seat,
+  .deck-button {
+    grid-column: 1 / -1;
+  }
+
+  .north-seat {
+    grid-row: 1;
+  }
+
+  .west-seat {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .east-seat {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .deck-button {
+    grid-row: 3;
+  }
+
+  .south-seat {
+    grid-row: 4;
+  }
+
+  .seat-stack {
+    width: 126px;
+    height: 58px;
+  }
+
+  .deal-card {
+    width: 29px;
+    height: 40px;
+    font-size: 0.58rem;
+  }
+
+  .lesson-controls {
+    display: grid;
+  }
+}

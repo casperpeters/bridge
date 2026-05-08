@@ -24,9 +24,11 @@ Dit document beschrijft de actuele architectuur en gewenste groeirichting van Br
 ## Hoog-overzicht
 
 ```text
-index.html
+index.html / lessons.html / lesson-01-cards.html
   +-- laadt CSS en browser scripts in vaste volgorde
-  +-- bevat DOM-structuur voor tafel, bieding, dialogs en review
+  +-- index bevat DOM-structuur voor tafel, bieding, dialogs en review
+  +-- lessons bevat de rustige lespagina en start oefenhanden via index queryparameters
+  +-- losse hoofdstukpagina's kunnen interactieve lesstappen tonen zonder de speeltafel te laden
 
 bridge-rules.js
   +-- public facade voor testbare bridge-regels
@@ -163,7 +165,7 @@ Huidige kern:
 - `scripts/flow/` - veilingflow, kaartspelflow, legaliteit, automatic play en slagvoortgang.
 - `scripts/render/` - rendering per UI-deel, zichtbare speelplantekst en scoretabel-UI.
 - `scripts/state/` - pure state-transitions, localStorage settings, `situatieseed:` codec, herhaalcode en herstel.
-- `scripts/learning/` - lessen, woordenlijst en bieduitleg voor AI-suggesties/review.
+- `scripts/learning/` - lessen, standalone lespagina, woordenlijst en bieduitleg voor AI-suggesties/review.
 - `scripts/copy/text-nl.js` - Nederlandse UI-copy.
 
 Richtlijn: `scripts/app.js` mag bootstrap en gedeelde infrastructuur blijven, maar nieuwe UI-flow hoort waar mogelijk in de passende submap. Als een flow groeit, eerst extracten naar een gerichte module in plaats van `app.js` groter maken.

@@ -23,6 +23,7 @@
           id: "kaarten-van-spelers",
           title: "De kaarten van de spelers",
           summary: "Iedere speler krijgt 13 kaarten; samen met je partner probeer je slagen te winnen.",
+          pageHref: "lesson-01-cards.html",
           blocks: [
             { type: "paragraph", text: "Bridge speel je met vier spelers. Jij zit Zuid, je partner zit Noord, en Oost/West zijn de tegenstanders." },
             { type: "paragraph", text: "Iedere speler krijgt 13 kaarten. De kaarten blijven eerst verborgen, behalve dummy: die verschijnt pas na de eerste kaart van het spelen." }
