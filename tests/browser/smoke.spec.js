@@ -557,10 +557,20 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator(".lesson-card")).toHaveCount(12);
   await expect(page.locator(".lesson-card").first()).toContainText("Wat is bridge?");
   await expect(page.locator("#lessons-list")).toContainText("Reviewles: hele spellen");
-  await page.locator(".lesson-card-featured .lesson-mini-option", { hasText: "Slagen" }).click();
-  await expect(page.locator(".lesson-card-featured")).toContainText("Een slag is een rondje");
+  await page.locator(".lesson-card-featured .lesson-view").click();
+  await expect(page.locator("#lessons-list")).toHaveAttribute("data-view", "detail");
+  await expect(page.locator(".lesson-detail")).toContainText("De kaarten van de spelers");
+  await expect(page.locator(".lesson-detail")).toContainText("Bekennen moet");
 
-  await page.locator(".lesson-card-featured .lesson-start").click();
+  await page.locator(".lesson-chapter-card", { hasText: "Een slag" }).click();
+  await expect(page.locator("#lessons-list")).toHaveAttribute("data-view", "chapter");
+  await page.locator(".lesson-mini-option", { hasText: "Slagen" }).click();
+  await expect(page.locator(".lesson-chapter-detail")).toContainText("Een slag is een rondje");
+
+  await page.locator(".lesson-back").click();
+  await page.locator(".lesson-chapter-card", { hasText: "Bekennen moet" }).click();
+  await expect(page.locator(".lesson-chapter-detail")).toContainText("Als de gevraagde kleur in je hand zit");
+  await page.locator(".lesson-chapter-detail .lesson-start").click();
   await expect(page.locator("#lessons-dialog")).toBeHidden();
   await expect(page.locator("#lesson-banner")).toContainText("Les 1: Wat is bridge?");
   await expect(page.locator("#lesson-banner")).toContainText("dummy");

@@ -18,24 +18,71 @@
       startMode: "play",
       enableGuidance: true,
       intro: "Je hoeft nog niets te bieden. Deze missie start meteen bij het spelen: kijk wie uitkomt, wie dummy is en hoeveel slagen jullie samen pakken.",
-      miniQuiz: [
+      chapters: [
         {
-          question: "Wat probeer je in bridge te winnen?",
-          answer: "Slagen",
-          options: ["Slagen", "Losse punten", "Alle harten"],
-          feedback: "Ja. Een slag is een rondje waarin iedere speler precies een kaart speelt."
+          id: "kaarten-van-spelers",
+          title: "De kaarten van de spelers",
+          summary: "Iedere speler krijgt 13 kaarten; samen met je partner probeer je slagen te winnen.",
+          blocks: [
+            { type: "paragraph", text: "Bridge speel je met vier spelers. Jij zit Zuid, je partner zit Noord, en Oost/West zijn de tegenstanders." },
+            { type: "paragraph", text: "Iedere speler krijgt 13 kaarten. De kaarten blijven eerst verborgen, behalve dummy: die verschijnt pas na de eerste kaart van het spelen." }
+          ]
         },
         {
-          question: "Wanneer komt dummy open op tafel?",
-          answer: "Na de uitkomst",
-          options: ["Voor het bieden", "Na de uitkomst", "Pas na slag 13"],
-          feedback: "Precies. Eerst komt links van de leider uit; daarna zie je dummy."
+          id: "windrichtingen",
+          title: "Noord, Oost, Zuid en West",
+          summary: "De tafel gebruikt windrichtingen om partners en beurten duidelijk te houden.",
+          blocks: [
+            { type: "paragraph", text: "Noord en Zuid vormen samen een paar. Oost en West vormen het andere paar." },
+            { type: "list", items: ["Zuid ben jij.", "Noord is je partner.", "Links van Zuid zit West; rechts van Zuid zit Oost."] }
+          ]
         },
         {
-          question: "Wie speelt de kaarten van dummy?",
-          answer: "De leider",
-          options: ["De leider", "Dummy zelf", "De speler links"],
-          feedback: "Klopt. Dummy legt de kaarten open; de leider kiest de kaarten uit beide handen."
+          id: "bieden-en-spelen",
+          title: "Bieden en spelen",
+          summary: "Eerst wordt het contract gekozen; daarna probeer je dat contract te maken of te verslaan.",
+          blocks: [
+            { type: "paragraph", text: "In het bieden zoeken de spelers uit welke speelsoort en hoeveel slagen haalbaar lijken." },
+            { type: "paragraph", text: "Na het bieden begint het spelen. De leider probeert het contract te maken; de tegenspelers proberen dat te voorkomen." }
+          ]
+        },
+        {
+          id: "een-slag",
+          title: "Een slag",
+          summary: "Een slag is een rondje waarin iedere speler precies een kaart speelt.",
+          blocks: [
+            { type: "paragraph", text: "De speler die de slag begint, bepaalt de gevraagde kleur. Daarna spelen de andere spelers met de klok mee een kaart." }
+          ],
+          quiz: [
+            {
+              question: "Wat probeer je in bridge te winnen?",
+              answer: "Slagen",
+              options: ["Slagen", "Losse punten", "Alle harten"],
+              feedback: "Ja. Een slag is een rondje waarin iedere speler precies een kaart speelt."
+            },
+            {
+              question: "Wanneer komt dummy open op tafel?",
+              answer: "Na de uitkomst",
+              options: ["Voor het bieden", "Na de uitkomst", "Pas na slag 13"],
+              feedback: "Precies. Eerst komt links van de leider uit; daarna zie je dummy."
+            },
+            {
+              question: "Wie speelt de kaarten van dummy?",
+              answer: "De leider",
+              options: ["De leider", "Dummy zelf", "De speler links"],
+              feedback: "Klopt. Dummy legt de kaarten open; de leider kiest de kaarten uit beide handen."
+            }
+          ]
+        },
+        {
+          id: "bekennen-moet",
+          title: "Bekennen moet",
+          summary: "Als de gevraagde kleur in je hand zit, moet je een kaart van die kleur spelen.",
+          handId: "draw-trumps-001",
+          blocks: [
+            { type: "paragraph", text: "Als iemand bijvoorbeeld harten vraagt en jij hebt harten, dan moet je harten spelen. Alleen als je die kleur niet hebt, mag je een andere kleur spelen." },
+            { type: "callout", text: "De oefening start meteen in het spelen, zodat je beurten, dummy en kleur bekennen in een echt bord ziet." }
+          ]
         }
       ],
       reviewFeedback: [
@@ -140,11 +187,7 @@
   ];
 
   function allLessons() {
-    return lessons.map((lesson) => ({
-      ...lesson,
-      focus: [...lesson.focus],
-      handIds: [...lesson.handIds]
-    }));
+    return lessons.map(cloneLesson);
   }
 
   function findLesson(id) {
@@ -165,6 +208,7 @@
           throw new Error(`Lesson ${lesson.id} refers to unknown practice hand ${handId}`);
         }
       }
+      validateLessonChapters(lesson, practiceApi);
       if (lesson.startMode === "play") {
         const scenario = practiceApi?.findPracticeHand?.(lesson.handIds[0]);
         if (!scenario?.expectedContract) throw new Error(`Lesson ${lesson.id} needs an expected contract for play start`);
@@ -188,6 +232,7 @@
 
     openButton?.addEventListener("click", () => {
       closeMenu?.();
+      renderLessonList({ list, startLesson, labels, dialog });
       openDialog(dialog);
       closeButton?.focus();
     });
@@ -200,6 +245,7 @@
   function renderLessonList({ list, startLesson, labels, dialog }) {
     if (!list) return;
     list.innerHTML = "";
+    list.dataset.view = "overview";
     lessons.forEach((lesson) => {
       const card = document.createElement("article");
       card.className = "lesson-card";
@@ -233,19 +279,182 @@
 
       const action = document.createElement("button");
       action.type = "button";
-      action.className = "lesson-start";
-      action.textContent = labels.start || "Start oefening";
+      const hasDetail = Boolean(lesson.chapters?.length);
+      action.className = hasDetail ? "lesson-view" : "lesson-start";
+      action.textContent = hasDetail ? (labels.view || "Bekijk les") : (labels.start || "Start oefening");
       action.addEventListener("click", () => {
-        startLesson?.(findLesson(lesson.id), lesson.handIds[0]);
-        closeDialog(dialog);
+        if (hasDetail) {
+          renderLessonDetail({ list, startLesson, labels, dialog, lessonId: lesson.id });
+          return;
+        }
+        startLessonFromHand({ lesson, handId: lesson.handIds[0], startLesson, dialog });
       });
 
       card.append(number, heading, challenge, focus);
       if (intro) card.appendChild(intro);
-      if (lesson.miniQuiz?.length) card.appendChild(miniQuizEl(lesson.miniQuiz));
       card.appendChild(action);
       list.appendChild(card);
     });
+  }
+
+  function renderLessonDetail({ list, startLesson, labels, dialog, lessonId }) {
+    if (!list) return;
+    const lesson = lessons.find((candidate) => candidate.id === lessonId);
+    if (!lesson) return renderLessonList({ list, startLesson, labels, dialog });
+
+    list.innerHTML = "";
+    list.dataset.view = "detail";
+
+    const detail = document.createElement("article");
+    detail.className = "lesson-detail";
+
+    const back = backButton(labels.backToLessons || "Alle lessen", () => {
+      renderLessonList({ list, startLesson, labels, dialog });
+    });
+
+    const header = document.createElement("div");
+    header.className = "lesson-detail-header";
+
+    const number = document.createElement("span");
+    number.className = "lesson-number";
+    number.textContent = String(lesson.number);
+
+    const heading = document.createElement("h3");
+    heading.textContent = lesson.title;
+
+    const challenge = document.createElement("p");
+    challenge.className = "lesson-challenge";
+    challenge.textContent = lesson.challenge;
+
+    const intro = document.createElement("p");
+    intro.className = "lesson-intro";
+    intro.textContent = lesson.intro || "Werk de hoofdstukken door en start daarna de oefening.";
+
+    const focus = lessonFocusEl(lesson.focus);
+    header.append(number, heading, challenge, intro, focus);
+
+    const chapters = document.createElement("div");
+    chapters.className = "lesson-chapter-list";
+    (lesson.chapters || []).forEach((chapter, index) => {
+      const chapterButton = document.createElement("button");
+      chapterButton.type = "button";
+      chapterButton.className = "lesson-chapter-card";
+      chapterButton.addEventListener("click", () => {
+        renderLessonChapter({ list, startLesson, labels, dialog, lessonId: lesson.id, chapterId: chapter.id });
+      });
+
+      const chapterNumber = document.createElement("span");
+      chapterNumber.className = "lesson-chapter-number";
+      chapterNumber.textContent = String(index + 1);
+
+      const text = document.createElement("span");
+      text.className = "lesson-chapter-text";
+
+      const title = document.createElement("strong");
+      title.textContent = chapter.title;
+
+      const summary = document.createElement("span");
+      summary.textContent = chapter.summary || "";
+
+      text.append(title, summary);
+      chapterButton.append(chapterNumber, text);
+      if (chapter.handId) {
+        const practice = document.createElement("span");
+        practice.className = "lesson-chapter-practice";
+        practice.textContent = "Oefening";
+        chapterButton.appendChild(practice);
+      }
+      chapters.appendChild(chapterButton);
+    });
+
+    detail.append(back, header, chapters);
+    list.appendChild(detail);
+    back.focus();
+  }
+
+  function renderLessonChapter({ list, startLesson, labels, dialog, lessonId, chapterId }) {
+    if (!list) return;
+    const lesson = lessons.find((candidate) => candidate.id === lessonId);
+    const chapter = lesson?.chapters?.find((candidate) => candidate.id === chapterId);
+    if (!lesson || !chapter) return renderLessonDetail({ list, startLesson, labels, dialog, lessonId });
+
+    list.innerHTML = "";
+    list.dataset.view = "chapter";
+
+    const detail = document.createElement("article");
+    detail.className = "lesson-detail lesson-chapter-detail";
+
+    const back = backButton(labels.backToLesson || "Terug naar les", () => {
+      renderLessonDetail({ list, startLesson, labels, dialog, lessonId: lesson.id });
+    });
+
+    const heading = document.createElement("h3");
+    heading.textContent = chapter.title;
+
+    const summary = document.createElement("p");
+    summary.className = "lesson-challenge";
+    summary.textContent = chapter.summary || "";
+
+    detail.append(back, heading, summary);
+    (chapter.blocks || []).forEach((block) => detail.appendChild(lessonBlockEl(block)));
+    if (chapter.quiz?.length) detail.appendChild(miniQuizEl(chapter.quiz));
+
+    if (chapter.handId) {
+      const action = document.createElement("button");
+      action.type = "button";
+      action.className = "lesson-start";
+      action.textContent = labels.startPractice || labels.start || "Start oefening";
+      action.addEventListener("click", () => {
+        startLessonFromHand({ lesson, handId: chapter.handId, startLesson, dialog });
+      });
+      detail.appendChild(action);
+    }
+
+    list.appendChild(detail);
+    back.focus();
+  }
+
+  function startLessonFromHand({ lesson, handId, startLesson, dialog }) {
+    startLesson?.(findLesson(lesson.id), handId);
+    closeDialog(dialog);
+  }
+
+  function backButton(label, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lesson-back";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
+  function lessonFocusEl(labels) {
+    const focus = document.createElement("div");
+    focus.className = "lesson-focus";
+    labels.forEach((label) => {
+      const pill = document.createElement("span");
+      pill.className = "lesson-focus-pill";
+      pill.textContent = label;
+      focus.appendChild(pill);
+    });
+    return focus;
+  }
+
+  function lessonBlockEl(block) {
+    if (block.type === "list") {
+      const list = document.createElement("ul");
+      list.className = "lesson-chapter-points";
+      (block.items || []).forEach((text) => {
+        const item = document.createElement("li");
+        item.textContent = text;
+        list.appendChild(item);
+      });
+      return list;
+    }
+    const element = document.createElement(block.type === "callout" ? "aside" : "p");
+    element.className = block.type === "callout" ? "lesson-chapter-callout" : "lesson-chapter-paragraph";
+    element.textContent = block.text || "";
+    return element;
   }
 
   function miniQuizEl(questions) {
@@ -296,6 +505,62 @@
     if (!dialog) return;
     if (typeof dialog.close === "function") dialog.close();
     else dialog.removeAttribute("open");
+  }
+
+  function cloneLesson(lesson) {
+    return {
+      ...lesson,
+      focus: [...lesson.focus],
+      handIds: [...lesson.handIds],
+      chapters: (lesson.chapters || []).map(cloneChapter),
+      miniQuiz: lesson.miniQuiz ? cloneQuiz(lesson.miniQuiz) : undefined,
+      reviewFeedback: lesson.reviewFeedback ? [...lesson.reviewFeedback] : undefined,
+      teachingPoints: lesson.teachingPoints ? [...lesson.teachingPoints] : undefined
+    };
+  }
+
+  function cloneChapter(chapter) {
+    return {
+      ...chapter,
+      blocks: (chapter.blocks || []).map((block) => ({
+        ...block,
+        items: block.items ? [...block.items] : undefined
+      })),
+      quiz: chapter.quiz ? cloneQuiz(chapter.quiz) : undefined
+    };
+  }
+
+  function cloneQuiz(questions) {
+    return questions.map((question) => ({
+      ...question,
+      options: [...question.options]
+    }));
+  }
+
+  function validateLessonChapters(lesson, practiceApi) {
+    if (!lesson.chapters) return;
+    if (!Array.isArray(lesson.chapters)) throw new Error(`Lesson ${lesson.id} chapters must be an array`);
+    const ids = new Set();
+    for (const chapter of lesson.chapters) {
+      if (!chapter.id || ids.has(chapter.id)) throw new Error(`Lesson ${lesson.id} has an invalid chapter id`);
+      ids.add(chapter.id);
+      if (!chapter.title) throw new Error(`Lesson ${lesson.id} chapter ${chapter.id} is missing a title`);
+      if (!chapter.summary) throw new Error(`Lesson ${lesson.id} chapter ${chapter.id} is missing a summary`);
+      if (chapter.handId && !practiceApi?.findPracticeHand?.(chapter.handId)) {
+        throw new Error(`Lesson ${lesson.id} chapter ${chapter.id} refers to unknown practice hand ${chapter.handId}`);
+      }
+      if (chapter.quiz) validateQuiz(lesson.id, chapter.id, chapter.quiz);
+    }
+  }
+
+  function validateQuiz(lessonId, chapterId, questions) {
+    if (!Array.isArray(questions) || !questions.length) throw new Error(`Lesson ${lessonId} chapter ${chapterId} has an empty quiz`);
+    questions.forEach((question, index) => {
+      if (!question.question || !question.answer) throw new Error(`Lesson ${lessonId} chapter ${chapterId} quiz ${index + 1} is incomplete`);
+      if (!Array.isArray(question.options) || !question.options.includes(question.answer)) {
+        throw new Error(`Lesson ${lessonId} chapter ${chapterId} quiz ${index + 1} is missing the answer option`);
+      }
+    });
   }
 
   validateLessons();
