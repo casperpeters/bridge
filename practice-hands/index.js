@@ -3,12 +3,12 @@
   const bridgeRules = isCommonJs ? require("../bridge-rules.js") : root.BridgeRules;
   const collections = isCommonJs
     ? {
-        fiveCardHighOpenings: require("./five-card-high-openings.js"),
-        notrumpResponses: require("./notrump-responses.js"),
-        basicBidding: require("./bidding-basic.js"),
-        basicPlayPlan: require("./play-plan-basic.js"),
-        basicDefense: require("./defense-basic.js"),
-        basicScoring: require("./scoring-basic.js")
+        fiveCardHighOpenings: require("./catalog/five-card-high-openings.js"),
+        notrumpResponses: require("./catalog/notrump-responses.js"),
+        basicBidding: require("./catalog/bidding-basic.js"),
+        basicPlayPlan: require("./catalog/play-plan-basic.js"),
+        basicDefense: require("./catalog/defense-basic.js"),
+        basicScoring: require("./catalog/scoring-basic.js")
       }
     : root.PracticeHandCollections || {};
   const api = factory(bridgeRules, collections);

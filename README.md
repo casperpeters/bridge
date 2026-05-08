@@ -46,34 +46,7 @@ npm run test:browser
 
 The app stays build-free: `index.html` loads plain browser scripts in dependency order.
 
-- `bridge-rules.js`: browser-facing aggregator that exposes the rule modules in dependency order.
-- `practice-hands/`: curated fixed beginner deals and scenario metadata for lessons, debugging, and regression tests.
-- `rules/`: testable bridge rules, scoring, bidding heuristics, card-play heuristics, and play-plan data.
-- `rules/scoring.js`: ordinary bridge score calculation.
-- `rules/score-table.js`: score-table data derived from the scoring rules.
-- `rules/bidding/common/`: shared bidding context, valuation, legality, and result helpers for system profiles.
-- `rules/bidding/index.js`: bidding-system dispatcher that selects the active convention profile.
-- `rules/bidding/systems/five-card-high/`: current NBB/Barry's Vijfkaart Hoog profile, split into opening, responses, rebids, competitive bidding, conventions, explanations, and the profile entrypoint.
-- `rules/play-plan.js`: compatibility entrypoint that exposes the split play-plan modules.
-- `rules/play-plan/`: split play-plan logic for shared helpers, notrump plans, and suit-contract plans.
-- `rules/card-play.js`: compatibility entrypoint and orchestrator for card-play choices.
-- `rules/card-play/`: split card-play helpers for opening leads, play-plan following, declarer play, and beginner defense rules.
-- `scripts/app.js`: app bootstrap, shared state, DOM references, shared formatting/status helpers, and top-level orchestration.
-- `scripts/text-nl.js`: Dutch UI copy and labels.
-- `scripts/settings.js`: saved settings.
-- `scripts/seed.js`: hand seed loading/copying and seed UI state.
-- `scripts/bid-explanations.js`: bid explanation orchestration for guidance and developer mode.
-- `scripts/play-plan.js`: visible play-plan rendering and play-plan explanation text.
-- `scripts/render-hands.js`: card and hand rendering.
-- `scripts/render-auction.js`: auction log and bidding controls.
-- `scripts/render-review.js`: trick history, play explanations, and final hand review.
-- `scripts/auction-flow.js`: auction flow and bidding decisions.
-- `scripts/play-flow.js`: card-play flow, automatic play, legal play handling, and trick advancement.
-- `scripts/glossary.js`: Dutch glossary entries and lookup helpers.
-- `scripts/lessons.js`: compact lesson catalog and validation against practice hands.
-- `scripts/score-table.js`: score-table rendering.
-- `scripts/state-transitions.js`: pure state-transition helpers for core game actions.
-- `rules/bidding/systems/five-card-high/explanations-nl.js`: Dutch explanation text for the current Vijfkaart Hoog system profile.
+See [docs/architecture.md](./docs/architecture.md) for the technical architecture, script order, module structure, explanation paths, and important code locations.
 
 ## Current Features
 
@@ -96,7 +69,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
 - Compact lesson picker that launches curated practice hands and shows lesson guidance or review points where available.
 - Trick history and full hand review after completion.
-- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, situation seed, auction, tricks, score, settings, current phase, and optional tester notes.
+- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including the tester message and situation seed.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
 - Ordinary bridge score calculation with vulnerability and contract bonuses.
 - Settings menu with saved AI-suggestion mode, play-history mode, and developer mode.
@@ -144,7 +117,7 @@ Use this checklist with someone who does not already know the app. Let the playe
 - Confirm each completed trick pauses until the table is clicked or Enter is pressed.
 - Confirm clicking settings does not advance a paused trick.
 - Inspect the hand review after the hand ends.
-- Open feedback during bidding or play and confirm the copied report includes the current phase, seed, situation seed, auction, tricks, score, and tester message.
+- Open feedback during bidding or play and confirm the copied report includes the situation seed and tester message.
 - Toggle developer mode and confirm extra explanations appear.
 
 ## Deployment

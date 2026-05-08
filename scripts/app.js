@@ -136,8 +136,6 @@ const els = {
   feedbackType: document.querySelector("#feedback-type"),
   feedbackMessageLabel: document.querySelector("#feedback-message-label"),
   feedbackMessage: document.querySelector("#feedback-message"),
-  feedbackIncludeContext: document.querySelector("#feedback-include-context"),
-  feedbackContextLabel: document.querySelector("#feedback-context-label"),
   copyFeedback: document.querySelector("#copy-feedback"),
   mailFeedback: document.querySelector("#mail-feedback"),
   closeFeedback: document.querySelector("#close-feedback"),
@@ -198,7 +196,6 @@ els.copyFeedback.addEventListener("click", copyFeedbackReport);
 els.mailFeedback.addEventListener("click", mailFeedbackReport);
 els.feedbackType.addEventListener("change", refreshFeedbackMailLink);
 els.feedbackMessage.addEventListener("input", refreshFeedbackMailLink);
-els.feedbackIncludeContext.addEventListener("change", refreshFeedbackMailLink);
 els.feedbackDialog.addEventListener("click", (event) => {
   if (event.target === els.feedbackDialog) closeFeedbackDialog();
 });
@@ -535,7 +532,6 @@ function applyStaticText() {
   els.feedbackTypeLabel.textContent = t("feedbackTypeLabel");
   els.feedbackMessageLabel.textContent = t("feedbackMessageLabel");
   els.feedbackMessage.placeholder = t("feedbackMessagePlaceholder");
-  els.feedbackContextLabel.textContent = t("feedbackContextLabel");
   els.copyFeedback.textContent = t("copyFeedback");
   els.mailFeedback.textContent = t("mailFeedback");
   els.closeFeedback.setAttribute("aria-label", t("closeFeedback"));

@@ -1,3 +1,8 @@
+const situationCodec = globalThis.BridgeSituationCodec;
+if (!situationCodec) throw new Error("situation-codec.js must load before seed.js");
+const normalizeSeed = situationCodec.normalizeSeed;
+const isSituationSeed = situationCodec.isSituationSeed;
+
 function loadSeedFromInput() {
   const seed = normalizeSeed(els.seedInput.value);
   if (!seed) {
@@ -6,11 +11,13 @@ function loadSeedFromInput() {
     return;
   }
   if (isSituationSeed(seed)) {
+    const previousState = cloneStateForSeedRestore();
     try {
       startSituationSeed(seed);
     } catch {
+      restoreStateFromSeedSnapshot(previousState);
       state.seedMessage = t("situationSeedInvalid");
-      renderSeedControls();
+      renderRestoredSituation();
     }
     return;
   }
@@ -54,15 +61,15 @@ async function copyText(text) {
   }
 }
 
-function normalizeSeed(seed) {
-  return String(seed || "").trim().slice(0, 5000);
+function cloneStateForSeedRestore() {
+  return JSON.parse(JSON.stringify(state));
 }
 
-const situationSeedPrefixes = ["situatieseed:", "situatie:", "situation:"];
-
-function isSituationSeed(seed) {
-  const normalized = String(seed || "").trim().toLowerCase();
-  return situationSeedPrefixes.some((prefix) => normalized.startsWith(prefix));
+function restoreStateFromSeedSnapshot(snapshot) {
+  Object.keys(state).forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(snapshot, key)) delete state[key];
+  });
+  Object.assign(state, snapshot);
 }
 
 function createSituationSeed() {
@@ -80,7 +87,7 @@ function createSituationSeed() {
     current: state.currentTrick.map(encodeSituationPlay),
     awaiting: state.awaitingTrickAdvance ? 1 : 0
   };
-  return `situatieseed:${base64UrlEncode(JSON.stringify(payload))}`;
+  return situationCodec.encodeSituationPayload(payload);
 }
 
 function startSituationSeed(seed) {
@@ -114,13 +121,7 @@ function startSituationSeed(seed) {
 }
 
 function parseSituationSeed(seed) {
-  const normalized = normalizeSeed(seed);
-  const prefix = situationSeedPrefixes.find((candidate) => normalized.toLowerCase().startsWith(candidate));
-  if (!prefix) return null;
-  const payload = normalized.slice(prefix.length);
-  const parsed = JSON.parse(base64UrlDecode(payload));
-  if (parsed?.v !== 1) throw new Error("Unsupported situation seed version");
-  return parsed;
+  return situationCodec.parseSituationSeed(seed);
 }
 
 function restoreSituationAuction(auction) {
@@ -343,32 +344,6 @@ function positiveBoardNumber(board) {
 
 function normalizeVulnerability(vulnerability) {
   return ["none", "NS", "EW", "both"].includes(vulnerability) ? vulnerability : null;
-}
-
-function base64UrlEncode(text) {
-  return btoa(utf8BinaryEncode(text)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function base64UrlDecode(payload) {
-  const normalized = String(payload || "").replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
-  return utf8BinaryDecode(atob(padded));
-}
-
-function utf8BinaryEncode(text) {
-  if (typeof TextEncoder === "function") {
-    const bytes = new TextEncoder().encode(text);
-    return Array.from(bytes, (byte) => String.fromCharCode(byte)).join("");
-  }
-  return unescape(encodeURIComponent(text));
-}
-
-function utf8BinaryDecode(binary) {
-  if (typeof TextDecoder === "function") {
-    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
-  }
-  return decodeURIComponent(escape(binary));
 }
 
 function createDealSeed() {

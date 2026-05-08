@@ -219,6 +219,336 @@ test("loads a situation seed with auction and played cards", async ({ page }) =>
   await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
 });
 
+test("restores situation seeds for bidding, pass-out, pre-lead, and doubled auctions", async ({ page }) => {
+  await openFreshApp(page);
+
+  const snapshots = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const bidText = (bid) => {
+      if (!bid) return null;
+      if (bid.type === "Pass") return "P";
+      if (bid.type === "Double") return "X";
+      if (bid.type === "Redouble") return "XX";
+      return `${bid.level}${bid.strain}${bid.redoubled ? "XX" : bid.doubled ? "X" : ""}`;
+    };
+    const callSnapshot = (call) => ({
+      seat: call.seat,
+      bid: bidText(call.bid),
+      stop: Boolean(call.stop),
+      alert: Boolean(call.alert)
+    });
+    const stateSnapshot = () => {
+      const state = app.getState();
+      return {
+        seed: state.dealSeed,
+        board: state.dealNumber,
+        dealer: app.seatAt(state.dealerIndex),
+        vulnerability: state.vulnerability,
+        practiceId: state.practice?.id || null,
+        phase: state.phase,
+        turn: app.seatAt(state.turnIndex),
+        auction: state.auction.map(callSnapshot),
+        contract: bidText(state.contract),
+        declarer: state.declarer,
+        dummy: state.dummy,
+        leader: state.leader,
+        finalScore: state.finalScore ? {
+          passOut: Boolean(state.finalScore.passOut),
+          scoreText: state.finalScore.scoreText,
+          made: state.finalScore.made,
+          defenders: state.finalScore.defenders
+        } : null
+      };
+    };
+    const restoreSnapshot = (situationSeed) => {
+      app.startHand({ seed: "restore-scratch", skipFlow: true });
+      app.getEls().seedInput.value = situationSeed;
+      app.loadSeedFromInput();
+      return stateSnapshot();
+    };
+    const passOutAuction = () => {
+      const state = app.getState();
+      return [0, 1, 2, 3].map((offset) => ({
+        seat: app.seatAt(state.dealerIndex + offset),
+        bid: rules.Pass()
+      }));
+    };
+
+    app.startPracticeHand("response-new-suit-after-1h-001", { skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      auction: [
+        { seat: "North", bid: rules.Bid(1, "H") },
+        { seat: "East", bid: rules.Pass() },
+        { seat: "South", bid: rules.Bid(2, "S"), stop: true, alert: true }
+      ],
+      turnIndex: 3
+    });
+    const bidding = restoreSnapshot(app.createSituationSeed());
+
+    app.startHand({ seed: "situation-passout", skipFlow: true });
+    const dealerIndex = app.getState().dealerIndex;
+    app.setState({
+      phase: "complete",
+      turnIndex: dealerIndex,
+      auction: passOutAuction(),
+      contract: null,
+      declarer: null,
+      dummy: null,
+      leader: null,
+      finalScore: null
+    });
+    const passOut = restoreSnapshot(app.createSituationSeed());
+
+    app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+    app.setState({
+      phase: "playing",
+      auction: [
+        { seat: "South", bid: rules.Bid(1, "H") },
+        { seat: "West", bid: rules.Double() },
+        { seat: "North", bid: rules.Redouble() },
+        { seat: "East", bid: rules.Pass() },
+        { seat: "South", bid: rules.Pass() },
+        { seat: "West", bid: rules.Pass() }
+      ],
+      contract: { level: 1, strain: "H", doubled: true, redoubled: true },
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 3
+    });
+    const preLead = restoreSnapshot(app.createSituationSeed());
+
+    return { bidding, passOut, preLead };
+  });
+
+  expect(snapshots.bidding.practiceId).toBe("response-new-suit-after-1h-001");
+  expect(snapshots.bidding.phase).toBe("bidding");
+  expect(snapshots.bidding.turn).toBe("West");
+  expect(snapshots.bidding.auction).toEqual([
+    { seat: "North", bid: "1H", stop: false, alert: false },
+    { seat: "East", bid: "P", stop: false, alert: false },
+    { seat: "South", bid: "2S", stop: true, alert: true }
+  ]);
+
+  expect(snapshots.passOut.phase).toBe("complete");
+  expect(snapshots.passOut.seed).toBe("situation-passout");
+  expect(snapshots.passOut.contract).toBe(null);
+  expect(snapshots.passOut.finalScore).toMatchObject({
+    passOut: true,
+    scoreText: "Noord/Zuid 0 · Oost/West 0",
+    made: 0,
+    defenders: 0
+  });
+
+  expect(snapshots.preLead.phase).toBe("playing");
+  expect(snapshots.preLead.practiceId).toBe("draw-trumps-001");
+  expect(snapshots.preLead.turn).toBe("West");
+  expect(snapshots.preLead.contract).toBe("1HXX");
+  expect(snapshots.preLead.declarer).toBe("South");
+  expect(snapshots.preLead.dummy).toBe("North");
+  expect(snapshots.preLead.leader).toBe("West");
+  expect(snapshots.preLead.auction.map((call) => call.bid)).toEqual(["1H", "X", "XX", "P", "P", "P"]);
+});
+
+test("restores situation seeds for running, paused, and completed play states", async ({ page }) => {
+  await openFreshApp(page);
+
+  const snapshots = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const playSnapshot = (play) => `${play.seat}:${play.card.id}`;
+    const bidText = (bid) => {
+      if (!bid) return null;
+      return `${bid.level}${bid.strain}${bid.redoubled ? "XX" : bid.doubled ? "X" : ""}`;
+    };
+    const stateSnapshot = () => {
+      const state = app.getState();
+      return {
+        seed: state.dealSeed,
+        phase: state.phase,
+        turn: app.seatAt(state.turnIndex),
+        contract: bidText(state.contract),
+        currentTrick: state.currentTrick.map(playSnapshot),
+        trickHistoryLength: state.trickHistory.length,
+        trickWinners: state.trickHistory.map((trick) => trick.winner),
+        tricks: state.tricks,
+        awaitingTrickAdvance: state.awaitingTrickAdvance,
+        trickAdvanceArmed: state.trickAdvanceArmed,
+        pendingTrickWinner: state.pendingTrickWinner,
+        finalScore: state.finalScore ? {
+          scoreText: state.finalScore.scoreText,
+          made: state.finalScore.made,
+          defenders: state.finalScore.defenders
+        } : null,
+        statusKey: state.status?.key || null
+      };
+    };
+    const restoreSnapshot = (situationSeed) => {
+      app.startHand({ seed: "restore-scratch", skipFlow: true });
+      app.getEls().seedInput.value = situationSeed;
+      app.loadSeedFromInput();
+      return stateSnapshot();
+    };
+    const startKnownContract = () => {
+      app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+      app.setState({
+        phase: "playing",
+        auction: [
+          { seat: "South", bid: rules.Bid(4, "S") },
+          { seat: "West", bid: rules.Pass() },
+          { seat: "North", bid: rules.Pass() },
+          { seat: "East", bid: rules.Pass() }
+        ],
+        contract: rules.Bid(4, "S"),
+        declarer: "South",
+        dummy: "North",
+        leader: "West",
+        turnIndex: 3
+      });
+    };
+    const playOneCardWithoutTimers = () => {
+      const state = app.getState();
+      const seat = app.seatAt(state.turnIndex);
+      const card = app.chooseCard(seat) || app.legalCards(seat)[0];
+      const patch = window.BridgeStateTransitions.applyCardPlayTransition(state, { seat, card });
+      app.setState(patch);
+      if (app.getState().currentTrick.length < 4) {
+        app.setState({ turnIndex: (state.turnIndex + 1) % 4 });
+      }
+      return `${seat}:${card.id}`;
+    };
+
+    startKnownContract();
+    const runningPlays = [playOneCardWithoutTimers(), playOneCardWithoutTimers(), playOneCardWithoutTimers()];
+    const running = restoreSnapshot(app.createSituationSeed());
+
+    startKnownContract();
+    const pausedPlays = [
+      playOneCardWithoutTimers(),
+      playOneCardWithoutTimers(),
+      playOneCardWithoutTimers(),
+      playOneCardWithoutTimers()
+    ];
+    const winner = rules.currentWinningPlay(app.getState().currentTrick, "S").seat;
+    app.setState({
+      awaitingTrickAdvance: true,
+      trickAdvanceArmed: true,
+      pendingTrickWinner: winner
+    });
+    const paused = restoreSnapshot(app.createSituationSeed());
+
+    startKnownContract();
+    app.autoCompletePlay();
+    const completedSeed = app.createSituationSeed();
+    const completedBefore = stateSnapshot();
+    const completed = restoreSnapshot(completedSeed);
+
+    return {
+      runningPlays,
+      running,
+      pausedPlays,
+      pausedWinner: winner,
+      paused,
+      completedBefore,
+      completed
+    };
+  });
+
+  expect(snapshots.running.phase).toBe("playing");
+  expect(snapshots.running.currentTrick).toEqual(snapshots.runningPlays);
+  expect(snapshots.running.turn).toBe("South");
+  expect(snapshots.running.trickHistoryLength).toBe(0);
+  expect(snapshots.running.awaitingTrickAdvance).toBe(false);
+
+  expect(snapshots.paused.phase).toBe("playing");
+  expect(snapshots.paused.currentTrick).toEqual(snapshots.pausedPlays);
+  expect(snapshots.paused.awaitingTrickAdvance).toBe(true);
+  expect(snapshots.paused.trickAdvanceArmed).toBe(true);
+  expect(snapshots.paused.pendingTrickWinner).toBe(snapshots.pausedWinner);
+  expect(snapshots.paused.statusKey).toBe("winsTrick");
+
+  expect(snapshots.completed.phase).toBe("complete");
+  expect(snapshots.completed.contract).toBe("4S");
+  expect(snapshots.completed.currentTrick).toEqual([]);
+  expect(snapshots.completed.trickHistoryLength).toBe(13);
+  expect(snapshots.completed.trickWinners).toEqual(snapshots.completedBefore.trickWinners);
+  expect(snapshots.completed.tricks).toEqual(snapshots.completedBefore.tricks);
+  expect(snapshots.completed.finalScore).toEqual(snapshots.completedBefore.finalScore);
+  expect(snapshots.completed.statusKey).toBe("contractResult");
+});
+
+test("rejects corrupt and out-of-order situation seeds without replacing the current hand", async ({ page }) => {
+  await openFreshApp(page);
+
+  const result = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const loadSeed = (seed) => {
+      app.getEls().seedInput.value = seed;
+      app.loadSeedFromInput();
+      return app.getState();
+    };
+    const decodeSituationSeed = (seed) => {
+      const payload = seed.slice(seed.indexOf(":") + 1).replace(/-/g, "+").replace(/_/g, "/");
+      const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
+      return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), (char) => char.charCodeAt(0))));
+    };
+    const encodeSituationSeed = (payload) => {
+      const json = JSON.stringify(payload);
+      const binary = Array.from(new TextEncoder().encode(json), (byte) => String.fromCharCode(byte)).join("");
+      return `situatieseed:${btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
+    };
+
+    app.startHand({ seed: "valid-before-invalid", skipFlow: true });
+    const before = app.getState();
+
+    const corrupt = loadSeed("situatieseed:not-valid-json");
+    const corruptSnapshot = {
+      seed: corrupt.dealSeed,
+      phase: corrupt.phase,
+      message: corrupt.seedMessage
+    };
+
+    app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      auction: [
+        { seat: "South", bid: rules.Bid(1, "S") },
+        { seat: "West", bid: rules.Pass() }
+      ],
+      turnIndex: 0
+    });
+    const payload = decodeSituationSeed(app.createSituationSeed());
+    payload.auction[1].s = "N";
+
+    app.startHand({ seed: "valid-before-out-of-order", skipFlow: true });
+    const outOfOrderBefore = app.getState();
+    const outOfOrder = loadSeed(encodeSituationSeed(payload));
+
+    return {
+      beforeSeed: before.dealSeed,
+      corrupt: corruptSnapshot,
+      outOfOrderBeforeSeed: outOfOrderBefore.dealSeed,
+      outOfOrder: {
+        seed: outOfOrder.dealSeed,
+        phase: outOfOrder.phase,
+        message: outOfOrder.seedMessage
+      }
+    };
+  });
+
+  expect(result.corrupt.seed).toBe(result.beforeSeed);
+  expect(result.corrupt.phase).toBe("bidding");
+  expect(result.corrupt.message).toBe("Deze situatieseed kon niet worden geladen.");
+
+  expect(result.outOfOrder.seed).toBe(result.outOfOrderBeforeSeed);
+  expect(result.outOfOrder.phase).toBe("bidding");
+  expect(result.outOfOrder.message).toBe("Deze situatieseed kon niet worden geladen.");
+  await expect(page.locator("#seed-description")).toContainText("Deze situatieseed kon niet worden geladen.");
+});
+
 test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await openFreshApp(page);
 
@@ -1004,6 +1334,7 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await expect(page.locator(".setup-controls > #open-feedback")).toBeVisible();
   await page.locator(".setup-controls > #open-feedback").click();
   await expect(page.locator("#feedback-dialog")).toBeVisible();
+  await expect(page.locator("#feedback-include-context")).toHaveCount(0);
   await page.locator("#feedback-message").fill("Smoke test report");
 
   await page.locator("#copy-feedback").click();
@@ -1011,9 +1342,10 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await expect(page.locator("#feedback-state")).toContainText("Feedbackrapport");
   const report = await page.evaluate(() => navigator.clipboard.readText());
   expect(report).toContain("Smoke test report");
-  expect(report).toContain("## Handcontext");
   expect(report).toContain("Situatieseed: situatieseed:");
-  expect(report).toContain("## Slagenoverzicht");
+  expect(report).not.toContain("## Handcontext");
+  expect(report).not.toContain("## Slagenoverzicht");
+  expect(report).not.toContain("Browser:");
 
   await page.evaluate(() => {
     window.__feedbackMailUrl = "";
@@ -1026,4 +1358,8 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   const mailUrl = await page.evaluate(() => window.__feedbackMailUrl);
   expect(mailUrl).toContain("mailto:casper.peters@gmail.com");
   expect(mailUrl).toContain("Smoke%20test%20report");
+  const decodedMailUrl = decodeURIComponent(mailUrl);
+  expect(decodedMailUrl).toContain("Situatieseed: situatieseed:");
+  expect(decodedMailUrl).not.toContain("## Handcontext");
+  expect(decodedMailUrl).not.toContain("## Slagenoverzicht");
 });

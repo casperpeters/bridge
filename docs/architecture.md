@@ -1,9 +1,9 @@
-# Architecture proposal
+# Architectuur
 
-Status: voorstel  
+Status: actueel
 Scope: `bridge-app`
 
-Dit document beschrijft de beoogde architectuur van Bridgetafel: een build-vrije, statische bridge-leerapp waarin spelregels, biedafspraken, UI-flow en uitlegpaden gescheiden blijven zodat de app stap voor stap kan groeien zonder een grote rewrite.
+Dit document beschrijft de actuele architectuur en gewenste groeirichting van Bridgetafel: een build-vrije, statische bridge-leerapp waarin spelregels, biedafspraken, UI-flow en uitlegpaden gescheiden blijven zodat de app stap voor stap kan groeien zonder een grote rewrite.
 
 ## Doelen
 
@@ -37,11 +37,11 @@ rules/
   +-- CommonJS voor tests, browser globals voor appgebruik
 
 scripts/
-  +-- browser orchestration, UI state, rendering en user actions
+  +-- browser orchestration, UI state, rendering, copy en user actions
   +-- roept rules/ aan en rendert resultaten
 
 practice-hands/
-  +-- reproduceerbare oefensituaties met leerdoel en metadata
+  +-- index/aggregator en catalogus met reproduceerbare oefensituaties
 
 tests/
   +-- unit tests voor regels en flows
@@ -128,15 +128,19 @@ Doel:
 
 Aanbevolen eigenaarschap:
 
+- `rules/card-play.js` - compatibele orchestrator: bepaalt de kaartkeuzevolgorde in `chooseCardPlay`, maar houdt geen tweede handmatige helperexportlijst bij. De entrypoint compose't exports uit de card-play deelmodules automatisch en voegt `chooseCardPlay` toe.
 - `rules/play-plan/common.js` - gedeelde tellingen, winners/losers en helpers.
 - `rules/play-plan/notrump.js` - sans-atout plannen.
 - `rules/play-plan/suit-contract.js` - kleurcontractplannen.
+- `rules/card-play/common.js` - gedeelde card-play context en result helpers.
 - `rules/card-play/opening-leads.js` - uitkomsten.
 - `rules/card-play/play-plan-following.js` - kaartkeuzes die expliciet het plan volgen.
 - `rules/card-play/declarer-play.js` - leider-specifieke heuristiek.
 - `rules/card-play/defense.js` - basisverdediging.
 
 Nieuwe kaartkeuzes moeten aangeven of ze zeker genoeg zijn voor feedback. Onzekere heuristiek mag als suggestie verschijnen, maar niet als harde lescorrectie.
+
+Nieuwe card-play helpers horen in de passende deelmodule. Als ze alleen door tests, uitleg of tooling nodig zijn, exporteer ze daar; `rules/card-play.js` neemt ze automatisch mee via compositie. Alleen helpers die `chooseCardPlay` zelf aanroept hoeven in de orchestrator lokaal te worden gedestructureerd.
 
 ### 4. Browser app layer
 
@@ -156,17 +160,29 @@ Verantwoordelijk voor:
 Huidige kern:
 
 - `scripts/app.js` - bootstrap, gedeelde state, DOM refs, shared helpers en top-level orchestration.
-- `scripts/auction-flow.js` - veilingflow en biedbeslissingen.
-- `scripts/play-flow.js` - kaartspelflow, legaliteit, automatic play en slagvoortgang.
-- `scripts/state-transitions.js` - pure state-transition helpers voor kernacties.
-- `scripts/render-*.js` - rendering per UI-deel.
-- `scripts/text-nl.js` - Nederlandse copy.
-- `scripts/settings.js` - localStorage settings.
-- `scripts/seed.js` - repeat-code, situation seed en herstel.
-- `scripts/lessons.js` - compacte lescatalogus.
-- `scripts/glossary.js` - woordenlijst.
+- `scripts/flow/` - veilingflow, kaartspelflow, legaliteit, automatic play en slagvoortgang.
+- `scripts/render/` - rendering per UI-deel, zichtbare speelplantekst en scoretabel-UI.
+- `scripts/state/` - pure state-transitions, localStorage settings, `situatieseed:` codec, repeat-code, situation seed en herstel.
+- `scripts/learning/` - lessen, woordenlijst en bieduitleg voor AI-suggesties/review.
+- `scripts/copy/text-nl.js` - Nederlandse UI-copy.
 
-Richtlijn: `scripts/app.js` mag bootstrap en gedeelde infrastructuur blijven, maar nieuwe UI-flow hoort waar mogelijk in aparte scripts. Als een flow groeit, eerst extracten naar een gerichte module in plaats van `app.js` groter maken.
+Richtlijn: `scripts/app.js` mag bootstrap en gedeelde infrastructuur blijven, maar nieuwe UI-flow hoort waar mogelijk in de passende submap. Als een flow groeit, eerst extracten naar een gerichte module in plaats van `app.js` groter maken.
+
+#### Situatieseed-herstelcontract
+
+Een gewone herhaalcode herstelt alleen de kaartverdeling of een oefenhand. Een `situatieseed:` herstelt een volledig reproduceerbare spelsituatie bovenop die basis. Het minimale contract is dat laden van een situatieseed exact dezelfde engine-toestand oplevert voor:
+
+- `dealSeed`, bordnummer, deler en kwetsbaarheid;
+- oefenhand-context wanneer de seed naar een `practice-hands/` scenario verwijst;
+- fase: bieden, spelen of complete hand;
+- actuele beurt, inclusief de speler die na herstel aan zet is;
+- volledig biedverloop, inclusief passen, contractbiedingen, doubletten, redoubletten, Stop en Alert;
+- afgeleid contract, leider, dummy en uitkomsthand zodra de veiling klaar is;
+- alle afgeronde slagen, lopende slag, slagentelling en winnaar per afgeronde slag;
+- de pauzestand na een complete maar nog niet doorgeschoven slag;
+- eindscore en resultaat wanneer de situatie een uitgespeelde of rondgepaste hand beschrijft.
+
+Herstel mag afgeleide uitleg opnieuw berekenen in plaats van letterlijk opslaan: bied- en speelverklaringen, speelplan, AI-suggesties, statuscopy en reviewtekst moeten na herstel opnieuw uit regels en state kunnen ontstaan. Gebruikersinstellingen zoals developermodus, AI-suggesties en speelgeschiedenis horen niet in de situatieseed; ze blijven lokale voorkeuren. Als biedsystemen of persoonlijke conventies later instelbaar worden, moet de situatieseed ook het actieve conventieprofiel en de relevante afspraak-overrides vastleggen, zodat oude feedback reproduceerbaar blijft.
 
 ### 5. Practice-hands layer
 
@@ -174,7 +190,8 @@ Locatie: `practice-hands/`
 
 Doel:
 
-- Reproduceerbare beginner-, test- en regressiesituaties.
+- `practice-hands/index.js` blijft de publieke aggregator.
+- `practice-hands/catalog/` bevat reproduceerbare beginner-, test- en regressiesituaties.
 - Elk oefenspel heeft een kort doel en een stabiele id.
 - Oefenhanden verbinden productleren met testdekking.
 
@@ -247,10 +264,11 @@ Afspraken:
 
 Coverage-contract:
 
-- `tests/unit/rule-copy-coverage.test.js` haalt belangrijke `ruleId`s uit bestaande unit- en browsertests.
+- `tests/unit/rule-copy-coverage.test.js` draait mee met `npm run test:unit` via `tests/run-tests.js`.
+- De test haalt belangrijke `ruleId`s uit bestaande unit- en browsertests.
 - `fiveCardHigh.*` regels moeten Nederlandse bieduitleg hebben in `rules/bidding/systems/five-card-high/explanations-nl.js`.
-- Kaartspelregels moeten Nederlandse speeluitleg hebben in `scripts/play-flow.js`.
-- `playPlan.*` regels mogen hun copy hebben in `scripts/play-flow.js` of in de zichtbare speelplantekst van `scripts/play-plan.js`.
+- Kaartspelregels moeten Nederlandse speeluitleg hebben in `scripts/flow/play-flow.js`.
+- `playPlan.*` regels mogen hun copy hebben in `scripts/flow/play-flow.js` of in de zichtbare speelplantekst van `scripts/render/play-plan.js`.
 - Voeg bij nieuwe engine-regels dus altijd samen toe: regel/heuristiek, fixture met verwachte `ruleId`, en het bijbehorende uitlegpad.
 
 ## Teststrategie

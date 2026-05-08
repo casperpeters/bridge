@@ -379,22 +379,7 @@ function reviewTrickLegend() {
   return legend;
 }
 
-function formatHand(hand) {
-  return handSuitOrder
-    .map((suit) => `${suitSymbols[suit]} ${formatSuitHolding(hand, suit)}`)
-    .join("  ");
-}
-
-function formatSuitHolding(hand, suit) {
-  const cards = hand
-    .filter((card) => card.suit === suit)
-    .sort((a, b) => rankOrder.indexOf(b.rank) - rankOrder.indexOf(a.rank))
-    .map((card) => rankLabel[card.rank] || card.rank);
-  return cards.length ? cards.join("") : "-";
-}
-
 const feedbackMailRecipient = "casper.peters@gmail.com";
-const mailtoUrlLengthLimit = 1800;
 
 async function copyFeedbackReport() {
   try {
@@ -425,10 +410,7 @@ function refreshFeedbackMailLink() {
 
 function buildFeedbackMailtoUrl() {
   const subject = `Bridgetafel feedback - bord ${state.dealNumber || "-"} - ${phaseName(state.phase)}`;
-  const fullReport = buildFeedbackReport();
-  const fullUrl = mailtoUrl(subject, fullReport);
-  if (fullUrl.length <= mailtoUrlLengthLimit) return fullUrl;
-  return mailtoUrl(subject, buildCompactFeedbackReport());
+  return mailtoUrl(subject, buildFeedbackReport());
 }
 
 function mailtoUrl(subject, body) {
@@ -452,26 +434,6 @@ function buildFeedbackReport() {
   const feedbackTypes = t("feedbackTypes");
   const type = feedbackTypes[els.feedbackType.value] || els.feedbackType.value;
   const message = els.feedbackMessage.value.trim() || t("feedbackNoMessage");
-  const lines = [
-    "## Feedback",
-    "",
-    `Type: ${type}`,
-    "Bericht:",
-    message,
-    ""
-  ];
-
-  if (els.feedbackIncludeContext.checked) {
-    lines.push(...feedbackContextLines());
-  }
-
-  return lines.join("\n").trimEnd();
-}
-
-function buildCompactFeedbackReport() {
-  const feedbackTypes = t("feedbackTypes");
-  const type = feedbackTypes[els.feedbackType.value] || els.feedbackType.value;
-  const message = els.feedbackMessage.value.trim() || t("feedbackNoMessage");
   return [
     "## Feedback",
     "",
@@ -479,142 +441,8 @@ function buildCompactFeedbackReport() {
     "Bericht:",
     message,
     "",
-    "## Handcontext",
-    "",
-    `Seed: ${state.dealSeed || t("none")}`,
-    `${t("feedbackSituationSeed")}: ${createSituationSeed() || t("none")}`,
-    `${t("board")}: ${state.dealNumber || t("none")}`,
-    ...feedbackPracticeContextLines(),
-    `${t("dealer")}: ${seatName(seatAt(state.dealerIndex))}`,
-    `${t("vulnerability")}: ${vulnerabilityName()}`,
-    `${t("feedbackPhase")}: ${phaseName(state.phase)}`,
-    `${t("feedbackCurrentTurn")}: ${state.phase === "complete" ? t("none") : seatName(seatAt(state.turnIndex))}`,
-    `${t("finalContract")}: ${feedbackContractText()}`,
-    `${t("result")}: ${feedbackResultText()}`,
-    `${t("bridgeScore")}: ${state.finalScore?.scoreText || t("none")}`,
-    `${t("auction")}: ${feedbackAuctionInline()}`,
-    `${t("trickOverview")}: ${feedbackTrickSummary()}`,
-    "",
-    t("feedbackMailContextTooLong")
+    `${t("feedbackSituationSeed")}: ${createSituationSeed() || t("none")}`
   ].join("\n").trimEnd();
-}
-
-function feedbackContextLines() {
-  const lines = [
-    "## Handcontext",
-    "",
-    `Seed: ${state.dealSeed || t("none")}`,
-    `${t("feedbackSituationSeed")}: ${createSituationSeed() || t("none")}`,
-    `${t("board")}: ${state.dealNumber || t("none")}`,
-    ...feedbackPracticeContextLines(),
-    `${t("dealer")}: ${seatName(seatAt(state.dealerIndex))}`,
-    `${t("vulnerability")}: ${vulnerabilityName()}`,
-    `${t("feedbackPhase")}: ${phaseName(state.phase)}`,
-    `${t("feedbackCurrentTurn")}: ${state.phase === "complete" ? t("none") : seatName(seatAt(state.turnIndex))}`,
-    `${t("finalContract")}: ${feedbackContractText()}`,
-    `${t("declarer")}: ${state.declarer ? seatName(state.declarer) : t("none")}`,
-    `${t("dummy")}: ${state.dummy ? seatName(state.dummy) : t("none")}`,
-    `${t("result")}: ${feedbackResultText()}`,
-    `${t("bridgeScore")}: ${state.finalScore?.scoreText || t("none")}`,
-    "",
-    `## ${t("auction")}`,
-    "",
-    ...feedbackAuctionLines(),
-    "",
-    `## ${t("trickOverview")}`,
-    "",
-    ...feedbackTrickLines(),
-    "",
-    `## ${t("feedbackCurrentTrick")}`,
-    "",
-    feedbackCurrentTrickLine(),
-    "",
-    `## ${t("feedbackOriginalHands")}`,
-    "",
-    ...feedbackHandLines(),
-    "",
-    `## ${t("feedbackSettings")}`,
-    "",
-    `AI-suggesties: ${onOff(state.guidanceMode)}`,
-    `Developermodus: ${onOff(state.developerMode)}`,
-    `Speelgeschiedenis: ${onOff(state.showPlayHistory)}`,
-    `Browser: ${navigator.userAgent || t("none")}`
-  ];
-
-  if (state.playPlan) {
-    lines.push("", `## ${t("playPlan")}`, "", ...feedbackPlayPlanLines());
-  }
-
-  return lines;
-}
-
-function feedbackPracticeContextLines() {
-  if (!state.practice) return [];
-  const lines = [`Oefenhand: ${state.practice.title} (${state.practice.id})`];
-  if (state.practice.testGoal) lines.push(`Testdoel: ${state.practice.testGoal}`);
-  return lines;
-}
-
-function feedbackContractText() {
-  if (state.finalScore?.passOut) return t("passedOut");
-  if (state.contract && state.declarer) return `${formatBid(state.contract)} ${t("by")} ${seatName(state.declarer)}`;
-  if (state.contract) return formatBid(state.contract);
-  return t("none");
-}
-
-function feedbackResultText() {
-  if (state.finalScore?.passOut) return t("passOutResult");
-  if (!state.finalScore || !state.contract) return t("none");
-  const needed = state.contract.level + 6;
-  return state.finalScore.made >= needed
-    ? t("made", { over: state.finalScore.made - needed })
-    : t("down", { under: needed - state.finalScore.made });
-}
-
-function feedbackAuctionLines() {
-  if (!state.auction.length) return [`- ${t("none")}`];
-  return state.auction.map((call) => {
-    const markers = [];
-    if (call.stop) markers.push(t("stop"));
-    if (call.alert) markers.push(t("alert"));
-    const markerText = markers.length ? ` (${markers.join(", ")})` : "";
-    return `- ${seatName(call.seat)}: ${formatCall(call.bid)}${markerText}`;
-  });
-}
-
-function feedbackTrickLines() {
-  if (!state.trickHistory.length) return [`- ${t("none")}`];
-  return state.trickHistory.map((trick) => {
-    const cards = trick.cards.map((play) => `${seatName(play.seat)} ${cardText(play.card)}`).join(", ");
-    return `- ${t("trick")} ${trick.number}: ${cards}. ${t("feedbackWinner")}: ${seatName(trick.winner)}.`;
-  });
-}
-
-function feedbackCurrentTrickLine() {
-  if (!state.currentTrick.length) return `- ${t("none")}`;
-  return `- ${state.currentTrick.map((play) => `${seatName(play.seat)} ${cardText(play.card)}`).join(", ")}`;
-}
-
-function feedbackAuctionInline() {
-  if (!state.auction.length) return t("none");
-  return state.auction.map((call) => `${seatName(call.seat)} ${formatCall(call.bid)}`).join(" | ");
-}
-
-function feedbackTrickSummary() {
-  if (!state.trickHistory.length) return t("none");
-  return state.trickHistory.map((trick) => `${trick.number}:${seatName(trick.winner)}`).join(", ");
-}
-
-function feedbackHandLines() {
-  return seats.map((seat) => `- ${seatName(seat)}: ${formatHand(state.originalHands[seat] || [])}`);
-}
-
-function feedbackPlayPlanLines() {
-  const lines = [`${t("playPlanGoal")}: ${playPlanGoalText(state.playPlan)}`];
-  playPlanMetricTexts(state.playPlan).forEach((metric) => lines.push(`- ${metric}`));
-  (state.playPlan.priorities || []).forEach((priority) => lines.push(`- ${playPlanPriorityText(priority)}`));
-  (state.playPlan.warnings || []).forEach((warning) => lines.push(`- Let op: ${playPlanWarningText(warning)}`));
-  return lines;
 }
 
 function phaseName(phase) {
@@ -624,8 +452,4 @@ function phaseName(phase) {
     playing: "Spelen",
     complete: t("review")
   }[phase] || phase;
-}
-
-function onOff(value) {
-  return value ? "aan" : "uit";
 }

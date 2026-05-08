@@ -1,6 +1,6 @@
 (function initBridgeLessons(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
-  const practiceHands = isCommonJs ? require("../practice-hands/index.js") : root.PracticeHands;
+  const practiceHands = isCommonJs ? require("../../practice-hands/index.js") : root.PracticeHands;
   const api = factory(practiceHands);
   if (isCommonJs) module.exports = api;
   root.BridgeLessons = api;

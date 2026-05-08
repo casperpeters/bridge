@@ -1,5 +1,5 @@
 const { assert, test } = require("./harness.js");
-const transitions = require("../../scripts/state-transitions.js");
+const transitions = require("../../scripts/state/state-transitions.js");
 
 function card(id, suit = "S", rank = "A") {
   return { id, suit, rank };

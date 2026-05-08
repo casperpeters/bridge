@@ -9,7 +9,7 @@ function readRepoFile(relativePath) {
 }
 
 test("card-play explanations do not expose raw engine reason fallbacks", () => {
-  const playFlow = readRepoFile("scripts/play-flow.js");
+  const playFlow = readRepoFile("scripts/flow/play-flow.js");
 
   assert.doesNotMatch(playFlow, /return\s+result\.reason/);
 });
@@ -23,7 +23,7 @@ test("play-plan finesse reasons used by AI card suggestions are Dutch", () => {
 });
 
 test("notrump opening-lead explanation covers refined suit-selection reasons", () => {
-  const playFlow = readRepoFile("scripts/play-flow.js");
+  const playFlow = readRepoFile("scripts/flow/play-flow.js");
 
   assert.match(playFlow, /partnerSuitAvoidSingleton/);
   assert.match(playFlow, /Partners kleur/);

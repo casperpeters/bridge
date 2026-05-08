@@ -6,7 +6,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Basisgame blijft rustig: zo weinig mogelijk tekstuele uitleg tijdens normaal spelen.
 - Uitgebreide uitleg hoort in developermodus, AI-suggesties, review, woordenlijst of toekomstige lesmodus.
-- Houd UI-wijzigingen binnen de bestaande scripts onder `scripts/`; `scripts/app.js` blijft vooral bootstrap en gedeelde helpers.
+- Houd UI-wijzigingen binnen de passende `scripts/`-submap; `scripts/app.js` blijft vooral bootstrap en gedeelde helpers.
 - Gebruik altijd de sterkste geimplementeerde heuristiek. Geen keuzemenu voor zwakkere AI-sterktes.
 - Maak claims in de UI niet sterker dan de engine kan waarmaken.
 - Voeg fixture- of smoketests toe bij nieuwe bied-, speel- of scorelogica.
@@ -71,7 +71,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Architectuur en onderhoudbaarheid
 
-- Splits `scripts/app.js` geleidelijk op zodra nieuwe UI-flow wordt toegevoegd: denk aan `state`, `dom`, `render-all`, `game-actions`, `feedback-flow` en gedeelde formatting/helpers. Geen grote rewrite; houd tijdelijk compatibele globals waar dat migratie veilig maakt.
+- Splits `scripts/app.js` geleidelijk op zodra nieuwe UI-flow wordt toegevoegd: gebruik de bestaande submappen voor flow, render, state, learning en copy. Geen grote rewrite; houd tijdelijk compatibele globals waar dat migratie veilig maakt.
 - Introduceer pure state-transitions voor kernacties zoals hand starten, bod toepassen, veiling afronden, kaart spelen en slag doorschuiven. UI-code roept transitions aan en rendert daarna opnieuw.
 - Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` heeft nu losse modules voor uitkomsten, speelplan volgen, leiderspel en basisverdediging. Splits Vijfkaart-Hoog rebids/competitive later naar auction families.
 - Houd de gesplitste `rules/play-plan/` modules per domein klein: gedeelde helpers in `common`, sans-atout in `notrump`, kleurcontract in `suit-contract`.

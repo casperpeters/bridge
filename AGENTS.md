@@ -5,7 +5,7 @@ Projectcontext voor AI-agenten die aan deze repo werken.
 ## Doel
 
 `bridge-app` is een kleine, build-vrije bridge-app om bridge te leren en te oefenen. De speler zit Zuid, biedt met een eenvoudige NBB/Barry's Vijfkaart Hoog AI-partner/tegenstanders, speelt de hand uit en kan daarna bieding, slagen en score reviewen.
-Voor nu wordt de bied- speel- en speelplanuitleg voornamlijk gebruikt om te controleren of de speelengine correct is, en waarom hij wat doet. Op de lange termijn moet dit gebruikt worden als feedback voor de speler wanneer hij een fout maakt. Zo kan hij daarvan leren. 
+Voor nu wordt de bied- speel- en speelplanuitleg voornamlijk gebruikt om te controleren of de speelengine correct is, en waarom hij wat doet. Op de lange termijn moet dit gebruikt worden als feedback voor de speler wanneer hij een fout maakt. Zo kan hij daarvan leren.
 
 Voor nu gebruikt de app de NBB/Barry's Vijfkaart Hoog- en `Start met Bridge 1 & 2`-cursusconventies als basis. Op lange termijn moet de app meerdere conventies kunnen ondersteunen en biedafspraken kunnen personaliseren per gebruiker of oefenset. De code-structuur moet daar nu al rekening mee houden: houd biedregels, conventiebetekenissen en UI-copy zoveel mogelijk modulair en voorkom hardcoded aannames die personalisatie later blokkeren.
 
@@ -32,13 +32,24 @@ Beginners moeten zonder veel uitleg kunnen zien:
 
 ## Voorkeursworkflow
 
-1. Lees eerst `README.md`, `TODO.md` en dit bestand.
-2. Inspecteer relevante code voordat je een plan of wijziging maakt.
-3. Maak bij niet-triviale taken een kort plan: inspectie, wijziging, tests, TODO/context update.
-4. Pas kleine, gerichte wijzigingen toe.
-5. Draai de kleinst zinvolle testset.
-6. Werk `TODO.md` bij als een roadmapitem is afgerond of aangescherpt.
-7. Sluit af met: gewijzigde bestanden, tests/resultaat, en de logisch volgende stap.
+1. Start altijd met:
+   - `README.md`
+   - `TODO.md`
+   - `AGENTS.md`
+   - `docs/architecture.md`
+   - `git status --short`
+2. Bepaal het taaktype: simpele vraag of commandotaak, bugfix, biedregel, speelregel, UI/UX-flow, test/refactor of review.
+3. Inspecteer gericht met `rg` en relevante bestanden. Lees niet breder dan nodig.
+4. Bij bugs: probeer eerst het probleem te reproduceren of maak een kleine falende test/fixture.
+5. Bij niet-triviale taken: maak een kort plan met inspectie, wijziging, tests, acceptatiecriterium en eventuele `TODO.md`-update.
+6. Pas kleine, gerichte wijzigingen toe.
+7. Bij bied- of speelgedrag: update regels, uitlegpad en tests/fixtures samen.
+8. Bij UI-wijzigingen: controleer desktop en mobiel waar relevant, houd normale gameplay compact en plaats uitgebreide uitleg alleen in developer mode, AI-suggesties, review of lesmodus.
+9. Draai de kleinst zinvolle testset: unit tests voor regels/logica, browser smoke voor UI-flow, volledige testset alleen bij gedeelde of risicovolle wijzigingen.
+10. Werk `TODO.md` alleen bij als een roadmapitem is afgerond, vervallen of concreter geworden.
+11. Sluit af met: gewijzigde bestanden, tests/resultaat, eventuele risico's en de logisch volgende stap.
+
+Gebruik `docs/ai-prompts.md` als promptbibliotheek wanneer een taakomschrijving nog te breed of vaag is, of wanneer je een herbruikbaar startsjabloon nodig hebt voor bugfixes, biedregels, speelregels, UI-flow, refactors, reviews of oefenhanden.
 
 ## Testcommando's
 
@@ -97,30 +108,9 @@ Beschouw `video/out/` als gegenereerde output.
 
 ## Architectuur
 
-De app heeft geen build step. `index.html` laadt plain browser scripts in dependency order.
+Zie `docs/architecture.md` voor de actuele architectuur, scriptvolgorde, module-indeling, uitlegpaden en belangrijke codepaden.
 
-Belangrijke plekken:
-
-- `index.html` - DOM-structuur en scriptvolgorde.
-- `styles.css` - layout, responsive gedrag en visuele states.
-- `scripts/app.js` - bootstrap, gedeelde state, DOM refs, helpers en top-level rendering.
-- `scripts/text-nl.js` - Nederlandse UI-copy.
-- `scripts/settings.js` - opgeslagen instellingen.
-- `scripts/seed.js` - handseed laden/kopieren en seed-UI.
-- `scripts/bid-explanations.js` - bieduitleg-orchestratie voor AI-suggesties en developermodus.
-- `scripts/render-hands.js` - kaarten en handen renderen.
-- `scripts/render-auction.js` - biedlog en biedcontrols.
-- `scripts/render-review.js` - slagenoverzicht, speeluitleg en handreview.
-- `scripts/play-plan.js` - zichtbaar speelplan en tekst daarover.
-- `scripts/auction-flow.js` - biedverloop en biedbeslissingen.
-- `scripts/play-flow.js` - kaartspel, automatisch spel, legaliteit en slagvoortgang.
-- `rules/play-plan.js` - compatibele ingang/aggregator voor speelplanlogica.
-- `rules/play-plan/` - gesplitste speelplanmodules: gedeelde helpers, sans-atout en kleurcontract.
-- `rules/card-play.js` - compatibele ingang/orchestrator voor kaartkeuzes.
-- `rules/card-play/` - gesplitste kaartspelmodules: gedeelde helpers, uitkomsten en basisverdediging.
-- `rules/bidding/systems/five-card-high/explanations-nl.js` - Nederlandse uitlegtekst gekoppeld aan het huidige Vijfkaart-Hoog-profiel.
-- `rules/` - testbare bridge-regels, scoring, biedheuristiek, kaartspel en speelplanlogica.
-- `tests/` - unit tests en Playwright-smoketests.
+Houd architectuurinformatie daar bij. Vermijd dubbele of verouderde modulelijsten in dit bestand.
 
 ## UI- en uitlegafspraken
 

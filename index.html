@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bridgetafel</title>
-    <link rel="icon" type="image/png" href="logo.png" />
+    <link rel="icon" type="image/png" href="assets/branding/logo.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <section class="topbar" aria-label="Spelinstellingen">
         <div class="brand-lockup">
-          <img class="app-logo" src="logo.png" alt="" aria-hidden="true" />
+          <img class="app-logo" src="assets/branding/logo.png" alt="" aria-hidden="true" />
           <div class="brand-copy">
             <p id="app-title" class="eyebrow">Bridgetafel</p>
             <h1 id="app-heading">Speel Vijfkaart Hoog met een AI-partner</h1>
@@ -291,10 +291,6 @@
           <label id="feedback-message-label" for="feedback-message">Bericht van tester</label>
           <textarea id="feedback-message" rows="4" spellcheck="true"></textarea>
         </div>
-        <label for="feedback-include-context" class="developer-toggle feedback-context-toggle">
-          <input id="feedback-include-context" type="checkbox" checked />
-          <span id="feedback-context-label">Handgegevens toevoegen</span>
-        </label>
         <div class="feedback-actions">
           <button id="copy-feedback" type="button">Kopieer feedback</button>
           <button id="mail-feedback" type="button">Mail feedback</button>
@@ -330,28 +326,29 @@
     <script src="rules/card-play/declarer-play.js"></script>
     <script src="rules/card-play.js"></script>
     <script src="bridge-rules.js"></script>
-    <script src="practice-hands/five-card-high-openings.js"></script>
-    <script src="practice-hands/notrump-responses.js"></script>
-    <script src="practice-hands/bidding-basic.js"></script>
-    <script src="practice-hands/play-plan-basic.js"></script>
-    <script src="practice-hands/defense-basic.js"></script>
-    <script src="practice-hands/scoring-basic.js"></script>
+    <script src="practice-hands/catalog/five-card-high-openings.js"></script>
+    <script src="practice-hands/catalog/notrump-responses.js"></script>
+    <script src="practice-hands/catalog/bidding-basic.js"></script>
+    <script src="practice-hands/catalog/play-plan-basic.js"></script>
+    <script src="practice-hands/catalog/defense-basic.js"></script>
+    <script src="practice-hands/catalog/scoring-basic.js"></script>
     <script src="practice-hands/index.js"></script>
-    <script src="scripts/text-nl.js"></script>
+    <script src="scripts/copy/text-nl.js"></script>
     <script src="rules/bidding/systems/five-card-high/explanations-nl.js"></script>
-    <script src="scripts/bid-explanations.js"></script>
-    <script src="scripts/glossary.js"></script>
-    <script src="scripts/lessons.js"></script>
-    <script src="scripts/settings.js"></script>
-    <script src="scripts/seed.js"></script>
-    <script src="scripts/score-table.js"></script>
-    <script src="scripts/play-plan.js"></script>
-    <script src="scripts/render-hands.js"></script>
-    <script src="scripts/render-auction.js"></script>
-    <script src="scripts/render-review.js"></script>
-    <script src="scripts/state-transitions.js"></script>
-    <script src="scripts/auction-flow.js"></script>
-    <script src="scripts/play-flow.js"></script>
+    <script src="scripts/learning/bid-explanations.js"></script>
+    <script src="scripts/learning/glossary.js"></script>
+    <script src="scripts/learning/lessons.js"></script>
+    <script src="scripts/state/settings.js"></script>
+    <script src="scripts/state/situation-codec.js"></script>
+    <script src="scripts/state/seed.js"></script>
+    <script src="scripts/render/score-table.js"></script>
+    <script src="scripts/render/play-plan.js"></script>
+    <script src="scripts/render/render-hands.js"></script>
+    <script src="scripts/render/render-auction.js"></script>
+    <script src="scripts/render/render-review.js"></script>
+    <script src="scripts/state/state-transitions.js"></script>
+    <script src="scripts/flow/auction-flow.js"></script>
+    <script src="scripts/flow/play-flow.js"></script>
     <script src="scripts/app.js"></script>
   </body>
 </html>

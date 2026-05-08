@@ -592,7 +592,7 @@
 }
 
 .card.back {
-  background: url("../assets/card-back.svg") center / cover;
+  background: url("../assets/cards/card-back.svg") center / cover;
   color: transparent;
 }
 

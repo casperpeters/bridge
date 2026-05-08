@@ -47,8 +47,8 @@ function testedRuleIds() {
 }
 
 const bidExplanationSource = readRepoFile("rules/bidding/systems/five-card-high/explanations-nl.js");
-const playFlowCopySource = readRepoFile("scripts/play-flow.js");
-const playPlanCopySource = readRepoFile("scripts/play-plan.js");
+const playFlowCopySource = readRepoFile("scripts/flow/play-flow.js");
+const playPlanCopySource = readRepoFile("scripts/render/play-plan.js");
 const cardPlayRuleSource = [
   readRepoFile("rules/card-play.js"),
   ...jsFilesUnder("rules/card-play").map((file) => fs.readFileSync(file, "utf8"))

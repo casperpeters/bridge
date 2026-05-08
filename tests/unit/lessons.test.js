@@ -1,6 +1,6 @@
 const { assert, test } = require("./harness.js");
 const practiceHands = require("../../practice-hands/index.js");
-const lessons = require("../../scripts/lessons.js");
+const lessons = require("../../scripts/learning/lessons.js");
 
 test("lesson catalog is valid and points at existing practice hands", () => {
   assert.equal(lessons.validateLessons(practiceHands), 12);
