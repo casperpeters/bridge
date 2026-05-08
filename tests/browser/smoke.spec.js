@@ -42,9 +42,17 @@ test("keeps tester-only menu actions behind developer mode", async ({ page }) =>
   const menu = page.locator(".app-menu");
   await menu.locator("summary").click();
   await expect(page.locator("#quick-review")).toBeHidden();
+  await expect(page.locator(".repeat-code-field")).toBeHidden();
 
-  await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(true));
+  const repeatCode = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "developer-repeat-code", skipFlow: true });
+    app.setDeveloperMode(true);
+    return app.getEls().seedInput.value;
+  });
   await expect(page.locator("#quick-review")).toBeVisible();
+  await expect(page.locator(".repeat-code-field")).toBeVisible();
+  expect(repeatCode).toMatch(/^situatieseed:/);
 });
 
 test("keeps Stop and Alert in a persisted expandable bidding bar", async ({ page }) => {
@@ -214,7 +222,7 @@ test("loads a situation seed with auction and played cards", async ({ page }) =>
     currentTrick: [`West:${created.leadCard}`],
     westHandLength: 12
   });
-  await expect(page.locator("#seed-description")).toContainText("Situatieseed geladen");
+  await expect(page.locator("#seed-description")).toContainText("Herhaalcode geladen");
   await expect(page.locator(".trick-west .card.played")).toHaveCount(1);
   await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
 });
@@ -541,12 +549,12 @@ test("rejects corrupt and out-of-order situation seeds without replacing the cur
 
   expect(result.corrupt.seed).toBe(result.beforeSeed);
   expect(result.corrupt.phase).toBe("bidding");
-  expect(result.corrupt.message).toBe("Deze situatieseed kon niet worden geladen.");
+  expect(result.corrupt.message).toBe("Deze herhaalcode kon niet worden geladen.");
 
   expect(result.outOfOrder.seed).toBe(result.outOfOrderBeforeSeed);
   expect(result.outOfOrder.phase).toBe("bidding");
-  expect(result.outOfOrder.message).toBe("Deze situatieseed kon niet worden geladen.");
-  await expect(page.locator("#seed-description")).toContainText("Deze situatieseed kon niet worden geladen.");
+  expect(result.outOfOrder.message).toBe("Deze herhaalcode kon niet worden geladen.");
+  await expect(page.locator("#seed-description")).toContainText("Deze herhaalcode kon niet worden geladen.");
 });
 
 test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
@@ -611,6 +619,7 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator("#review-summary")).toContainText("verscheen Noord als dummy");
   await expect(page.locator("#review-summary")).toContainText("Lespunten");
   await expect(page.locator("#review-summary")).toContainText("Een bridgebord bestaat uit 13 slagen");
+  await expect(page.locator("#review-summary")).not.toContainText("Herhaalcode");
 });
 
 test("runs curated beginner practice hands through fixed UI checkpoints", async ({ page }) => {
@@ -1352,7 +1361,7 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   await expect(page.locator("#feedback-state")).toContainText("Feedbackrapport");
   const report = await page.evaluate(() => navigator.clipboard.readText());
   expect(report).toContain("Smoke test report");
-  expect(report).toContain("Situatieseed: situatieseed:");
+  expect(report).toContain("Herhaalcode: situatieseed:");
   expect(report).not.toContain("## Handcontext");
   expect(report).not.toContain("## Slagenoverzicht");
   expect(report).not.toContain("Browser:");
@@ -1369,7 +1378,7 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   expect(mailUrl).toContain("mailto:casper.peters@gmail.com");
   expect(mailUrl).toContain("Smoke%20test%20report");
   const decodedMailUrl = decodeURIComponent(mailUrl);
-  expect(decodedMailUrl).toContain("Situatieseed: situatieseed:");
+  expect(decodedMailUrl).toContain("Herhaalcode: situatieseed:");
   expect(decodedMailUrl).not.toContain("## Handcontext");
   expect(decodedMailUrl).not.toContain("## Slagenoverzicht");
 });

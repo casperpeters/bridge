@@ -153,7 +153,7 @@ Verantwoordelijk voor:
 - user actions;
 - rendering;
 - instellingen;
-- seed/situation restore;
+- herhaalcode/situation restore;
 - dialogs;
 - feedbackrapportage.
 
@@ -162,15 +162,15 @@ Huidige kern:
 - `scripts/app.js` - bootstrap, gedeelde state, DOM refs, shared helpers en top-level orchestration.
 - `scripts/flow/` - veilingflow, kaartspelflow, legaliteit, automatic play en slagvoortgang.
 - `scripts/render/` - rendering per UI-deel, zichtbare speelplantekst en scoretabel-UI.
-- `scripts/state/` - pure state-transitions, localStorage settings, `situatieseed:` codec, repeat-code, situation seed en herstel.
+- `scripts/state/` - pure state-transitions, localStorage settings, `situatieseed:` codec, herhaalcode en herstel.
 - `scripts/learning/` - lessen, woordenlijst en bieduitleg voor AI-suggesties/review.
 - `scripts/copy/text-nl.js` - Nederlandse UI-copy.
 
 Richtlijn: `scripts/app.js` mag bootstrap en gedeelde infrastructuur blijven, maar nieuwe UI-flow hoort waar mogelijk in de passende submap. Als een flow groeit, eerst extracten naar een gerichte module in plaats van `app.js` groter maken.
 
-#### Situatieseed-herstelcontract
+#### Herhaalcode-herstelcontract
 
-Een gewone herhaalcode herstelt alleen de kaartverdeling of een oefenhand. Een `situatieseed:` herstelt een volledig reproduceerbare spelsituatie bovenop die basis. Het minimale contract is dat laden van een situatieseed exact dezelfde engine-toestand oplevert voor:
+De publieke herhaalcode is bij voorkeur een `situatieseed:`. Die herstelt een volledig reproduceerbare spelsituatie bovenop de interne basis-seed voor de kaartverdeling. Het repeat-code veld staat alleen in developermodus. Laden blijft backwards-compatible met oude gewone basis-seeds en oefenhand-id's, maar kopieren en feedbackrapporten gebruiken de situatieseed-vorm. Het minimale contract is dat laden van een situatieseed exact dezelfde engine-toestand oplevert voor:
 
 - `dealSeed`, bordnummer, deler en kwetsbaarheid;
 - oefenhand-context wanneer de seed naar een `practice-hands/` scenario verwijst;
@@ -198,7 +198,7 @@ Doel:
 Aanbevolen patroon:
 
 - Voeg oefenhanden toe wanneer een beginnerstest, bug of regelgat daarom vraagt.
-- Houd ids stabiel; bestaande links en repeat-codes mogen niet breken.
+- Houd ids stabiel; bestaande links en herhaalcodes mogen niet breken.
 - Gebruik oefenhanden in unit tests en/of browser smoke tests wanneer ze regressierisico afdekken.
 
 ### 6. Styling layer

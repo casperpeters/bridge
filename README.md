@@ -65,11 +65,11 @@ See [docs/architecture.md](./docs/architecture.md) for the technical architectur
 - Declarer-side AI card suggestions follow the visible play-plan priorities when a plan action is currently playable.
 - Pause after each completed trick so the player can inspect the cards.
 - Replay the same hand without advancing the board.
-- Copy or load a hand seed to replay a specific card distribution; feedback reports also include a situation seed that restores the board, auction, and played cards.
-- Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
+- Developer mode exposes a repeat-code field that copies a situation code by default, restoring the board, auction, played cards, and current turn where available.
+- Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the developer repeat-code field or `startPracticeHand(id)`.
 - Compact lesson picker that launches curated practice hands and shows lesson guidance or review points where available.
 - Trick history and full hand review after completion.
-- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including the tester message and situation seed.
+- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including the tester message and repeat code.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
 - Ordinary bridge score calculation with vulnerability and contract bonuses.
 - Settings menu with saved AI-suggestion mode, play-history mode, and developer mode.
@@ -92,7 +92,7 @@ See [docs/architecture.md](./docs/architecture.md) for the technical architectur
 
 ## Beginners Acceptance Checklist
 
-Use this checklist with someone who does not already know the app. Let the player complete one full board, preferably without extra explanation, and note where the app leaves questions open. For repeatable follow-up rounds, load fixed practice hands through the repeat-code field, for example `response-new-suit-after-1h-001` for bidding, `draw-trumps-001` for dummy/play-plan/review flow, and `game-bonus-vulnerable-001` for score explanation. In each round, check bidding legality, opening lead status, dummy reveal, trick winners, score explanation, `Nieuwe hand`, `Zelfde hand`, and feedback copy.
+Use this checklist with someone who does not already know the app. Let the player complete one full board, preferably without extra explanation, and note where the app leaves questions open. For repeatable follow-up rounds, turn on developer mode and load fixed practice hands through the repeat-code field, for example `response-new-suit-after-1h-001` for bidding, `draw-trumps-001` for dummy/play-plan/review flow, and `game-bonus-vulnerable-001` for score explanation. In each round, check bidding legality, opening lead status, dummy reveal, trick winners, score explanation, `Nieuwe hand`, `Zelfde hand`, and feedback copy.
 
 - The player can see clearly whose turn it is.
 - The player understands which bids or calls are currently available.
@@ -117,7 +117,7 @@ Use this checklist with someone who does not already know the app. Let the playe
 - Confirm each completed trick pauses until the table is clicked or Enter is pressed.
 - Confirm clicking settings does not advance a paused trick.
 - Inspect the hand review after the hand ends.
-- Open feedback during bidding or play and confirm the copied report includes the situation seed and tester message.
+- Open feedback during bidding or play and confirm the copied report includes the repeat code and tester message.
 - Toggle developer mode and confirm extra explanations appear.
 
 ## Deployment

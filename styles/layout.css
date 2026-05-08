@@ -191,6 +191,10 @@
   gap: 6px;
 }
 
+.setting-field[hidden] {
+  display: none;
+}
+
 .setting-field select,
 .setting-field input {
   width: 100%;

@@ -55,10 +55,10 @@ function renderReview() {
   appendScoreExplanation(passOut, resultText);
   appendLessonFeedback(passOut, resultText);
   appendLessonPoints();
-  [
-    [t("board"), state.dealNumber],
-    [t("seed"), state.dealSeed || t("none")]
-  ].forEach(([label, value]) => els.reviewSummary.appendChild(reviewRow(label, value)));
+  els.reviewSummary.appendChild(reviewRow(t("board"), state.dealNumber));
+  if (state.developerMode) {
+    els.reviewSummary.appendChild(reviewRow(t("seed"), currentRepeatCode() || t("none")));
+  }
   renderFeedbackStatus();
   if (state.playPlan) {
     els.reviewSummary.appendChild(reviewSectionTitle(t("playPlan")));
@@ -441,7 +441,7 @@ function buildFeedbackReport() {
     "Bericht:",
     message,
     "",
-    `${t("feedbackSituationSeed")}: ${createSituationSeed() || t("none")}`
+    `${t("feedbackSituationSeed")}: ${currentRepeatCode() || t("none")}`
   ].join("\n").trimEnd();
 }
 

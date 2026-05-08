@@ -74,7 +74,7 @@ const els = {
   playMode: document.querySelector("#play-mode"),
   appMenu: document.querySelector(".app-menu"),
   settingsSummary: document.querySelector("#settings-summary"),
-  developerOnlyMenuSections: document.querySelectorAll("[data-developer-only]"),
+  developerOnlyElements: document.querySelectorAll("[data-developer-only]"),
   developerMode: document.querySelector("#developer-mode"),
   developerModeLabel: document.querySelector("#developer-mode-label"),
   developerModeDescription: document.querySelector("#developer-mode-description"),
@@ -515,8 +515,8 @@ function applyStaticText() {
   els.replayNewHand.textContent = t("newHand");
   els.replaySameHand.textContent = t("sameHand");
   els.quickReview.textContent = t("quickReview");
-  els.developerOnlyMenuSections.forEach((section) => {
-    section.hidden = !state.developerMode;
+  els.developerOnlyElements.forEach((element) => {
+    element.hidden = !state.developerMode;
   });
   els.seedLabel.textContent = t("seed");
   els.loadSeed.textContent = t("loadSeed");

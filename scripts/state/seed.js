@@ -30,14 +30,23 @@ function loadSeedFromInput() {
 }
 
 async function copyCurrentSeed() {
-  if (!state.dealSeed) return;
+  const repeatCode = currentRepeatCode();
+  if (!repeatCode) return;
   try {
-    await copyText(state.dealSeed);
+    await copyText(repeatCode);
     state.seedMessage = t("seedCopied");
   } catch {
     state.seedMessage = t("seedCopyFailed");
   }
   renderSeedControls();
+}
+
+function currentRepeatCode() {
+  try {
+    return createSituationSeed() || "";
+  } catch {
+    return "";
+  }
 }
 
 async function copyText(text) {
@@ -356,7 +365,8 @@ function createDealSeed() {
 }
 
 function renderSeedControls() {
-  if (document.activeElement !== els.seedInput) els.seedInput.value = state.dealSeed || "";
-  els.copySeed.disabled = !state.dealSeed;
+  const repeatCode = currentRepeatCode();
+  if (document.activeElement !== els.seedInput) els.seedInput.value = repeatCode;
+  els.copySeed.disabled = !repeatCode;
   els.seedDescription.textContent = state.seedMessage || t("seedHelp");
 }
