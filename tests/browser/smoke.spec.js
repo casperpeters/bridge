@@ -146,6 +146,79 @@ test("loads curated practice hands through the repeat-code field", async ({ page
   await expect(page.locator("#seed-description")).toContainText("Code geladen");
 });
 
+test("loads a situation seed with auction and played cards", async ({ page }) => {
+  await openFreshApp(page);
+
+  const created = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+    app.setState({
+      phase: "playing",
+      auction: [
+        { seat: "South", bid: rules.Bid(4, "S") },
+        { seat: "West", bid: rules.Pass() },
+        { seat: "North", bid: rules.Pass() },
+        { seat: "East", bid: rules.Pass() }
+      ],
+      contract: rules.Bid(4, "S"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 3
+    });
+    app.clearTrickSlots();
+    app.renderAll();
+    const lead = app.chooseCard("West");
+    app.playCard("West", lead.id);
+    const state = app.getState();
+    return {
+      situationSeed: app.createSituationSeed(),
+      leadCard: lead.id,
+      auctionLength: state.auction.length
+    };
+  });
+
+  expect(created.situationSeed).toMatch(/^situatieseed:/);
+  expect(created.auctionLength).toBe(4);
+
+  const restored = await page.evaluate((situationSeed) => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "different-hand", skipFlow: true });
+    app.getEls().seedInput.value = situationSeed;
+    app.loadSeedFromInput();
+    const state = app.getState();
+    return {
+      seed: state.dealSeed,
+      practiceId: state.practice?.id,
+      phase: state.phase,
+      contract: state.contract ? `${state.contract.level}${state.contract.strain}` : null,
+      declarer: state.declarer,
+      dummy: state.dummy,
+      turn: app.seatAt(state.turnIndex),
+      auction: state.auction.map((call) => `${call.seat}:${call.bid.type === "Bid" ? `${call.bid.level}${call.bid.strain}` : call.bid.type}`),
+      currentTrick: state.currentTrick.map((play) => `${play.seat}:${play.card.id}`),
+      westHandLength: state.hands.West.length
+    };
+  }, created.situationSeed);
+
+  expect(restored).toEqual({
+    seed: "draw-trumps-001",
+    practiceId: "draw-trumps-001",
+    phase: "playing",
+    contract: "4S",
+    declarer: "South",
+    dummy: "North",
+    turn: "North",
+    auction: ["South:4S", "West:Pass", "North:Pass", "East:Pass"],
+    currentTrick: [`West:${created.leadCard}`],
+    westHandLength: 12
+  });
+  await expect(page.locator("#seed-description")).toContainText("Situatieseed geladen");
+  await expect(page.locator(".trick-west .card.played")).toHaveCount(1);
+  await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
+});
+
 test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await openFreshApp(page);
 
@@ -939,6 +1012,7 @@ test("can finish a hand and copy a feedback report from the review", async ({ pa
   const report = await page.evaluate(() => navigator.clipboard.readText());
   expect(report).toContain("Smoke test report");
   expect(report).toContain("## Handcontext");
+  expect(report).toContain("Situatieseed: situatieseed:");
   expect(report).toContain("## Slagenoverzicht");
 
   await page.evaluate(() => {

@@ -206,7 +206,7 @@
         if (shape.hcp < 6) return Pass();
         const major = chooseResponseSuit(["H", "S"], shape, 4);
         if (major) return bid(1, major);
-        const clubs = shape.counts.C >= 5 && shape.hcp >= 10 ? "C" : null;
+        const clubs = shape.counts.C >= 4 && shape.hcp >= 10 ? "C" : null;
         if (clubs) return bid(2, "C");
         if (shape.counts.D >= 4) {
           const strength = fitStrength(hand, shape, "D", minimumOpeningLength("D"));

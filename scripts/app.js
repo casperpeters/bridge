@@ -925,7 +925,8 @@ const BridgeApp = {
     playCard,
     makeBid,
     replayHand,
-    jumpToTrickOverview
+    jumpToTrickOverview,
+    createSituationSeed
   },
   render: {
     renderAll,
@@ -1001,6 +1002,7 @@ function createBridgeAppTestHooks() {
     setDeveloperMode,
     setGuidanceMode,
     loadSeedFromInput,
+    createSituationSeed,
     chooseRecommendedBidResult,
     chooseCardPlayResult,
     chooseCard,

@@ -374,6 +374,25 @@ test("Vijfkaart Hoog responds 4D to 1D with strong unbalanced diamond support an
   ], auction), bid(4, "D"));
 });
 
+test("Vijfkaart Hoog responds 2C to 1D with 10+ HCP and a four-card club suit", () => {
+  const auction = [
+    { seat: "North", bid: bid(1, "D") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const result = chooseFiveCardHighResult([
+    "AS", "3S", "2S",
+    "KH", "3H", "2H",
+    "QD", "3D", "2D",
+    "JC", "4C", "3C", "2C"
+  ], auction);
+
+  assert.deepEqual(result.bid, bid(2, "C"));
+  assert.equal(result.ruleId, "fiveCardHigh.response.newSuit");
+  assert.equal(result.length, 4);
+  assert.equal(result.partnerSuit, "D");
+});
+
 test("Vijfkaart Hoog raises a five-card major with three-card support", () => {
   const auction = [
     { seat: "North", bid: bid(1, "H") },

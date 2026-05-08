@@ -42,11 +42,25 @@ Beginners moeten zonder veel uitleg kunnen zien:
 
 ## Testcommando's
 
+De app zelf heeft geen build step of server nodig. Open `index.html` direct in een browser. Als lokale assets worden geblokkeerd, start een simpele statische server:
+
+```powershell
+python -m http.server 8000
+```
+
+Open daarna `http://localhost:8000`.
+
 Installatie eenmalig:
 
 ```powershell
 npm install
 npx playwright install chromium
+```
+
+Volledige testset:
+
+```powershell
+npm test
 ```
 
 Gebruik bij voorkeur:
@@ -69,6 +83,17 @@ npx playwright test tests/browser/smoke.spec.js --project=mobile-chromium
 ```
 
 Let op: de Playwright-projectnamen zijn `desktop-chromium` en `mobile-chromium`, niet `chromium`.
+Playwright start zelf `node tests/static-server.js 4173` via `playwright.config.js`; start voor `npm run test:browser` dus geen losse server tenzij je handmatig test.
+
+Alleen bij werk aan de Remotion-promovideo:
+
+```powershell
+npm run video:studio
+npm run video:still
+npm run video:render
+```
+
+Beschouw `video/out/` als gegenereerde output.
 
 ## Architectuur
 

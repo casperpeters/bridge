@@ -38,6 +38,7 @@
     Redouble,
     isPass,
     isDouble,
+    isRedouble,
     isContractBid,
     highestBidCall,
     highestBid,
@@ -57,7 +58,8 @@
     notrumpTransferSuit,
     chooseSuitByLengthThenRank,
     minimumOpeningLength,
-    supportLengthForOpening
+    supportLengthForOpening,
+    isOneMinorOpeningFiveCardHigh
   } = conventionHelpers;
   const { respondToOneNotrumpFiveCardHigh, respondToTwoNotrumpFiveCardHigh } = responseHelpers;
 
@@ -79,6 +81,13 @@
         return candidate && !isPass(candidate) ? candidate : null;
       }
 
+  function partnershipNonPassCalls(auction, seat) {
+        return auction.filter((call) =>
+          teamOf(call.seat) === teamOf(seat) &&
+          (isContractBid(call.bid) || isDouble(call.bid) || isRedouble(call.bid))
+        );
+      }
+
   function chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability = "none") {
         const state = competitiveBiddingState(hand, auction, seat, vulnerability);
         return chooseFallbackBid([
@@ -87,7 +96,7 @@
             const context = partnerTakeoutDoubleResponseContext(auction, seat, state.partnershipCalls);
             return context ? respondToPartnerTakeoutDoubleFiveCardHigh(state.shape, hand, context) : null;
           },
-          () => !state.partnershipCalls.length ? chooseOvercallFiveCardHigh(hand, auction, seat, vulnerability) : null,
+          () => !state.partnershipNonPassCalls.length ? chooseOvercallFiveCardHigh(hand, auction, seat, vulnerability) : null,
           () => {
             const context = partnerTakeoutDoubleRebidContext(auction, seat, state.partnershipCalls);
             return context ? rebidAfterPartnerTakeoutDoubleResponseFiveCardHigh(state.shape, hand, context) : null;
@@ -105,6 +114,7 @@
           vulnerability,
           shape: handShape(hand),
           partnershipCalls: partnershipContractCalls(auction, seat),
+          partnershipNonPassCalls: partnershipNonPassCalls(auction, seat),
           lastBid: highestBid(auction),
           lastCall: auction[auction.length - 1] || null,
           highestBidCall: highestBidCall(auction)
@@ -716,10 +726,46 @@
         const strength = fitStrength(hand, shape, partnerBid.strain, minimumOpeningLength(partnerBid.strain));
         const supportLevel = cheapestLevelForStrain(partnerBid.strain, opponentBid);
         if (supportLevel > gameLevel(partnerBid.strain)) return Pass();
-        if (strength >= 12) return bid(gameLevel(partnerBid.strain), partnerBid.strain);
+        if (strength >= 12) {
+          return chooseMinorFitNotrumpGameAfterOpponentOvercall(shape, hand, partnerBid, opponentBid) ||
+            bid(gameLevel(partnerBid.strain), partnerBid.strain);
+        }
         if (strength >= 10 && supportLevel <= 3) return bid(Math.max(supportLevel, 3), partnerBid.strain);
         if (strength >= 6 && supportLevel <= 2) return bid(supportLevel, partnerBid.strain);
         return null;
+      }
+
+  function minorFitNotrumpGameAfterOpponentOvercallContext(shape, hand, partnerBid, opponentBid) {
+        if (!isOneMinorOpeningFiveCardHigh(partnerBid)) return null;
+        if (!opponentBid?.strain || opponentBid.strain === "NT") return null;
+        if (!shape.balanced || shape.hcp < 12) return null;
+        if (!hasStopper(hand, opponentBid.strain)) return null;
+        if (!canBidContract(3, "NT", opponentBid)) return null;
+
+        const support = shape.counts[partnerBid.strain] || 0;
+        const supportThreshold = supportLengthForOpening(partnerBid.strain);
+        if (support < supportThreshold) return null;
+
+        const partnerMinTrumpLength = minimumOpeningLength(partnerBid.strain);
+        const fitStrengthValue = fitStrength(hand, shape, partnerBid.strain, partnerMinTrumpLength);
+        if (fitStrengthValue < 12) return null;
+
+        return {
+          partnerSuit: partnerBid.strain,
+          support,
+          supportThreshold,
+          partnerMinTrumpLength,
+          minorFitStrength: fitStrengthValue,
+          minimumHcp: 12,
+          stopperSuit: opponentBid.strain,
+          minorGameAlternative: bid(gameLevel(partnerBid.strain), partnerBid.strain)
+        };
+      }
+
+  function chooseMinorFitNotrumpGameAfterOpponentOvercall(shape, hand, partnerBid, opponentBid) {
+        return minorFitNotrumpGameAfterOpponentOvercallContext(shape, hand, partnerBid, opponentBid)
+          ? bid(3, "NT")
+          : null;
       }
 
   function chooseOnlyUnbidOneLevelMajor(shape, partnerBid, opponentBid) {
@@ -780,7 +826,8 @@
 
   function describeDoubleBidChoice(chosenBid, shape, hand, auction, seat, base) {
         const lastBid = highestBid(auction);
-        if (shouldMakeWeakTwoDefenseDouble(shape, hand, lastBid)) {
+        const initialDefense = partnershipNonPassCalls(auction, seat).length === 0;
+        if (initialDefense && shouldMakeWeakTwoDefenseDouble(shape, hand, lastBid)) {
           return fiveCardHighBidChoiceResult(chosenBid, "competitive.weakTwoDefenseDouble", "basic", "Defend against their weak two with a takeout double, or with a strong hand and a very good own suit.", {
             ...base,
             category: "competitive",
@@ -790,7 +837,7 @@
             minimumHcp: hasWeakTwoDefenseStrongOwnSuit(shape, hand, lastBid) ? 16 : 12
           });
         }
-        if (shouldMakePreemptDefenseDouble(shape, hand, lastBid)) {
+        if (initialDefense && shouldMakePreemptDefenseDouble(shape, hand, lastBid)) {
           return fiveCardHighBidChoiceResult(chosenBid, "competitive.preemptDefenseDouble", "basic", "Defend against their preempt with a takeout double, or with a strong hand and a very good own suit.", {
             ...base,
             category: "competitive",
@@ -826,6 +873,7 @@
 
   function describeCompetitiveFiveCardHighBidChoice(chosenBid, shape, hand, auction, seat, vulnerability, base) {
         const partnershipCalls = partnershipContractCalls(auction, seat);
+        const partnershipNonPassActions = partnershipNonPassCalls(auction, seat);
         const lastBid = highestBid(auction);
         const lastPartnerCall = lastPartnerContractCall(auction, seat);
         const partnerOvercall = didPartnerMakeOvercall(auction, seat, lastPartnerCall);
@@ -846,7 +894,7 @@
           return describeTakeoutDoubleResponseChoice(chosenBid, shape, takeoutResponseContext, extra);
         }
 
-        if (!partnershipCalls.length) {
+        if (!partnershipNonPassActions.length) {
           if (isWeakTwoOpponentOpening(lastBid)) {
             if (chosenBid.strain === "NT") {
               const game = chosenBid.level >= 3;
@@ -913,6 +961,16 @@
             const invite = chosenBid.level === lastPartnerCall.bid.level + 1 && chosenBid.level < 3;
             return fiveCardHighBidChoiceResult(chosenBid, invite ? "competitive.notrumpOvercallInvite" : "competitive.notrumpOvercallGame", "basic", "Invite or bid game after partner's notrump overcall with balanced values.", notrumpExtra);
           }
+        }
+
+        const minorFitNotrumpContext = !partnerOvercall && bidEquals(chosenBid, 3, "NT")
+          ? minorFitNotrumpGameAfterOpponentOvercallContext(shape, hand, lastPartnerCall?.bid, lastBid)
+          : null;
+        if (minorFitNotrumpContext) {
+          return fiveCardHighBidChoiceResult(chosenBid, "competitive.minorFitNotrumpGameAfterOvercall", "basic", "Prefer 3NT to a minor-suit game with balanced game values, a minor fit, and a stopper in the opponent's suit.", {
+            ...extra,
+            ...minorFitNotrumpContext
+          });
         }
 
         if (

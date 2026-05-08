@@ -73,10 +73,9 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Splits `scripts/app.js` geleidelijk op zodra nieuwe UI-flow wordt toegevoegd: denk aan `state`, `dom`, `render-all`, `game-actions`, `feedback-flow` en gedeelde formatting/helpers. Geen grote rewrite; houd tijdelijk compatibele globals waar dat migratie veilig maakt.
 - Introduceer pure state-transitions voor kernacties zoals hand starten, bod toepassen, veiling afronden, kaart spelen en slag doorschuiven. UI-code roept transitions aan en rendert daarna opnieuw.
-- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` heeft losse uitkomst- en verdedigingsmodules; resterend werk zit vooral in leiderplan-volgen en snits. Splits Vijfkaart-Hoog rebids/competitive later naar auction families.
+- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` heeft nu losse modules voor uitkomsten, speelplan volgen, leiderspel en basisverdediging. Splits Vijfkaart-Hoog rebids/competitive later naar auction families.
 - Houd de gesplitste `rules/play-plan/` modules per domein klein: gedeelde helpers in `common`, sans-atout in `notrump`, kleurcontract in `suit-contract`.
 - Houd bestaande public API's via `bridge-rules.js` en index/aggregator-bestanden stabiel tijdens refactors.
-- Voeg dekking toe die controleert dat belangrijke `ruleId`s ook uitleg hebben, zodat toekomstige leerfeedback niet losraakt van de engine.
 
 ## Lange termijn
 

@@ -19,7 +19,7 @@
       return t("bidExplanationCompetitive", { detail: `redoublet met extra waarden nadat de tegenpartij partner heeft gedoubleerd. ${ruleReferenceText(ruleName)}` });
     }
   
-    const detail = bidChoiceDetail(ruleName, result);
+    const detail = appendInterferenceContinuationText(bidChoiceDetail(ruleName, result), result);
     return t(bidChoiceExplanationKey(ruleName), { detail });
   }
   
@@ -65,7 +65,17 @@
       "pass.unknownCall": `de biedengine herkende geen contractactie${factSuffix}`,
       "pass.noAction": `geen duidelijke systeemactie of te weinig waarden om te bieden${factSuffix}`
     }[ruleName] || `${t("bidExplanationPass")}${factSuffix}`;
-    return `${detail}.`;
+    const interferenceText = interferenceContinuationText(result);
+    return `${detail}.${interferenceText ? ` ${interferenceText}` : ""}`;
+  }
+
+  function appendInterferenceContinuationText(detail, result) {
+    const interferenceText = interferenceContinuationText(result);
+    return interferenceText ? `${detail} ${interferenceText}` : detail;
+  }
+
+  function interferenceContinuationText(result) {
+    return result?.interfered ? "De verstoring verandert deze herkenbare fitafspraak niet." : "";
   }
   
   function bidChoiceExplanationKey(ruleName) {
@@ -331,6 +341,8 @@
         return `tweede bijbod met 6-9 HCP: zolang het nog op eenniveau kan, houdt antwoorder het laag met 1SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.responderTwoNotrumpInvite":
         return `tweede bijbod met 10-11 HCP: 2SA is inviterend en belooft geen minimum. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "continuation.responderStrongSecondMajor":
+        return `sterk tweede bijbod in de andere hoge kleur: antwoorder toont een 5-4 hoog spel en genoeg kracht om verder naar de beste manche te zoeken. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.responderRaiseOpenerSecondSuit":
         return `tweede bijbod: antwoorder steunt openaars tweede kleur met fit. ${handFactsText({ ruleName, result })}`;
       case "continuation.responderRebidOwnSixCard":
@@ -388,6 +400,8 @@
         return `sprongvolgbod met beperkte kracht en een goede zeskaart. ${handFactsText({ ruleName, result })}`;
       case "competitive.simpleOvercall":
         return `natuurlijk volgbod met een goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || (result.bid?.level >= 2 ? 10 : 8)}+ HCP. ${handFactsText({ ruleName, result })}`;
+      case "competitive.takeoutDouble":
+        return `informatiedoublet: 12+ HCP, kort in ${suitName(result.opponentSuit)}, en steun voor de ongeboden kleuren; met 16+ HCP mag een ongeboden kleur soms een driekaart zijn. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.takeoutDoubleForcedSuit":
         return `biedplicht na partners informatiedoublet: de rechtertegenstander heeft geen bod gedaan, dus je kiest met een zwakke hand de hoogste nog niet door de tegenpartij geboden kleur. ${handFactsText({ ruleName, result })}`;
       case "competitive.takeoutDoubleOneNotrump":
@@ -419,6 +433,8 @@
         return `${result.bid?.level || ""}SA na partners volgbod: ${result.minimumHcp || 10}+ HCP, gebalanceerde hand en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
       case "competitive.newSuitAfterPartnerOvercall":
         return `nieuwe kleur na partners volgbod: eigen goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || 10}+ HCP. ${handFactsText({ ruleName, result })}`;
+      case "competitive.minorFitNotrumpGameAfterOvercall":
+        return `3SA boven lage-kleurmanche: met gebalanceerde manchewaarden, fit in partners ${suitName(result.partnerSuit)} en stop in ${suitName(result.stopperSuit || result.opponentSuit)} is 3SA meestal praktischer dan 5 ${suitName(result.partnerSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.raisePartner":
         return `verhoging van partners kleur. ${handFactsText({ ruleName, result })}`;
       case "competitive.notrump":
@@ -513,7 +529,7 @@
   }
   
   function responseNewSuitDetail(ruleName, result) {
-    if (result?.partnerSuit === "H" || result?.partnerSuit === "S") {
+    if (result?.partnerSuit && result.partnerSuit !== "NT") {
       const level = result.bid?.level || 0;
       const range = level === 1 ? "6+ HCP" : "10+ HCP";
       const levelText = level === 1 ? "eenhoogte" : "tweehoogte";

@@ -8,11 +8,16 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighContext(core, auction) {
   "use strict";
 
-  const { suits, partnerOf } = core;
+  const { suits, partnerOf, teamOf } = core;
   const {
     bidEquals,
     cheapestLevelForStrain,
+    highestBidCall,
     highestBid,
+    isContractBid,
+    isDouble,
+    isPass,
+    isRedouble,
     isUncontestedAuctionForSeat,
     lastPartnerContractCall,
     partnershipContractCalls
@@ -41,19 +46,31 @@
     const openerThirdCall = partnershipCalls[4] || null;
     const lastPartnerCall = seat ? lastPartnerContractCall(calls, seat) : null;
     const uncontested = Boolean(seat && isUncontestedAuctionForSeat(calls, seat));
+    const partnershipNonPassCalls = seat ? nonPassCallsForTeam(calls, teamOf(seat)) : [];
+    const opponentNonPassCalls = seat ? nonPassCallsForOpponents(calls, teamOf(seat)) : [];
+    const currentHighestBidCall = highestBidCall(calls);
+    const ourSideOwnsCurrentContract = Boolean(seat && currentHighestBidCall && teamOf(currentHighestBidCall.seat) === teamOf(seat));
+    const opponentsOwnCurrentContract = Boolean(seat && currentHighestBidCall && teamOf(currentHighestBidCall.seat) !== teamOf(seat));
     const fourthSuit = fourthSuitForAuction(openingCall?.bid, responseCall?.bid, openerRebidCall?.bid);
     const isFourthSuitForcing = isFourthSuitForcingBid(openingCall?.bid, responseCall?.bid, openerRebidCall?.bid, responderRebidCall?.bid);
     const base = {
       auction: calls,
       seat,
       uncontested,
+      interfered: opponentNonPassCalls.length > 0,
+      interferenceKind: interferenceKindFromCalls(opponentNonPassCalls),
       partnershipCalls,
+      partnershipNonPassCalls,
+      opponentNonPassCalls,
       openingCall,
       responseCall,
       openerRebidCall,
       responderRebidCall,
       openerThirdCall,
       lastPartnerCall,
+      highestBidCall: currentHighestBidCall,
+      ourSideOwnsCurrentContract,
+      opponentsOwnCurrentContract,
       lastBid: highestBid(calls),
       fourthSuit,
       isFourthSuitForcing
@@ -69,6 +86,30 @@
     if (partnershipCalls.length >= 4 && openingCall.seat === seat) return { ...base, phase: fiveCardHighAuctionPhases.openerThird };
     if (partnershipCalls.length >= 5 && openingCall.seat === partnerOf(seat)) return { ...base, phase: fiveCardHighAuctionPhases.responderAfterFourthSuit };
     return { ...base, phase: fiveCardHighAuctionPhases.naturalContinuation };
+  }
+
+  function nonPassCallsForTeam(calls, team) {
+    return calls.filter((call) => teamOf(call.seat) === team && isNonPassCall(call));
+  }
+
+  function nonPassCallsForOpponents(calls, team) {
+    return calls.filter((call) => teamOf(call.seat) !== team && isNonPassCall(call));
+  }
+
+  function isNonPassCall(call) {
+    return Boolean(call && !isPass(call.bid) && (isContractBid(call.bid) || isDouble(call.bid) || isRedouble(call.bid)));
+  }
+
+  function interferenceKindFromCalls(calls) {
+    const hasContract = calls.some((call) => isContractBid(call.bid));
+    const hasDouble = calls.some((call) => isDouble(call.bid));
+    const hasRedouble = calls.some((call) => isRedouble(call.bid));
+    const kinds = [hasContract, hasDouble, hasRedouble].filter(Boolean).length;
+    if (kinds > 1) return "mixed";
+    if (hasRedouble) return "redouble";
+    if (hasDouble) return "double";
+    if (hasContract) return "contract";
+    return null;
   }
 
   function fourthSuitForAuction(openingBid, responseBid, openerRebid) {

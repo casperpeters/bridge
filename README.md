@@ -57,7 +57,7 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - `rules/play-plan.js`: compatibility entrypoint that exposes the split play-plan modules.
 - `rules/play-plan/`: split play-plan logic for shared helpers, notrump plans, and suit-contract plans.
 - `rules/card-play.js`: compatibility entrypoint and orchestrator for card-play choices.
-- `rules/card-play/`: split card-play helpers, opening-lead logic, and beginner defense rules.
+- `rules/card-play/`: split card-play helpers for opening leads, play-plan following, declarer play, and beginner defense rules.
 - `scripts/app.js`: app bootstrap, shared state, DOM references, shared formatting/status helpers, and top-level orchestration.
 - `scripts/text-nl.js`: Dutch UI copy and labels.
 - `scripts/settings.js`: saved settings.
@@ -92,11 +92,11 @@ The app stays build-free: `index.html` loads plain browser scripts in dependency
 - Declarer-side AI card suggestions follow the visible play-plan priorities when a plan action is currently playable.
 - Pause after each completed trick so the player can inspect the cards.
 - Replay the same hand without advancing the board.
-- Copy or load a hand seed to replay a specific card distribution.
+- Copy or load a hand seed to replay a specific card distribution; feedback reports also include a situation seed that restores the board, auction, and played cards.
 - Curated beginner practice hands, including basic bidding and defense/lead situations, can be loaded by id through the repeat-code field or `startPracticeHand(id)`.
 - Compact lesson picker that launches curated practice hands and shows lesson guidance or review points where available.
 - Trick history and full hand review after completion.
-- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, auction, tricks, score, settings, current phase, and optional tester notes.
+- Always-available tester feedback report that can be copied or opened as an email to the maintainer, including seed, situation seed, auction, tricks, score, settings, current phase, and optional tester notes.
 - Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy.
 - Ordinary bridge score calculation with vulnerability and contract bonuses.
 - Settings menu with saved AI-suggestion mode, play-history mode, and developer mode.
@@ -144,7 +144,7 @@ Use this checklist with someone who does not already know the app. Let the playe
 - Confirm each completed trick pauses until the table is clicked or Enter is pressed.
 - Confirm clicking settings does not advance a paused trick.
 - Inspect the hand review after the hand ends.
-- Open feedback during bidding or play and confirm the copied report includes the current phase, seed, auction, tricks, score, and tester message.
+- Open feedback during bidding or play and confirm the copied report includes the current phase, seed, situation seed, auction, tricks, score, and tester message.
 - Toggle developer mode and confirm extra explanations appear.
 
 ## Deployment

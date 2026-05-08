@@ -26,6 +26,8 @@ const expectedScripts = [
   "rules/card-play/opening-leads.js",
   "rules/card-play/common.js",
   "rules/card-play/defense.js",
+  "rules/card-play/play-plan-following.js",
+  "rules/card-play/declarer-play.js",
   "rules/card-play.js",
   "bridge-rules.js",
   "practice-hands/five-card-high-openings.js",

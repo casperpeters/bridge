@@ -1553,6 +1553,267 @@ test("Vijfkaart Hoog passes weak support when the overcall pushes the raise to t
   assert.equal(result.ruleId, "fiveCardHigh.pass.competitiveNoAction");
 });
 
+test("Vijfkaart Hoog prefers 3NT over a minor-suit game after partner opens and right-hand opponent overcalls", () => {
+  const auction = [
+    { seat: "East", bid: bid(1, "C") },
+    { seat: "South", bid: bid(2, "S") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "6S", "2S",
+      "QH", "TH",
+      "KD", "9D", "3D",
+      "AC", "TC", "8C", "7C", "2C"
+    ),
+    auction,
+    seat: "West",
+    vulnerability: "NS"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "NT"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.minorFitNotrumpGameAfterOvercall");
+  assert.equal(result.partnerSuit, "C");
+  assert.equal(result.support, 5);
+  assert.equal(result.stopperSuit, "S");
+  assert.equal(result.hcp, 13);
+});
+
+test("Vijfkaart Hoog applies the 3NT preference to diamond games too", () => {
+  const auction = [
+    { seat: "East", bid: bid(1, "D") },
+    { seat: "South", bid: bid(2, "S") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "6S", "2S",
+      "QH", "TH",
+      "KD", "9D", "7D", "3D",
+      "AC", "TC", "8C", "5C"
+    ),
+    auction,
+    seat: "West",
+    vulnerability: "NS"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "NT"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.minorFitNotrumpGameAfterOvercall");
+  assert.equal(result.partnerSuit, "D");
+  assert.equal(result.support, 4);
+});
+
+test("Vijfkaart Hoog still chooses the minor-suit game without a stopper for 3NT", () => {
+  const auction = [
+    { seat: "East", bid: bid(1, "C") },
+    { seat: "South", bid: bid(2, "S") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "9S", "6S", "2S",
+      "KH", "QH",
+      "KD", "9D", "3D",
+      "AC", "TC", "8C", "7C", "2C"
+    ),
+    auction,
+    seat: "West",
+    vulnerability: "NS"
+  });
+
+  assert.deepEqual(result.bid, bid(5, "C"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.raisePartner");
+});
+
+test("Vijfkaart Hoog keeps opener's single-major-raise invite available after a double", () => {
+  const auction = [
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: double() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "KS", "7S", "5S", "2S",
+      "KD", "QD", "9D", "6D", "3D",
+      "QC", "6C", "2C"
+    ),
+    auction,
+    seat: "North",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.openerMajorRaiseInvite");
+  assert.equal(result.fitPoints, 17);
+  assert.equal(result.interfered, true);
+  assert.equal(result.interferenceKind, "double");
+});
+
+test("Vijfkaart Hoog lets responder accept a single-major-raise invite after interference", () => {
+  const auction = [
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: double() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "QS", "6S", "3S",
+      "9H", "7H", "3H", "2H",
+      "JD", "8D", "4D",
+      "AC", "JC", "7C"
+    ),
+    auction,
+    seat: "South",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, bid(4, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.acceptMajorInvite");
+  assert.equal(result.interfered, true);
+});
+
+test("Vijfkaart Hoog lets responder accept the invite even when the invite is doubled", () => {
+  const auction = [
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: double() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") },
+    { seat: "East", bid: double() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "QS", "6S", "3S",
+      "9H", "7H", "3H", "2H",
+      "JD", "8D", "4D",
+      "AC", "JC", "7C"
+    ),
+    auction,
+    seat: "South",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, bid(4, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.acceptMajorInvite");
+  assert.equal(result.interfered, true);
+  assert.equal(result.interferenceKind, "double");
+});
+
+test("Vijfkaart Hoog passes a minimum opener after a doubled single major raise", () => {
+  const auction = [
+    { seat: "South", bid: bid(1, "H") },
+    { seat: "West", bid: double() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "2S",
+      "AH", "KH", "QH", "3H", "2H",
+      "JD", "3D", "2D",
+      "4C", "3C", "2C"
+    ),
+    auction,
+    seat: "South",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, pass());
+  assert.equal(result.ruleId, "fiveCardHigh.pass.openerMajorRaiseMinimum");
+  assert.equal(result.interfered, true);
+});
+
+test("Vijfkaart Hoog bids game with a maximum opener after a doubled single major raise", () => {
+  const auction = [
+    { seat: "South", bid: bid(1, "H") },
+    { seat: "West", bid: double() },
+    { seat: "North", bid: bid(2, "H") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "2S",
+      "AH", "KH", "QH", "3H", "2H",
+      "AD", "3D", "2D",
+      "4C", "3C", "2C"
+    ),
+    auction,
+    seat: "South",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(4, "H"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.openerMajorRaiseGame");
+  assert.equal(result.interfered, true);
+});
+
+test("Vijfkaart Hoog reuses opener's raise continuation after an opponent overcall", () => {
+  const auction = [
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: bid(2, "D") },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "KS", "7S", "5S", "2S",
+      "KD", "QD", "9D", "6D", "3D",
+      "QC", "6C", "2C"
+    ),
+    auction,
+    seat: "North",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.openerMajorRaiseInvite");
+  assert.equal(result.interferenceKind, "contract");
+});
+
+test("Vijfkaart Hoog does not treat an opponent raise as a fresh preempt after our double", () => {
+  const auction = [
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: double() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(3, "S") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "JS", "4S",
+      "AH", "QH", "8H", "6H", "4H",
+      "AD", "TD", "5D",
+      "KC", "5C", "4C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, pass());
+  assert.equal(result.ruleId, "fiveCardHigh.pass.competitiveNoAction");
+  assert.doesNotMatch(result.ruleId, /weakTwoDefense|preemptDefense/);
+});
+
 test("Vijfkaart Hoog bids game with a strong fit after partner opens and right-hand opponent overcalls", () => {
   const auction = [
     { seat: "North", bid: bid(1, "H") },

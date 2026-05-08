@@ -245,6 +245,8 @@
       }
       const takeoutDoubleRebidResult = describeTakeoutDoubleRebidChoice?.(chosenBid, shape, hand, auction, seat, base);
       if (takeoutDoubleRebidResult) return takeoutDoubleRebidResult;
+      const interferenceContinuationResult = describeInterferenceAwareContinuationChoice(chosenBid, shape, hand, auction, seat, base, bidContext);
+      if (interferenceContinuationResult) return interferenceContinuationResult;
       if (isPass(chosenBid)) {
         return describePassBidChoice(shape, hand, auction, seat, base, bidContext);
       }
@@ -485,9 +487,12 @@
       const blackwoodAgreement = agreementForPartnerBlackwoodAsk(auction, seat);
       if (blackwoodAgreement) return blackwoodResponseBidForAceCount(countAces(hand));
       const bidContext = context || auctionContextForFiveCardHigh(auction, seat);
+      const interferenceAwareTarget = bidContext.uncontested
+        ? null
+        : chooseInterferenceAwareContinuationFiveCardHigh(hand, auction, seat, bidContext);
       const target = bidContext.uncontested
         ? chooseUncontestedFiveCardHighBid(hand, auction, seat, bidContext, vulnerability)
-        : chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
+        : interferenceAwareTarget || chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
       return normalizeBid(target) || Pass();
     }
 
@@ -526,6 +531,95 @@
         }
       }
 
+  function chooseInterferenceAwareContinuationFiveCardHigh(hand, auction, seat, context = auctionContextForFiveCardHigh(auction, seat)) {
+        const continuation = interferenceAwareContinuationContext(context);
+        if (!continuation) return null;
+        const shape = handShape(hand);
+        if (continuation.kind === "openerAfterRaise") {
+          return openerRebidAfterRaiseFiveCardHigh(shape, hand, continuation.openingCall.bid, continuation.responseCall.bid);
+        }
+        if (continuation.kind === "responderAfterSingleRaiseInvite") {
+          return rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, continuation.openerRebidCall.bid);
+        }
+        return null;
+      }
+
+  function describeInterferenceAwareContinuationChoice(chosenBid, shape, hand, auction, seat, base, context = auctionContextForFiveCardHigh(auction, seat)) {
+        const continuation = interferenceAwareContinuationContext(context);
+        if (!continuation) return null;
+        const expectedBid = chooseInterferenceAwareContinuationFiveCardHigh(hand, auction, seat, context);
+        if (!sameCall(chosenBid, expectedBid)) return null;
+
+        const continuationBase = interferenceContinuationBase(base, context);
+        if (isPass(chosenBid)) {
+          return describePassBidChoice(shape, hand, auction, seat, continuationBase, {
+            ...context,
+            uncontested: true
+          });
+        }
+        if (continuation.kind === "openerAfterRaise") {
+          return describeOpenerRebidChoice(
+            chosenBid,
+            shape,
+            hand,
+            continuation.openingCall.bid,
+            continuation.responseCall.bid,
+            continuationBase
+          );
+        }
+        if (continuation.kind === "responderAfterSingleRaiseInvite") {
+          return describeResponderRebidChoice(
+            chosenBid,
+            shape,
+            continuation.openingCall.bid,
+            continuation.responseCall.bid,
+            continuation.openerRebidCall.bid,
+            continuationBase
+          );
+        }
+        return null;
+      }
+
+  function interferenceAwareContinuationContext(context) {
+        if (!context?.interfered || !context.ourSideOwnsCurrentContract || context.partnershipCalls.length < 2) return null;
+        const openingCall = context.openingCall;
+        const responseCall = context.responseCall;
+        const openerRebidCall = context.openerRebidCall;
+        if (!openingCall?.bid || !responseCall?.bid) return null;
+
+        if (openingCall.seat === context.seat && isDirectRaiseOfOpening(openingCall.bid, responseCall.bid)) {
+          return { kind: "openerAfterRaise", openingCall, responseCall };
+        }
+        if (
+          openingCall.seat === partnerOf(context.seat) &&
+          openerRebidCall?.bid &&
+          isSingleRaiseInviteFiveCardHigh(responseCall.bid, openerRebidCall.bid)
+        ) {
+          return { kind: "responderAfterSingleRaiseInvite", openingCall, responseCall, openerRebidCall };
+        }
+        return null;
+      }
+
+  function isDirectRaiseOfOpening(openingBid, responseBid) {
+        return (
+          openingBid?.level === 1 &&
+          openingBid.strain &&
+          openingBid.strain !== "NT" &&
+          responseBid?.strain === openingBid.strain &&
+          responseBid.level > openingBid.level &&
+          responseBid.level < gameLevel(openingBid.strain)
+        );
+      }
+
+  function interferenceContinuationBase(base, context) {
+        return {
+          ...base,
+          interfered: true,
+          interferenceKind: context.interferenceKind,
+          interferenceCallCount: context.opponentNonPassCalls?.length || 0
+        };
+      }
+
 
 
 
@@ -545,6 +639,8 @@
     describeResponderRebidChoice,
     describeNaturalContinuationChoice,
     describeCompetitiveFiveCardHighBidChoice,
+    chooseInterferenceAwareContinuationFiveCardHigh,
+    describeInterferenceAwareContinuationChoice,
     chooseUncontestedFiveCardHighBid,
     chooseFiveCardHighOpeningMajor,
     chooseFiveCardHighOpeningMinor,
