@@ -48,6 +48,7 @@ const expectedScripts = [
   "scripts/render/score-table.js",
   "scripts/render/play-plan.js",
   "scripts/render/render-hands.js",
+  "scripts/render/card-animation.js",
   "scripts/render/render-auction.js",
   "scripts/render/render-review.js",
   "scripts/state/state-transitions.js",

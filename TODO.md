@@ -24,6 +24,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Ruim de normale beginnersflow op: feedbackknoppen en geavanceerde biedhulpmiddelen mogen de hoofdactie niet visueel verdringen.
 - Houd actieve-handbegeleiding vooral visueel; voeg alleen minimale tekst toe wanneer een beperking anders onduidelijk is, bijvoorbeeld bij kleur bekennen.
+- Breid kaartanimatie later gericht uit met delen, slagen opruimen, dummy reveal en review-/slagoverzichtanimaties; houd `prefers-reduced-motion` leidend.
 - Gebruik de README-checklist voor de volgende beginnerstest-2-herhaling en noteer alleen concrete afhakers.
 
 ### Oefenhanden en leerbare situaties

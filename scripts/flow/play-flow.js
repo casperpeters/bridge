@@ -417,13 +417,14 @@ function playCard(seat, cardId) {
   }
   state.illegalActionFeedback = null;
   renderIllegalActionFeedback();
+  const animationSource = captureCardPlayAnimationSource(seat, cardId);
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
   Object.assign(state, BridgeStateTransitions.applyCardPlayTransition(state, { seat, card, cardId, ruleResult, explanation }));
   ensurePlayPlan();
   renderPlayPlan();
   renderHands();
-  renderPlayedCard(seat, card);
+  renderPlayedCard(seat, card, { animationSource });
   setStatus("played", { seat, card: cardText(card) });
   if (state.currentTrick.length === 4) {
     pauseCompletedTrick();
@@ -433,11 +434,16 @@ function playCard(seat, cardId) {
   }
 }
 
-function renderPlayedCard(seat, card) {
+function renderPlayedCard(seat, card, options = {}) {
   slotEls[seat].innerHTML = "";
   const cardEl = createCardEl(card, true);
   cardEl.classList.add("played");
   slotEls[seat].appendChild(cardEl);
+  animateCardPlayToSlot({
+    source: options.animationSource,
+    targetEl: cardEl,
+    card
+  });
 }
 
 function pauseCompletedTrick() {

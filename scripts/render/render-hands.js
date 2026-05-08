@@ -44,6 +44,8 @@ function renderVisibleHandCards(seat, cards, recommended) {
 
 function createHandCardEl(seat, card, visible, index, recommended) {
   const cardEl = createCardEl(card, visible);
+  cardEl.dataset.seat = seat;
+  if (visible) cardEl.dataset.cardId = card.id;
   if (state.animateDeal) {
     cardEl.style.animationDelay = `${index * 26}ms`;
   } else {
