@@ -85,38 +85,38 @@ function createSituationSeed() {
   if (!state.dealSeed) return "";
   const payload = {
     v: 1,
-    seed: state.dealSeed,
-    board: state.dealNumber,
-    dealer: seatCode(seatAt(state.dealerIndex)),
-    vul: state.vulnerability,
-    phase: state.phase,
-    turn: seatCode(seatAt(state.turnIndex)),
-    auction: state.auction.map(encodeSituationCall),
-    tricks: state.trickHistory.map((trick) => trick.cards.map(encodeSituationPlay)),
-    current: state.currentTrick.map(encodeSituationPlay),
-    awaiting: state.awaitingTrickAdvance ? 1 : 0
+    s: state.dealSeed,
+    b: state.dealNumber,
+    d: seatCode(seatAt(state.dealerIndex)),
+    u: state.vulnerability,
+    p: state.phase,
+    t: seatCode(seatAt(state.turnIndex)),
+    a: state.auction.map(encodeSituationCall),
+    k: state.trickHistory.map((trick) => trick.cards.map(encodeSituationPlay)),
+    c: state.currentTrick.map(encodeSituationPlay),
+    w: state.awaitingTrickAdvance ? 1 : 0
   };
-  if (state.contract) payload.contract = contractToSituationText(state.contract);
-  if (state.declarer) payload.declarer = seatCode(state.declarer);
-  if (state.dummy) payload.dummy = seatCode(state.dummy);
-  if (state.leader) payload.leader = seatCode(state.leader);
-  if (state.practice?.lessonId) payload.lesson = state.practice.lessonId;
+  if (state.contract) payload.x = contractToSituationText(state.contract);
+  if (state.declarer) payload.r = seatCode(state.declarer);
+  if (state.dummy) payload.m = seatCode(state.dummy);
+  if (state.leader) payload.l = seatCode(state.leader);
+  if (state.practice?.lessonId) payload.e = state.practice.lessonId;
   return situationCodec.encodeSituationPayload(payload);
 }
 
 function startSituationSeed(seed) {
   const situation = parseSituationSeed(seed);
-  if (!situation?.seed) throw new Error("Situation seed is missing the base seed");
+  if (!situation?.s) throw new Error("Situation seed is missing the base seed");
 
-  state.dealNumber = positiveBoardNumber(situation.board);
-  state.dealSeed = String(situation.seed);
-  const dealer = seatFromCode(situation.dealer) || seatAt(dealerIndexForDeal(state.dealNumber));
-  const vulnerability = normalizeVulnerability(situation.vul) || vulnerabilityForDeal(state.dealNumber);
+  state.dealNumber = positiveBoardNumber(situation.b);
+  state.dealSeed = String(situation.s);
+  const dealer = seatFromCode(situation.d) || seatAt(dealerIndexForDeal(state.dealNumber));
+  const vulnerability = normalizeVulnerability(situation.u) || vulnerabilityForDeal(state.dealNumber);
   const scenario = globalThis.PracticeHands?.findPracticeHand(state.dealSeed)
     ? globalThis.PracticeHands.preparePracticeHand(state.dealSeed)
     : null;
   const hands = scenario ? scenario.hands : dealHands(state.dealSeed);
-  const lesson = scenario && situation.lesson ? globalThis.BridgeLessons?.findLesson?.(String(situation.lesson)) || null : null;
+  const lesson = scenario && situation.e ? globalThis.BridgeLessons?.findLesson?.(String(situation.e)) || null : null;
   const practice = scenario ? practiceStateFromScenario(scenario, lesson) : null;
 
   startPreparedHand({
@@ -129,10 +129,10 @@ function startSituationSeed(seed) {
   state.animateDeal = false;
   state.seedMessage = t("situationSeedLoaded");
 
-  restoreSituationAuction(situation.auction || []);
+  restoreSituationAuction(situation.a || []);
   restoreSituationContractContext(situation);
   restoreSituationPlay(situation);
-  setSituationStatus(situation.phase);
+  setSituationStatus(situation.p);
   renderRestoredSituation();
 }
 
@@ -143,15 +143,15 @@ function parseSituationSeed(seed) {
 function restoreSituationAuction(auction) {
   state.auction = [];
   for (const encodedCall of auction) {
-    const seat = seatFromCode(encodedCall.s) || seatAt(state.turnIndex);
+    const seat = seatFromCode(encodedCall[0]) || seatAt(state.turnIndex);
     if (seat !== seatAt(state.turnIndex)) throw new Error("Situation auction is out of order");
-    const bid = bidFromSituationText(encodedCall.b);
+    const bid = bidFromSituationText(encodedCall[1]);
     const bidResult = chooseBidResult(seat);
     const call = {
       seat,
       bid,
-      stop: Boolean(encodedCall.o),
-      alert: Boolean(encodedCall.a)
+      stop: Boolean(encodedCall[2]),
+      alert: Boolean(encodedCall[3])
     };
     if (bidResult && sameCall(bidResult.bid, bid)) call.bidResult = bidResult;
     if (bidResult && !sameCall(bidResult.bid, bid)) call.recommendedBidResult = bidResult;
@@ -188,37 +188,37 @@ function restoreSituationAuction(auction) {
 
 function restoreSituationContractContext(situation) {
   if (state.phase === "playing" || state.phase === "complete") return;
-  const explicitContract = contractFromSituationText(situation.contract);
-  if (!explicitContract || !["playing", "complete"].includes(situation.phase)) return;
+  const explicitContract = contractFromSituationText(situation.x);
+  if (!explicitContract || !["playing", "complete"].includes(situation.p)) return;
 
-  const declarer = seatFromCode(situation.declarer);
+  const declarer = seatFromCode(situation.r);
   if (!declarer) throw new Error("Situation declarer is missing for explicit contract restore");
 
   state.contract = explicitContract;
   state.declarer = declarer;
-  state.dummy = seatFromCode(situation.dummy) || partnerOf(declarer);
-  state.leader = seatFromCode(situation.leader) || leftOf(declarer);
+  state.dummy = seatFromCode(situation.m) || partnerOf(declarer);
+  state.leader = seatFromCode(situation.l) || leftOf(declarer);
   state.turnIndex = seats.indexOf(state.leader);
   state.phase = "playing";
 }
 
 function restoreSituationPlay(situation) {
   if (state.phase !== "playing") {
-    if (situation.phase === "complete" && !state.contract) setStatus("fourPasses");
+    if (situation.p === "complete" && !state.contract) setStatus("fourPasses");
     return;
   }
 
-  (situation.tricks || []).forEach((trick) => {
+  (situation.k || []).forEach((trick) => {
     trick.forEach((play) => restoreSituationPlayCard(play));
     completeRestoredTrick();
   });
 
-  (situation.current || []).forEach((play) => restoreSituationPlayCard(play));
+  (situation.c || []).forEach((play) => restoreSituationPlayCard(play));
 
   if (state.currentTrick.length === 4) {
     const winner = currentWinningPlay()?.seat;
     if (!winner) throw new Error("Situation current trick has no winner");
-    if (situation.awaiting) {
+    if (situation.w) {
       state.awaitingTrickAdvance = true;
       state.trickAdvanceArmed = true;
       state.pendingTrickWinner = winner;
@@ -227,15 +227,15 @@ function restoreSituationPlay(situation) {
     }
   }
 
-  if (situation.phase === "complete") {
+  if (situation.p === "complete") {
     finishRestoredHand();
   }
 }
 
 function restoreSituationPlayCard(encodedPlay) {
-  const seat = seatFromCode(encodedPlay.s) || seatAt(state.turnIndex);
+  const seat = seatFromCode(encodedPlay[0]) || seatAt(state.turnIndex);
   if (seat !== seatAt(state.turnIndex)) throw new Error("Situation play is out of order");
-  const card = state.hands[seat]?.find((item) => item.id === normalizeCardId(encodedPlay.c));
+  const card = state.hands[seat]?.find((item) => item.id === normalizeCardId(encodedPlay[1]));
   if (!card || !isLegalCard(seat, card)) throw new Error("Situation card is not playable");
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
@@ -309,20 +309,14 @@ function renderRestoredSituation() {
 }
 
 function encodeSituationCall(call) {
-  const encoded = {
-    s: seatCode(call.seat),
-    b: bidToSituationText(call.bid)
-  };
-  if (call.stop) encoded.o = 1;
-  if (call.alert) encoded.a = 1;
+  const encoded = [seatCode(call.seat), bidToSituationText(call.bid)];
+  if (call.stop || call.alert) encoded.push(call.stop ? 1 : 0);
+  if (call.alert) encoded.push(1);
   return encoded;
 }
 
 function encodeSituationPlay(play) {
-  return {
-    s: seatCode(play.seat),
-    c: play.card.id
-  };
+  return [seatCode(play.seat), play.card.id];
 }
 
 function bidToSituationText(bid) {

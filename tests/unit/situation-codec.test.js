@@ -13,36 +13,36 @@ test("situation codec recognizes and normalizes situation seeds", () => {
 test("situation codec round-trips a valid payload with UTF-8 seed text", () => {
   const payload = {
     v: 1,
-    seed: "oefenhand-schoppen-\u00e4",
-    board: 7,
-    dealer: "S",
-    vul: "both",
-    phase: "playing",
-    lesson: "les-01-wat-is-bridge",
-    contract: "4S",
-    declarer: "S",
-    dummy: "N",
-    leader: "W",
-    turn: "N",
-    auction: [
-      { s: "S", b: "1S", o: 1 },
-      { s: "W", b: "X" },
-      { s: "N", b: "XX", a: true },
-      { s: "E", b: "P" },
-      { s: "S", b: "P" },
-      { s: "W", b: "P" }
+    s: "oefenhand-schoppen-\u00e4",
+    b: 7,
+    d: "S",
+    u: "both",
+    p: "playing",
+    e: "les-01-wat-is-bridge",
+    x: "4S",
+    r: "S",
+    m: "N",
+    l: "W",
+    t: "N",
+    a: [
+      ["S", "1S", 1],
+      ["W", "X"],
+      ["N", "XX", 0, 1],
+      ["E", "P"],
+      ["S", "P"],
+      ["W", "P"]
     ],
-    tricks: [[
-      { s: "W", c: "2H" },
-      { s: "N", c: "AH" },
-      { s: "E", c: "3H" },
-      { s: "S", c: "10H" }
+    k: [[
+      ["W", "2H"],
+      ["N", "AH"],
+      ["E", "3H"],
+      ["S", "10H"]
     ]],
-    current: [
-      { s: "N", c: "AS" },
-      { s: "E", c: "KS" }
+    c: [
+      ["N", "AS"],
+      ["E", "KS"]
     ],
-    awaiting: 0
+    w: 0
   };
 
   const seed = codec.encodeSituationPayload(payload);
@@ -50,34 +50,52 @@ test("situation codec round-trips a valid payload with UTF-8 seed text", () => {
   assert.deepEqual(codec.parseSituationSeed(seed), payload);
 });
 
+test("situation codec accepts the compact feedback seed format", () => {
+  const seed = "situatieseed:eyJ2IjoxLCJzIjoiMzlicTJmNWY4aDZjIiwiYiI6MSwiZCI6Ik4iLCJ1Ijoibm9uZSIsInAiOiJiaWRkaW5nIiwidCI6IlMiLCJhIjpbWyJOIiwiMUQiXSxbIkUiLCIyUyJdXSwiayI6W10sImMiOltdLCJ3IjowfQ";
+
+  assert.deepEqual(codec.parseSituationSeed(seed), {
+    v: 1,
+    s: "39bq2f5f8h6c",
+    b: 1,
+    d: "N",
+    u: "none",
+    p: "bidding",
+    t: "S",
+    a: [["N", "1D"], ["E", "2S"]],
+    k: [],
+    c: [],
+    w: 0
+  });
+});
+
 test("situation codec validates payload shape before restore code runs", () => {
   const valid = {
     v: 1,
-    seed: "valid",
-    board: 1,
-    dealer: "N",
-    vul: "none",
-    phase: "bidding",
-    turn: "N",
-    auction: [],
-    tricks: [],
-    current: [],
-    awaiting: 0
+    s: "valid",
+    b: 1,
+    d: "N",
+    u: "none",
+    p: "bidding",
+    t: "N",
+    a: [],
+    k: [],
+    c: [],
+    w: 0
   };
 
   assert.equal(codec.validateSituationPayload(valid), valid);
   assert.throws(() => codec.validateSituationPayload({ ...valid, v: 2 }), /Unsupported situation seed version/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, seed: "" }), /missing the base seed/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, board: 0 }), /positive integer/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, dealer: "Z" }), /seat dealer/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, vul: "all" }), /vulnerability/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, phase: "review" }), /phase/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, contract: "8S" }), /contract/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, declarer: "Z" }), /declarer/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, auction: [{ s: "N", b: "8S" }] }), /auction\[0\]\.b/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, tricks: [[{ s: "N", c: "AS" }]] }), /must contain four plays/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, current: [{ s: "N", c: "1S" }] }), /current\[0\]\.c/);
-  assert.throws(() => codec.validateSituationPayload({ ...valid, awaiting: 2 }), /awaiting/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, s: "" }), /missing the base seed/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, b: 0 }), /positive integer/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, d: "Z" }), /seat dealer/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, u: "all" }), /vulnerability/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, p: "review" }), /phase/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, x: "8S" }), /contract/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, r: "Z" }), /declarer/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, a: [["N", "8S"]] }), /auction\[0\]\[1\]/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, k: [[["N", "AS"]]] }), /must contain four plays/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, c: [["N", "1S"]] }), /current\[0\]\[1\]/);
+  assert.throws(() => codec.validateSituationPayload({ ...valid, w: 2 }), /awaiting/);
 });
 
 test("situation codec rejects malformed encoded seeds", () => {
@@ -86,7 +104,7 @@ test("situation codec rejects malformed encoded seeds", () => {
   assert.throws(() => codec.parseSituationSeed("situatieseed:abcde"), /payload encoding/);
   assert.throws(() => codec.parseSituationSeed(codec.encodeSituationPayload({
     v: 1,
-    seed: "valid",
-    auction: [{ s: "N", b: "pass please" }]
-  })), /auction\[0\]\.b/);
+    s: "valid",
+    a: [["N", "pass please"]]
+  })), /auction\[0\]\[1\]/);
 });

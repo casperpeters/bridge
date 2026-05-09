@@ -238,6 +238,38 @@ test("loads a situation seed with auction and played cards", async ({ page }) =>
   await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
 });
 
+test("loads a compact feedback situation seed", async ({ page }) => {
+  await openFreshApp(page);
+
+  const restored = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "different-hand", skipFlow: true });
+    app.getEls().seedInput.value = "situatieseed:eyJ2IjoxLCJzIjoiMzlicTJmNWY4aDZjIiwiYiI6MSwiZCI6Ik4iLCJ1Ijoibm9uZSIsInAiOiJiaWRkaW5nIiwidCI6IlMiLCJhIjpbWyJOIiwiMUQiXSxbIkUiLCIyUyJdXSwiayI6W10sImMiOltdLCJ3IjowfQ";
+    app.loadSeedFromInput();
+    const state = app.getState();
+    return {
+      seed: state.dealSeed,
+      board: state.dealNumber,
+      phase: state.phase,
+      turn: app.seatAt(state.turnIndex),
+      vulnerability: state.vulnerability,
+      auction: state.auction.map((call) => `${call.seat}:${call.bid.type === "Bid" ? `${call.bid.level}${call.bid.strain}` : call.bid.type}`),
+      southHandLength: state.hands.South.length
+    };
+  });
+
+  expect(restored).toEqual({
+    seed: "39bq2f5f8h6c",
+    board: 1,
+    phase: "bidding",
+    turn: "South",
+    vulnerability: "none",
+    auction: ["North:1D", "East:2S"],
+    southHandLength: 13
+  });
+  await expect(page.locator("#seed-description")).toContainText("Herhaalcode geladen");
+});
+
 test("restores situation seeds for bidding, pass-out, pre-lead, and doubled auctions", async ({ page }) => {
   await openFreshApp(page);
 
@@ -540,7 +572,7 @@ test("rejects corrupt and out-of-order situation seeds without replacing the cur
       turnIndex: 0
     });
     const payload = decodeSituationSeed(app.createSituationSeed());
-    payload.auction[1].s = "N";
+    payload.a[1][0] = "N";
 
     app.startHand({ seed: "valid-before-out-of-order", skipFlow: true });
     const outOfOrderBefore = app.getState();

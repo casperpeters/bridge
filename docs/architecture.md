@@ -172,7 +172,7 @@ Richtlijn: `scripts/app.js` mag bootstrap en gedeelde infrastructuur blijven, ma
 
 #### Herhaalcode-herstelcontract
 
-De publieke herhaalcode is bij voorkeur een `situatieseed:`. Die herstelt een volledig reproduceerbare spelsituatie bovenop de interne basis-seed voor de kaartverdeling. Het repeat-code veld staat alleen in developermodus. Laden blijft backwards-compatible met oude gewone basis-seeds en oefenhand-id's, maar kopieren en feedbackrapporten gebruiken de situatieseed-vorm. Het minimale contract is dat laden van een situatieseed exact dezelfde engine-toestand oplevert voor:
+De publieke herhaalcode is bij voorkeur een compacte `situatieseed:`. Die herstelt een volledig reproduceerbare spelsituatie bovenop de interne basis-seed voor de kaartverdeling. Het repeat-code veld staat alleen in developermodus. Gewone basis-seeds en oefenhand-id's blijven los laadbaar; kopieren en feedbackrapporten gebruiken de compacte situatieseed-vorm. Het minimale contract is dat laden van een situatieseed exact dezelfde engine-toestand oplevert voor:
 
 - `dealSeed`, bordnummer, deler en kwetsbaarheid;
 - oefenhand-context wanneer de seed naar een `practice-hands/` scenario verwijst;
@@ -184,7 +184,14 @@ De publieke herhaalcode is bij voorkeur een `situatieseed:`. Die herstelt een vo
 - de pauzestand na een complete maar nog niet doorgeschoven slag;
 - eindscore en resultaat wanneer de situatie een uitgespeelde of rondgepaste hand beschrijft.
 
-Herstel mag afgeleide uitleg opnieuw berekenen in plaats van letterlijk opslaan: bied- en speelverklaringen, speelplan, AI-suggesties, statuscopy en reviewtekst moeten na herstel opnieuw uit regels en state kunnen ontstaan. Gebruikersinstellingen zoals developermodus, AI-suggesties en speelgeschiedenis horen niet in de situatieseed; ze blijven lokale voorkeuren. Als biedsystemen of persoonlijke conventies later instelbaar worden, moet de situatieseed ook het actieve conventieprofiel en de relevante afspraak-overrides vastleggen, zodat oude feedback reproduceerbaar blijft.
+Herstel mag afgeleide uitleg opnieuw berekenen in plaats van letterlijk opslaan: bied- en speelverklaringen, speelplan, AI-suggesties, statuscopy en reviewtekst moeten na herstel opnieuw uit regels en state kunnen ontstaan. Gebruikersinstellingen zoals developermodus, AI-suggesties en speelgeschiedenis horen niet in de situatieseed; ze blijven lokale voorkeuren. Als biedsystemen of persoonlijke conventies later instelbaar worden, moet de situatieseed ook het actieve conventieprofiel en de relevante afspraak-overrides vastleggen, zodat feedback reproduceerbaar blijft.
+
+Compacte payloadvelden:
+
+- `s`, `b`, `d`, `u`, `p`, `t` - basis-seed, bord, deler, kwetsbaarheid, fase en beurt.
+- `a` - veiling als compacte arrays `[seat, call, stop?, alert?]`.
+- `k`, `c`, `w` - afgeronde slagen, lopende slag en wacht-op-slagdoorschuifstatus.
+- `x`, `r`, `m`, `l`, `e` - optioneel contract, leider, dummy, uitkomsthand en les-id.
 
 ### 5. Practice-hands layer
 
