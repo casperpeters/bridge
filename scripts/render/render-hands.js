@@ -158,7 +158,7 @@ function compareHandCards(a, b) {
 
 function createCardEl(card, visible = true) {
   const cardEl = document.createElement("div");
-  cardEl.className = "card";
+  cardEl.className = "card playing-card";
   if (!visible) {
     cardEl.classList.add("back");
     return cardEl;
@@ -166,9 +166,9 @@ function createCardEl(card, visible = true) {
   if (card.suit === "D" || card.suit === "H") cardEl.classList.add("red");
   const label = rankLabel[card.rank] || card.rank;
   cardEl.innerHTML = `
-    <div class="rank">${label}${suitSymbols[card.suit]}</div>
-    <div class="suit-big">${suitSymbols[card.suit]}</div>
-    <div class="mini">${label}${suitSymbols[card.suit]}</div>
+    <div class="playing-card-rank">${label}${suitSymbols[card.suit]}</div>
+    <div class="playing-card-suit">${suitSymbols[card.suit]}</div>
+    <div class="playing-card-mini">${label}${suitSymbols[card.suit]}</div>
   `;
   cardEl.setAttribute("aria-label", `${label} ${suitName(card.suit)}`);
   return cardEl;

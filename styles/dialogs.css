@@ -692,10 +692,6 @@
   gap: 5px;
 }
 
-.feedback-field[hidden] {
-  display: none;
-}
-
 .feedback-field label {
   font-weight: 800;
 }

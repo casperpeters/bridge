@@ -179,6 +179,7 @@ const els = {
 
 const mobileLayoutQuery = globalThis.matchMedia?.("(max-width: 760px)") || null;
 const mobileBiddingLayoutQuery = mobileLayoutQuery;
+const stableSidebarLayoutQuery = globalThis.matchMedia?.("(min-width: 1180px)") || null;
 
 loadSavedSettings();
 
@@ -259,14 +260,14 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-if (mobileBiddingLayoutQuery) {
-  const rerenderResponsiveLayout = () => renderAll();
-  if (typeof mobileBiddingLayoutQuery.addEventListener === "function") {
-    mobileBiddingLayoutQuery.addEventListener("change", rerenderResponsiveLayout);
-  } else if (typeof mobileBiddingLayoutQuery.addListener === "function") {
-    mobileBiddingLayoutQuery.addListener(rerenderResponsiveLayout);
+const rerenderResponsiveLayout = () => renderAll();
+[mobileBiddingLayoutQuery, stableSidebarLayoutQuery].filter(Boolean).forEach((query) => {
+  if (typeof query.addEventListener === "function") {
+    query.addEventListener("change", rerenderResponsiveLayout);
+  } else if (typeof query.addListener === "function") {
+    query.addListener(rerenderResponsiveLayout);
   }
-}
+});
 
 function isControlTarget(target) {
   return target?.closest?.("a, button, input, select, textarea, summary, details");
@@ -366,8 +367,7 @@ function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null,
   }
   renderAll();
   scheduleDealAnimationEnd();
-  setStatus("opensAuction", { seat: seatAt(state.turnIndex) });
-  continueAuction();
+  setStatus("dealing");
 }
 
 function resetScheduledFlow() {
@@ -376,13 +376,16 @@ function resetScheduledFlow() {
 
 function scheduleDealAnimationEnd() {
   clearDealAnimationTimer();
+  const dealAnimationMs = prefersReducedMotion() ? 0 : 1400;
   dealAnimationTimer = window.setTimeout(() => {
     state.animateDeal = false;
     dealAnimationHandsLocked = false;
     dealAnimationHandRenderSnapshot = null;
     dealAnimationTimer = null;
     renderHands();
-  }, 1400);
+    setStatus("opensAuction", { seat: seatAt(state.turnIndex) });
+    continueAuction();
+  }, dealAnimationMs);
 }
 
 function clearDealAnimationTimer() {
@@ -538,28 +541,38 @@ function renderAll() {
 
 function renderResponsiveLayoutState() {
   const isBidding = state.phase === "bidding";
-  const useMobileBiddingLayout = Boolean(isBidding && mobileBiddingLayoutQuery?.matches);
+  const auctionReady = isBidding && !state.animateDeal;
+  const useTableBiddingLayout = isBidding;
+  const useMobileBiddingLayout = Boolean(useTableBiddingLayout && mobileBiddingLayoutQuery?.matches);
+  const useStableSidebarLayout = Boolean(stableSidebarLayoutQuery?.matches);
   els.appShell?.classList.toggle("is-bidding", isBidding);
+  els.appShell?.classList.toggle("is-playing", state.phase === "playing");
+  els.appShell?.classList.toggle("is-table-bidding", useTableBiddingLayout);
   els.appShell?.classList.toggle("is-mobile-bidding", useMobileBiddingLayout);
+  els.appShell?.classList.toggle("has-stable-sidebars", useStableSidebarLayout);
 
   if (!els.auctionPanel || !els.sidePanel || !els.mobileBiddingSlot) return;
 
-  if (useMobileBiddingLayout) {
-    if (els.auctionPanel.parentElement !== els.mobileBiddingSlot) {
-      els.mobileBiddingSlot.appendChild(els.auctionPanel);
+  if (useTableBiddingLayout) {
+    if (els.bidControls.parentElement !== els.mobileBiddingSlot) {
+      els.mobileBiddingSlot.appendChild(els.bidControls);
     }
     els.mobileBiddingSlot.setAttribute("aria-hidden", "false");
     return;
   }
 
-  if (els.auctionPanel.parentElement === els.mobileBiddingSlot) {
-    els.sidePanel.insertBefore(els.auctionPanel, els.sidePanel.firstChild);
+  if (els.bidControls.parentElement === els.mobileBiddingSlot) {
+    els.bidControlsTitle.insertAdjacentElement("afterend", els.bidControls);
   }
   els.mobileBiddingSlot.setAttribute("aria-hidden", "true");
 }
 
 function isMobileLayout() {
   return Boolean(mobileLayoutQuery?.matches);
+}
+
+function usesStableSidebarLayout() {
+  return Boolean(stableSidebarLayoutQuery?.matches);
 }
 
 function focusHandSuit(seat, suit) {
@@ -621,6 +634,10 @@ function dealAnimationHandRenderState() {
     currentTrickLength: playing ? state.currentTrick.length : 0,
     trickHistoryLength: playing ? state.trickHistory.length : 0
   };
+}
+
+function prefersReducedMotion() {
+  return Boolean(globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
 }
 
 function toggleAppMenu() {
@@ -806,13 +823,35 @@ function renderGuidance() {
 
 function renderSeatLabel(label, seat, role = "") {
   if (!label) return;
-  const name = document.createElement("span");
-  name.className = "seat-label-name";
-  name.textContent = seatName(seat);
+  let name = label.querySelector(".seat-label-name");
+  if (!name || name.parentElement !== label) {
+    name = document.createElement("span");
+    name.className = "seat-label-name";
+    label.replaceChildren(name);
+  }
+
+  const nextName = seatName(seat);
+  if (name.textContent !== nextName) name.textContent = nextName;
   name.classList.toggle("is-vulnerable-team", isSeatVulnerable(seat));
-  label.replaceChildren(name);
-  if (!role) return;
-  label.append(` ${roleSeparator} `, role);
+
+  const roleText = role ? ` ${roleSeparator} ${role}` : "";
+  const roleNode = Array.from(label.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+  Array.from(label.childNodes).forEach((node) => {
+    if (node !== name && node !== roleNode) node.remove();
+  });
+
+  if (!roleText) {
+    roleNode?.remove();
+    return;
+  }
+
+  if (roleNode) {
+    if (roleNode.textContent !== roleText) roleNode.textContent = roleText;
+    if (roleNode.previousSibling !== name) name.after(roleNode);
+    return;
+  }
+
+  name.after(document.createTextNode(roleText));
 }
 
 function renderLessonBanner() {
@@ -830,7 +869,7 @@ function renderLessonBanner() {
 }
 
 function currentGuidance() {
-  if (state.phase === "bidding" && seatAt(state.turnIndex) === "South") return biddingGuidance();
+  if (state.phase === "bidding" && !state.animateDeal && seatAt(state.turnIndex) === "South") return biddingGuidance();
   if (state.phase === "playing" && isHumanControlledSeat(seatAt(state.turnIndex))) return cardGuidance();
   return null;
 }
@@ -901,6 +940,7 @@ function currentHint() {
 }
 
 function biddingHint() {
+  if (state.animateDeal) return "Wacht tot de kaarten gedeeld zijn; daarna begint het bieden.";
   if (seatAt(state.turnIndex) === "South") {
     if (highestBid()) return "Je mag alleen hoger bieden dan het huidige hoogste bod. Pas betekent dat je nu geen bod doet.";
     return "Open alleen met genoeg kracht of een duidelijke verdeling. 1SA toont meestal een gebalanceerde hand.";

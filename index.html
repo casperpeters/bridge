@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <main class="app-shell is-bidding is-table-bidding is-mobile-bidding">
       <section class="topbar" aria-label="Spelinstellingen">
         <div class="brand-lockup">
           <img class="app-logo" src="assets/branding/logo.png" alt="" aria-hidden="true" />
@@ -86,14 +86,14 @@
         <div class="turn-glow turn-glow-west" aria-hidden="true"></div>
         <div class="opponent north">
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
-          <div id="north-label" class="seat-label">Noord &bull; Partner</div>
+          <div id="north-label" class="seat-label"><span class="seat-label-name">Noord</span> &bull; Partner</div>
           <div id="north-auction-calls" class="seat-auction-calls seat-auction-north" aria-label="Biedingen Noord"></div>
         </div>
 
         <div class="middle-row">
           <div class="opponent west">
             <div id="west-hand" class="hand vertical" aria-label="West hand"></div>
-            <div id="west-label" class="seat-label">West</div>
+            <div id="west-label" class="seat-label"><span class="seat-label-name">West</span></div>
             <div id="west-auction-calls" class="seat-auction-calls seat-auction-west" aria-label="Biedingen West"></div>
           </div>
 
@@ -117,13 +117,12 @@
               <div id="dummy-notice" class="table-note" aria-live="polite" hidden></div>
               <div id="lesson-banner" class="lesson-banner" aria-live="polite" hidden></div>
               <div id="table-feedback" class="table-feedback" aria-live="polite" hidden></div>
-              <div id="guidance-panel" class="guidance-panel" hidden></div>
               <div id="trick-advance-hint" class="trick-advance-hint" hidden>Klik ergens of druk op Enter voor de volgende slag.</div>
             </div>
           </div>
 
           <div class="opponent east">
-            <div id="east-label" class="seat-label">Oost</div>
+            <div id="east-label" class="seat-label"><span class="seat-label-name">Oost</span></div>
             <div id="east-auction-calls" class="seat-auction-calls seat-auction-east" aria-label="Biedingen Oost"></div>
             <div id="east-hand" class="hand vertical" aria-label="Oost hand"></div>
           </div>
@@ -131,7 +130,7 @@
 
         <div class="player-zone">
           <div class="player-label-row">
-            <div id="south-label" class="seat-label">Zuid &bull; Jij</div>
+            <div id="south-label" class="seat-label"><span class="seat-label-name">Zuid</span> &bull; Jij</div>
             <button id="hint-button" class="hint-button" type="button" aria-label="Hint" data-hint="Deel een nieuwe hand om te starten.">i</button>
           </div>
           <div id="south-auction-calls" class="seat-auction-calls seat-auction-south" aria-label="Biedingen Zuid"></div>
@@ -143,17 +142,18 @@
         <section class="auction-panel" aria-label="Bieden">
           <div class="panel-head">
             <h2 id="bidding-title">Bieden</h2>
-            <span id="dealer-badge">Deler: Zuid</span>
+            <span id="dealer-badge">Bord 1 &middot; Deler: Noord</span>
           </div>
           <h3 id="contract-title" class="review-section-title">Contract</h3>
           <div class="game-summary" aria-labelledby="contract-title">
-            <div id="contract" class="contract">Deel een hand om te starten</div>
-            <div id="scoreline" class="scoreline"></div>
+            <div id="contract" class="contract">Bieden bezig</div>
+            <div id="scoreline" class="scoreline">Noord/Zuid 0 &middot; Oost/West 0 &middot; Kwetsbaarheid: Niemand</div>
           </div>
+          <div id="guidance-panel" class="guidance-panel" hidden></div>
           <h3 id="auction-log-title" class="review-section-title">Biedverloop</h3>
           <div id="auction-log" class="auction-log" aria-labelledby="auction-log-title"></div>
           <h3 id="bid-controls-title" class="review-section-title" hidden>Biedbox</h3>
-          <div id="bid-controls" class="bid-controls" aria-labelledby="bid-controls-title"></div>
+          <div id="bid-controls" class="bid-controls" aria-labelledby="bid-controls-title" aria-hidden="true"></div>
           <div id="play-plan-panel" class="play-plan-panel" hidden></div>
           <div id="bid-explanations" class="bid-explanations" hidden></div>
         </section>

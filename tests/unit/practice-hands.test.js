@@ -8,9 +8,10 @@ function callText(call) {
   return `${call.level}${call.strain}`;
 }
 
-test("practice hand catalog contains thirty-two valid beginner deals", () => {
+test("practice hand catalog contains thirty-two beginner deals plus regression deals", () => {
   assert.equal(practiceHands.beginnerHands.length, 32);
-  assert.equal(practiceHands.validatePracticeHands(), 32);
+  assert.equal(practiceHands.validatePracticeHands(), 33);
+  assert.ok(practiceHands.findPracticeHand("situation-2s-west-trick-8-001"));
 
   const ids = new Set();
   for (const scenario of practiceHands.beginnerHands) {

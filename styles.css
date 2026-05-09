@@ -1,7 +1,21 @@
+/* CSS ownership:
+ * base.css: globale tokens, resets, toegankelijkheid en invariants.
+ * card.css: gedeelde visuele kaartbasis voor gameplay en lessen.
+ * layout.css: app-shell, topbar, menu's en algemene panel-layout.
+ * table.css: gameplaytafel, handen, slagen en speelkaartgedrag.
+ * auction.css: biedtafel, bidbox en auction UI op desktop/basis.
+ * auction-responsive.css: mobiele en responsive auction-specifieke regels.
+ * review.css: review-, score- en nabespreking UI.
+ * dialogs.css: modals, feedbackvelden en dialog states.
+ * responsive.css: algemene responsive regels buiten auction-eigenaarschap.
+ */
+
 @import url("styles/base.css");
+@import url("styles/card.css");
 @import url("styles/layout.css");
 @import url("styles/table.css");
 @import url("styles/auction.css");
+@import url("styles/auction-responsive.css");
 @import url("styles/review.css");
 @import url("styles/dialogs.css");
 @import url("styles/responsive.css");

@@ -221,11 +221,13 @@ Doel:
 
 - `styles.css` blijft de compatibility/aggregator entrypoint voor bestaande laadvolgorde.
 - `styles/` bevat domeingerichte CSS: base, layout, table, auction, dialogs, review en responsive gedrag.
+- `styles/card.css` bevat de gedeelde visuele kaartbasis; gameplay voegt daar `.card`-gedrag aan toe, lessen gebruiken eigen lesson-classes bovenop `.playing-card`.
+- Component-specifieke responsive regels mogen naast het domeinbestand staan; `styles/auction-responsive.css` is eigenaar van biedtafel-, bidbox- en auction-log-responsiveness.
 
 Richtlijn:
 
 - Houd visuele states voorspelbaar: beurt, legaliteit, dummyzichtbaarheid, trick pause, developer-only en dialogs.
-- Responsive gedrag hoort bij voorkeur in `styles/responsive.css`.
+- Algemene responsive layout blijft in `styles/responsive.css`; domeinspecifieke responsive regels horen bij hun domein wanneer dat onderhoudbaarheid verbetert.
 - Voorkom dat CSS utility/layout-regels browsersemantiek zoals `[hidden]` breken.
 
 ## State model

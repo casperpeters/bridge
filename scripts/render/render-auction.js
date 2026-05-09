@@ -2,26 +2,65 @@ function renderAuction() {
   els.auctionLog.innerHTML = "";
   renderSeatAuctionCalls();
   renderBidExplanations();
-  const headers = ["North", "East", "South", "West"];
+  els.auctionLog.appendChild(auctionHistoryTable());
+}
+
+function auctionHistoryTable() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "review-trick-table-wrap";
+
+  const table = document.createElement("table");
+  table.className = "review-trick-table auction-history-table";
+  table.setAttribute("aria-label", t("auction"));
+
+  const headers = seats;
+  const thead = document.createElement("thead");
+  const headerRow = document.createElement("tr");
   headers.forEach((seat) => {
-    const cell = document.createElement("div");
-    cell.className = "auction-cell";
-    cell.classList.toggle("auction-active-seat", state.phase === "bidding" && seatAt(state.turnIndex) === seat);
-    const label = document.createElement("strong");
-    label.textContent = seatName(seat).slice(0, 1);
-    cell.appendChild(label);
-    els.auctionLog.appendChild(cell);
+    const header = document.createElement("th");
+    header.scope = "col";
+    header.textContent = seatName(seat);
+    headerRow.appendChild(header);
   });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
   const offset = state.dealerIndex;
-  for (let i = 0; i < offset; i++) {
-    els.auctionLog.appendChild(emptyAuctionCell());
-  }
+  const cellCount = Math.max(4, offset + state.auction.length + (isAuctionReady() ? 1 : 0));
+  const rowCount = Math.ceil(cellCount / 4);
+  const callByPosition = new Map();
   state.auction.forEach((call) => {
-    const cell = document.createElement("div");
-    cell.className = "auction-cell";
-    cell.appendChild(auctionCallContent(call));
-    els.auctionLog.appendChild(cell);
+    callByPosition.set(offset + callByPosition.size, call);
   });
+
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const row = document.createElement("tr");
+    for (let seatIndex = 0; seatIndex < headers.length; seatIndex++) {
+      const position = rowIndex * 4 + seatIndex;
+      const seat = headers[seatIndex];
+      const call = callByPosition.get(position);
+      row.appendChild(auctionHistoryCell(call, position, position < offset, seat));
+    }
+    tbody.appendChild(row);
+  }
+
+  table.appendChild(tbody);
+  wrapper.appendChild(table);
+  return wrapper;
+}
+
+function auctionHistoryCell(call, position, isDealerOffset, seat) {
+  const cell = document.createElement("td");
+  cell.className = "auction-history-cell";
+  const nextCallPosition = state.dealerIndex + state.auction.length;
+  cell.classList.toggle("auction-active-seat", isAuctionReady() && seatAt(state.turnIndex) === seat && position === nextCallPosition);
+  if (call) {
+    cell.appendChild(auctionCallContent(call));
+  } else {
+    cell.textContent = isDealerOffset ? separatorDot : "-";
+  }
+  return cell;
 }
 
 function renderSeatAuctionCalls() {
@@ -31,7 +70,7 @@ function renderSeatAuctionCalls() {
     if (!container) return;
     container.innerHTML = "";
     const calls = state.auction.filter((call) => call.seat === seat);
-    container.classList.toggle("auction-active-seat", state.phase === "bidding" && seatAt(state.turnIndex) === seat);
+    container.classList.toggle("auction-active-seat", isAuctionReady() && seatAt(state.turnIndex) === seat);
     container.classList.toggle("empty-seat-auction", !calls.length);
     if (!calls.length) {
       const placeholder = document.createElement("span");
@@ -75,15 +114,8 @@ function auctionBadge(label, kind) {
   return badge;
 }
 
-function emptyAuctionCell() {
-  const cell = document.createElement("div");
-  cell.className = "auction-cell";
-  cell.textContent = separatorDot;
-  return cell;
-}
-
 function renderBidExplanations() {
-  els.bidExplanations.hidden = !state.developerMode || !state.auction.length;
+  els.bidExplanations.hidden = state.phase !== "bidding" || !state.developerMode || !state.auction.length;
   els.bidExplanations.innerHTML = "";
   if (els.bidExplanations.hidden) return;
 
@@ -105,16 +137,19 @@ function renderBidExplanations() {
 
 function renderBidControls() {
   els.bidControls.innerHTML = "";
-  const isSouthTurn = state.phase === "bidding" && seatAt(state.turnIndex) === "South";
-  const showWaitingMobileBidBox = state.phase === "bidding" && Boolean(mobileBiddingLayoutQuery?.matches);
-  const showBidControls = isSouthTurn || showWaitingMobileBidBox;
+  const auctionReady = isAuctionReady();
+  const isSouthTurn = auctionReady && seatAt(state.turnIndex) === "South";
+  const showWaitingBidBox = auctionReady;
+  const showBidControls = isSouthTurn || showWaitingBidBox;
   els.bidControls.classList.toggle("active-bid-box", isSouthTurn);
-  els.bidControls.classList.toggle("waiting-bid-box", showWaitingMobileBidBox && !isSouthTurn);
+  els.bidControls.classList.toggle("waiting-bid-box", showWaitingBidBox && !isSouthTurn);
+  els.bidControls.classList.toggle("bid-box-expanded", state.showAdvancedBidControls);
   els.auctionPanel?.classList.toggle("active-action-panel", isSouthTurn);
   if (els.bidControlsTitle) {
-    els.bidControlsTitle.hidden = !showBidControls;
-    els.bidControlsTitle.textContent = isSouthTurn ? t("bidBoxYourTurn") : t("bidBox");
+    els.bidControlsTitle.hidden = true;
+    els.bidControlsTitle.textContent = "";
   }
+  els.bidControls.setAttribute("aria-label", t("bidBox"));
   if (!showBidControls) {
     els.bidControls.setAttribute("aria-hidden", "true");
     return;
@@ -202,6 +237,10 @@ function biddingButton(label, className) {
   button.className = className;
   button.textContent = label;
   return button;
+}
+
+function isAuctionReady() {
+  return state.phase === "bidding" && !state.animateDeal;
 }
 
 function appendBidContent(parent, bid, symbolClassName) {

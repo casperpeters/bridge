@@ -1,7 +1,3 @@
-.play-explanations[hidden] {
-  display: none;
-}
-
 .play-explanations {
   display: grid;
   align-content: start;
@@ -36,6 +32,7 @@
 
 .history .review-trick-table {
   font-size: 0.86rem;
+  min-width: 0;
 }
 
 .history .review-trick-table thead th {
@@ -71,8 +68,21 @@
   color: var(--ink);
 }
 
-.review-panel[hidden] {
-  display: none;
+.history-panel.is-inactive {
+  border-color: rgba(183, 197, 188, 0.18);
+}
+
+.history-panel.is-inactive #trick-count {
+  color: var(--muted);
+}
+
+.history-panel.is-inactive .history-item {
+  border-left-color: rgba(96, 197, 185, 0.45);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.history-panel.is-empty-reserved > * {
+  visibility: hidden;
 }
 
 .review-panel {

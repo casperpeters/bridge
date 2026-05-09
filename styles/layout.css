@@ -145,10 +145,6 @@
   gap: 14px;
 }
 
-.app-menu-panel[hidden] {
-  display: none;
-}
-
 .menu-actions {
   display: grid;
   gap: 12px;
@@ -157,10 +153,6 @@
 .menu-section {
   display: grid;
   gap: 8px;
-}
-
-.menu-section[hidden] {
-  display: none;
 }
 
 .menu-section-title {
@@ -192,10 +184,6 @@
 .setting-field {
   display: grid;
   gap: 6px;
-}
-
-.setting-field[hidden] {
-  display: none;
 }
 
 .setting-field select,
@@ -328,9 +316,6 @@
 }
 
 .history-panel:has(.play-explanations:not([hidden])) {
-  grid-template-rows: auto minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 
-.history-panel[hidden] {
-  display: none;
-}

@@ -1,5 +1,14 @@
 function renderHistory() {
+  syncHistoryPanelState();
   els.history.innerHTML = "";
+  if (!state.showPlayHistory) return;
+  if (!shouldShowLiveHistory()) {
+    const inactive = document.createElement("div");
+    inactive.className = "history-item";
+    inactive.textContent = t("historyEmpty");
+    els.history.appendChild(inactive);
+    return;
+  }
   if (!state.trickHistory.length) {
     const empty = document.createElement("div");
     empty.className = "history-item";
@@ -11,7 +20,7 @@ function renderHistory() {
 }
 
 function renderPlayExplanations() {
-  els.playExplanations.hidden = !state.developerMode || !state.playExplanations.length || state.phase === "complete";
+  els.playExplanations.hidden = !state.showPlayHistory || !state.developerMode || !state.playExplanations.length || state.phase === "complete";
   els.playExplanations.innerHTML = "";
   if (els.playExplanations.hidden) return;
   els.playExplanations.appendChild(reviewSectionTitle(t("playExplanations")));
@@ -31,7 +40,7 @@ function playExplanationEl(explanation) {
 
 function renderReview() {
   const complete = state.phase === "complete" && state.finalScore && (state.contract || state.finalScore.passOut);
-  els.historyPanel.hidden = complete || !state.showPlayHistory;
+  syncHistoryPanelState(complete);
   els.reviewPanel.hidden = !complete;
   if (!complete) return;
 
@@ -92,6 +101,21 @@ function renderReview() {
       els.reviewTricks.appendChild(explanationEl);
     });
   }
+}
+
+function syncHistoryPanelState(complete = state.phase === "complete") {
+  const visible = !complete && (shouldShowLiveHistory() || shouldReserveHistorySlot());
+  els.historyPanel.hidden = !visible;
+  els.historyPanel.classList.toggle("is-inactive", visible && !shouldShowLiveHistory());
+  els.historyPanel.classList.toggle("is-empty-reserved", visible && !state.showPlayHistory);
+}
+
+function shouldShowLiveHistory() {
+  return state.phase === "playing" && state.showPlayHistory;
+}
+
+function shouldReserveHistorySlot() {
+  return typeof usesStableSidebarLayout === "function" && usesStableSidebarLayout() && state.phase !== "complete";
 }
 
 function appendLessonPoints() {
