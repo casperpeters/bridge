@@ -1,5 +1,6 @@
 function continueAuction() {
   if (state.phase !== "bidding") return;
+  if (state.animateDeal) return;
   const seat = seatAt(state.turnIndex);
   renderAll();
   if (auctionComplete()) {
@@ -20,6 +21,7 @@ function continueAuction() {
 
 function makeBid(seat, bid, bidResult = null) {
   if (state.phase !== "bidding" || seat !== seatAt(state.turnIndex)) return;
+  if (state.animateDeal) return;
   const typedBid = normalizeBid(bid);
   if (!typedBid) return;
   if (isContractBid(typedBid) && !isBidHigher(typedBid, highestBid())) return;

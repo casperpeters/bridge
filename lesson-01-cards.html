@@ -5,7 +5,7 @@
     <title>Les 1 - De kaarten van de spelers</title>
     <link rel="icon" type="image/png" href="assets/branding/logo.png" />
     <link rel="stylesheet" href="styles/base.css" />
-    <link rel="stylesheet" href="styles/table.css" />
+    <link rel="stylesheet" href="styles/card.css" />
     <link rel="stylesheet" href="styles/lesson-card-basics.css" />
   </head>
   <body class="card-lesson-body">
@@ -52,6 +52,10 @@
           <button class="progress-step" type="button" data-step-target="3">
             <span>4</span>
             Vier spelers
+          </button>
+          <button class="progress-step" type="button" data-step-target="4">
+            <span>5</span>
+            Windrichtingen
           </button>
         </aside>
 
@@ -176,6 +180,42 @@
               <strong>Onthoud dit:</strong>
               <span>Jij en de speler tegenover je spelen samen. Iedereen krijgt 13 kaarten.</span>
             </aside>
+          </section>
+
+          <section class="lesson-slide" data-step="4" aria-labelledby="wind-title">
+            <p class="card-lesson-kicker">Tafelkompas</p>
+            <h2 id="wind-title">Noord, Oost, Zuid en West</h2>
+            <p>De tafel werkt als een kompas. Jij zit Zuid, je partner zit Noord, en Oost/West zijn de tegenstanders.</p>
+
+            <div class="wind-mini-game" aria-label="Windrichtingen aan de bridgetafel">
+              <button class="wind-mini-seat wind-north" type="button" data-wind-seat="North">
+                <span>Noord</span>
+                <strong>partner</strong>
+              </button>
+              <button class="wind-mini-seat wind-west" type="button" data-wind-seat="West">
+                <span>West</span>
+                <strong>links</strong>
+              </button>
+              <div class="wind-compass-center" aria-hidden="true">
+                <span>N</span>
+                <span>O</span>
+                <span>Z</span>
+                <span>W</span>
+              </div>
+              <button class="wind-mini-seat wind-east" type="button" data-wind-seat="East">
+                <span>Oost</span>
+                <strong>rechts</strong>
+              </button>
+              <button class="wind-mini-seat wind-south" type="button" data-wind-seat="South">
+                <span>Zuid</span>
+                <strong>jij</strong>
+              </button>
+            </div>
+
+            <div class="mini-question wind-question">
+              <h3 id="wind-question">Klik op Zuid: jouw plek aan tafel.</h3>
+              <p id="wind-feedback" class="lesson-feedback" aria-live="polite">Begin bij jezelf. Vanaf daar valt de rest snel op zijn plek.</p>
+            </div>
           </section>
 
           <footer class="lesson-controls">

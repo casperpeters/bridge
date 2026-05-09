@@ -6,7 +6,7 @@ function renderAuction() {
   headers.forEach((seat) => {
     const cell = document.createElement("div");
     cell.className = "auction-cell";
-    cell.classList.toggle("auction-active-seat", state.phase === "bidding" && seatAt(state.turnIndex) === seat);
+    cell.classList.toggle("auction-active-seat", isAuctionReady() && seatAt(state.turnIndex) === seat);
     const label = document.createElement("strong");
     label.textContent = seatName(seat).slice(0, 1);
     cell.appendChild(label);
@@ -31,7 +31,7 @@ function renderSeatAuctionCalls() {
     if (!container) return;
     container.innerHTML = "";
     const calls = state.auction.filter((call) => call.seat === seat);
-    container.classList.toggle("auction-active-seat", state.phase === "bidding" && seatAt(state.turnIndex) === seat);
+    container.classList.toggle("auction-active-seat", isAuctionReady() && seatAt(state.turnIndex) === seat);
     container.classList.toggle("empty-seat-auction", !calls.length);
     if (!calls.length) {
       const placeholder = document.createElement("span");
@@ -83,7 +83,7 @@ function emptyAuctionCell() {
 }
 
 function renderBidExplanations() {
-  els.bidExplanations.hidden = !state.developerMode || !state.auction.length;
+  els.bidExplanations.hidden = state.phase !== "bidding" || !state.developerMode || !state.auction.length;
   els.bidExplanations.innerHTML = "";
   if (els.bidExplanations.hidden) return;
 
@@ -105,16 +105,18 @@ function renderBidExplanations() {
 
 function renderBidControls() {
   els.bidControls.innerHTML = "";
-  const isSouthTurn = state.phase === "bidding" && seatAt(state.turnIndex) === "South";
-  const showWaitingMobileBidBox = state.phase === "bidding" && Boolean(mobileBiddingLayoutQuery?.matches);
-  const showBidControls = isSouthTurn || showWaitingMobileBidBox;
+  const auctionReady = isAuctionReady();
+  const isSouthTurn = auctionReady && seatAt(state.turnIndex) === "South";
+  const showWaitingBidBox = auctionReady;
+  const showBidControls = isSouthTurn || showWaitingBidBox;
   els.bidControls.classList.toggle("active-bid-box", isSouthTurn);
-  els.bidControls.classList.toggle("waiting-bid-box", showWaitingMobileBidBox && !isSouthTurn);
+  els.bidControls.classList.toggle("waiting-bid-box", showWaitingBidBox && !isSouthTurn);
   els.auctionPanel?.classList.toggle("active-action-panel", isSouthTurn);
   if (els.bidControlsTitle) {
-    els.bidControlsTitle.hidden = !showBidControls;
-    els.bidControlsTitle.textContent = isSouthTurn ? t("bidBoxYourTurn") : t("bidBox");
+    els.bidControlsTitle.hidden = true;
+    els.bidControlsTitle.textContent = "";
   }
+  els.bidControls.setAttribute("aria-label", t("bidBox"));
   if (!showBidControls) {
     els.bidControls.setAttribute("aria-hidden", "true");
     return;
@@ -202,6 +204,10 @@ function biddingButton(label, className) {
   button.className = className;
   button.textContent = label;
   return button;
+}
+
+function isAuctionReady() {
+  return state.phase === "bidding" && !state.animateDeal;
 }
 
 function appendBidContent(parent, bid, symbolClassName) {

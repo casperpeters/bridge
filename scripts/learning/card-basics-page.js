@@ -14,15 +14,26 @@
   const dealButton = document.querySelector("#deal-demo");
   const tableDemo = document.querySelector(".table-demo");
   const dealStatus = document.querySelector("#deal-status");
+  const windSeats = [...document.querySelectorAll(".wind-mini-seat")];
+  const windQuestion = document.querySelector("#wind-question");
+  const windFeedback = document.querySelector("#wind-feedback");
   const params = new URLSearchParams(window.location.search || "");
   const dealSeats = ["North", "East", "South", "West"];
+  const windQuestions = [
+    { seat: "South", text: "Klik op Zuid: jouw plek aan tafel.", ok: "Precies. Jij speelt vanuit Zuid." },
+    { seat: "North", text: "Wie is je partner, recht tegenover jou?", ok: "Ja. Noord is je partner." },
+    { seat: "West", text: "Wie zit links van Zuid?", ok: "Klopt. Links van Zuid zit West." },
+    { seat: "East", text: "Wie zit rechts van Zuid?", ok: "Goed. Rechts van Zuid zit Oost." }
+  ];
   const sampleDeal = buildSampleDeal();
   let dealTimers = [];
   let currentStep = 0;
+  let windStep = 0;
 
   preserveTestHooksOnLessonLinks();
   renderRanks(".compact-ranks", "S");
   renderRanks(".full-ranks", "H");
+  renderWindStep();
   showStep(0);
 
   progressButtons.forEach((button) => {
@@ -65,6 +76,10 @@
     runDealDemo();
   });
 
+  windSeats.forEach((button) => {
+    button.addEventListener("click", () => chooseWindSeat(button));
+  });
+
   function showStep(step) {
     currentStep = Math.max(0, Math.min(slides.length - 1, step));
     slides.forEach((slide, index) => {
@@ -91,14 +106,14 @@
 
   function createLessonCard(card) {
     const cardEl = document.createElement("div");
-    cardEl.className = "card lesson-rank-card";
+    cardEl.className = "playing-card lesson-rank-card";
     if (card.suit === "D" || card.suit === "H") cardEl.classList.add("red");
     const label = rankLabel[card.rank] || card.rank;
     const symbol = suitSymbols[card.suit] || card.suit;
     cardEl.innerHTML = `
-      <div class="rank">${label}${symbol}</div>
-      <div class="suit-big">${symbol}</div>
-      <div class="mini">${label}${symbol}</div>
+      <div class="playing-card-rank">${label}${symbol}</div>
+      <div class="playing-card-suit">${symbol}</div>
+      <div class="playing-card-mini">${label}${symbol}</div>
     `;
     cardEl.setAttribute("aria-label", `${label} ${suitNames[card.suit] || card.suit}`);
     return cardEl;
@@ -140,6 +155,49 @@
       }, index * 55);
       dealTimers.push(timer);
     });
+  }
+
+  function chooseWindSeat(button) {
+    const current = windQuestions[windStep];
+    if (!current) return;
+
+    const correct = button.dataset.windSeat === current.seat;
+    windSeats.forEach((seat) => seat.classList.remove("is-correct", "is-missed"));
+    button.classList.add(correct ? "is-correct" : "is-missed");
+
+    if (!correct) {
+      if (windFeedback) windFeedback.textContent = `Bijna. Zoek ${windSeatName(current.seat)} op het tafelkompas.`;
+      return;
+    }
+
+    if (windFeedback) windFeedback.textContent = current.ok;
+    windStep += 1;
+
+    if (windStep >= windQuestions.length) {
+      if (windQuestion) windQuestion.textContent = "Je tafelkompas staat goed.";
+      if (windFeedback) windFeedback.textContent = "Mooi. Zuid-Noord spelen samen; Oost-West zitten links en rechts.";
+      windSeats.forEach((seat) => seat.classList.remove("is-target", "is-missed"));
+      return;
+    }
+
+    renderWindStep();
+  }
+
+  function renderWindStep() {
+    const current = windQuestions[windStep];
+    if (!current) return;
+    windSeats.forEach((seat) => seat.classList.remove("is-correct", "is-missed", "is-target"));
+    document.querySelector(`[data-wind-seat="${current.seat}"]`)?.classList.add("is-target");
+    if (windQuestion) windQuestion.textContent = current.text;
+  }
+
+  function windSeatName(seat) {
+    return {
+      North: "Noord",
+      East: "Oost",
+      South: "Zuid",
+      West: "West"
+    }[seat] || seat;
   }
 
   function dealOneCard(card, seat, index) {

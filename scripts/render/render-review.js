@@ -1,5 +1,13 @@
 function renderHistory() {
+  syncHistoryPanelState();
   els.history.innerHTML = "";
+  if (!shouldShowLiveHistory()) {
+    const inactive = document.createElement("div");
+    inactive.className = "history-item";
+    inactive.textContent = state.showPlayHistory ? t("historyEmpty") : t("historyDisabled");
+    els.history.appendChild(inactive);
+    return;
+  }
   if (!state.trickHistory.length) {
     const empty = document.createElement("div");
     empty.className = "history-item";
@@ -31,7 +39,7 @@ function playExplanationEl(explanation) {
 
 function renderReview() {
   const complete = state.phase === "complete" && state.finalScore && (state.contract || state.finalScore.passOut);
-  els.historyPanel.hidden = complete || !state.showPlayHistory;
+  syncHistoryPanelState(complete);
   els.reviewPanel.hidden = !complete;
   if (!complete) return;
 
@@ -92,6 +100,20 @@ function renderReview() {
       els.reviewTricks.appendChild(explanationEl);
     });
   }
+}
+
+function syncHistoryPanelState(complete = state.phase === "complete") {
+  const visible = !complete && (shouldShowLiveHistory() || shouldReserveHistorySlot());
+  els.historyPanel.hidden = !visible;
+  els.historyPanel.classList.toggle("is-inactive", visible && !shouldShowLiveHistory());
+}
+
+function shouldShowLiveHistory() {
+  return state.phase === "playing" && state.showPlayHistory;
+}
+
+function shouldReserveHistorySlot() {
+  return typeof usesStableSidebarLayout === "function" && usesStableSidebarLayout() && state.phase !== "complete";
 }
 
 function appendLessonPoints() {

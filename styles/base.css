@@ -71,6 +71,10 @@ h2 {
   border: 0;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 label,
 .panel-head span,
 .seat-label,

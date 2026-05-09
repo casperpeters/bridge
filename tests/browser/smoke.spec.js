@@ -71,6 +71,12 @@ test("keeps tester-only menu actions behind developer mode", async ({ page }) =>
 
 test("keeps Stop and Alert in a persisted expandable bidding bar", async ({ page }) => {
   await openFreshApp(page);
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "stop-alert-controls", skipFlow: true });
+    app.setState({ phase: "bidding", turnIndex: 2, auction: [], animateDeal: false });
+    app.renderAll();
+  });
 
   await expect(page.locator("#bid-controls button.double")).toBeVisible();
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
@@ -81,18 +87,25 @@ test("keeps Stop and Alert in a persisted expandable bidding bar", async ({ page
   const toggle = page.locator("#bid-controls button.bid-advanced-toggle");
   await expect(toggle).toBeVisible();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await toggle.click();
+  await toggle.focus();
+  await page.keyboard.press("Enter");
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#bid-controls button.stop")).toBeVisible();
   await expect(page.locator("#bid-controls button.alert")).toBeVisible();
 
   await page.reload();
   await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "stop-alert-controls-reloaded", skipFlow: true });
+    app.setState({ phase: "bidding", turnIndex: 2, auction: [], animateDeal: false });
+    app.renderAll();
+  });
   await expect(page.locator("#bid-controls button.bid-advanced-toggle")).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#bid-controls button.stop")).toBeVisible();
 
-  await page.locator("#bid-controls button.stop").click();
-  await page.locator("#bid-controls button.pass").click();
+  await page.locator("#bid-controls button.stop").evaluate((button) => button.click());
+  await page.locator("#bid-controls button.pass").evaluate((button) => button.click());
   await expect(page.locator("#auction-log")).toContainText("Stop");
   await expect(page.locator("#auction-log")).toContainText("Pas");
 });
@@ -128,6 +141,165 @@ test("loads the live table and lets South make an auction call", async ({ page }
   expect(pageErrors).toEqual([]);
 });
 
+test("waits for the deal animation before South can start bidding", async ({ page }) => {
+  await openFreshApp(page);
+
+  const duringDeal = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "advance-to-east-dealer", skipFlow: true });
+    app.startHand({ seed: "south-dealer-waits-for-deal-animation" });
+    return {
+      animateDeal: app.getState().animateDeal,
+      dealer: app.seatAt(app.getState().dealerIndex),
+      turn: app.seatAt(app.getState().turnIndex),
+      status: document.querySelector("#status").textContent,
+      bidBoxActive: document.querySelector("#bid-controls").classList.contains("active-bid-box"),
+      visibleBidButtons: document.querySelectorAll("#bid-controls button:not([hidden])").length
+    };
+  });
+
+  expect(duringDeal).toEqual({
+    animateDeal: true,
+    dealer: "South",
+    turn: "South",
+    status: "De kaarten worden gedeeld.",
+    bidBoxActive: false,
+    visibleBidButtons: 0
+  });
+
+  await expect.poll(async () => page.evaluate(() => ({
+    animateDeal: window.BridgeAppTestHooks.getState().animateDeal,
+    status: document.querySelector("#status").textContent,
+    bidBoxActive: document.querySelector("#bid-controls").classList.contains("active-bid-box")
+  }))).toEqual({
+    animateDeal: false,
+    status: "Jij bent aan de beurt om te bieden.",
+    bidBoxActive: true
+  });
+});
+
+test("keeps stable left and right sidebar slots on desktop", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium", "Desktop-only responsive layout");
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "desktop-stable-sidebars", skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      animateDeal: false,
+      guidanceMode: true,
+      showPlayHistory: false,
+      dealerIndex: 0,
+      turnIndex: 2,
+      auction: [
+        { seat: "North", bid: app.rules.Bid(1, "H") },
+        { seat: "East", bid: app.rules.Pass() }
+      ]
+    });
+    app.renderAll();
+  });
+
+  await expect(page.locator(".app-shell")).toHaveClass(/has-stable-sidebars/);
+  await expect(page.locator(".app-shell")).toHaveClass(/is-table-bidding/);
+  await expect(page.locator(".app-shell")).not.toHaveClass(/is-mobile-bidding/);
+  await expect(page.locator(".side-panel > .auction-panel")).toBeVisible();
+  await expect(page.locator("#mobile-bidding-slot > #bid-controls")).toBeVisible();
+  await expect(page.locator(".auction-panel #bid-controls")).toHaveCount(0);
+  await expect(page.locator("#history-panel")).toBeVisible();
+  await expect(page.locator("#history-panel")).toHaveClass(/is-inactive/);
+  await expect(page.locator("#history")).toContainText("Speelgeschiedenis staat uit.");
+  await expect(page.locator("#guidance-panel")).toBeVisible();
+  await expect(page.locator(".auction-panel #guidance-panel")).toContainText("AI-suggestie bod");
+  await expect(page.locator("#contract")).toBeVisible();
+  await expect(page.locator("#auction-log")).toBeHidden();
+  await expect(page.locator("#north-hand")).toBeVisible();
+  await expect(page.locator("#west-hand")).toBeVisible();
+  await expect(page.locator("#east-hand")).toBeVisible();
+  await expect(page.locator("#south-hand")).toBeVisible();
+  await expect(page.locator("#bid-controls-title")).toBeHidden();
+  await expect(page.locator("#bid-controls")).toHaveClass(/active-bid-box/);
+  await expect(page.locator("#bid-controls button.pass")).toBeVisible();
+  await expect(page.locator("#bid-controls button.pass")).toBeEnabled();
+  await expect(page.locator("#south-auction-calls")).toHaveClass(/auction-active-seat/);
+
+  const biddingLayout = await page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const table = rectFor(".table-area");
+    const auctionPanel = rectFor(".auction-panel");
+    const historyPanel = rectFor("#history-panel");
+    const bidControls = rectFor("#bid-controls");
+    const contains = (outer, inner) =>
+      inner.top >= outer.top &&
+      inner.left >= outer.left &&
+      inner.right <= outer.right &&
+      inner.bottom <= outer.bottom;
+    return {
+      table,
+      auctionPanel,
+      historyPanel,
+      bidBoxInsideTable: contains(table, bidControls),
+      leftBeforeTable: auctionPanel.right <= table.left,
+      rightAfterTable: historyPanel.left >= table.right,
+      sideHeightsMatch: Math.abs(auctionPanel.height - historyPanel.height) <= 2
+    };
+  });
+
+  expect(biddingLayout.leftBeforeTable).toBe(true);
+  expect(biddingLayout.rightAfterTable).toBe(true);
+  expect(biddingLayout.bidBoxInsideTable).toBe(true);
+  expect(biddingLayout.sideHeightsMatch).toBe(true);
+
+  const playingLayout = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({
+      phase: "playing",
+      guidanceMode: false,
+      showPlayHistory: true,
+      contract: app.rules.Bid(2, "H"),
+      declarer: "North",
+      dummy: "South",
+      turnIndex: 1
+    });
+    app.renderAll();
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    return {
+      table: rectFor(".table-area"),
+      auctionPanel: rectFor(".auction-panel"),
+      historyPanel: rectFor("#history-panel"),
+      auctionLogDisplay: getComputedStyle(document.querySelector("#auction-log")).display,
+      historyClass: document.querySelector("#history-panel").className,
+      historyText: document.querySelector("#history").textContent
+    };
+  });
+
+  expect(playingLayout.auctionLogDisplay).toBe("none");
+  expect(playingLayout.historyClass).not.toContain("is-inactive");
+  expect(playingLayout.historyText).toContain("Slagen verschijnen hier tijdens het spel.");
+  expect(Math.abs(playingLayout.table.left - biddingLayout.table.left)).toBeLessThanOrEqual(2);
+  expect(Math.abs(playingLayout.table.right - biddingLayout.table.right)).toBeLessThanOrEqual(2);
+});
+
 test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only responsive layout");
   await openFreshApp(page);
@@ -148,7 +320,9 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
   });
 
   await expect(page.locator(".app-shell")).toHaveClass(/is-mobile-bidding/);
-  await expect(page.locator("#mobile-bidding-slot > .auction-panel")).toBeVisible();
+  await expect(page.locator("#mobile-bidding-slot > #bid-controls")).toBeVisible();
+  await expect(page.locator(".auction-panel #bid-controls")).toHaveCount(0);
+  await expect(page.locator(".auction-panel #contract")).toBeVisible();
   await expect(page.locator("#north-hand")).toBeHidden();
   await expect(page.locator("#west-hand")).toBeHidden();
   await expect(page.locator("#east-hand")).toBeHidden();
@@ -156,6 +330,7 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
   await expect(page.locator("#auction-log")).toBeHidden();
   await expect(page.locator("#north-auction-calls")).toBeVisible();
   await expect(page.locator("#east-auction-calls")).toBeVisible();
+  await expect(page.locator("#bid-controls-title")).toBeHidden();
   await expect(page.locator("#north-auction-calls")).toContainText("1");
   await expect(page.locator("#east-auction-calls")).toContainText("Pas");
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
@@ -199,7 +374,7 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
     };
     return {
       table: rectFor(".table-area"),
-      panel: rectFor("#mobile-bidding-slot > .auction-panel"),
+      panel: rectFor("#mobile-bidding-slot > #bid-controls"),
       northLabel: rectFor("#north-label"),
       westLabel: rectFor("#west-label"),
       eastLabel: rectFor("#east-label"),
@@ -233,7 +408,7 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
     };
     return {
       table: rectFor(".table-area"),
-      panel: rectFor("#mobile-bidding-slot > .auction-panel"),
+      panel: rectFor("#mobile-bidding-slot > #bid-controls"),
       northLabel: rectFor("#north-label"),
       westLabel: rectFor("#west-label"),
       eastLabel: rectFor("#east-label"),
@@ -263,7 +438,7 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
     const bidControls = getComputedStyle(document.querySelector("#bid-controls"));
     const advancedToggle = getComputedStyle(document.querySelector("#bid-controls .bid-advanced-toggle"));
     const southBids = rectFor("#south-auction-calls");
-    const panel = rectFor("#mobile-bidding-slot > .auction-panel");
+    const panel = rectFor("#mobile-bidding-slot > #bid-controls");
     const advancedToggleRect = rectFor("#bid-controls .bid-advanced-toggle");
     const westLabel = rectFor("#west-label");
     const westBids = rectFor("#west-auction-calls");
@@ -368,7 +543,7 @@ test("keeps the mobile bidding box visible while waiting for another player", as
   });
 
   await expect(page.locator(".app-shell")).toHaveClass(/is-mobile-bidding/);
-  await expect(page.locator("#mobile-bidding-slot > .auction-panel")).toBeVisible();
+  await expect(page.locator("#mobile-bidding-slot > #bid-controls")).toBeVisible();
   await expect(page.locator("#bid-controls")).toHaveClass(/waiting-bid-box/);
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
   await expect(page.locator("#bid-controls button.pass")).toBeDisabled();
@@ -1017,22 +1192,24 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator("#lesson-page-title")).toContainText("Wat is bridge?");
   await expect(page.locator("#lesson-route-panel")).toContainText("Leerroute");
   await expect(page.locator(".lesson-route-button")).toHaveCount(12);
-  await expect(page.locator("#lesson-content")).toContainText("Hoofdstukken");
-  await expect(page.locator("#lesson-content")).toContainText("De kaarten van de spelers");
-  await expect(page.locator("#lesson-content")).toContainText("Bekennen moet");
-  await expect(page.locator("#lesson-content")).not.toContainText("Bridge speel je met vier spelers");
+  await expect(page.locator("#lesson-content")).toContainText("Samenvatting");
+  await expect(page.locator("#lesson-content")).toContainText("vier spelers");
+  await expect(page.locator("#lesson-content")).toContainText("Begin les");
+  await expect(page.locator("#lesson-content")).not.toContainText("Hoofdstukken");
 
-  await page.locator(".lesson-chapter", { hasText: "De kaarten van de spelers" }).locator(".lesson-chapter-link").click();
+  await page.locator(".lesson-finish .lesson-chapter-link", { hasText: "Begin les" }).click();
   await expect(page).toHaveURL(/lesson-01-cards\.html\?testHooks=1/);
   await expect(page.locator("#card-lesson-title")).toContainText("Leer eerst de kaarten lezen");
+  await expect(page.locator(".progress-step")).toHaveCount(5);
+  await expect(page.locator(".progress-step", { hasText: "Windrichtingen" })).toBeVisible();
   await expect(page.locator(".suit-tile")).toHaveCount(4);
   await expect(page.locator(".suit-tile", { hasText: "Harten" })).toBeVisible();
   await page.locator("#next-step").click();
   await expect(page.locator(".lesson-slide.is-active")).toContainText("Elke kleur heeft 13 kaarten");
-  await expect(page.locator(".compact-ranks .card")).toHaveCount(13);
+  await expect(page.locator(".compact-ranks .lesson-rank-card")).toHaveCount(13);
   await page.locator(".suit-count-card", { hasText: "♥" }).click();
   await expect(page.locator("#suit-count-feedback")).toContainText("hartenkaarten");
-  await expect(page.locator(".compact-ranks .card").first()).toHaveAttribute("aria-label", "A harten");
+  await expect(page.locator(".compact-ranks .lesson-rank-card").first()).toHaveAttribute("aria-label", "A harten");
   await page.locator("#next-step").click();
   await page.locator(".choice-card", { hasText: "A" }).click();
   await expect(page.locator("#rank-feedback")).toContainText("De aas is de hoogste kaart");
@@ -1053,10 +1230,20 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator('[data-seat-count="South"]')).toHaveText("13");
   await expect(page.locator('[data-seat-count="West"]')).toHaveText("13");
   await expect(page.locator("#deal-status")).toContainText("Iedere speler heeft nu 13 kaarten");
-  await page.locator(".card-lesson-back").click();
+  await page.locator("#next-step").click();
+  await expect(page.locator(".lesson-slide.is-active")).toContainText("Noord, Oost, Zuid en West");
+  await page.locator(".wind-mini-seat", { hasText: "Zuid" }).click();
+  await expect(page.locator("#wind-feedback")).toContainText("Jij speelt vanuit Zuid");
+  await page.locator(".wind-mini-seat", { hasText: "Noord" }).click();
+  await expect(page.locator("#wind-feedback")).toContainText("Noord is je partner");
+  await page.locator(".wind-mini-seat", { hasText: "West" }).click();
+  await expect(page.locator("#wind-feedback")).toContainText("Links van Zuid zit West");
+  await page.locator(".wind-mini-seat", { hasText: "Oost" }).click();
+  await expect(page.locator("#wind-question")).toContainText("tafelkompas staat goed");
+  await page.goto("/lessons.html?testHooks=1");
   await expect(page).toHaveURL(/lessons\.html\?testHooks=1/);
 
-  await page.locator(".lesson-chapter", { hasText: "Bekennen moet" }).locator(".lesson-practice-link").click();
+  await page.locator(".lesson-finish .lesson-practice-link", { hasText: "Start oefening" }).click();
   await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1/);
   await expect(page.locator("#lesson-banner")).toContainText("Les 1: Wat is bridge?");
   await expect(page.locator("#lesson-banner")).toContainText("dummy");
@@ -1151,7 +1338,7 @@ test("submits structured lesson metadata in feedback payload", async ({ page }) 
   await openFreshApp(page);
 
   await clickMenuButton(page, "#open-lessons");
-  await page.locator(".lesson-chapter", { hasText: "Bekennen moet" }).locator(".lesson-practice-link").click();
+  await page.locator(".lesson-finish .lesson-practice-link", { hasText: "Start oefening" }).click();
   await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1/);
   await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
   await expect(page.locator("#dummy-notice")).toContainText("dummy");
@@ -1312,6 +1499,7 @@ test("stores South convention metadata without showing an AI suggestion", async 
     ].map(makeCard);
     app.setState({
       phase: "bidding",
+      animateDeal: false,
       guidanceMode: false,
       turnIndex: 2,
       vulnerability: "none",
@@ -1352,13 +1540,21 @@ test("developer bid explanations use rule references without the old source line
 
   await page.evaluate(() => {
     const app = window.BridgeAppTestHooks;
-    app.setState({ developerMode: true, guidanceMode: true });
+    app.startHand({ seed: "developer-bid-explanations", skipFlow: true });
+    app.setState({
+      developerMode: true,
+      guidanceMode: true,
+      phase: "bidding",
+      turnIndex: 2,
+      auction: [],
+      animateDeal: false
+    });
     app.renderAll();
   });
   const suggestedAction = await page.locator("#guidance-panel strong").textContent();
   const suggestedBid = suggestedAction.split(": ").pop();
 
-  await page.locator(".bid-controls .recommended-action").click();
+  await page.locator(".bid-controls .recommended-action").evaluate((button) => button.click());
   await expect(page.locator("#bid-explanations")).toContainText(suggestedBid);
   await expect(page.locator("#bid-explanations")).toContainText("Regel:");
   await expect(page.locator("#bid-explanations")).not.toContainText("Bron: huidige Vijfkaart-Hoog-heuristiek; nog geen volledige systeemkaart.");
@@ -1589,7 +1785,7 @@ test("developer bid explanations describe fourth-suit forcing as artificial", as
   await expect(page.locator("#bid-explanations")).toContainText("Regel: continuation.responderFourthSuitForcing");
 });
 
-test("shows compact feedback when a player clicks an illegal card", async ({ page }) => {
+test("shows compact feedback when a player clicks an illegal card", async ({ page }, testInfo) => {
   await openFreshApp(page);
 
   await page.evaluate(() => {
@@ -1617,6 +1813,10 @@ test("shows compact feedback when a player clicks an illegal card", async ({ pag
   });
 
   await page.locator('#south-hand .card[aria-label="A schoppen"]').click();
+  if (testInfo.project.name === "mobile-chromium") {
+    await expect(page.locator("#south-hand")).toHaveClass(/suit-focus-active/);
+    await page.locator('#south-hand .card[aria-label="A schoppen"]').click();
+  }
   await expect(page.locator("#table-feedback")).toContainText("Bekennen: speel eerst harten.");
 
   const afterIllegalClick = await page.evaluate(() => {
@@ -1628,7 +1828,18 @@ test("shows compact feedback when a player clicks an illegal card", async ({ pag
   });
   expect(afterIllegalClick).toEqual({ currentTrickLength: 1, southHandLength: 2 });
 
+  if (testInfo.project.name === "mobile-chromium") {
+    await page.evaluate(() => {
+      const app = window.BridgeAppTestHooks;
+      app.setState({ handSuitFocus: null });
+      app.renderAll();
+    });
+  }
   await page.locator('#south-hand .card[aria-label="2 harten"]').click();
+  if (testInfo.project.name === "mobile-chromium") {
+    await expect(page.locator("#south-hand")).toHaveClass(/suit-focus-active/);
+    await page.locator('#south-hand .card[aria-label="2 harten"]').click();
+  }
   await expect(page.locator("#table-feedback")).toBeHidden();
 });
 
@@ -1835,7 +2046,7 @@ test("hides the target card while the play animation flyer moves", async ({ page
   });
 });
 
-test("keeps dummy hidden until the opening lead and shows the play plan only in developer mode", async ({ page }) => {
+test("keeps dummy hidden until the opening lead and shows the play plan only in developer mode", async ({ page }, testInfo) => {
   await openFreshApp(page);
   await prepareNorthSouthDeclarerHand(page);
 
@@ -1882,6 +2093,11 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
 
   await page.locator("#north-hand .card.legal").first().focus();
   await page.keyboard.press("Enter");
+  if (testInfo.project.name === "mobile-chromium") {
+    await expect(page.locator("#north-hand")).toHaveClass(/suit-focus-active/);
+    await page.locator("#north-hand .card.legal").first().focus();
+    await page.keyboard.press("Enter");
+  }
   await expect(page.locator("#trick-area .card.played")).toHaveCount(2);
 
   await page.evaluate(() => {

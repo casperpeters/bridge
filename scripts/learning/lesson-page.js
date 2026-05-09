@@ -79,21 +79,41 @@
     eyebrow.textContent = `Les ${lesson.number}`;
 
     const title = document.createElement("h2");
-    title.textContent = "Hoofdstukken";
+    title.textContent = "Samenvatting";
 
     const intro = document.createElement("p");
     intro.className = "lesson-intro";
-    intro.textContent = "Kies een onderwerp. De uitleg opent pas wanneer je verder klikt.";
+    intro.textContent = lesson.summary || lesson.intro || lesson.challenge;
 
     header.append(eyebrow, title, intro);
     els.content.appendChild(header);
 
-    const chapters = document.createElement("div");
-    chapters.className = "lesson-chapters";
     const lessonChapters = lesson.chapters?.length ? lesson.chapters : fallbackChapters(lesson);
-    lessonChapters.forEach((chapter, index) => chapters.appendChild(chapterEl(lesson, chapter, index, lessonChapters)));
-    els.content.appendChild(chapters);
-    els.content.appendChild(lessonFinishEl(lesson, lessonChapters));
+    els.content.appendChild(lessonSummaryEl(lesson, lessonChapters));
+    els.content.appendChild(lessonStartEl(lesson, lessonChapters));
+  }
+
+  function lessonSummaryEl(lesson, chapters) {
+    const summary = document.createElement("section");
+    summary.className = "lesson-summary-panel";
+
+    const title = document.createElement("h3");
+    title.textContent = "Wat zit erin?";
+
+    const copy = document.createElement("p");
+    copy.className = "lesson-chapter-paragraph";
+    copy.textContent = lesson.intro || "Begin de les en loop stap voor stap door de onderdelen heen.";
+
+    summary.append(title, copy, focusEl(lesson.focus || []));
+
+    if (chapters.length) {
+      const chapterCopy = document.createElement("p");
+      chapterCopy.className = "lesson-chapter-paragraph";
+      chapterCopy.textContent = `De les bestaat uit ${chapters.length} korte onderdelen. Je opent ze met de knop hieronder.`;
+      summary.appendChild(chapterCopy);
+    }
+
+    return summary;
   }
 
   function chapterEl(lesson, chapter, index, chapters) {
@@ -129,7 +149,7 @@
     footer.className = "lesson-chapter-actions";
 
     if (chapter.pageHref) {
-      footer.appendChild(chapterPageLink(chapter.pageHref, "Open mini-les"));
+      footer.appendChild(chapterPageLink(chapter.pageHref, "Begin les"));
     }
 
     if (chapter.handId) {
@@ -149,15 +169,20 @@
     return link;
   }
 
-  function lessonFinishEl(lesson, chapters) {
+  function lessonStartEl(lesson, chapters) {
     const finish = document.createElement("section");
     finish.className = "lesson-finish";
 
     const title = document.createElement("h3");
-    title.textContent = "Aan tafel oefenen";
+    title.textContent = lesson.pageHref ? "Begin de les" : "Aan tafel oefenen";
+
+    finish.appendChild(title);
+    if (lesson.pageHref) {
+      finish.appendChild(chapterPageLink(lesson.pageHref, "Begin les"));
+    }
 
     const handId = chapters.find((chapter) => chapter.handId)?.handId || lesson.handIds[0];
-    finish.append(title, practiceLink(lesson, handId, "Start oefening"));
+    finish.appendChild(practiceLink(lesson, handId, "Start oefening"));
     return finish;
   }
 

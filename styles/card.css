@@ -1,0 +1,58 @@
+.playing-card {
+  width: 94px;
+  height: 133px;
+  border: 1px solid rgba(0, 0, 0, 0.26);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--card-ink);
+  box-shadow: 0 12px 18px rgba(0, 0, 0, 0.24);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 8px;
+  flex: 0 0 auto;
+  user-select: none;
+  touch-action: pan-y;
+  position: relative;
+}
+
+.playing-card.red {
+  color: var(--red);
+}
+
+.playing-card.back {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0 8%, transparent 8% 18%, rgba(255, 255, 255, 0.12) 18% 26%, transparent 26% 100%),
+    radial-gradient(circle at 50% 42%, rgba(248, 243, 223, 0.28), transparent 28%),
+    linear-gradient(135deg, #245b7c 0%, #3f6677 52%, #7f3f61 100%);
+  border-color: rgba(248, 243, 223, 0.46);
+  color: transparent;
+}
+
+.playing-card.back::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 2px solid rgba(248, 243, 223, 0.34);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.playing-card-rank {
+  font-size: 1.18em;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.playing-card-suit {
+  place-self: center;
+  font-size: 2.7rem;
+  line-height: 1;
+}
+
+.playing-card-mini {
+  justify-self: end;
+  font-size: 1.05em;
+  line-height: 1;
+  transform: rotate(180deg);
+  font-weight: 900;
+}

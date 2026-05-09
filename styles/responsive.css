@@ -3,38 +3,27 @@
   .table-area.turn-focus-east .turn-glow-east,
   .table-area.turn-focus-south .turn-glow-south,
   .table-area.turn-focus-west .turn-glow-west,
-  .trick-slot.active-trick-slot::after,
-  .auction-cell.auction-active-seat::after,
-  .bid-controls .recommended-action,
-  .bid-controls .recommended-action::after {
+  .trick-slot.active-trick-slot::after {
     animation: none;
-  }
-
-  .auction-cell.auction-active-seat::after,
-  .bid-controls .recommended-action::after {
-    transform: translateX(0);
   }
 }
 
-@media (min-width: 1360px) {
-  .app-shell:has(.history-panel:not([hidden])),
-  .app-shell:has(.review-panel:not([hidden])) {
-    grid-template-columns: 360px minmax(0, 1fr) minmax(340px, 360px);
+@media (min-width: 1180px) {
+  .app-shell.has-stable-sidebars {
+    grid-template-columns: minmax(280px, 300px) minmax(0, 1fr) minmax(260px, 300px);
   }
 
-  .side-panel:has(.history-panel:not([hidden])),
-  .side-panel:has(.review-panel:not([hidden])) {
+  .app-shell.has-stable-sidebars .side-panel {
     display: contents;
   }
 
-  .app-shell:has(.history-panel:not([hidden])) .table-area,
-  .app-shell:has(.review-panel:not([hidden])) .table-area {
+  .app-shell.has-stable-sidebars .table-area {
     grid-column: 2;
     grid-row: 2;
   }
 
-  .side-panel:has(.history-panel:not([hidden])) .history-panel,
-  .side-panel:has(.review-panel:not([hidden])) .review-panel {
+  .app-shell.has-stable-sidebars .history-panel,
+  .app-shell.has-stable-sidebars .review-panel {
     grid-column: 3;
     grid-row: 2;
     min-height: 0;
@@ -42,8 +31,7 @@
     overflow: auto;
   }
 
-  .side-panel:has(.history-panel:not([hidden])) .auction-panel,
-  .side-panel:has(.review-panel:not([hidden])) .auction-panel {
+  .app-shell.has-stable-sidebars .auction-panel {
     grid-column: 1;
     grid-row: 2;
     min-height: 0;
@@ -205,7 +193,7 @@
     font-size: 0.94rem;
   }
 
-  .card .suit-big {
+  .card .playing-card-suit {
     font-size: 2rem;
   }
 
@@ -345,7 +333,7 @@
     font-size: 0.96rem;
   }
 
-  .card .suit-big {
+  .card .playing-card-suit {
     font-size: 1.85rem;
   }
 
@@ -413,282 +401,6 @@
     display: grid;
   }
 
-  .app-shell.is-mobile-bidding {
-    min-height: 100svh;
-  }
-
-  .app-shell.is-mobile-bidding .table-area {
-    --mobile-side-auction-width: clamp(52px, 13vw, 70px);
-    --mobile-bidbox-width: clamp(236px, calc(100vw - 132px), 300px);
-    --mobile-bidbox-row-width: clamp(202px, calc(100vw - 185px), 300px);
-    --mobile-bidbox-half-width: clamp(101px, calc(50vw - 95px), 150px);
-    --mobile-bidbox-side-gap: 4px;
-    --mobile-bidbox-center-y: calc(50% - 59px);
-    --mobile-bidbox-top: calc(var(--mobile-bidbox-center-y) - 189px);
-    --mobile-bidbox-bottom: calc(var(--mobile-bidbox-center-y) + 189px);
-    height: clamp(612px, calc(100svh - 145px), 680px);
-    max-height: clamp(612px, calc(100svh - 145px), 680px);
-    grid-template-rows: 34px minmax(0, 1fr) 154px;
-    gap: 0;
-    overflow: hidden;
-  }
-
-  .app-shell.is-mobile-bidding .north {
-    position: static;
-    min-height: 34px;
-    display: block;
-  }
-
-  .app-shell.is-mobile-bidding .middle-row {
-    grid-template-columns: minmax(54px, 66px) minmax(0, 1fr) minmax(54px, 66px);
-    gap: 5px;
-    min-height: 0;
-    height: 100%;
-  }
-
-  .app-shell.is-mobile-bidding .west,
-  .app-shell.is-mobile-bidding .east {
-    position: static;
-    display: block;
-  }
-
-  .app-shell.is-mobile-bidding .player-zone {
-    position: static;
-    min-height: 154px;
-    align-content: end;
-    padding-top: 50px;
-  }
-
-  .app-shell.is-mobile-bidding .player-label-row,
-  .app-shell.is-mobile-bidding #south-auction-calls,
-  .app-shell.is-mobile-bidding #south-hand {
-    grid-column: 1 / -1;
-  }
-
-  .app-shell.is-mobile-bidding .north .seat-label {
-    position: absolute;
-    left: 50%;
-    top: 12px;
-    transform: translateX(-50%);
-  }
-
-  .app-shell.is-mobile-bidding .west .seat-label,
-  .app-shell.is-mobile-bidding .east .seat-label {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .app-shell.is-mobile-bidding .west .seat-label {
-    left: 10px;
-  }
-
-  .app-shell.is-mobile-bidding .east .seat-label {
-    right: 10px;
-  }
-
-  .app-shell.is-mobile-bidding .player-label-row {
-    position: absolute;
-    left: 50%;
-    top: calc(100% - 138px);
-    transform: translateX(-50%);
-    z-index: 2;
-  }
-
-  .app-shell.is-mobile-bidding #north-hand,
-  .app-shell.is-mobile-bidding #west-hand,
-  .app-shell.is-mobile-bidding #east-hand,
-  .app-shell.is-mobile-bidding #trick-area,
-  .app-shell.is-mobile-bidding #auction-log-title,
-  .app-shell.is-mobile-bidding #auction-log,
-  .app-shell.is-mobile-bidding #contract-title,
-  .app-shell.is-mobile-bidding .game-summary,
-  .app-shell.is-mobile-bidding .side-panel {
-    display: none;
-  }
-
-  .app-shell.is-mobile-bidding .felt {
-    grid-template-rows: 1fr;
-    align-content: center;
-    padding: 4px;
-  }
-
-  .app-shell.is-mobile-bidding .table-bidding-slot {
-    display: block;
-    width: min(100%, var(--mobile-bidbox-width));
-    justify-self: center;
-  }
-
-  .app-shell.is-mobile-bidding .auction-panel {
-    width: 100%;
-    max-height: none;
-    overflow: visible;
-    padding: 10px;
-    background: rgba(25, 32, 27, 0.9);
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-      0 14px 28px rgba(0, 0, 0, 0.22);
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-calls {
-    position: absolute;
-    z-index: 3;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    flex-wrap: nowrap;
-    width: var(--mobile-side-auction-width);
-    height: 76px;
-    border-radius: 8px;
-    padding: 2px 3px;
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-north {
-    left: calc(50% - var(--mobile-bidbox-half-width));
-    top: calc(var(--mobile-bidbox-top) - 30px);
-    width: var(--mobile-bidbox-row-width);
-    height: 24px;
-    flex-direction: row-reverse;
-    justify-content: flex-start;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-west {
-    right: calc(50% + var(--mobile-bidbox-half-width) + var(--mobile-bidbox-side-gap));
-    top: calc(var(--mobile-bidbox-top) + 64px);
-    align-items: flex-end;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-east {
-    left: calc(50% + var(--mobile-bidbox-half-width) + var(--mobile-bidbox-side-gap));
-    top: calc(var(--mobile-bidbox-bottom) - 82px);
-    align-items: flex-start;
-    flex-direction: column-reverse;
-    justify-content: flex-start;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-south {
-    left: calc(50% - var(--mobile-bidbox-half-width));
-    top: calc(var(--mobile-bidbox-bottom) + 8px);
-    width: var(--mobile-bidbox-row-width);
-    height: 24px;
-    flex-direction: row;
-    justify-content: flex-start;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-calls.auction-active-seat {
-    background: rgba(224, 194, 95, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(224, 194, 95, 0.38);
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-calls.empty-seat-auction {
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-calls .auction-call-token {
-    min-width: 27px;
-    min-height: 21px;
-    padding: 1px 5px;
-    font-size: 0.74rem;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-calls .auction-badge {
-    padding: 1px 3px;
-    font-size: 0.52rem;
-  }
-
-  .app-shell.is-mobile-bidding .seat-auction-placeholder {
-    display: inline-grid;
-    place-items: center;
-    min-width: 24px;
-    min-height: 21px;
-    opacity: 0;
-  }
-
-  .app-shell.is-mobile-bidding .auction-panel .panel-head {
-    gap: 6px;
-    justify-content: space-between;
-  }
-
-  .app-shell.is-mobile-bidding .auction-panel .panel-head h2 {
-    font-size: 1rem;
-  }
-
-  .app-shell.is-mobile-bidding #dealer-badge,
-  .app-shell.is-mobile-bidding .review-section-title {
-    font-size: 0.72rem;
-  }
-
-  .app-shell.is-mobile-bidding .auction-log {
-    gap: 4px;
-    margin: 4px 0 8px;
-  }
-
-  .app-shell.is-mobile-bidding .auction-cell {
-    min-height: 25px;
-    border-radius: 6px;
-    font-size: 0.72rem;
-  }
-
-  .app-shell.is-mobile-bidding .auction-call-token {
-    min-width: 30px;
-    min-height: 22px;
-    padding: 1px 5px;
-    font-size: 0.78rem;
-  }
-
-  .app-shell.is-mobile-bidding .auction-badge {
-    padding: 1px 3px;
-    font-size: 0.55rem;
-  }
-
-  .app-shell.is-mobile-bidding .bid-controls {
-    --bid-control-row: 33px;
-    gap: 4px;
-    margin: 4px 0 0;
-    grid-template-columns: repeat(5, minmax(34px, 1fr));
-  }
-
-  .app-shell.is-mobile-bidding .bid-controls.active-bid-box {
-    outline: 0;
-    box-shadow: none;
-  }
-
-  .app-shell.is-mobile-bidding .bid-controls button {
-    padding: 0 4px;
-    font-size: 0.92rem;
-  }
-
-  .app-shell.is-mobile-bidding .bid-primary-actions,
-  .app-shell.is-mobile-bidding .bid-advanced-actions {
-    gap: 4px;
-  }
-
-  .app-shell.is-mobile-bidding .bid-controls .bid-advanced-toggle {
-    height: 12px;
-    min-height: 12px;
-    background: transparent;
-    border-color: transparent;
-    color: rgba(247, 244, 232, 0.42);
-  }
-
-  .app-shell.is-mobile-bidding .bid-controls .bid-advanced-toggle:hover,
-  .app-shell.is-mobile-bidding .bid-controls .bid-advanced-toggle:focus-visible {
-    background: rgba(224, 194, 95, 0.12);
-    border-color: rgba(224, 194, 95, 0.34);
-    color: var(--ink);
-  }
-
-  .app-shell.is-mobile-bidding .table-help-stack {
-    display: none;
-    min-height: 0;
-  }
-
   .side-panel:has(.history-panel:not([hidden])) .history-panel,
   .side-panel:has(.history-panel:not([hidden])) .auction-panel,
   .side-panel:has(.review-panel:not([hidden])) .review-panel,
@@ -697,23 +409,12 @@
     grid-row: auto;
   }
 
-  .bid-controls {
-    --bid-control-row: 42px;
-    grid-template-columns: repeat(5, minmax(44px, 1fr));
-  }
-
-  .bid-controls button {
-    font-size: 1rem;
-  }
-
-  .auction-panel,
   .history-panel,
   .review-panel {
     padding: 11px;
     overscroll-behavior: auto;
   }
 
-  .auction-panel,
   .history-panel {
     max-height: none;
     overflow: visible;
@@ -859,7 +560,7 @@
     font-size: 0.88rem;
   }
 
-  .card .suit-big {
+  .card .playing-card-suit {
     font-size: 1.59rem;
   }
 
@@ -930,7 +631,7 @@
     scroll-snap-align: center;
   }
 
-  .hand.suit-focus-active .card .suit-big {
+  .hand.suit-focus-active .card .playing-card-suit {
     font-size: clamp(1.45rem, 5vw, 2.1rem);
   }
 }

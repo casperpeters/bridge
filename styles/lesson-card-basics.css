@@ -336,31 +336,32 @@
   font-weight: 700;
 }
 
-.lesson-rank-card.card {
+.lesson-rank-card.playing-card {
   width: 72px;
   height: 102px;
   margin-left: -28px;
   padding: 6px;
   font-size: 0.88rem;
   cursor: default;
+  animation: card-pop 220ms ease both;
 }
 
-.lesson-rank-card.card:first-child {
+.lesson-rank-card.playing-card:first-child {
   margin-left: 0;
 }
 
-.lesson-rank-card.card .suit-big {
+.lesson-rank-card.playing-card .playing-card-suit {
   font-size: 2rem;
 }
 
-.compact-ranks .lesson-rank-card.card {
+.compact-ranks .lesson-rank-card.playing-card {
   width: 62px;
   height: 88px;
   margin-left: -24px;
   font-size: 0.78rem;
 }
 
-.compact-ranks .lesson-rank-card.card .suit-big {
+.compact-ranks .lesson-rank-card.playing-card .playing-card-suit {
   font-size: 1.65rem;
 }
 
@@ -371,6 +372,115 @@
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.045);
   padding: 14px;
+}
+
+.wind-mini-game {
+  min-height: 390px;
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(140px, 1.1fr) minmax(100px, 1fr);
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.wind-mini-seat {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--ink);
+  min-height: 94px;
+}
+
+.wind-mini-seat span {
+  font-size: clamp(1.15rem, 3vw, 1.8rem);
+  font-weight: 950;
+}
+
+.wind-mini-seat strong {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.wind-mini-seat.is-target {
+  border-color: rgba(224, 194, 95, 0.58);
+}
+
+.wind-mini-seat.is-correct {
+  border-color: rgba(85, 213, 126, 0.86);
+  background: rgba(85, 213, 126, 0.16);
+}
+
+.wind-mini-seat.is-missed {
+  border-color: rgba(231, 97, 97, 0.78);
+  background: rgba(231, 97, 97, 0.14);
+}
+
+.wind-north {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.wind-west {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.wind-east {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.wind-south {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.wind-compass-center {
+  grid-column: 2;
+  grid-row: 2;
+  place-self: center;
+  width: min(128px, 100%);
+  aspect-ratio: 1;
+  border: 2px solid rgba(96, 197, 185, 0.36);
+  border-radius: 50%;
+  display: grid;
+  grid-template-areas:
+    ". n ."
+    "w . e"
+    ". s .";
+  align-items: center;
+  justify-items: center;
+  background: rgba(6, 44, 30, 0.54);
+}
+
+.wind-compass-center span {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(224, 194, 95, 0.44);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent-2);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.wind-compass-center span:nth-child(1) {
+  grid-area: n;
+}
+
+.wind-compass-center span:nth-child(2) {
+  grid-area: e;
+}
+
+.wind-compass-center span:nth-child(3) {
+  grid-area: s;
+}
+
+.wind-compass-center span:nth-child(4) {
+  grid-area: w;
 }
 
 .mini-question h3 {
@@ -584,7 +694,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .lesson-slide.is-active,
-  .lesson-rank-card.card,
+  .lesson-rank-card.playing-card,
   .deal-card {
     animation: none;
   }
@@ -615,6 +725,10 @@
 
   .deck-equation {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wind-mini-game {
+    min-height: 430px;
   }
 
   .equation-total {
@@ -675,8 +789,8 @@
     height: 74px;
   }
 
-  .lesson-rank-card.card,
-  .compact-ranks .lesson-rank-card.card {
+  .lesson-rank-card.playing-card,
+  .compact-ranks .lesson-rank-card.playing-card {
     width: 100%;
     height: 64px;
     margin-left: 0;
@@ -691,8 +805,8 @@
     justify-content: center;
   }
 
-  .lesson-rank-card.card .suit-big,
-  .compact-ranks .lesson-rank-card.card .suit-big {
+  .lesson-rank-card.playing-card .playing-card-suit,
+  .compact-ranks .lesson-rank-card.playing-card .playing-card-suit {
     font-size: 1.08rem;
   }
 
@@ -700,6 +814,41 @@
     min-height: 560px;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto auto auto auto;
+  }
+
+  .wind-mini-game {
+    min-height: 450px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .wind-north,
+  .wind-south {
+    grid-column: 1 / -1;
+  }
+
+  .wind-north {
+    grid-row: 1;
+  }
+
+  .wind-west {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .wind-east {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .wind-compass-center {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 116px;
+  }
+
+  .wind-south {
+    grid-row: 4;
   }
 
   .north-seat,
