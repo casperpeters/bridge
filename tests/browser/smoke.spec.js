@@ -92,6 +92,63 @@ test("keeps Stop and Alert in a persisted expandable bidding bar", async ({ page
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#bid-controls button.stop")).toBeVisible();
   await expect(page.locator("#bid-controls button.alert")).toBeVisible();
+  await expect(page.locator("#bid-controls")).toHaveClass(/bid-box-expanded/);
+
+  const northLabelGap = await page.evaluate(() => {
+    const northHand = document.querySelector("#north-hand");
+    if (getComputedStyle(northHand).display === "none") return null;
+    const hand = northHand.getBoundingClientRect();
+    const label = document.querySelector("#north-label").getBoundingClientRect();
+    return Math.round(label.top - hand.bottom);
+  });
+  if (northLabelGap !== null) {
+    expect(northLabelGap).toBeGreaterThanOrEqual(0);
+    expect(northLabelGap).toBeLessThanOrEqual(12);
+  }
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({
+      auction: [
+        { seat: "North", bid: app.rules.Pass() },
+        { seat: "East", bid: app.rules.Pass() },
+        { seat: "South", bid: app.rules.Pass() },
+        { seat: "West", bid: app.rules.Bid(1, "H") },
+        { seat: "North", bid: app.rules.Pass() },
+        { seat: "East", bid: app.rules.Bid(3, "H") }
+      ],
+      turnIndex: 2
+    });
+    app.renderAll();
+  });
+
+  const expandedOverlap = await page.evaluate(() => {
+    const rectFor = (element) => {
+      const rect = element.getBoundingClientRect();
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left, width: rect.width, height: rect.height };
+    };
+    const overlapArea = (a, b) => {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      return width * height;
+    };
+    const bidBox = rectFor(document.querySelector("#bid-controls"));
+    const visibleCalls = [...document.querySelectorAll(".seat-auction-calls .auction-call-token")]
+      .filter((call) => getComputedStyle(call).opacity !== "0")
+      .map(rectFor);
+    const north = rectFor(document.querySelector("#north-auction-calls"));
+    const south = rectFor(document.querySelector("#south-auction-calls"));
+    return {
+      overlap: Math.max(0, ...visibleCalls.map((call) => overlapArea(bidBox, call))),
+      northGap: Math.round(bidBox.top - north.bottom),
+      southGap: Math.round(south.top - bidBox.bottom)
+    };
+  });
+  expect(expandedOverlap.overlap).toBe(0);
+  expect(expandedOverlap.northGap).toBeGreaterThanOrEqual(0);
+  expect(expandedOverlap.northGap).toBeLessThanOrEqual(8);
+  expect(expandedOverlap.southGap).toBeGreaterThanOrEqual(0);
+  expect(expandedOverlap.southGap).toBeLessThanOrEqual(8);
 
   await page.reload();
   await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
@@ -208,12 +265,17 @@ test("keeps stable left and right sidebar slots on desktop", async ({ page }, te
   await expect(page.locator(".auction-panel #bid-controls")).toHaveCount(0);
   await expect(page.locator("#history-panel")).toBeVisible();
   await expect(page.locator("#history-panel")).toHaveClass(/is-inactive/);
-  await expect(page.locator("#history")).toContainText("Speelgeschiedenis staat uit.");
+  await expect(page.locator("#history-panel")).toHaveClass(/is-empty-reserved/);
+  await expect(page.locator("#history-panel .panel-head")).toBeHidden();
+  await expect(page.locator("#history")).toBeEmpty();
   await expect(page.locator("#guidance-panel")).toBeVisible();
   await expect(page.locator(".auction-panel #guidance-panel")).toContainText("AI-suggestie bod");
   await expect(page.locator("#contract")).toBeVisible();
-  await expect(page.locator("#auction-log")).toBeHidden();
+  await expect(page.locator("#auction-log")).toBeVisible();
+  await expect(page.locator("#auction-log .review-trick-table")).toBeVisible();
   await expect(page.locator("#north-hand")).toBeVisible();
+  await expect(page.locator("#north-label")).toBeVisible();
+  await expect(page.locator("#north-label")).toContainText("Partner");
   await expect(page.locator("#west-hand")).toBeVisible();
   await expect(page.locator("#east-hand")).toBeVisible();
   await expect(page.locator("#south-hand")).toBeVisible();
@@ -249,8 +311,11 @@ test("keeps stable left and right sidebar slots on desktop", async ({ page }, te
       auctionPanel,
       historyPanel,
       bidBoxInsideTable: contains(table, bidControls),
+      bidBoxBorderColor: getComputedStyle(document.querySelector("#bid-controls")).borderColor,
+      auctionPanelBorderColor: getComputedStyle(document.querySelector(".auction-panel")).borderColor,
       leftBeforeTable: auctionPanel.right <= table.left,
       rightAfterTable: historyPanel.left >= table.right,
+      sideWidthsMatch: Math.abs(auctionPanel.width - historyPanel.width) <= 2,
       sideHeightsMatch: Math.abs(auctionPanel.height - historyPanel.height) <= 2
     };
   });
@@ -258,6 +323,8 @@ test("keeps stable left and right sidebar slots on desktop", async ({ page }, te
   expect(biddingLayout.leftBeforeTable).toBe(true);
   expect(biddingLayout.rightAfterTable).toBe(true);
   expect(biddingLayout.bidBoxInsideTable).toBe(true);
+  expect(biddingLayout.bidBoxBorderColor).not.toBe(biddingLayout.auctionPanelBorderColor);
+  expect(biddingLayout.sideWidthsMatch).toBe(true);
   expect(biddingLayout.sideHeightsMatch).toBe(true);
 
   const playingLayout = await page.evaluate(() => {
@@ -293,7 +360,7 @@ test("keeps stable left and right sidebar slots on desktop", async ({ page }, te
     };
   });
 
-  expect(playingLayout.auctionLogDisplay).toBe("none");
+  expect(playingLayout.auctionLogDisplay).not.toBe("none");
   expect(playingLayout.historyClass).not.toContain("is-inactive");
   expect(playingLayout.historyText).toContain("Slagen verschijnen hier tijdens het spel.");
   expect(Math.abs(playingLayout.table.left - biddingLayout.table.left)).toBeLessThanOrEqual(2);
@@ -324,10 +391,13 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
   await expect(page.locator(".auction-panel #bid-controls")).toHaveCount(0);
   await expect(page.locator(".auction-panel #contract")).toBeVisible();
   await expect(page.locator("#north-hand")).toBeHidden();
+  await expect(page.locator("#north-label")).toBeVisible();
+  await expect(page.locator("#north-label")).toContainText("Partner");
   await expect(page.locator("#west-hand")).toBeHidden();
   await expect(page.locator("#east-hand")).toBeHidden();
   await expect(page.locator("#south-hand")).toBeVisible();
-  await expect(page.locator("#auction-log")).toBeHidden();
+  await expect(page.locator("#auction-log")).toBeVisible();
+  await expect(page.locator("#auction-log .review-trick-table")).toBeVisible();
   await expect(page.locator("#north-auction-calls")).toBeVisible();
   await expect(page.locator("#east-auction-calls")).toBeVisible();
   await expect(page.locator("#bid-controls-title")).toBeHidden();
@@ -490,8 +560,8 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
       northFirstBidRightOfSecond: northBidRects.length >= 2 ? northBidRects[0].left > northBidRects[1].left : true,
       westFirstBidAboveSecond: westBidRects.length >= 2 ? westBidRects[0].top < westBidRects[1].top : true,
       southFirstBidLeftOfSecond: southBidRects.length >= 2 ? southBidRects[0].left < southBidRects[1].left : true,
-      eastFirstBidBelowSecond: eastBidRects.length >= 2 ? eastBidRects[0].top > eastBidRects[1].top : true,
-      eastFirstBidNearBottom: eastBidRects.length ? Math.abs(eastBidRects[0].bottom - eastBids.bottom) : 0,
+      eastFirstBidAboveSecond: eastBidRects.length >= 2 ? eastBidRects[0].top < eastBidRects[1].top : true,
+      eastLatestBidNearBottom: eastBidRects.length ? Math.abs(eastBidRects.at(-1).bottom - eastBids.bottom) : 0,
       southLabelOverlap: overlapArea(rectFor("#south-label"), rectFor("#south-auction-calls")),
       southCardOverlap,
       panelBottomGap: Math.round(panel.bottom - advancedToggleRect.bottom),
@@ -516,8 +586,8 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
   expect(polish.northFirstBidRightOfSecond).toBe(true);
   expect(polish.westFirstBidAboveSecond).toBe(true);
   expect(polish.southFirstBidLeftOfSecond).toBe(true);
-  expect(polish.eastFirstBidBelowSecond).toBe(true);
-  expect(polish.eastFirstBidNearBottom).toBeLessThanOrEqual(10);
+  expect(polish.eastFirstBidAboveSecond).toBe(true);
+  expect(polish.eastLatestBidNearBottom).toBeLessThanOrEqual(10);
   expect(polish.southLabelOverlap).toBe(0);
   expect(polish.southCardOverlap).toBe(0);
   expect(polish.panelBottomGap).toBeLessThanOrEqual(12);
@@ -2127,7 +2197,7 @@ test("developer play explanations flag cards that differ from the heuristic", as
       app.autoCompleteAuction();
       let state = app.getState();
       if (state.phase !== "playing") continue;
-      app.setState({ developerMode: true });
+      app.setState({ developerMode: true, showPlayHistory: true });
       app.autoPlayCard(app.seatAt(state.turnIndex), app.chooseCard(app.seatAt(state.turnIndex)));
       state = app.getState();
       const seat = app.seatAt(state.turnIndex);
@@ -2148,6 +2218,13 @@ test("developer play explanations flag cards that differ from the heuristic", as
   expect(madeDeviation).toBe(true);
   await expect(page.locator("#play-explanations")).toContainText("wijkt af van de speelheuristiek");
   await expect(page.locator("#play-explanations")).toContainText("De heuristiek stelde");
+
+  const historyToExplanationGap = await page.evaluate(() => {
+    const history = document.querySelector("#history").getBoundingClientRect();
+    const explanations = document.querySelector("#play-explanations").getBoundingClientRect();
+    return explanations.top - history.bottom;
+  });
+  expect(historyToExplanationGap).toBeLessThanOrEqual(14);
 });
 
 test("can finish a hand and copy or submit a feedback report from the review", async ({ page, context, baseURL }) => {

@@ -9,19 +9,24 @@
 }
 
 @media (min-width: 1180px) {
+  .app-shell,
   .app-shell.has-stable-sidebars {
-    grid-template-columns: minmax(280px, 300px) minmax(0, 1fr) minmax(260px, 300px);
+    grid-template-columns: minmax(280px, 300px) minmax(0, 1fr) minmax(280px, 300px);
   }
 
+  .app-shell .side-panel,
   .app-shell.has-stable-sidebars .side-panel {
     display: contents;
   }
 
+  .app-shell .table-area,
   .app-shell.has-stable-sidebars .table-area {
     grid-column: 2;
     grid-row: 2;
   }
 
+  .app-shell .history-panel,
+  .app-shell .review-panel,
   .app-shell.has-stable-sidebars .history-panel,
   .app-shell.has-stable-sidebars .review-panel {
     grid-column: 3;
@@ -31,6 +36,7 @@
     overflow: auto;
   }
 
+  .app-shell .auction-panel,
   .app-shell.has-stable-sidebars .auction-panel {
     grid-column: 1;
     grid-row: 2;

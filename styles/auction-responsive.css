@@ -1,22 +1,22 @@
 @media (prefers-reduced-motion: reduce) {
-  .auction-cell.auction-active-seat::after,
+  .auction-history-cell.auction-active-seat::after,
   .bid-controls .recommended-action,
   .bid-controls .recommended-action::after {
     animation: none;
   }
 
-  .auction-cell.auction-active-seat::after,
+  .auction-history-cell.auction-active-seat::after,
   .bid-controls .recommended-action::after {
     transform: translateX(0);
   }
 }
 
 @media (max-width: 760px) {
-  .app-shell.is-mobile-bidding {
+  .app-shell.is-bidding {
     min-height: 100svh;
   }
 
-  .app-shell.is-mobile-bidding .table-area {
+  .app-shell.is-bidding .table-area {
     --mobile-side-auction-width: clamp(52px, 13vw, 70px);
     --mobile-bidbox-width: clamp(236px, calc(100vw - 132px), 300px);
     --mobile-bidbox-row-width: clamp(202px, calc(100vw - 185px), 300px);
@@ -27,6 +27,14 @@
     --mobile-bidbox-bottom: calc(var(--mobile-bidbox-center-y) + 189px);
     height: clamp(612px, calc(100svh - 145px), 680px);
     max-height: clamp(612px, calc(100svh - 145px), 680px);
+  }
+
+  .app-shell.is-bidding .table-area:has(.bid-controls.bid-box-expanded) {
+    --mobile-bidbox-top: calc(var(--mobile-bidbox-center-y) - 184px);
+    --mobile-bidbox-bottom: calc(var(--mobile-bidbox-center-y) + 184px);
+  }
+
+  .app-shell.is-mobile-bidding .table-area {
     grid-template-rows: 34px minmax(0, 1fr) 154px;
     gap: 0;
     overflow: hidden;
@@ -108,9 +116,7 @@
   .app-shell.is-mobile-bidding #north-hand,
   .app-shell.is-mobile-bidding #west-hand,
   .app-shell.is-mobile-bidding #east-hand,
-  .app-shell.is-mobile-bidding #trick-area,
-  .app-shell.is-mobile-bidding .auction-panel #auction-log-title,
-  .app-shell.is-mobile-bidding .auction-panel #auction-log {
+  .app-shell.is-mobile-bidding #trick-area {
     display: none;
   }
 
@@ -123,6 +129,7 @@
   .app-shell.is-mobile-bidding .table-bidding-slot {
     display: block;
     width: min(100%, var(--mobile-bidbox-width));
+    min-height: 312px;
     justify-self: center;
   }
 
@@ -144,7 +151,7 @@
 
   .app-shell.is-mobile-bidding .seat-auction-north {
     left: calc(50% - var(--mobile-bidbox-half-width));
-    top: calc(var(--mobile-bidbox-top) - 30px);
+    top: calc(var(--mobile-bidbox-top) - 28px);
     width: var(--mobile-bidbox-row-width);
     height: 24px;
     flex-direction: row-reverse;
@@ -163,13 +170,13 @@
     left: calc(50% + var(--mobile-bidbox-half-width) + var(--mobile-bidbox-side-gap));
     top: calc(var(--mobile-bidbox-bottom) - 82px);
     align-items: flex-start;
-    flex-direction: column-reverse;
-    justify-content: flex-start;
+    flex-direction: column;
+    justify-content: flex-end;
   }
 
   .app-shell.is-mobile-bidding .seat-auction-south {
     left: calc(50% - var(--mobile-bidbox-half-width));
-    top: calc(var(--mobile-bidbox-bottom) + 8px);
+    top: calc(var(--mobile-bidbox-bottom) + 4px);
     width: var(--mobile-bidbox-row-width);
     height: 24px;
     flex-direction: row;
@@ -221,14 +228,16 @@
   }
 
   .app-shell.is-mobile-bidding .auction-log {
-    gap: 4px;
     margin: 4px 0 8px;
   }
 
-  .app-shell.is-mobile-bidding .auction-cell {
-    min-height: 25px;
-    border-radius: 6px;
+  .app-shell.is-mobile-bidding .auction-log .review-trick-table {
     font-size: 0.72rem;
+  }
+
+  .app-shell.is-mobile-bidding .auction-log .review-trick-table th,
+  .app-shell.is-mobile-bidding .auction-log .review-trick-table td {
+    padding: 6px 3px;
   }
 
   .app-shell.is-mobile-bidding .auction-call-token {

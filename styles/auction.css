@@ -23,33 +23,34 @@
 }
 
 .auction-log {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
   margin: 6px 0 12px;
 }
 
-.auction-cell {
+.auction-log .review-trick-table {
+  min-width: 0;
+  font-size: 0.86rem;
+}
+
+.auction-log .review-trick-table th,
+.auction-log .review-trick-table td {
+  padding: 8px 5px;
+}
+
+.auction-history-cell {
   position: relative;
   overflow: hidden;
   min-height: 32px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  display: grid;
-  place-items: center;
   color: var(--muted);
-  font-size: 0.84rem;
 }
 
-.auction-cell.auction-active-seat {
-  border: 1px solid rgba(224, 194, 95, 0.8);
+.auction-history-cell.auction-active-seat {
   background: rgba(224, 194, 95, 0.14);
   color: var(--ink);
   font-weight: 900;
-  box-shadow: 0 0 18px rgba(224, 194, 95, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(224, 194, 95, 0.78);
 }
 
-.auction-cell.auction-active-seat::after {
+.auction-history-cell.auction-active-seat::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -59,10 +60,9 @@
   pointer-events: none;
 }
 
-.auction-cell strong {
+.auction-history-cell .auction-call {
   position: relative;
   z-index: 1;
-  color: var(--ink);
 }
 
 .seat-auction-calls {
@@ -74,11 +74,6 @@
   font-weight: 900;
 }
 
-.app-shell.is-playing #auction-log-title,
-.app-shell.is-playing #auction-log {
-  display: none;
-}
-
 @media (min-width: 761px) {
   .app-shell.is-table-bidding .table-area {
     --table-bidbox-width: clamp(290px, 24vw, 330px);
@@ -88,6 +83,11 @@
     --table-side-auction-width: clamp(64px, 7vw, 92px);
     --table-bidbox-top: calc(50% - 182px);
     --table-bidbox-bottom: calc(50% + 182px);
+  }
+
+  .app-shell.is-table-bidding .table-area:has(.bid-controls.bid-box-expanded) {
+    --table-bidbox-top: calc(50% - 195px);
+    --table-bidbox-bottom: calc(50% + 189px);
   }
 
   .app-shell.is-table-bidding .felt {
@@ -110,14 +110,8 @@
     pointer-events: none;
   }
 
-  .app-shell.is-table-bidding .north .seat-label {
-    display: none;
-  }
-
   .app-shell.is-table-bidding #trick-area,
-  .app-shell.is-table-bidding .table-help-stack,
-  .app-shell.is-table-bidding .auction-panel #auction-log-title,
-  .app-shell.is-table-bidding .auction-panel #auction-log {
+  .app-shell.is-table-bidding .table-help-stack {
     display: none;
   }
 
@@ -126,6 +120,7 @@
     z-index: 6;
     display: block;
     width: min(100%, var(--table-bidbox-width));
+    min-height: 328px;
     justify-self: center;
   }
 
@@ -147,7 +142,7 @@
 
   .app-shell.is-table-bidding .seat-auction-north {
     left: calc(50% - var(--table-bidbox-half-width));
-    top: calc(var(--table-bidbox-top) - 42px);
+    top: calc(var(--table-bidbox-top) - 32px);
     width: var(--table-bidbox-row-width);
     height: 28px;
     flex-direction: row-reverse;
@@ -166,13 +161,13 @@
     left: calc(50% + var(--table-bidbox-half-width) + var(--table-bidbox-side-gap));
     top: calc(50% + 10px);
     align-items: flex-start;
-    flex-direction: column-reverse;
-    justify-content: flex-start;
+    flex-direction: column;
+    justify-content: flex-end;
   }
 
   .app-shell.is-table-bidding .seat-auction-south {
     left: calc(50% - var(--table-bidbox-half-width));
-    top: calc(var(--table-bidbox-bottom) - 16px);
+    top: calc(var(--table-bidbox-bottom) + 4px);
     width: var(--table-bidbox-row-width);
     height: 28px;
     flex-direction: row;
@@ -234,7 +229,10 @@
 
   .app-shell.is-table-bidding .bid-controls.active-bid-box {
     outline: 0;
-    box-shadow: none;
+    border-color: rgba(224, 194, 95, 0.72);
+    box-shadow:
+      inset 0 0 0 1px rgba(224, 194, 95, 0.18),
+      0 0 24px rgba(224, 194, 95, 0.16);
   }
 
   .app-shell.is-table-bidding .bid-controls button {
@@ -290,10 +288,8 @@
 }
 
 .auction-panel.active-action-panel {
-  border-color: rgba(224, 194, 95, 0.62);
-  box-shadow:
-    inset 0 0 0 1px rgba(224, 194, 95, 0.12),
-    0 0 24px rgba(224, 194, 95, 0.12);
+  border-color: var(--line);
+  box-shadow: none;
 }
 
 .bid-controls button {

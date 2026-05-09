@@ -32,6 +32,7 @@
 
 .history .review-trick-table {
   font-size: 0.86rem;
+  min-width: 0;
 }
 
 .history .review-trick-table thead th {
@@ -78,6 +79,10 @@
 .history-panel.is-inactive .history-item {
   border-left-color: rgba(96, 197, 185, 0.45);
   background: rgba(255, 255, 255, 0.035);
+}
+
+.history-panel.is-empty-reserved > * {
+  visibility: hidden;
 }
 
 .review-panel {

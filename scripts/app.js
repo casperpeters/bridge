@@ -542,7 +542,7 @@ function renderAll() {
 function renderResponsiveLayoutState() {
   const isBidding = state.phase === "bidding";
   const auctionReady = isBidding && !state.animateDeal;
-  const useTableBiddingLayout = auctionReady;
+  const useTableBiddingLayout = isBidding;
   const useMobileBiddingLayout = Boolean(useTableBiddingLayout && mobileBiddingLayoutQuery?.matches);
   const useStableSidebarLayout = Boolean(stableSidebarLayoutQuery?.matches);
   els.appShell?.classList.toggle("is-bidding", isBidding);
@@ -823,13 +823,35 @@ function renderGuidance() {
 
 function renderSeatLabel(label, seat, role = "") {
   if (!label) return;
-  const name = document.createElement("span");
-  name.className = "seat-label-name";
-  name.textContent = seatName(seat);
+  let name = label.querySelector(".seat-label-name");
+  if (!name || name.parentElement !== label) {
+    name = document.createElement("span");
+    name.className = "seat-label-name";
+    label.replaceChildren(name);
+  }
+
+  const nextName = seatName(seat);
+  if (name.textContent !== nextName) name.textContent = nextName;
   name.classList.toggle("is-vulnerable-team", isSeatVulnerable(seat));
-  label.replaceChildren(name);
-  if (!role) return;
-  label.append(` ${roleSeparator} `, role);
+
+  const roleText = role ? ` ${roleSeparator} ${role}` : "";
+  const roleNode = Array.from(label.childNodes).find((node) => node.nodeType === Node.TEXT_NODE);
+  Array.from(label.childNodes).forEach((node) => {
+    if (node !== name && node !== roleNode) node.remove();
+  });
+
+  if (!roleText) {
+    roleNode?.remove();
+    return;
+  }
+
+  if (roleNode) {
+    if (roleNode.textContent !== roleText) roleNode.textContent = roleText;
+    if (roleNode.previousSibling !== name) name.after(roleNode);
+    return;
+  }
+
+  name.after(document.createTextNode(roleText));
 }
 
 function renderLessonBanner() {

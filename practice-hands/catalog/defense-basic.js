@@ -200,6 +200,27 @@
         "Als twee uitkomstkleuren even lang en even sterk zijn, kies je tegen sans-atout liever een hoge kleur.",
         "De tegenpartij heeft in een SA-contract vaak geen duidelijke hoge-kleurfit gevonden."
       ]
+    },
+    {
+      id: "situation-2s-west-trick-8-001",
+      title: "2 schoppen door West, Zuid aan zet in slag 8",
+      level: "regression",
+      focus: ["defense", "card-play", "situation-seed", "follow-suit"],
+      systemId: "fiveCardHigh",
+      dealer: "East",
+      vulnerability: "NS",
+      testGoal: "Reproduceert een speelsituatie uit testerfeedback: 2 schoppen door West, zeven slagen gespeeld, Noord heeft 8S voorgespeeld en Zuid moet zonder schoppen afgooien.",
+      hands: {
+        North: ["QS", "8S", "7S", "KH", "TH", "9H", "QD", "7D", "5D", "2D", "QC", "6C", "4C"],
+        East: ["JS", "9S", "6S", "4S", "3S", "AH", "8H", "JD", "TD", "9D", "4D", "8C", "7C"],
+        South: ["AS", "5S", "7H", "6H", "5H", "3H", "8D", "6D", "AC", "JC", "TC", "9C", "5C"],
+        West: ["KS", "TS", "2S", "QH", "JH", "4H", "2H", "AD", "KD", "3D", "KC", "3C", "2C"]
+      },
+      expectedContract: { contract: "2S", declarer: "West" },
+      teachingPoints: [
+        "Deze hand is bedoeld als reproduceerbare fout- of adviescontrole, niet als zelfstandige beginnersles.",
+        "Zuid heeft in slag 8 geen schoppen meer en mag dus vrij afgooien."
+      ]
     }
   ];
 });
