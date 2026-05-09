@@ -342,7 +342,12 @@
         );
       }
 
-  function openerAfterMinorOneLevelNewSuitRuleName(chosenBid, openingBid, responseBid) {
+  function hasMinorReverseStrengthFiveCardHigh(shape, openingBid) {
+        const openingLength = openingBid?.strain ? shape.counts[openingBid.strain] || 0 : 0;
+        return shape.hcp >= 16 || (shape.hcp >= 15 && shape.points >= 17 && openingLength >= 5);
+      }
+
+  function openerAfterMinorOneLevelNewSuitRuleName(chosenBid, openingBid, responseBid, shape = null) {
         const responseIsMajor = responseBid.strain === "H" || responseBid.strain === "S";
         if (responseIsMajor && chosenBid.strain === responseBid.strain) {
           if (chosenBid.level === 2) return "continuation.openerMinorNewSuitMajorFitMinimum";
@@ -354,6 +359,9 @@
           if (chosenBid.level === 2) return "continuation.openerMinorNewSuitNotrumpInvite";
         }
         if (chosenBid.strain === openingBid.strain) {
+          if (shape && chosenBid.level === 2 && (shape.counts[openingBid.strain] || 0) === 5) {
+            return "continuation.openerMinorNewSuitFallbackOwnMinor";
+          }
           if (chosenBid.level === 2) return "continuation.openerMinorNewSuitLongMinorMinimum";
           if (chosenBid.level === 3) return "continuation.openerMinorNewSuitLongMinorInvite";
           if (chosenBid.level === gameLevel(openingBid.strain)) return "continuation.openerMinorNewSuitLongMinorGame";
@@ -450,9 +458,10 @@
         }
         const secondSuit = chooseOpenerSecondSuit(shape, openingBid.strain, responseBid.strain, (suit) => {
           const nextBid = bid(cheapestLevelForStrain(suit, responseBid), suit);
-          return !isReverseRebidFiveCardHigh(openingBid, nextBid) || shape.hcp >= 16;
+          return !isReverseRebidFiveCardHigh(openingBid, nextBid) || hasMinorReverseStrengthFiveCardHigh(shape, openingBid);
         });
         if (secondSuit) return bid(cheapestLevelForStrain(secondSuit, responseBid), secondSuit);
+        if (shape.counts[openingBid.strain] >= 5) return bid(cheapestLevelForStrain(openingBid.strain, responseBid), openingBid.strain);
         return bid(cheapestLevelForStrain("NT", responseBid), "NT");
       }
 
@@ -837,7 +846,7 @@
           });
         }
         if (isMinorOpeningOneLevelNewSuitFiveCardHigh(openingBid, responseBid)) {
-          const ruleName = openerAfterMinorOneLevelNewSuitRuleName(chosenBid, openingBid, responseBid);
+          const ruleName = openerAfterMinorOneLevelNewSuitRuleName(chosenBid, openingBid, responseBid, shape);
           if (ruleName) {
             return fiveCardHighBidChoiceResult(
               chosenBid,

@@ -19,12 +19,12 @@
         </div>
         <div class="setup-controls">
           <button id="open-feedback" class="topbar-feedback" type="button">Feedback</button>
-          <details class="app-menu">
-            <summary id="settings-summary" aria-label="Menu" title="Menu">
+          <div class="app-menu">
+            <button id="settings-summary" class="menu-trigger" type="button" aria-expanded="false" aria-controls="app-menu-panel" aria-label="Menu" title="Menu">
               <span class="menu-icon" aria-hidden="true"></span>
               <span>Menu</span>
-            </summary>
-            <div class="app-menu-panel">
+            </button>
+            <div id="app-menu-panel" class="app-menu-panel" hidden>
               <div class="menu-actions" aria-label="Menuacties">
                 <section class="menu-section" aria-labelledby="game-menu-title">
                   <p id="game-menu-title" class="menu-section-title">Spel</p>
@@ -75,7 +75,7 @@
                 </div>
               </div>
             </div>
-          </details>
+          </div>
         </div>
       </section>
 
@@ -87,12 +87,14 @@
         <div class="opponent north">
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
           <div id="north-label" class="seat-label">Noord &bull; Partner</div>
+          <div id="north-auction-calls" class="seat-auction-calls seat-auction-north" aria-label="Biedingen Noord"></div>
         </div>
 
         <div class="middle-row">
           <div class="opponent west">
             <div id="west-hand" class="hand vertical" aria-label="West hand"></div>
             <div id="west-label" class="seat-label">West</div>
+            <div id="west-auction-calls" class="seat-auction-calls seat-auction-west" aria-label="Biedingen West"></div>
           </div>
 
           <div class="felt">
@@ -102,6 +104,7 @@
               <div class="trick-slot trick-east" data-seat="Oost"></div>
               <div class="trick-slot trick-south" data-seat="Zuid"></div>
             </div>
+            <div id="mobile-bidding-slot" class="table-bidding-slot" aria-hidden="true"></div>
             <div id="replay-panel" class="replay-panel" hidden>
               <p id="replay-title">Speel opnieuw</p>
               <div class="replay-actions">
@@ -121,6 +124,7 @@
 
           <div class="opponent east">
             <div id="east-label" class="seat-label">Oost</div>
+            <div id="east-auction-calls" class="seat-auction-calls seat-auction-east" aria-label="Biedingen Oost"></div>
             <div id="east-hand" class="hand vertical" aria-label="Oost hand"></div>
           </div>
         </div>
@@ -130,6 +134,7 @@
             <div id="south-label" class="seat-label">Zuid &bull; Jij</div>
             <button id="hint-button" class="hint-button" type="button" aria-label="Hint" data-hint="Deel een nieuwe hand om te starten.">i</button>
           </div>
+          <div id="south-auction-calls" class="seat-auction-calls seat-auction-south" aria-label="Biedingen Zuid"></div>
           <div id="south-hand" class="hand horizontal playable" aria-label="Jouw hand"></div>
         </div>
       </section>
@@ -289,13 +294,17 @@
           <select id="feedback-type">
             <option value="confusion">Verwarring</option>
             <option value="bug">Bug</option>
-            <option value="rules">Regel of score klopt niet</option>
+            <option value="rules">Biedconventie/speelengine klopt niet</option>
             <option value="suggestion">Suggestie</option>
           </select>
         </div>
         <div class="feedback-field">
           <label id="feedback-message-label" for="feedback-message">Bericht van tester</label>
           <textarea id="feedback-message" rows="4" spellcheck="true"></textarea>
+        </div>
+        <div id="feedback-detail-field" class="feedback-field" hidden>
+          <label id="feedback-detail-label" for="feedback-detail">Extra toelichting</label>
+          <textarea id="feedback-detail" rows="3" spellcheck="true"></textarea>
         </div>
         <div class="feedback-actions">
           <button id="copy-feedback" type="button">Kopieer feedback</button>

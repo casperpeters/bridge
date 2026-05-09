@@ -24,6 +24,12 @@ const slotEls = {
   South: document.querySelector(".trick-south"),
   West: document.querySelector(".trick-west")
 };
+const seatAuctionEls = {
+  North: document.querySelector("#north-auction-calls"),
+  East: document.querySelector("#east-auction-calls"),
+  South: document.querySelector("#south-auction-calls"),
+  West: document.querySelector("#west-auction-calls")
+};
 
 const state = {
   hands: {},
@@ -63,12 +69,18 @@ const state = {
   seedMessage: null,
   practice: null,
   feedbackStatus: null,
-  illegalActionFeedback: null
+  illegalActionFeedback: null,
+  handSuitFocus: null
 };
 
 let illegalActionFeedbackTimer = null;
+let flowGeneration = 0;
+let dealAnimationTimer = null;
+let dealAnimationHandsLocked = false;
+let dealAnimationHandRenderSnapshot = null;
 
 const els = {
+  appShell: document.querySelector(".app-shell"),
   title: document.querySelector("#app-title"),
   heading: document.querySelector("#app-heading"),
   playMode: document.querySelector("#play-mode"),
@@ -117,6 +129,9 @@ const els = {
   copySeed: document.querySelector("#copy-seed"),
   seedDescription: document.querySelector("#seed-description"),
   tableArea: document.querySelector(".table-area"),
+  sidePanel: document.querySelector(".side-panel"),
+  auctionPanel: document.querySelector(".auction-panel"),
+  mobileBiddingSlot: document.querySelector("#mobile-bidding-slot"),
   northLabel: document.querySelector("#north-label"),
   eastLabel: document.querySelector("#east-label"),
   southLabel: document.querySelector("#south-label"),
@@ -136,6 +151,9 @@ const els = {
   feedbackType: document.querySelector("#feedback-type"),
   feedbackMessageLabel: document.querySelector("#feedback-message-label"),
   feedbackMessage: document.querySelector("#feedback-message"),
+  feedbackDetailField: document.querySelector("#feedback-detail-field"),
+  feedbackDetailLabel: document.querySelector("#feedback-detail-label"),
+  feedbackDetail: document.querySelector("#feedback-detail"),
   copyFeedback: document.querySelector("#copy-feedback"),
   mailFeedback: document.querySelector("#mail-feedback"),
   closeFeedback: document.querySelector("#close-feedback"),
@@ -159,6 +177,9 @@ const els = {
   trickCount: document.querySelector("#trick-count")
 };
 
+const mobileLayoutQuery = globalThis.matchMedia?.("(max-width: 760px)") || null;
+const mobileBiddingLayoutQuery = mobileLayoutQuery;
+
 loadSavedSettings();
 
 els.newHand.addEventListener("click", startHand);
@@ -176,7 +197,7 @@ BridgeGlossary.init({
   definition: els.glossaryDefinition
 });
 els.openLessons?.addEventListener("click", () => {
-  els.appMenu?.removeAttribute("open");
+  closeAppMenu();
 });
 if (els.openLessons && new URLSearchParams(globalThis.location?.search || "").has("testHooks")) {
   els.openLessons.href = "lessons.html?testHooks=1";
@@ -189,15 +210,22 @@ els.openFeedback.addEventListener("click", openFeedbackDialog);
 els.closeFeedback.addEventListener("click", closeFeedbackDialog);
 els.copyFeedback.addEventListener("click", copyFeedbackReport);
 els.mailFeedback.addEventListener("click", submitFeedbackReport);
+els.feedbackType.addEventListener("change", updateFeedbackQuestions);
 els.feedbackDialog.addEventListener("click", (event) => {
   if (event.target === els.feedbackDialog) closeFeedbackDialog();
 });
-els.appMenu?.querySelector(".menu-actions")?.addEventListener("click", (event) => {
-  if (event.target.closest("button")) els.appMenu.removeAttribute("open");
+els.settingsSummary?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleAppMenu();
 });
+els.appMenu?.querySelector(".menu-actions")?.addEventListener("click", (event) => {
+  if (event.target.closest("button, a")) closeAppMenu();
+});
+els.appMenu?.addEventListener("click", (event) => event.stopPropagation());
 els.scoreTableDialog.addEventListener("click", (event) => {
   if (event.target === els.scoreTableDialog) closeScoreTableDialog();
 });
+document.addEventListener("click", () => closeAppMenu());
 document.documentElement.lang = "nl";
 els.developerMode.addEventListener("change", () => {
   state.developerMode = els.developerMode.checked;
@@ -214,10 +242,12 @@ els.playHistoryMode.addEventListener("change", () => {
   saveSettings();
   renderAll();
 });
-els.tableArea.addEventListener("click", () => {
+els.tableArea.addEventListener("click", (event) => {
+  if (clearHandSuitFocusFromOutsideClick(event.target)) return;
   if (state.awaitingTrickAdvance && state.trickAdvanceArmed) advanceCompletedTrick();
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeAppMenu();
   if (isControlTarget(event.target)) return;
   if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && moveReviewTrickCursor(event.key === "ArrowRight" ? 1 : -1)) {
     event.preventDefault();
@@ -228,6 +258,15 @@ document.addEventListener("keydown", (event) => {
     advanceCompletedTrick();
   }
 });
+
+if (mobileBiddingLayoutQuery) {
+  const rerenderResponsiveLayout = () => renderAll();
+  if (typeof mobileBiddingLayoutQuery.addEventListener === "function") {
+    mobileBiddingLayoutQuery.addEventListener("change", rerenderResponsiveLayout);
+  } else if (typeof mobileBiddingLayoutQuery.addListener === "function") {
+    mobileBiddingLayoutQuery.addListener(rerenderResponsiveLayout);
+  }
+}
 
 function isControlTarget(target) {
   return target?.closest?.("a, button, input, select, textarea, summary, details");
@@ -302,6 +341,9 @@ function startLessonFromUrl() {
 }
 
 function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null, clearSeedMessage = false, skipFlow = false }) {
+  resetScheduledFlow();
+  clearDealAnimationTimer();
+  dealAnimationHandsLocked = false;
   Object.assign(state, stateTransitions.startPreparedHandTransition({
     dealerIndex,
     vulnerability,
@@ -313,17 +355,41 @@ function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null,
     window.clearTimeout(illegalActionFeedbackTimer);
     illegalActionFeedbackTimer = null;
   }
+  state.handSuitFocus = null;
   if (clearSeedMessage) state.seedMessage = null;
   clearTrickSlots();
   if (skipFlow) {
     state.animateDeal = false;
+    dealAnimationHandsLocked = false;
     setStatus("opensAuction", { seat: seatAt(state.turnIndex) });
     return;
   }
   renderAll();
-  state.animateDeal = false;
+  scheduleDealAnimationEnd();
   setStatus("opensAuction", { seat: seatAt(state.turnIndex) });
   continueAuction();
+}
+
+function resetScheduledFlow() {
+  flowGeneration += 1;
+}
+
+function scheduleDealAnimationEnd() {
+  clearDealAnimationTimer();
+  dealAnimationTimer = window.setTimeout(() => {
+    state.animateDeal = false;
+    dealAnimationHandsLocked = false;
+    dealAnimationHandRenderSnapshot = null;
+    dealAnimationTimer = null;
+    renderHands();
+  }, 1400);
+}
+
+function clearDealAnimationTimer() {
+  if (dealAnimationTimer) window.clearTimeout(dealAnimationTimer);
+  dealAnimationTimer = null;
+  dealAnimationHandsLocked = false;
+  dealAnimationHandRenderSnapshot = null;
 }
 
 function replayHand() {
@@ -442,10 +508,11 @@ function compareCards(a, b) {
 
 function renderAll() {
   applyStaticText();
+  renderResponsiveLayoutState();
   renderScoreTable();
   renderTurnFocus();
   renderTrickSlotFocus();
-  renderHands();
+  if (!shouldSkipHandRenderForDealAnimation()) renderHands();
   renderAuction();
   renderBidControls();
   renderPlayPlan();
@@ -469,6 +536,110 @@ function renderAll() {
   renderStatus();
 }
 
+function renderResponsiveLayoutState() {
+  const isBidding = state.phase === "bidding";
+  const useMobileBiddingLayout = Boolean(isBidding && mobileBiddingLayoutQuery?.matches);
+  els.appShell?.classList.toggle("is-bidding", isBidding);
+  els.appShell?.classList.toggle("is-mobile-bidding", useMobileBiddingLayout);
+
+  if (!els.auctionPanel || !els.sidePanel || !els.mobileBiddingSlot) return;
+
+  if (useMobileBiddingLayout) {
+    if (els.auctionPanel.parentElement !== els.mobileBiddingSlot) {
+      els.mobileBiddingSlot.appendChild(els.auctionPanel);
+    }
+    els.mobileBiddingSlot.setAttribute("aria-hidden", "false");
+    return;
+  }
+
+  if (els.auctionPanel.parentElement === els.mobileBiddingSlot) {
+    els.sidePanel.insertBefore(els.auctionPanel, els.sidePanel.firstChild);
+  }
+  els.mobileBiddingSlot.setAttribute("aria-hidden", "true");
+}
+
+function isMobileLayout() {
+  return Boolean(mobileLayoutQuery?.matches);
+}
+
+function focusHandSuit(seat, suit) {
+  if (!isMobileLayout() || !seat || !suit) return false;
+  state.handSuitFocus = { seat, suit };
+  renderHands();
+  return true;
+}
+
+function clearHandSuitFocus() {
+  if (!state.handSuitFocus) return false;
+  state.handSuitFocus = null;
+  renderHands();
+  return true;
+}
+
+function clearHandSuitFocusFromOutsideClick(target) {
+  if (!state.handSuitFocus || !isMobileLayout()) return false;
+  const focusedHand = seatEls[state.handSuitFocus.seat];
+  if (focusedHand?.contains(target)) return false;
+  clearHandSuitFocus();
+  return false;
+}
+
+function shouldSkipHandRenderForDealAnimation() {
+  if (!state.animateDeal || !dealAnimationHandsLocked || !dealAnimationHandRenderSnapshot) return false;
+  const current = dealAnimationHandRenderState();
+  return (
+    current.phase === dealAnimationHandRenderSnapshot.phase &&
+    current.hands === dealAnimationHandRenderSnapshot.hands &&
+    current.developerMode === dealAnimationHandRenderSnapshot.developerMode &&
+    current.guidanceMode === dealAnimationHandRenderSnapshot.guidanceMode &&
+    current.declarer === dealAnimationHandRenderSnapshot.declarer &&
+    current.dummy === dealAnimationHandRenderSnapshot.dummy &&
+    current.turnIndex === dealAnimationHandRenderSnapshot.turnIndex &&
+    current.awaitingTrickAdvance === dealAnimationHandRenderSnapshot.awaitingTrickAdvance &&
+    current.currentTrickLength === dealAnimationHandRenderSnapshot.currentTrickLength &&
+    current.trickHistoryLength === dealAnimationHandRenderSnapshot.trickHistoryLength
+  );
+}
+
+function lockDealAnimationHands() {
+  if (!state.animateDeal) return;
+  dealAnimationHandsLocked = true;
+  dealAnimationHandRenderSnapshot = dealAnimationHandRenderState();
+}
+
+function dealAnimationHandRenderState() {
+  const playing = state.phase === "playing";
+  return {
+    phase: state.phase,
+    hands: state.phase === "complete" ? state.originalHands : state.hands,
+    developerMode: state.developerMode,
+    guidanceMode: state.guidanceMode,
+    declarer: state.declarer,
+    dummy: state.dummy,
+    turnIndex: playing ? state.turnIndex : null,
+    awaitingTrickAdvance: playing ? state.awaitingTrickAdvance : false,
+    currentTrickLength: playing ? state.currentTrick.length : 0,
+    trickHistoryLength: playing ? state.trickHistory.length : 0
+  };
+}
+
+function toggleAppMenu() {
+  const isOpen = !els.appMenu?.classList.contains("is-open");
+  renderAppMenu(isOpen);
+}
+
+function closeAppMenu() {
+  renderAppMenu(false);
+}
+
+function renderAppMenu(isOpen) {
+  if (!els.appMenu || !els.settingsSummary) return;
+  els.appMenu.classList.toggle("is-open", isOpen);
+  els.settingsSummary.setAttribute("aria-expanded", String(isOpen));
+  const panel = els.appMenu.querySelector(".app-menu-panel");
+  if (panel) panel.hidden = !isOpen;
+}
+
 function renderReplayPanel() {
   els.replayPanel.hidden = state.phase !== "complete";
 }
@@ -476,6 +647,10 @@ function renderReplayPanel() {
 function renderTurnFocus() {
   const focusClasses = seats.map((seat) => `turn-focus-${seat.toLowerCase()}`);
   els.tableArea.classList.remove(...focusClasses);
+  if (state.phase === "bidding" && seatAt(state.turnIndex) === "South") {
+    els.tableArea.classList.add("turn-focus-south");
+    return;
+  }
   if (state.phase !== "playing" || state.awaitingTrickAdvance) return;
   els.tableArea.classList.add(`turn-focus-${seatAt(state.turnIndex).toLowerCase()}`);
 }
@@ -539,6 +714,7 @@ function applyStaticText() {
   els.feedbackTypeLabel.textContent = t("feedbackTypeLabel");
   els.feedbackMessageLabel.textContent = t("feedbackMessageLabel");
   els.feedbackMessage.placeholder = t("feedbackMessagePlaceholder");
+  els.feedbackDetailLabel.textContent = t("feedbackDetailLabel");
   els.copyFeedback.textContent = t("copyFeedback");
   els.mailFeedback.textContent = t("mailFeedback");
   els.closeFeedback.setAttribute("aria-label", t("closeFeedback"));
@@ -550,6 +726,7 @@ function applyStaticText() {
     const option = els.feedbackType.querySelector(`[value="${value}"]`);
     if (option) option.textContent = label;
   });
+  updateFeedbackQuestions();
   els.hintButton.setAttribute("aria-label", t("hint"));
 }
 
@@ -580,7 +757,8 @@ function closeScoreTableDialog() {
 
 function openFeedbackDialog() {
   state.feedbackStatus = null;
-  els.appMenu?.removeAttribute("open");
+  closeAppMenu();
+  updateFeedbackQuestions();
   renderFeedbackStatus();
   if (typeof els.feedbackDialog.showModal === "function") {
     els.feedbackDialog.showModal();
@@ -588,6 +766,18 @@ function openFeedbackDialog() {
     els.feedbackDialog.setAttribute("open", "");
   }
   els.feedbackMessage.focus();
+}
+
+function updateFeedbackQuestions() {
+  const prompts = t("feedbackPrompts") || {};
+  const prompt = prompts[els.feedbackType.value] || prompts.confusion || {};
+  els.feedbackMessageLabel.textContent = prompt.primaryLabel || t("feedbackMessageLabel");
+  els.feedbackMessage.placeholder = prompt.primaryPlaceholder || t("feedbackMessagePlaceholder");
+  const hasDetailQuestion = Boolean(prompt.secondaryLabel);
+  els.feedbackDetailField.hidden = !hasDetailQuestion;
+  els.feedbackDetailLabel.textContent = prompt.secondaryLabel || t("feedbackDetailLabel");
+  els.feedbackDetail.placeholder = prompt.secondaryPlaceholder || "";
+  if (!hasDetailQuestion) els.feedbackDetail.value = "";
 }
 
 function closeFeedbackDialog() {

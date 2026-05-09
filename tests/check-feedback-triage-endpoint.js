@@ -21,9 +21,6 @@ async function main() {
     userAgent: `node ${process.version}`,
     report: "## Triage smoke-test",
     message: `Automatische triage endpoint test ${now}`,
-    triageStatus: "Onderzocht",
-    category: "smoke-test",
-    reproduced: "N.v.t.",
     cause: `Triage smoke-test oorzaak ${now}`,
     fixProposal: `Triage smoke-test fixvoorstel ${now}`,
     fixImplemented: "N.v.t. - triage smoke-test"
@@ -41,9 +38,6 @@ async function main() {
   assertEqual(result.triage?.cause, payload.cause, "cause");
   assertEqual(result.triage?.fixProposal, payload.fixProposal, "fixProposal");
   assertEqual(result.triage?.fixImplemented, payload.fixImplemented, "fixImplemented");
-  assertEqual(result.triage?.triageStatus, payload.triageStatus, "triageStatus");
-  assertEqual(result.triage?.category, payload.category, "category");
-  assertEqual(result.triage?.reproduced, payload.reproduced, "reproduced");
 
   const cleanup = await cleanupCanaries();
   if (!cleanup.ok) {

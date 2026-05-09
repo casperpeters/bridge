@@ -37,7 +37,6 @@
 }
 
 .score-table-panel,
-.feedback-dialog .feedback-panel,
 .glossary-panel,
 .lessons-panel {
   position: relative;
@@ -50,12 +49,15 @@
   box-shadow: 0 28px 72px rgba(0, 0, 0, 0.56);
 }
 
+.feedback-dialog .feedback-panel {
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.56);
+}
+
 .score-table-panel {
   max-height: min(900px, calc(100vh - 24px));
 }
 
 .score-table-hero,
-.feedback-dialog .feedback-panel::before,
 .glossary-panel::before,
 .lessons-panel::before {
   position: absolute;
@@ -67,13 +69,11 @@
   pointer-events: none;
 }
 
-.feedback-dialog .feedback-panel::before,
 .glossary-panel::before,
 .lessons-panel::before {
   content: "";
 }
 
-.feedback-dialog .feedback-panel > *,
 .glossary-panel > *,
 .lessons-panel > * {
   position: relative;
@@ -648,6 +648,10 @@
   padding: 11px;
 }
 
+.feedback-dialog .feedback-panel {
+  background: var(--panel);
+}
+
 .feedback-head {
   display: flex;
   align-items: center;
@@ -686,6 +690,10 @@
 .feedback-field {
   display: grid;
   gap: 5px;
+}
+
+.feedback-field[hidden] {
+  display: none;
 }
 
 .feedback-field label {

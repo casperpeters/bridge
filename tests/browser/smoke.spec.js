@@ -30,8 +30,9 @@ async function prepareNorthSouthDeclarerHand(page) {
 
 async function clickMenuButton(page, selector) {
   const menu = page.locator(".app-menu");
-  await menu.locator("summary").click();
-  await expect(menu).toHaveAttribute("open", "");
+  const trigger = page.locator("#settings-summary");
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
   await page.locator(selector).click();
 }
 
@@ -40,7 +41,9 @@ test("keeps tester-only menu actions behind developer mode", async ({ page }) =>
   await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(false));
 
   const menu = page.locator(".app-menu");
-  await menu.locator("summary").click();
+  const trigger = page.locator("#settings-summary");
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
   const settingLabels = await page.locator(".settings-panel .developer-toggle span").allTextContents();
   expect(settingLabels).toEqual(["Speelgeschiedenis", "AI-suggesties", "Developermodus"]);
   await expect(page.locator("#play-history-mode-description")).toHaveText("i");
@@ -99,6 +102,15 @@ test("loads the live table and lets South make an auction call", async ({ page }
 
   await expect(page.locator("#south-hand .card")).toHaveCount(13);
   await expect(page.locator("#north-hand .card.back")).toHaveCount(13);
+  const cardBackStyle = await page.evaluate(() => {
+    const style = getComputedStyle(document.querySelector("#north-hand .card.back"));
+    return {
+      backgroundImage: style.backgroundImage,
+      borderColor: style.borderTopColor
+    };
+  });
+  expect(cardBackStyle.backgroundImage).toContain("linear-gradient");
+  expect(cardBackStyle.borderColor).not.toBe("rgba(0, 0, 0, 0)");
   await expect(page.locator("#status")).toHaveClass(/sr-only/);
   await expect(page.locator("#hint-button")).toBeVisible();
   await expect(page.locator("#bid-controls")).toHaveClass(/active-bid-box/);
@@ -114,6 +126,368 @@ test("loads the live table and lets South make an auction call", async ({ page }
   await page.locator("#bid-controls button.pass").click();
   await expect(page.locator("#auction-log")).toContainText("Pas");
   expect(pageErrors).toEqual([]);
+});
+
+test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only responsive layout");
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "mobile-table-bidding", skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      dealerIndex: 0,
+      turnIndex: 2,
+      auction: [
+        { seat: "North", bid: app.rules.Bid(1, "H") },
+        { seat: "East", bid: app.rules.Pass() }
+      ]
+    });
+    app.renderAll();
+  });
+
+  await expect(page.locator(".app-shell")).toHaveClass(/is-mobile-bidding/);
+  await expect(page.locator("#mobile-bidding-slot > .auction-panel")).toBeVisible();
+  await expect(page.locator("#north-hand")).toBeHidden();
+  await expect(page.locator("#west-hand")).toBeHidden();
+  await expect(page.locator("#east-hand")).toBeHidden();
+  await expect(page.locator("#south-hand")).toBeVisible();
+  await expect(page.locator("#auction-log")).toBeHidden();
+  await expect(page.locator("#north-auction-calls")).toBeVisible();
+  await expect(page.locator("#east-auction-calls")).toBeVisible();
+  await expect(page.locator("#north-auction-calls")).toContainText("1");
+  await expect(page.locator("#east-auction-calls")).toContainText("Pas");
+  await expect(page.locator("#bid-controls button.pass")).toBeVisible();
+
+  const layout = await page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left
+      };
+    };
+    const contains = (outer, inner) =>
+      inner.top >= outer.top &&
+      inner.left >= outer.left &&
+      inner.right <= outer.right &&
+      inner.bottom <= outer.bottom;
+    const table = rectFor(".table-area");
+    return {
+      northBidsInsideTable: contains(table, rectFor("#north-auction-calls")),
+      eastBidsInsideTable: contains(table, rectFor("#east-auction-calls")),
+      bidBoxInsideTable: contains(table, rectFor("#bid-controls"))
+    };
+  });
+
+  expect(layout.northBidsInsideTable).toBe(true);
+  expect(layout.eastBidsInsideTable).toBe(true);
+  expect(layout.bidBoxInsideTable).toBe(true);
+
+  const stableBefore = await page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      };
+    };
+    return {
+      table: rectFor(".table-area"),
+      panel: rectFor("#mobile-bidding-slot > .auction-panel"),
+      northLabel: rectFor("#north-label"),
+      westLabel: rectFor("#west-label"),
+      eastLabel: rectFor("#east-label"),
+      southLabel: rectFor("#south-label")
+    };
+  });
+
+  const stableAfter = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({
+      auction: [
+        { seat: "North", bid: app.rules.Bid(1, "H") },
+        { seat: "East", bid: app.rules.Pass() },
+        { seat: "South", bid: app.rules.Pass() },
+        { seat: "West", bid: app.rules.Bid(1, "S") },
+        { seat: "North", bid: app.rules.Pass() },
+        { seat: "East", bid: app.rules.Bid(2, "D") },
+        { seat: "South", bid: app.rules.Pass() },
+        { seat: "West", bid: app.rules.Bid(2, "C") }
+      ]
+    });
+    app.renderAll();
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: Math.round(rect.top),
+        left: Math.round(rect.left),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      };
+    };
+    return {
+      table: rectFor(".table-area"),
+      panel: rectFor("#mobile-bidding-slot > .auction-panel"),
+      northLabel: rectFor("#north-label"),
+      westLabel: rectFor("#west-label"),
+      eastLabel: rectFor("#east-label"),
+      southLabel: rectFor("#south-label")
+    };
+  });
+
+  expect(stableAfter).toEqual(stableBefore);
+
+  const polish = await page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      };
+    };
+    const overlapArea = (a, b) => {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      return width * height;
+    };
+    const bidControls = getComputedStyle(document.querySelector("#bid-controls"));
+    const advancedToggle = getComputedStyle(document.querySelector("#bid-controls .bid-advanced-toggle"));
+    const southBids = rectFor("#south-auction-calls");
+    const panel = rectFor("#mobile-bidding-slot > .auction-panel");
+    const advancedToggleRect = rectFor("#bid-controls .bid-advanced-toggle");
+    const westLabel = rectFor("#west-label");
+    const westBids = rectFor("#west-auction-calls");
+    const eastLabel = rectFor("#east-label");
+    const eastBids = rectFor("#east-auction-calls");
+    const northLabel = rectFor("#north-label");
+    const table = rectFor(".table-area");
+    const northBidRects = [...document.querySelectorAll("#north-auction-calls .auction-call")].map((call) => {
+      const rect = call.getBoundingClientRect();
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+    });
+    const westBidRects = [...document.querySelectorAll("#west-auction-calls .auction-call")].map((call) => {
+      const rect = call.getBoundingClientRect();
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+    });
+    const eastBidRects = [...document.querySelectorAll("#east-auction-calls .auction-call")].map((call) => {
+      const rect = call.getBoundingClientRect();
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+    });
+    const southBidRects = [...document.querySelectorAll("#south-auction-calls .auction-call")].map((call) => {
+      const rect = call.getBoundingClientRect();
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+    });
+    const southCardOverlap = [...document.querySelectorAll("#south-hand .card")]
+      .map((card) => {
+        const rect = card.getBoundingClientRect();
+        return overlapArea(southBids, {
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height
+        });
+      })
+      .reduce((max, area) => Math.max(max, area), 0);
+    return {
+      westOverlap: overlapArea(westLabel, westBids),
+      eastOverlap: overlapArea(eastLabel, eastBids),
+      westBidsAreInward: westBids.left > westLabel.left,
+      eastBidsAreInward: eastBids.right < eastLabel.right,
+      northLabelCenterDelta: Math.abs(((northLabel.left + northLabel.right) / 2) - ((table.left + table.right) / 2)),
+      northFirstCallAgainstPanel: northBidRects.length ? Math.abs(northBidRects[0].right - panel.right) : 0,
+      southFirstCallAgainstPanel: southBidRects.length ? Math.abs(southBidRects[0].left - panel.left) : 0,
+      westBidsAgainstPanel: Math.abs(panel.left - westBids.right),
+      eastBidsAgainstPanel: Math.abs(eastBids.left - panel.right),
+      westFirstCallAgainstPanel: westBidRects.length ? Math.abs(panel.left - westBidRects[0].right) : 0,
+      eastFirstCallAgainstPanel: eastBidRects.length ? Math.abs(eastBidRects[0].left - panel.right) : 0,
+      northFirstBidRightOfSecond: northBidRects.length >= 2 ? northBidRects[0].left > northBidRects[1].left : true,
+      westFirstBidAboveSecond: westBidRects.length >= 2 ? westBidRects[0].top < westBidRects[1].top : true,
+      southFirstBidLeftOfSecond: southBidRects.length >= 2 ? southBidRects[0].left < southBidRects[1].left : true,
+      eastFirstBidBelowSecond: eastBidRects.length >= 2 ? eastBidRects[0].top > eastBidRects[1].top : true,
+      eastFirstBidNearBottom: eastBidRects.length ? Math.abs(eastBidRects[0].bottom - eastBids.bottom) : 0,
+      southLabelOverlap: overlapArea(rectFor("#south-label"), rectFor("#south-auction-calls")),
+      southCardOverlap,
+      panelBottomGap: Math.round(panel.bottom - advancedToggleRect.bottom),
+      activeBidBoxOutlineWidth: bidControls.outlineWidth,
+      activeBidBoxBoxShadow: bidControls.boxShadow,
+      advancedToggleBackground: advancedToggle.backgroundColor,
+      advancedToggleBorder: advancedToggle.borderTopColor
+    };
+  });
+
+  expect(polish.westOverlap).toBe(0);
+  expect(polish.eastOverlap).toBe(0);
+  expect(polish.westBidsAreInward).toBe(true);
+  expect(polish.eastBidsAreInward).toBe(true);
+  expect(polish.northLabelCenterDelta).toBeLessThanOrEqual(2);
+  expect(polish.northFirstCallAgainstPanel).toBeLessThanOrEqual(10);
+  expect(polish.southFirstCallAgainstPanel).toBeLessThanOrEqual(10);
+  expect(polish.westBidsAgainstPanel).toBeLessThanOrEqual(10);
+  expect(polish.eastBidsAgainstPanel).toBeLessThanOrEqual(10);
+  expect(polish.westFirstCallAgainstPanel).toBeLessThanOrEqual(10);
+  expect(polish.eastFirstCallAgainstPanel).toBeLessThanOrEqual(10);
+  expect(polish.northFirstBidRightOfSecond).toBe(true);
+  expect(polish.westFirstBidAboveSecond).toBe(true);
+  expect(polish.southFirstBidLeftOfSecond).toBe(true);
+  expect(polish.eastFirstBidBelowSecond).toBe(true);
+  expect(polish.eastFirstBidNearBottom).toBeLessThanOrEqual(10);
+  expect(polish.southLabelOverlap).toBe(0);
+  expect(polish.southCardOverlap).toBe(0);
+  expect(polish.panelBottomGap).toBeLessThanOrEqual(12);
+  expect(polish.activeBidBoxOutlineWidth).toBe("0px");
+  expect(polish.activeBidBoxBoxShadow).toBe("none");
+  expect(polish.advancedToggleBackground).toBe("rgba(0, 0, 0, 0)");
+  expect(polish.advancedToggleBorder).toBe("rgba(0, 0, 0, 0)");
+});
+
+test("keeps the mobile bidding box visible while waiting for another player", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only responsive layout");
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "mobile-waiting-bidbox", skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      turnIndex: 1,
+      auction: [{ seat: "North", bid: app.rules.Bid(1, "H") }]
+    });
+    app.renderAll();
+  });
+
+  await expect(page.locator(".app-shell")).toHaveClass(/is-mobile-bidding/);
+  await expect(page.locator("#mobile-bidding-slot > .auction-panel")).toBeVisible();
+  await expect(page.locator("#bid-controls")).toHaveClass(/waiting-bid-box/);
+  await expect(page.locator("#bid-controls button.pass")).toBeVisible();
+  await expect(page.locator("#bid-controls button.pass")).toBeDisabled();
+  await expect(page.locator("#east-auction-calls")).toHaveClass(/auction-active-seat/);
+});
+
+test("expands a tapped suit across the mobile hand before playing South and North cards", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only responsive layout");
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const make = app.makeCard;
+    const hands = {
+      North: [make("AC"), make("KC"), make("5H"), make("2S")],
+      East: [make("9S")],
+      South: [make("AS"), make("QH"), make("AC"), make("JC"), make("TC"), make("5C"), make("3D")],
+      West: [make("2C")]
+    };
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(3, "NT"),
+      declarer: "East",
+      dummy: "West",
+      leader: "South",
+      turnIndex: 2,
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickAdvanceArmed: false,
+      pendingTrickWinner: null,
+      animateDeal: false,
+      hands,
+      originalHands: hands
+    });
+    app.renderAll();
+  });
+
+  await page.locator('#south-hand [data-card-id="5C"]').click();
+  await expect(page.locator("#south-hand")).toHaveClass(/suit-focus-active/);
+  await expect(page.locator("#south-hand .card")).toHaveCount(4);
+  await expect(page.locator('#south-hand [data-card-id$="C"]')).toHaveCount(4);
+
+  const southFocus = await page.evaluate(() => ({
+    focus: window.BridgeAppTestHooks.getState().handSuitFocus,
+    currentTrickLength: window.BridgeAppTestHooks.getState().currentTrick.length
+  }));
+  expect(southFocus).toEqual({
+    focus: { seat: "South", suit: "C" },
+    currentTrickLength: 0
+  });
+
+  await page.locator('#south-hand [data-card-id="JC"]').click();
+  const afterSouthPlay = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      focus: state.handSuitFocus,
+      currentTrick: state.currentTrick.map((play) => `${play.seat}:${play.card.id}`)
+    };
+  });
+  expect(afterSouthPlay).toEqual({
+    focus: null,
+    currentTrick: ["South:JC"]
+  });
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const make = app.makeCard;
+    const hands = {
+      North: [make("AC"), make("KC"), make("5H"), make("2S")],
+      East: [make("9S")],
+      South: [make("AS"), make("QH"), make("3D")],
+      West: [make("2C")]
+    };
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(3, "NT"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 0,
+      currentTrick: [{ seat: "West", card: make("2C") }],
+      awaitingTrickAdvance: false,
+      trickAdvanceArmed: false,
+      pendingTrickWinner: null,
+      handSuitFocus: null,
+      animateDeal: false,
+      hands,
+      originalHands: hands
+    });
+    app.clearTrickSlots();
+    app.renderAll();
+  });
+
+  await page.locator('#north-hand [data-card-id="KC"]').click();
+  await expect(page.locator("#north-hand")).toHaveClass(/suit-focus-active/);
+  await expect(page.locator("#north-hand .card")).toHaveCount(2);
+  await expect(page.locator('#north-hand [data-card-id$="C"]')).toHaveCount(2);
+
+  const northFocus = await page.evaluate(() => ({
+    focus: window.BridgeAppTestHooks.getState().handSuitFocus,
+    currentTrickLength: window.BridgeAppTestHooks.getState().currentTrick.length
+  }));
+  expect(northFocus).toEqual({
+    focus: { seat: "North", suit: "C" },
+    currentTrickLength: 1
+  });
+
+  await page.locator('#north-hand [data-card-id="AC"]').click();
+  const afterNorthPlay = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      focus: state.handSuitFocus,
+      currentTrick: state.currentTrick.map((play) => `${play.seat}:${play.card.id}`)
+    };
+  });
+  expect(afterNorthPlay).toEqual({
+    focus: null,
+    currentTrick: ["West:2C", "North:AC"]
+  });
 });
 
 test("marks vulnerable seats red on the table", async ({ page }) => {
@@ -236,6 +610,81 @@ test("loads a situation seed with auction and played cards", async ({ page }) =>
   await expect(page.locator("#seed-description")).toContainText("Herhaalcode geladen");
   await expect(page.locator(".trick-west .card.played")).toHaveCount(1);
   await expect(page.locator("#north-hand .card:not(.back)")).toHaveCount(13);
+});
+
+test("loading a situation seed ignores pending AI play from the previous hand", async ({ page }) => {
+  await openFreshApp(page);
+
+  const restored = await page.evaluate(async () => {
+    const app = window.BridgeAppTestHooks;
+    const rules = app.rules;
+    const startKnownContract = () => {
+      app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+      app.setState({
+        phase: "playing",
+        auction: [
+          { seat: "South", bid: rules.Bid(4, "S") },
+          { seat: "West", bid: rules.Pass() },
+          { seat: "North", bid: rules.Pass() },
+          { seat: "East", bid: rules.Pass() }
+        ],
+        contract: rules.Bid(4, "S"),
+        declarer: "South",
+        dummy: "North",
+        leader: "West",
+        turnIndex: 3
+      });
+    };
+    const playOneCardWithoutTimers = () => {
+      const state = app.getState();
+      const seat = app.seatAt(state.turnIndex);
+      const card = app.chooseCard(seat) || app.legalCards(seat)[0];
+      const patch = window.BridgeStateTransitions.applyCardPlayTransition(state, { seat, card });
+      app.setState(patch);
+      if (app.getState().currentTrick.length < 4) {
+        app.setState({ turnIndex: (state.turnIndex + 1) % 4 });
+      }
+      return `${seat}:${card.id}`;
+    };
+    const playSnapshot = () => {
+      const state = app.getState();
+      return {
+        phase: state.phase,
+        turn: app.seatAt(state.turnIndex),
+        currentTrick: state.currentTrick.map((play) => `${play.seat}:${play.card.id}`),
+        trickHistoryLength: state.trickHistory.length
+      };
+    };
+
+    startKnownContract();
+    const expectedCurrentTrick = [playOneCardWithoutTimers(), playOneCardWithoutTimers()];
+    const situationSeed = app.createSituationSeed();
+
+    startKnownContract();
+    playOneCardWithoutTimers();
+    playOneCardWithoutTimers();
+    app.continuePlay();
+
+    app.getEls().seedInput.value = situationSeed;
+    app.loadSeedFromInput();
+    const immediatelyAfterLoad = playSnapshot();
+    await new Promise((resolve) => setTimeout(resolve, 780));
+    const afterPendingTimer = playSnapshot();
+
+    return {
+      expectedCurrentTrick,
+      immediatelyAfterLoad,
+      afterPendingTimer
+    };
+  });
+
+  expect(restored.immediatelyAfterLoad).toEqual({
+    phase: "playing",
+    turn: "East",
+    currentTrick: restored.expectedCurrentTrick,
+    trickHistoryLength: 0
+  });
+  expect(restored.afterPendingTimer).toEqual(restored.immediatelyAfterLoad);
 });
 
 test("restores situation seeds for bidding, pass-out, pre-lead, and doubled auctions", async ({ page }) => {
@@ -509,16 +958,8 @@ test("rejects corrupt and out-of-order situation seeds without replacing the cur
       app.loadSeedFromInput();
       return app.getState();
     };
-    const decodeSituationSeed = (seed) => {
-      const payload = seed.slice(seed.indexOf(":") + 1).replace(/-/g, "+").replace(/_/g, "/");
-      const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
-      return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), (char) => char.charCodeAt(0))));
-    };
-    const encodeSituationSeed = (payload) => {
-      const json = JSON.stringify(payload);
-      const binary = Array.from(new TextEncoder().encode(json), (byte) => String.fromCharCode(byte)).join("");
-      return `situatieseed:${btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
-    };
+    const decodeSituationSeed = (seed) => window.BridgeSituationCodec.parseSituationSeed(seed);
+    const encodeSituationSeed = (payload) => window.BridgeSituationCodec.encodeSituationPayload(payload);
 
     app.startHand({ seed: "valid-before-invalid", skipFlow: true });
     const before = app.getState();
@@ -1329,6 +1770,71 @@ test("keeps North's played card readable in the trick area", async ({ page }) =>
   expect(layout.north.bottom).toBeLessThanOrEqual(layout.trickArea.bottom + 1);
 });
 
+test("hides the target card while the play animation flyer moves", async ({ page }) => {
+  await openFreshApp(page);
+
+  const duringAnimation = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = app.makeCard;
+    const hands = {
+      North: [],
+      East: [],
+      South: [makeCard("5H")],
+      West: []
+    };
+
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(1, "S"),
+      declarer: "East",
+      dummy: "West",
+      turnIndex: 2,
+      currentTrick: [
+        { seat: "West", card: makeCard("2H") },
+        { seat: "North", card: makeCard("3H") },
+        { seat: "East", card: makeCard("4H") }
+      ],
+      awaitingTrickAdvance: false,
+      trickAdvanceArmed: false,
+      pendingTrickWinner: null,
+      hands,
+      originalHands: hands
+    });
+    app.clearTrickSlots();
+    app.renderAll();
+    app.playCard("South", "5H");
+
+    const target = document.querySelector(".trick-south .card.played");
+    return {
+      flyerCount: document.querySelectorAll(".card-play-flyer").length,
+      targetIsAnimationTarget: target?.classList.contains("card-animation-target") || false,
+      targetOpacity: target ? getComputedStyle(target).opacity : null
+    };
+  });
+
+  expect(duringAnimation).toEqual({
+    flyerCount: 1,
+    targetIsAnimationTarget: true,
+    targetOpacity: "0"
+  });
+
+  await page.waitForTimeout(820);
+  const afterAnimation = await page.evaluate(() => {
+    const target = document.querySelector(".trick-south .card.played");
+    return {
+      flyerCount: document.querySelectorAll(".card-play-flyer").length,
+      targetIsAnimationTarget: target?.classList.contains("card-animation-target") || false,
+      targetOpacity: target ? getComputedStyle(target).opacity : null
+    };
+  });
+
+  expect(afterAnimation).toEqual({
+    flyerCount: 0,
+    targetIsAnimationTarget: false,
+    targetOpacity: "1"
+  });
+});
+
 test("keeps dummy hidden until the opening lead and shows the play plan only in developer mode", async ({ page }) => {
   await openFreshApp(page);
   await prepareNorthSouthDeclarerHand(page);
@@ -1471,6 +1977,35 @@ test("can finish a hand and copy or submit a feedback report from the review", a
   await page.locator(".setup-controls > #open-feedback").click();
   await expect(page.locator("#feedback-dialog")).toBeVisible();
   await expect(page.locator("#feedback-include-context")).toHaveCount(0);
+  await expect(page.locator("#feedback-message-label")).toContainText("Wat was de verwarring?");
+  await expect(page.locator("#feedback-detail-field")).toBeHidden();
+  await page.locator("#feedback-type").selectOption("bug");
+  await expect(page.locator("#feedback-message-label")).toContainText("Wat was de bug?");
+  await expect(page.locator("#feedback-detail-field")).toBeHidden();
+  await page.locator("#feedback-type").selectOption("rules");
+  await expect(page.locator("#feedback-type")).toContainText("Biedconventie/speelengine klopt niet");
+  await expect(page.locator("#feedback-message-label")).toContainText("Wat klopte er niet?");
+  await expect(page.locator("#feedback-detail-label")).toContainText("Waarom klopt dit niet?");
+  await expect(page.locator("#feedback-detail-field")).toBeVisible();
+  await page.locator("#feedback-message").fill("De Jacoby-transfer werd verkeerd behandeld");
+  await page.locator("#feedback-detail").fill("2 ruiten na 1SA belooft harten, geen ruitenkleur");
+
+  await page.locator("#copy-feedback").click();
+
+  await expect(page.locator("#feedback-state")).toContainText("Feedbackrapport");
+  const rulesReport = await page.evaluate(() => navigator.clipboard.readText());
+  expect(rulesReport).toContain("Biedconventie/speelengine klopt niet");
+  expect(rulesReport).toContain("Wat klopte er niet?");
+  expect(rulesReport).toContain("De Jacoby-transfer werd verkeerd behandeld");
+  expect(rulesReport).toContain("Waarom klopt dit niet?");
+  expect(rulesReport).toContain("2 ruiten na 1SA belooft harten");
+
+  await page.locator("#feedback-type").selectOption("suggestion");
+  await expect(page.locator("#feedback-message-label")).toContainText("Wat zou je verbeteren?");
+  await expect(page.locator("#feedback-detail-label")).toContainText("Waarom is dit beter?");
+  await expect(page.locator("#feedback-detail-field")).toBeVisible();
+
+  await page.locator("#feedback-type").selectOption("confusion");
   await page.locator("#feedback-message").fill("Smoke test report");
 
   await page.locator("#copy-feedback").click();
@@ -1506,6 +2041,10 @@ test("can finish a hand and copy or submit a feedback report from the review", a
   expect(requests[0].options.mode).toBe("no-cors");
   const payload = JSON.parse(requests[0].options.body);
   expect(payload.message).toBe("Smoke test report");
+  expect(payload.feedbackQuestion).toBe("Wat was de verwarring?");
+  expect(payload.feedbackAnswer).toBe("Smoke test report");
+  expect(payload.feedbackDetailQuestion).toBe("");
+  expect(payload.feedbackDetail).toBe("");
   expect(payload.repeatCode).toContain("situatieseed:");
   expect(payload.report).toContain("Herhaalcode: situatieseed:");
   expect(payload.declarer).toBeTruthy();

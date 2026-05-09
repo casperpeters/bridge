@@ -63,6 +63,7 @@
     chooseOpeningLeadAttitudeSignal,
     chooseThirdHandHighOverLowLead,
     chooseThirdHandUnblockHonor,
+    chooseProtectPartnerWinnerFromDummy,
     chooseSecondHandDefensivePlay,
     chooseThirdHandDefensivePlay
   } = cardPlayDefense;
@@ -186,6 +187,18 @@
         trump
       });
       if (openingLeadAttitudeSignal) return withPlayPlanFallback(openingLeadAttitudeSignal, planDecision);
+
+      const protectPartnerWinnerFromDummy = chooseProtectPartnerWinnerFromDummy({
+        legal,
+        currentTrick,
+        seat,
+        declarer,
+        dummy,
+        dummyHand,
+        trump,
+        winning
+      });
+      if (protectPartnerWinnerFromDummy) return withPlayPlanFallback(protectPartnerWinnerFromDummy, planDecision);
 
       if (partnerWinning) {
         const harmlessCards = legal.filter((card) => !beats(card, winning.card, leadSuit, trump));

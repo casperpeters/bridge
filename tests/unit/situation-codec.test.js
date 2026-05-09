@@ -27,7 +27,7 @@ test("situation codec round-trips a valid payload with UTF-8 seed text", () => {
     auction: [
       { s: "S", b: "1S", o: 1 },
       { s: "W", b: "X" },
-      { s: "N", b: "XX", a: true },
+      { s: "N", b: "XX", a: 1 },
       { s: "E", b: "P" },
       { s: "S", b: "P" },
       { s: "W", b: "P" }
@@ -48,6 +48,45 @@ test("situation codec round-trips a valid payload with UTF-8 seed text", () => {
   const seed = codec.encodeSituationPayload(payload);
   assert.match(seed, /^situatieseed:/);
   assert.deepEqual(codec.parseSituationSeed(seed), payload);
+});
+
+test("situation codec writes a compact payload while accepting legacy payloads", () => {
+  const payload = {
+    v: 1,
+    seed: "compact-shape",
+    board: 3,
+    dealer: "E",
+    vul: "NS",
+    phase: "playing",
+    turn: "W",
+    auction: [
+      { s: "E", b: "1NT" },
+      { s: "S", b: "P" },
+      { s: "W", b: "2D", a: 1 }
+    ],
+    tricks: [[
+      { s: "N", c: "2S" },
+      { s: "E", c: "AS" },
+      { s: "S", c: "3S" },
+      { s: "W", c: "4S" }
+    ]],
+    current: [
+      { s: "E", c: "AH" }
+    ],
+    awaiting: 0
+  };
+
+  const seed = codec.encodeSituationPayload(payload);
+  const encodedPayload = decodePayload(seed);
+
+  assert.equal(encodedPayload.seed, undefined);
+  assert.equal(encodedPayload.s, payload.seed);
+  assert.deepEqual(encodedPayload.a, [["E", "1NT"], ["S", "P"], ["W", "2D", "a"]]);
+  assert.deepEqual(encodedPayload.k[0][0], ["N", "2S"]);
+  assert.deepEqual(codec.parseSituationSeed(seed), payload);
+
+  const legacySeed = `situatieseed:${base64UrlEncode(JSON.stringify(payload))}`;
+  assert.deepEqual(codec.parseSituationSeed(legacySeed), payload);
 });
 
 test("situation codec validates payload shape before restore code runs", () => {
@@ -90,3 +129,13 @@ test("situation codec rejects malformed encoded seeds", () => {
     auction: [{ s: "N", b: "pass please" }]
   })), /auction\[0\]\.b/);
 });
+
+function decodePayload(seed) {
+  const payload = seed.slice(seed.indexOf(":") + 1).replace(/-/g, "+").replace(/_/g, "/");
+  const padded = payload + "=".repeat((4 - (payload.length % 4)) % 4);
+  return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+}
+
+function base64UrlEncode(text) {
+  return Buffer.from(String(text), "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}

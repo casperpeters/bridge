@@ -633,8 +633,8 @@ test("Vijfkaart Hoog opener rebids after a one-level new suit response to a one 
     "KD", "QD", "5D", "4D", "3D",
     "JC", "4C", "3C"
   ], oneDiamondOneSpade);
-  assert.deepEqual(reverseBlockedWithoutExtras.bid, bid(1, "NT"));
-  assert.equal(reverseBlockedWithoutExtras.ruleId, "fiveCardHigh.continuation.openerMinorNewSuitNotrumpMinimum");
+  assert.deepEqual(reverseBlockedWithoutExtras.bid, bid(2, "D"));
+  assert.equal(reverseBlockedWithoutExtras.ruleId, "fiveCardHigh.continuation.openerMinorNewSuitFallbackOwnMinor");
 
   const reverseWithExtras = chooseFiveCardHighResult([
     "AS",
@@ -644,6 +644,23 @@ test("Vijfkaart Hoog opener rebids after a one-level new suit response to a one 
   ], oneDiamondOneSpade);
   assert.deepEqual(reverseWithExtras.bid, bid(2, "H"));
   assert.equal(reverseWithExtras.ruleId, "fiveCardHigh.continuation.openerMinorNewSuitReverse");
+
+  const fiveFourReverseWithExtraShape = chooseFiveCardHighResult([
+    "7S",
+    "AH", "KH", "5H", "4H",
+    "AD", "QD", "JD",
+    "JC", "TC", "8C", "6C", "2C"
+  ], [
+    { seat: "North", bid: pass() },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: bid(1, "C") },
+    { seat: "North", bid: pass() },
+    { seat: "East", bid: bid(1, "S") },
+    { seat: "South", bid: pass() }
+  ], "West");
+  assert.deepEqual(fiveFourReverseWithExtraShape.bid, bid(2, "H"));
+  assert.equal(fiveFourReverseWithExtraShape.ruleId, "fiveCardHigh.continuation.openerMinorNewSuitReverse");
 
   const simpleSecondSuit = chooseFiveCardHighResult([
     "AS", "KS", "4S", "3S",

@@ -141,7 +141,7 @@ The app can be deployed as a static site. See [DEPLOY.md](./DEPLOY.md) for GitHu
 
 For direct tester feedback, deploy the Google Apps Script in [integrations/google-apps-script/feedback.gs](./integrations/google-apps-script/feedback.gs) as a Web app and paste its `/exec` URL into [scripts/feedback-config.js](./scripts/feedback-config.js). The copy button remains available as a fallback when no endpoint is configured.
 
-The feedback sheet includes triage columns for `Oorzaak`, `Fixvoorstel`, and `Fix geimplementeerd`. After updating the Apps Script, deploy a new version and open the `/exec` URL once to migrate existing sheets.
+The feedback sheet is intentionally compact: `Ontvangen`, `Status`, `Rapport`, `Oorzaak`, `Fixvoorstel`, and `Fix geimplementeerd`. New feedback rows start with status `Nieuw`. After updating the Apps Script, deploy a new version and open the `/exec` URL once to migrate existing sheets.
 
 ## Roadmap
 

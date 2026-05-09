@@ -436,11 +436,16 @@ function buildFeedbackPayload() {
   const type = els.feedbackType.value;
   const typeLabel = feedbackTypes[type] || type;
   const repeatCode = currentRepeatCode() || "";
+  const answers = currentFeedbackAnswers();
   return {
     source: "bridge-app",
     type,
     typeLabel,
-    message: els.feedbackMessage.value.trim(),
+    message: answers.message,
+    feedbackQuestion: answers.primaryLabel,
+    feedbackAnswer: answers.primary,
+    feedbackDetailQuestion: answers.secondaryLabel,
+    feedbackDetail: answers.secondary,
     report: buildFeedbackReport(),
     repeatCode,
     phase: state.phase,
@@ -469,16 +474,44 @@ function renderFeedbackStatus() {
 function buildFeedbackReport() {
   const feedbackTypes = t("feedbackTypes");
   const type = feedbackTypes[els.feedbackType.value] || els.feedbackType.value;
-  const message = els.feedbackMessage.value.trim() || t("feedbackNoMessage");
+  const answers = currentFeedbackAnswers();
+  const answerLines = [
+    answers.primaryLabel,
+    answers.primary || t("feedbackNoMessage")
+  ];
+  if (answers.secondaryLabel) {
+    answerLines.push("", answers.secondaryLabel, answers.secondary || t("feedbackAnswerMissing"));
+  }
   return [
     "## Feedback",
     "",
     `Type: ${type}`,
-    "Bericht:",
-    message,
+    ...answerLines,
     "",
     `${t("feedbackSituationSeed")}: ${currentRepeatCode() || t("none")}`
   ].join("\n").trimEnd();
+}
+
+function currentFeedbackAnswers() {
+  const prompts = t("feedbackPrompts") || {};
+  const prompt = prompts[els.feedbackType.value] || prompts.confusion || {};
+  const primaryLabel = prompt.primaryLabel || t("feedbackMessageLabel");
+  const secondaryLabel = prompt.secondaryLabel || "";
+  const primary = els.feedbackMessage.value.trim();
+  const secondary = secondaryLabel ? els.feedbackDetail.value.trim() : "";
+  const message = secondaryLabel
+    ? [
+        `${primaryLabel} ${primary || t("feedbackNoMessage")}`,
+        `${secondaryLabel} ${secondary || t("feedbackAnswerMissing")}`
+      ].join("\n")
+    : primary;
+  return {
+    primaryLabel,
+    primary,
+    secondaryLabel,
+    secondary,
+    message
+  };
 }
 
 function feedbackContractText() {

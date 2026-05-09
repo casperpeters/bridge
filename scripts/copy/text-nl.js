@@ -52,6 +52,8 @@ const text = {
   feedbackTypeLabel: "Type feedback",
   feedbackMessageLabel: "Bericht van tester",
   feedbackMessagePlaceholder: "Wat viel je op? Beschrijf waar je was en wat je verwachtte.",
+  feedbackDetailLabel: "Extra toelichting",
+  feedbackAnswerMissing: "_Niet ingevuld._",
   copyFeedback: "Kopieer feedback",
   mailFeedback: "Verstuur feedback",
   feedbackSubmitting: "Versturen...",
@@ -67,12 +69,36 @@ const text = {
   feedbackTypes: {
     confusion: "Verwarring",
     bug: "Bug",
-    rules: "Regel of score klopt niet",
+    rules: "Biedconventie/speelengine klopt niet",
     suggestion: "Suggestie"
+  },
+  feedbackPrompts: {
+    confusion: {
+      primaryLabel: "Wat was de verwarring?",
+      primaryPlaceholder: "Beschrijf wat onduidelijk voelde of waar je vastliep."
+    },
+    bug: {
+      primaryLabel: "Wat was de bug?",
+      primaryPlaceholder: "Beschrijf wat er gebeurde en wat je verwachtte."
+    },
+    rules: {
+      primaryLabel: "Wat klopte er niet?",
+      primaryPlaceholder: "Noem het bod, de conventie, kaartkeuze of engine-uitkomst die niet klopt.",
+      secondaryLabel: "Waarom klopt dit niet?",
+      secondaryPlaceholder: "Leg kort uit welke bridgeafspraak, regel of verwachting hier volgens jou hoort."
+    },
+    suggestion: {
+      primaryLabel: "Wat zou je verbeteren?",
+      primaryPlaceholder: "Beschrijf de gewenste verbetering.",
+      secondaryLabel: "Waarom is dit beter?",
+      secondaryPlaceholder: "Leg kort uit wat dit duidelijker, leerzamer of prettiger maakt."
+    }
   },
   recommendedBid: "AI-suggestie bod",
   recommendedCard: "AI-suggestie kaart",
   bidding: "Bieden",
+  bidBox: "Biedbox",
+  bidBoxYourTurn: "Biedbox · jij bent aan zet",
   history: "Speelgeschiedenis",
   review: "Handoverzicht",
   openingLead: "Eerste kaart",

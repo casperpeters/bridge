@@ -10,7 +10,9 @@ function continueAuction() {
     setStatus("yourCall");
     return;
   }
+  const scheduledFlowGeneration = flowGeneration;
   window.setTimeout(() => {
+    if (scheduledFlowGeneration !== flowGeneration) return;
     const bidResult = chooseBidResult(seat);
     makeBid(seat, bidResult.bid, bidResult);
   }, 560);

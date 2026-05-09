@@ -62,7 +62,9 @@ function continuePlay() {
     setStatus("yourPlay");
     return;
   }
+  const scheduledFlowGeneration = flowGeneration;
   window.setTimeout(() => {
+    if (scheduledFlowGeneration !== flowGeneration) return;
     const card = chooseCard(seat);
     if (!card) return;
     playCard(seat, card.id);
@@ -359,6 +361,7 @@ function explainCardPlayResult(result) {
   }
   if (ruleName === "lowestLead") return "Speel eenvoudig voor met de laagste legale kaart.";
   if (ruleName === "partnerWinningLow") return "Partner ligt voorlopig voor in de slag, dus speel laag en spaar hogere kaarten.";
+  if (ruleName === "protectPartnerWinnerFromDummy") return "Dummy komt nog en kan partners huidige winnaar overnemen; speel de goedkoopste kaart die voor dummy blijft.";
   if (ruleName === "cheapestWinner") return "Win de slag voorlopig met de goedkoopste winnende kaart.";
   if (ruleName === "lowestFollow") return "Bekennen is verplicht; omdat winnen niet kan, speel je de laagste kaart in de gevraagde kleur.";
   if (ruleName === "lowestDiscard") return "Bekennen kan niet en winnen lukt niet, dus gooi de laagste legale kaart af.";
@@ -416,6 +419,7 @@ function playCard(seat, cardId) {
     return;
   }
   state.illegalActionFeedback = null;
+  state.handSuitFocus = null;
   renderIllegalActionFeedback();
   const animationSource = captureCardPlayAnimationSource(seat, cardId);
   const ruleResult = chooseCardPlayResult(seat);
@@ -455,7 +459,9 @@ function pauseCompletedTrick() {
   renderTrickSlotFocus();
   renderGuidance();
   renderTrickAdvanceHint();
+  const scheduledFlowGeneration = flowGeneration;
   window.setTimeout(() => {
+    if (scheduledFlowGeneration !== flowGeneration) return;
     state.trickAdvanceArmed = true;
   }, 0);
 }

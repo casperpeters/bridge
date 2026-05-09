@@ -11,17 +11,31 @@ function renderHands() {
     const visible = state.developerMode || complete || isSeatVisible(seat);
     const sourceHand = complete ? state.originalHands[seat] : state.hands[seat];
     const cards = sortedHandCards(sourceHand || []);
+    const suitFocus = visible ? activeHandSuitFocus(seat, cards) : null;
+    seatEls[seat].classList.toggle("suit-focus-active", Boolean(suitFocus));
+    if (suitFocus) {
+      seatEls[seat].dataset.focusSuit = suitFocus;
+    } else {
+      delete seatEls[seat].dataset.focusSuit;
+    }
     if (visible) {
-      renderVisibleHandCards(seat, cards, recommended);
+      renderVisibleHandCards(seat, cards, recommended, suitFocus);
     } else {
       cards.forEach((card, index) => {
         seatEls[seat].appendChild(createHandCardEl(seat, card, false, index, recommended));
       });
     }
   }
+  lockDealAnimationHands();
 }
 
-function renderVisibleHandCards(seat, cards, recommended) {
+function renderVisibleHandCards(seat, cards, recommended, suitFocus = null) {
+  if (suitFocus) {
+    cards
+      .filter((card) => card.suit === suitFocus)
+      .forEach((card, index) => seatEls[seat].appendChild(createHandCardEl(seat, card, true, index, recommended)));
+    return;
+  }
   let animationIndex = 0;
   let hasPreviousSuitSlot = false;
   for (const suit of handSuitOrder) {
@@ -47,7 +61,7 @@ function createHandCardEl(seat, card, visible, index, recommended) {
   cardEl.dataset.seat = seat;
   if (visible) cardEl.dataset.cardId = card.id;
   if (state.animateDeal) {
-    cardEl.style.animationDelay = `${index * 26}ms`;
+    applyDealAnimation(cardEl, seat, index);
   } else {
     cardEl.classList.add("no-hand-animation");
   }
@@ -59,21 +73,68 @@ function createHandCardEl(seat, card, visible, index, recommended) {
     cardEl.classList.add(legal ? "legal" : "illegal");
     if (seatAt(state.turnIndex) === seat) {
       cardEl.tabIndex = 0;
-      cardEl.addEventListener("click", () => {
+      cardEl.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
         if (legal) playCard(seat, card.id);
         else showIllegalCardFeedback(seat, card);
       });
       cardEl.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
+        if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
         if (legal) playCard(seat, card.id);
         else showIllegalCardFeedback(seat, card);
       });
     } else {
-      cardEl.addEventListener("click", () => showIllegalCardFeedback(seat, card));
+      cardEl.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
+        showIllegalCardFeedback(seat, card);
+      });
     }
   }
   return cardEl;
+}
+
+function activeHandSuitFocus(seat, cards) {
+  if (!isMobileLayout() || state.handSuitFocus?.seat !== seat) return null;
+  const suit = state.handSuitFocus.suit;
+  return cards.some((card) => card.suit === suit) ? suit : null;
+}
+
+function shouldFocusSuitBeforePlay(seat, card) {
+  if (!isMobileLayout() || state.phase !== "playing") return false;
+  if (state.handSuitFocus?.seat === seat && state.handSuitFocus.suit === card.suit) return false;
+  return seat === "South" || seat === "North";
+}
+
+function applyDealAnimation(cardEl, seat, index) {
+  const seatOffset = Math.max(0, seats.indexOf(seat));
+  const dealIndex = index * seats.length + seatOffset;
+  const direction = dealAnimationDirection(seat);
+  const spread = (index - 6) * 3;
+
+  cardEl.classList.add("deal-card-enter");
+  cardEl.style.animationDelay = `${dealIndex * 18}ms`;
+  cardEl.style.setProperty("--deal-start-x", `${direction.x + direction.cross * spread}px`);
+  cardEl.style.setProperty("--deal-start-y", `${direction.y + direction.main * spread}px`);
+  cardEl.style.setProperty("--deal-start-rotate", `${direction.rotate + spread * 0.35}deg`);
+  cardEl.addEventListener("animationend", () => {
+    cardEl.classList.remove("deal-card-enter");
+    cardEl.classList.add("no-hand-animation");
+    cardEl.style.animationDelay = "";
+    cardEl.style.removeProperty("--deal-start-x");
+    cardEl.style.removeProperty("--deal-start-y");
+    cardEl.style.removeProperty("--deal-start-rotate");
+  }, { once: true });
+}
+
+function dealAnimationDirection(seat) {
+  if (seat === "North") return { x: 0, y: 210, main: 0, cross: 1, rotate: -5 };
+  if (seat === "East") return { x: -240, y: 0, main: 1, cross: 0, rotate: 6 };
+  if (seat === "South") return { x: 0, y: -210, main: 0, cross: 1, rotate: 5 };
+  return { x: 240, y: 0, main: 1, cross: 0, rotate: -6 };
 }
 
 function createEmptySuitEl(suit) {

@@ -34,9 +34,12 @@
 
     const dx = targetRect.left - source.rect.left;
     const dy = targetRect.top - source.rect.top;
+    let cleanedUp = false;
     const cleanup = () => {
-      flyer.remove();
+      if (cleanedUp) return;
+      cleanedUp = true;
       targetEl.classList.remove("card-animation-target");
+      window.requestAnimationFrame(() => flyer.remove());
     };
 
     window.requestAnimationFrame(() => {

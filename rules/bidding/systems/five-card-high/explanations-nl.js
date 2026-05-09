@@ -307,6 +307,8 @@
         return `invite met lange lage kleur: geen hoge-kleurfit; openaar heeft een zeskaart in de openingskleur en extra waarden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorNewSuitLongMinorGame":
         return `lage-kleurmanche met lange openingskleur: geen hoge-kleurfit; openaar heeft een sterke ongebalanceerde hand. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "continuation.openerMinorNewSuitFallbackOwnMinor":
+        return `terug naar de openingskleur: openaar is niet gebalanceerd, heeft geen veilige tweede kleur en toont liever de echte vijfkaart lage kleur dan een misleidende SA-herbieding. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorNewSuitReverse":
         return `reverse: openaar toont een tweede kleur op hoger niveau; dit gebeurt alleen met extra kracht. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorNewSuitSecondSuit":

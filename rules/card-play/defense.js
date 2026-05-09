@@ -237,6 +237,40 @@
     );
   }
 
+  function chooseProtectPartnerWinnerFromDummy({ legal, currentTrick, seat, declarer, dummy, dummyHand, trump, winning }) {
+    if (currentTrick.length !== 2 || !isDefensivePlaySeat(seat, declarer)) return null;
+    if (!dummy || !dummyHand?.length || currentTrick.some((play) => play.seat === dummy)) return null;
+    if (winning?.seat !== partnerOf(seat)) return null;
+
+    const leadSuit = currentTrick[0].card.suit;
+    const dummyFollowSuit = cardsInSuit(dummyHand, leadSuit);
+    const dummyLegal = dummyFollowSuit.length ? dummyFollowSuit : dummyHand;
+    const dummyThreats = dummyLegal
+      .filter((card) => beats(card, winning.card, leadSuit, trump))
+      .sort(compareLowCards);
+    if (!dummyThreats.length) return null;
+
+    const protectCards = legal
+      .filter((card) => beats(card, winning.card, leadSuit, trump))
+      .filter((card) => !dummyLegal.some((dummyCard) => beats(dummyCard, card, leadSuit, trump)))
+      .sort(compareLowCards);
+    if (!protectCards.length) return null;
+
+    return cardPlayResult(
+      protectCards[0],
+      "protectPartnerWinnerFromDummy",
+      "basic",
+      "Dummy is still to play and can beat partner's current winner, so third hand protects the trick with the cheapest card dummy cannot overtake.",
+      {
+        leadSuit,
+        winningSeat: winning.seat,
+        dummy,
+        dummyThreatRank: dummyThreats[0].rank,
+        action: "protectPartnerWinner"
+      }
+    );
+  }
+
   function playedHigherCardsInSuit({ playedCards = [], suit, rank }) {
     return cardsInSuit(playedCards, suit)
       .filter((card) => rankOrder.indexOf(card.rank) > rankOrder.indexOf(rank))
@@ -375,6 +409,7 @@
     chooseOpeningLeadAttitudeSignal,
     chooseThirdHandHighOverLowLead,
     chooseThirdHandUnblockHonor,
+    chooseProtectPartnerWinnerFromDummy,
     playedHigherCardsInSuit,
     cheapestHigherHonor,
     honorCoverTarget,

@@ -945,6 +945,28 @@ test("chooseCardPlay keeps third hand low when partner is already winning", () =
   assert.equal(result.ruleId, "partnerWinningLow");
 });
 
+test("chooseCardPlay protects partner's current winner when visible dummy can still overtake", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QC", "6C", "QS", "8S", "7S", "KH", "TH", "9H", "4H", "2H"),
+    currentTrick: [
+      { seat: "South", card: card("5C") },
+      { seat: "West", card: card("2C") }
+    ],
+    seat: "North",
+    declarer: "West",
+    dummy: "East",
+    dummyHand: hand("JS", "9S", "6S", "4S", "3S", "AH", "8H", "8C", "JD", "TD"),
+    contract: { level: 2, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.id, "QC");
+  assert.equal(result.ruleId, "protectPartnerWinnerFromDummy");
+  assert.equal(result.winningSeat, "South");
+  assert.equal(result.dummy, "East");
+  assert.equal(result.dummyThreatRank, "8");
+});
+
 test("chooseCardPlay does not apply second hand low to the declarer side", () => {
   const result = rules.chooseCardPlay({
     hand: hand("9H", "2H", "AS"),

@@ -15,6 +15,23 @@
   const validCallPattern = /^(?:P|PASS|PAS|X|DOUBLE|DBL|XX|REDOUBLE|RDBL|[1-7](?:C|D|H|S|NT|SA))$/;
   const validContractPattern = /^[1-7](?:C|D|H|S|NT|SA)(?:XX|X)?$/;
   const validCardPattern = /^(?:10|[2-9TJQKA])(?:C|D|H|S)$/;
+  const compactPayloadKeys = [
+    ["seed", "s"],
+    ["board", "b"],
+    ["dealer", "d"],
+    ["vul", "u"],
+    ["phase", "p"],
+    ["turn", "t"],
+    ["auction", "a"],
+    ["tricks", "k"],
+    ["current", "c"],
+    ["awaiting", "w"],
+    ["contract", "x"],
+    ["declarer", "r"],
+    ["dummy", "m"],
+    ["leader", "l"],
+    ["lesson", "e"]
+  ];
 
   function normalizeSeed(seed) {
     return String(seed || "").trim().slice(0, maxSeedLength);
@@ -26,7 +43,7 @@
 
   function encodeSituationPayload(payload) {
     validateSituationPayload(payload);
-    return `${situationSeedPrefixes[0]}${base64UrlEncode(JSON.stringify(payload))}`;
+    return `${situationSeedPrefixes[0]}${base64UrlEncode(JSON.stringify(compactSituationPayload(payload)))}`;
   }
 
   function parseSituationSeed(seed) {
@@ -34,7 +51,7 @@
     const prefix = situationSeedPrefix(normalized);
     if (!prefix) return null;
     const payloadText = base64UrlDecode(normalized.slice(prefix.length));
-    const payload = JSON.parse(payloadText);
+    const payload = expandSituationPayload(JSON.parse(payloadText));
     validateSituationPayload(payload);
     return payload;
   }
@@ -121,6 +138,71 @@
 
   function assertPlainObject(value, message) {
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(message);
+  }
+
+  function compactSituationPayload(payload) {
+    const compact = { v: payload.v };
+    compactPayloadKeys.forEach(([expandedKey, compactKey]) => {
+      if (!Object.prototype.hasOwnProperty.call(payload, expandedKey)) return;
+      const value = payload[expandedKey];
+      if (value === undefined) return;
+      if (expandedKey === "auction") {
+        compact[compactKey] = value.map(compactSituationCall);
+      } else if (expandedKey === "tricks") {
+        compact[compactKey] = value.map((trick) => trick.map(compactSituationPlay));
+      } else if (expandedKey === "current") {
+        compact[compactKey] = value.map(compactSituationPlay);
+      } else {
+        compact[compactKey] = value;
+      }
+    });
+    return compact;
+  }
+
+  function expandSituationPayload(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+    const expanded = { v: payload.v };
+    compactPayloadKeys.forEach(([expandedKey, compactKey]) => {
+      const value = Object.prototype.hasOwnProperty.call(payload, expandedKey)
+        ? payload[expandedKey]
+        : payload[compactKey];
+      if (value === undefined) return;
+      if (expandedKey === "auction" && Array.isArray(value)) {
+        expanded[expandedKey] = value.map(expandSituationCall);
+      } else if (expandedKey === "tricks" && Array.isArray(value)) {
+        expanded[expandedKey] = value.map((trick) => Array.isArray(trick) ? trick.map(expandSituationPlay) : trick);
+      } else if (expandedKey === "current" && Array.isArray(value)) {
+        expanded[expandedKey] = value.map(expandSituationPlay);
+      } else {
+        expanded[expandedKey] = value;
+      }
+    });
+    return expanded;
+  }
+
+  function compactSituationCall(call) {
+    const compact = [call.s, call.b];
+    const flags = `${call.o ? "o" : ""}${call.a ? "a" : ""}`;
+    if (flags) compact.push(flags);
+    return compact;
+  }
+
+  function expandSituationCall(call) {
+    if (!Array.isArray(call)) return call;
+    const expanded = { s: call[0], b: call[1] };
+    const flags = String(call[2] || "");
+    if (flags.includes("o")) expanded.o = 1;
+    if (flags.includes("a")) expanded.a = 1;
+    return expanded;
+  }
+
+  function compactSituationPlay(play) {
+    return [play.s, play.c];
+  }
+
+  function expandSituationPlay(play) {
+    if (!Array.isArray(play)) return play;
+    return { s: play[0], c: play[1] };
   }
 
   function base64UrlEncode(text) {
