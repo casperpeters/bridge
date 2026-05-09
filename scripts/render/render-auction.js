@@ -70,9 +70,10 @@ function renderSeatAuctionCalls() {
     if (!container) return;
     container.innerHTML = "";
     const calls = state.auction.filter((call) => call.seat === seat);
-    container.classList.toggle("auction-active-seat", isAuctionReady() && seatAt(state.turnIndex) === seat);
+    const isActiveSeat = isAuctionReady() && seatAt(state.turnIndex) === seat;
+    container.classList.toggle("auction-active-seat", isActiveSeat);
     container.classList.toggle("empty-seat-auction", !calls.length);
-    if (!calls.length) {
+    if (!calls.length && !isActiveSeat) {
       const placeholder = document.createElement("span");
       placeholder.className = "seat-auction-placeholder";
       placeholder.textContent = separatorDot;
@@ -80,7 +81,15 @@ function renderSeatAuctionCalls() {
       return;
     }
     calls.forEach((call) => container.appendChild(auctionCallContent(call)));
+    if (isActiveSeat) container.appendChild(nextAuctionCallPlaceholder(seat));
   });
+}
+
+function nextAuctionCallPlaceholder(seat) {
+  const placeholder = document.createElement("span");
+  placeholder.className = "seat-auction-next-call";
+  placeholder.setAttribute("aria-label", `${seatName(seat)} is aan de beurt`);
+  return placeholder;
 }
 
 function auctionCallContent(call) {
@@ -124,7 +133,8 @@ function renderBidExplanations() {
   heading.textContent = t("bidExplanations");
   els.bidExplanations.appendChild(heading);
 
-  state.auction.forEach((call, index) => {
+  [...state.auction].reverse().forEach((call, reversedIndex) => {
+    const index = state.auction.length - 1 - reversedIndex;
     const item = document.createElement("div");
     item.className = "bid-explanation";
     const callText = formatCall(call.bid);

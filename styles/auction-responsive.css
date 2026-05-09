@@ -170,8 +170,8 @@
     left: calc(50% + var(--mobile-bidbox-half-width) + var(--mobile-bidbox-side-gap));
     top: calc(var(--mobile-bidbox-bottom) - 82px);
     align-items: flex-start;
-    flex-direction: column;
-    justify-content: flex-end;
+    flex-direction: column-reverse;
+    justify-content: flex-start;
   }
 
   .app-shell.is-mobile-bidding .seat-auction-south {
@@ -184,8 +184,8 @@
   }
 
   .app-shell.is-mobile-bidding .seat-auction-calls.auction-active-seat {
-    background: rgba(224, 194, 95, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(224, 194, 95, 0.38);
+    background: transparent;
+    box-shadow: none;
   }
 
   .app-shell.is-mobile-bidding .seat-auction-calls.empty-seat-auction {
@@ -211,6 +211,19 @@
     min-width: 24px;
     min-height: 21px;
     opacity: 0;
+  }
+
+  .app-shell.is-mobile-bidding .seat-auction-next-call {
+    display: inline-grid;
+    place-items: center;
+    min-width: 27px;
+    min-height: 21px;
+    border: 1px solid rgba(224, 194, 95, 0.92);
+    border-radius: 6px;
+    background: rgba(224, 194, 95, 0.12);
+    box-shadow:
+      inset 0 0 0 1px rgba(224, 194, 95, 0.24),
+      0 0 12px rgba(224, 194, 95, 0.16);
   }
 
   .app-shell.is-mobile-bidding .auction-panel .panel-head {
