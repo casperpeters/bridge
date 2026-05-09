@@ -687,6 +687,38 @@ test("loading a situation seed ignores pending AI play from the previous hand", 
   expect(restored.afterPendingTimer).toEqual(restored.immediatelyAfterLoad);
 });
 
+test("loads a compact feedback situation seed", async ({ page }) => {
+  await openFreshApp(page);
+
+  const restored = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "different-hand", skipFlow: true });
+    app.getEls().seedInput.value = "situatieseed:eyJ2IjoxLCJzIjoiMzlicTJmNWY4aDZjIiwiYiI6MSwiZCI6Ik4iLCJ1Ijoibm9uZSIsInAiOiJiaWRkaW5nIiwidCI6IlMiLCJhIjpbWyJOIiwiMUQiXSxbIkUiLCIyUyJdXSwiayI6W10sImMiOltdLCJ3IjowfQ";
+    app.loadSeedFromInput();
+    const state = app.getState();
+    return {
+      seed: state.dealSeed,
+      board: state.dealNumber,
+      phase: state.phase,
+      turn: app.seatAt(state.turnIndex),
+      vulnerability: state.vulnerability,
+      auction: state.auction.map((call) => `${call.seat}:${call.bid.type === "Bid" ? `${call.bid.level}${call.bid.strain}` : call.bid.type}`),
+      southHandLength: state.hands.South.length
+    };
+  });
+
+  expect(restored).toEqual({
+    seed: "39bq2f5f8h6c",
+    board: 1,
+    phase: "bidding",
+    turn: "South",
+    vulnerability: "none",
+    auction: ["North:1D", "East:2S"],
+    southHandLength: 13
+  });
+  await expect(page.locator("#seed-description")).toContainText("Herhaalcode geladen");
+});
+
 test("restores situation seeds for bidding, pass-out, pre-lead, and doubled auctions", async ({ page }) => {
   await openFreshApp(page);
 
@@ -952,13 +984,11 @@ test("rejects corrupt and out-of-order situation seeds without replacing the cur
 
   const result = await page.evaluate(() => {
     const app = window.BridgeAppTestHooks;
-    const rules = app.rules;
     const loadSeed = (seed) => {
       app.getEls().seedInput.value = seed;
       app.loadSeedFromInput();
       return app.getState();
     };
-    const decodeSituationSeed = (seed) => window.BridgeSituationCodec.parseSituationSeed(seed);
     const encodeSituationSeed = (payload) => window.BridgeSituationCodec.encodeSituationPayload(payload);
 
     app.startHand({ seed: "valid-before-invalid", skipFlow: true });
@@ -971,20 +1001,21 @@ test("rejects corrupt and out-of-order situation seeds without replacing the cur
       message: corrupt.seedMessage
     };
 
-    app.startPracticeHand("draw-trumps-001", { skipFlow: true });
-    app.setState({
-      phase: "bidding",
-      auction: [
-        { seat: "South", bid: rules.Bid(1, "S") },
-        { seat: "West", bid: rules.Pass() }
-      ],
-      turnIndex: 0
-    });
-    const payload = decodeSituationSeed(app.createSituationSeed());
-    payload.auction[1].s = "N";
-
     app.startHand({ seed: "valid-before-out-of-order", skipFlow: true });
     const outOfOrderBefore = app.getState();
+    const payload = {
+      v: 1,
+      s: "draw-trumps-001",
+      b: 1,
+      d: "S",
+      u: "none",
+      p: "bidding",
+      t: "N",
+      a: [["N", "1S"]],
+      k: [],
+      c: [],
+      w: 0
+    };
     const outOfOrder = loadSeed(encodeSituationSeed(payload));
 
     return {

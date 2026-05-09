@@ -15,23 +15,6 @@
   const validCallPattern = /^(?:P|PASS|PAS|X|DOUBLE|DBL|XX|REDOUBLE|RDBL|[1-7](?:C|D|H|S|NT|SA))$/;
   const validContractPattern = /^[1-7](?:C|D|H|S|NT|SA)(?:XX|X)?$/;
   const validCardPattern = /^(?:10|[2-9TJQKA])(?:C|D|H|S)$/;
-  const compactPayloadKeys = [
-    ["seed", "s"],
-    ["board", "b"],
-    ["dealer", "d"],
-    ["vul", "u"],
-    ["phase", "p"],
-    ["turn", "t"],
-    ["auction", "a"],
-    ["tricks", "k"],
-    ["current", "c"],
-    ["awaiting", "w"],
-    ["contract", "x"],
-    ["declarer", "r"],
-    ["dummy", "m"],
-    ["leader", "l"],
-    ["lesson", "e"]
-  ];
 
   function normalizeSeed(seed) {
     return String(seed || "").trim().slice(0, maxSeedLength);
@@ -43,7 +26,7 @@
 
   function encodeSituationPayload(payload) {
     validateSituationPayload(payload);
-    return `${situationSeedPrefixes[0]}${base64UrlEncode(JSON.stringify(compactSituationPayload(payload)))}`;
+    return `${situationSeedPrefixes[0]}${base64UrlEncode(JSON.stringify(payload))}`;
   }
 
   function parseSituationSeed(seed) {
@@ -51,7 +34,7 @@
     const prefix = situationSeedPrefix(normalized);
     if (!prefix) return null;
     const payloadText = base64UrlDecode(normalized.slice(prefix.length));
-    const payload = expandSituationPayload(JSON.parse(payloadText));
+    const payload = JSON.parse(payloadText);
     validateSituationPayload(payload);
     return payload;
   }
@@ -59,35 +42,35 @@
   function validateSituationPayload(payload) {
     assertPlainObject(payload, "Situation seed payload must be an object");
     if (payload.v !== supportedVersion) throw new Error("Unsupported situation seed version");
-    if (payload.seed === null || payload.seed === undefined || String(payload.seed) === "") {
+    if (payload.s === null || payload.s === undefined || String(payload.s) === "") {
       throw new Error("Situation seed is missing the base seed");
     }
-    if (Object.prototype.hasOwnProperty.call(payload, "board") && payload.board !== null && payload.board !== undefined) {
-      const board = Number(payload.board);
+    if (Object.prototype.hasOwnProperty.call(payload, "b") && payload.b !== null && payload.b !== undefined) {
+      const board = Number(payload.b);
       if (!Number.isInteger(board) || board < 1) throw new Error("Situation board must be a positive integer");
     }
-    validateOptionalSeat(payload.dealer, "dealer");
-    validateOptionalSeat(payload.turn, "turn");
-    if (payload.vul !== undefined && payload.vul !== null && payload.vul !== "" && !validVulnerabilities.has(payload.vul)) {
+    validateOptionalSeat(payload.d, "dealer");
+    validateOptionalSeat(payload.t, "turn");
+    if (payload.u !== undefined && payload.u !== null && payload.u !== "" && !validVulnerabilities.has(payload.u)) {
       throw new Error("Situation vulnerability is invalid");
     }
-    if (payload.phase !== undefined && payload.phase !== null && payload.phase !== "" && !validPhases.has(payload.phase)) {
+    if (payload.p !== undefined && payload.p !== null && payload.p !== "" && !validPhases.has(payload.p)) {
       throw new Error("Situation phase is invalid");
     }
-    if (payload.contract !== undefined && payload.contract !== null && payload.contract !== "") {
-      const contractText = String(payload.contract).trim().toUpperCase();
+    if (payload.x !== undefined && payload.x !== null && payload.x !== "") {
+      const contractText = String(payload.x).trim().toUpperCase();
       if (!validContractPattern.test(contractText)) throw new Error("Situation contract is invalid");
     }
-    validateOptionalSeat(payload.declarer, "declarer");
-    validateOptionalSeat(payload.dummy, "dummy");
-    validateOptionalSeat(payload.leader, "leader");
-    if (payload.lesson !== undefined && payload.lesson !== null && typeof payload.lesson !== "string") {
+    validateOptionalSeat(payload.r, "declarer");
+    validateOptionalSeat(payload.m, "dummy");
+    validateOptionalSeat(payload.l, "leader");
+    if (payload.e !== undefined && payload.e !== null && typeof payload.e !== "string") {
       throw new Error("Situation lesson must be a string");
     }
-    validateArrayField(payload.auction, "auction", validateSituationCall);
-    validateArrayField(payload.tricks, "tricks", validateSituationTrick);
-    validateArrayField(payload.current, "current", validateSituationPlay);
-    if (payload.awaiting !== undefined && ![0, 1, true, false].includes(payload.awaiting)) {
+    validateArrayField(payload.a, "auction", validateSituationCall);
+    validateArrayField(payload.k, "tricks", validateSituationTrick);
+    validateArrayField(payload.c, "current", validateSituationPlay);
+    if (payload.w !== undefined && ![0, 1, true, false].includes(payload.w)) {
       throw new Error("Situation awaiting flag is invalid");
     }
     return payload;
@@ -105,12 +88,13 @@
   }
 
   function validateSituationCall(call, path) {
-    assertPlainObject(call, `Situation call ${path} must be an object`);
-    validateOptionalSeat(call.s, `${path}.s`);
-    const callText = String(call.b || "").trim().toUpperCase();
-    if (!validCallPattern.test(callText)) throw new Error(`Situation call ${path}.b is invalid`);
-    validateOptionalFlag(call.o, `${path}.o`);
-    validateOptionalFlag(call.a, `${path}.a`);
+    if (!Array.isArray(call)) throw new Error(`Situation call ${path} must be an array`);
+    if (call.length < 2 || call.length > 4) throw new Error(`Situation call ${path} must contain two to four values`);
+    validateOptionalSeat(call[0], `${path}[0]`);
+    const callText = String(call[1] || "").trim().toUpperCase();
+    if (!validCallPattern.test(callText)) throw new Error(`Situation call ${path}[1] is invalid`);
+    validateOptionalFlag(call[2], `${path}[2]`);
+    validateOptionalFlag(call[3], `${path}[3]`);
   }
 
   function validateSituationTrick(trick, path) {
@@ -120,10 +104,11 @@
   }
 
   function validateSituationPlay(play, path) {
-    assertPlainObject(play, `Situation play ${path} must be an object`);
-    validateOptionalSeat(play.s, `${path}.s`);
-    const cardText = String(play.c || "").trim().toUpperCase();
-    if (!validCardPattern.test(cardText)) throw new Error(`Situation play ${path}.c is invalid`);
+    if (!Array.isArray(play)) throw new Error(`Situation play ${path} must be an array`);
+    if (play.length !== 2) throw new Error(`Situation play ${path} must contain two values`);
+    validateOptionalSeat(play[0], `${path}[0]`);
+    const cardText = String(play[1] || "").trim().toUpperCase();
+    if (!validCardPattern.test(cardText)) throw new Error(`Situation play ${path}[1] is invalid`);
   }
 
   function validateOptionalSeat(value, path) {
@@ -138,71 +123,6 @@
 
   function assertPlainObject(value, message) {
     if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(message);
-  }
-
-  function compactSituationPayload(payload) {
-    const compact = { v: payload.v };
-    compactPayloadKeys.forEach(([expandedKey, compactKey]) => {
-      if (!Object.prototype.hasOwnProperty.call(payload, expandedKey)) return;
-      const value = payload[expandedKey];
-      if (value === undefined) return;
-      if (expandedKey === "auction") {
-        compact[compactKey] = value.map(compactSituationCall);
-      } else if (expandedKey === "tricks") {
-        compact[compactKey] = value.map((trick) => trick.map(compactSituationPlay));
-      } else if (expandedKey === "current") {
-        compact[compactKey] = value.map(compactSituationPlay);
-      } else {
-        compact[compactKey] = value;
-      }
-    });
-    return compact;
-  }
-
-  function expandSituationPayload(payload) {
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
-    const expanded = { v: payload.v };
-    compactPayloadKeys.forEach(([expandedKey, compactKey]) => {
-      const value = Object.prototype.hasOwnProperty.call(payload, expandedKey)
-        ? payload[expandedKey]
-        : payload[compactKey];
-      if (value === undefined) return;
-      if (expandedKey === "auction" && Array.isArray(value)) {
-        expanded[expandedKey] = value.map(expandSituationCall);
-      } else if (expandedKey === "tricks" && Array.isArray(value)) {
-        expanded[expandedKey] = value.map((trick) => Array.isArray(trick) ? trick.map(expandSituationPlay) : trick);
-      } else if (expandedKey === "current" && Array.isArray(value)) {
-        expanded[expandedKey] = value.map(expandSituationPlay);
-      } else {
-        expanded[expandedKey] = value;
-      }
-    });
-    return expanded;
-  }
-
-  function compactSituationCall(call) {
-    const compact = [call.s, call.b];
-    const flags = `${call.o ? "o" : ""}${call.a ? "a" : ""}`;
-    if (flags) compact.push(flags);
-    return compact;
-  }
-
-  function expandSituationCall(call) {
-    if (!Array.isArray(call)) return call;
-    const expanded = { s: call[0], b: call[1] };
-    const flags = String(call[2] || "");
-    if (flags.includes("o")) expanded.o = 1;
-    if (flags.includes("a")) expanded.a = 1;
-    return expanded;
-  }
-
-  function compactSituationPlay(play) {
-    return [play.s, play.c];
-  }
-
-  function expandSituationPlay(play) {
-    if (!Array.isArray(play)) return play;
-    return { s: play[0], c: play[1] };
   }
 
   function base64UrlEncode(text) {
