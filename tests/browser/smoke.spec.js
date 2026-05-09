@@ -560,8 +560,8 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
       northFirstBidRightOfSecond: northBidRects.length >= 2 ? northBidRects[0].left > northBidRects[1].left : true,
       westFirstBidAboveSecond: westBidRects.length >= 2 ? westBidRects[0].top < westBidRects[1].top : true,
       southFirstBidLeftOfSecond: southBidRects.length >= 2 ? southBidRects[0].left < southBidRects[1].left : true,
-      eastFirstBidAboveSecond: eastBidRects.length >= 2 ? eastBidRects[0].top < eastBidRects[1].top : true,
-      eastLatestBidNearBottom: eastBidRects.length ? Math.abs(eastBidRects.at(-1).bottom - eastBids.bottom) : 0,
+      eastFirstBidBelowSecond: eastBidRects.length >= 2 ? eastBidRects[0].top > eastBidRects[1].top : true,
+      eastFirstBidNearBottom: eastBidRects.length ? Math.abs(eastBidRects[0].bottom - eastBids.bottom) : 0,
       southLabelOverlap: overlapArea(rectFor("#south-label"), rectFor("#south-auction-calls")),
       southCardOverlap,
       panelBottomGap: Math.round(panel.bottom - advancedToggleRect.bottom),
@@ -586,8 +586,8 @@ test("uses a table-centered bidding layout on mobile", async ({ page }, testInfo
   expect(polish.northFirstBidRightOfSecond).toBe(true);
   expect(polish.westFirstBidAboveSecond).toBe(true);
   expect(polish.southFirstBidLeftOfSecond).toBe(true);
-  expect(polish.eastFirstBidAboveSecond).toBe(true);
-  expect(polish.eastLatestBidNearBottom).toBeLessThanOrEqual(10);
+  expect(polish.eastFirstBidBelowSecond).toBe(true);
+  expect(polish.eastFirstBidNearBottom).toBeLessThanOrEqual(10);
   expect(polish.southLabelOverlap).toBe(0);
   expect(polish.southCardOverlap).toBe(0);
   expect(polish.panelBottomGap).toBeLessThanOrEqual(12);
@@ -607,7 +607,12 @@ test("keeps the mobile bidding box visible while waiting for another player", as
     app.setState({
       phase: "bidding",
       turnIndex: 1,
-      auction: [{ seat: "North", bid: app.rules.Bid(1, "H") }]
+      auction: [
+        { seat: "North", bid: app.rules.Bid(1, "H") },
+        { seat: "East", bid: app.rules.Bid(1, "S") },
+        { seat: "South", bid: app.rules.Pass() },
+        { seat: "West", bid: app.rules.Pass() }
+      ]
     });
     app.renderAll();
   });
@@ -618,6 +623,21 @@ test("keeps the mobile bidding box visible while waiting for another player", as
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
   await expect(page.locator("#bid-controls button.pass")).toBeDisabled();
   await expect(page.locator("#east-auction-calls")).toHaveClass(/auction-active-seat/);
+  await expect(page.locator("#east-auction-calls .seat-auction-next-call")).toBeVisible();
+
+  const activeSlot = await page.evaluate(() => {
+    const call = document.querySelector("#east-auction-calls .auction-call").getBoundingClientRect();
+    const marker = document.querySelector("#east-auction-calls .seat-auction-next-call").getBoundingClientRect();
+    const containerStyle = getComputedStyle(document.querySelector("#east-auction-calls"));
+    return {
+      markerAboveCall: marker.bottom <= call.top,
+      containerBoxShadow: containerStyle.boxShadow,
+      markerBorderColor: getComputedStyle(document.querySelector("#east-auction-calls .seat-auction-next-call")).borderTopColor
+    };
+  });
+  expect(activeSlot.markerAboveCall).toBe(true);
+  expect(activeSlot.containerBoxShadow).toBe("none");
+  expect(activeSlot.markerBorderColor).not.toBe("rgba(0, 0, 0, 0)");
 });
 
 test("expands a tapped suit across the mobile hand before playing South and North cards", async ({ page }, testInfo) => {
@@ -1659,6 +1679,33 @@ test("developer bid explanations use rule references without the old source line
   await expect(page.locator("#bid-explanations")).toContainText(suggestedBid);
   await expect(page.locator("#bid-explanations")).toContainText("Regel:");
   await expect(page.locator("#bid-explanations")).not.toContainText("Bron: huidige Vijfkaart-Hoog-heuristiek; nog geen volledige systeemkaart.");
+});
+
+test("developer bid explanations show the newest call first", async ({ page }) => {
+  await openFreshApp(page);
+
+  const labels = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "developer-bid-explanation-order", skipFlow: true });
+    app.setState({
+      developerMode: true,
+      phase: "bidding",
+      dealerIndex: 0,
+      turnIndex: 0,
+      auction: [
+        { seat: "North", bid: app.rules.Bid(1, "H") },
+        { seat: "East", bid: app.rules.Pass() },
+        { seat: "South", bid: app.rules.Bid(1, "S") },
+        { seat: "West", bid: app.rules.Pass() }
+      ],
+      animateDeal: false
+    });
+    app.renderAll();
+    return [...document.querySelectorAll("#bid-explanations .bid-explanation strong")]
+      .map((item) => item.textContent);
+  });
+
+  expect(labels).toEqual(["West Pas", "Zuid 1♠", "Oost Pas", "Noord 1♥"]);
 });
 
 test("developer bid explanations flag South calls that differ from the heuristic", async ({ page }) => {
