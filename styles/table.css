@@ -98,6 +98,8 @@
 }
 
 .middle-row {
+  position: relative;
+  z-index: 3;
   display: grid;
   grid-template-columns: 160px minmax(210px, 1fr) 160px;
   gap: 18px;
@@ -121,6 +123,7 @@
 
 .player-zone {
   align-content: end;
+  z-index: 2;
 }
 
 .player-label-row {
@@ -216,6 +219,142 @@
   font-weight: 900;
 }
 
+.contract-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3vw, 28px);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(224, 194, 95, 0.24), rgba(224, 194, 95, 0) 35%),
+    radial-gradient(circle at 18% 18%, rgba(96, 197, 185, 0.26), rgba(96, 197, 185, 0) 30%),
+    linear-gradient(145deg, rgba(8, 18, 16, 0.6), rgba(8, 18, 16, 0.84));
+  backdrop-filter: blur(3px);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.contract-reveal:focus-visible {
+  outline: 3px solid rgba(224, 194, 95, 0.9);
+  outline-offset: -8px;
+}
+
+.contract-reveal::before {
+  content: attr(data-strain-symbol);
+  position: absolute;
+  right: max(12px, 8%);
+  top: max(10px, 8%);
+  color: rgba(247, 244, 232, 0.1);
+  font-size: clamp(6rem, 22vw, 14rem);
+  font-weight: 950;
+  line-height: 1;
+  transform: rotate(8deg);
+  animation: contractRevealSuitFloat 1600ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+}
+
+.contract-reveal::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px solid rgba(224, 194, 95, 0.26);
+  border-radius: 999px;
+  opacity: 0.8;
+  animation: contractRevealRing 1300ms ease both;
+}
+
+.contract-reveal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(440px, 100%);
+  border: 1px solid rgba(224, 194, 95, 0.52);
+  border-radius: 8px;
+  background:
+    linear-gradient(160deg, rgba(37, 46, 38, 0.96), rgba(17, 37, 33, 0.96)),
+    rgba(24, 32, 28, 0.98);
+  box-shadow:
+    0 28px 60px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: clamp(18px, 4vw, 28px);
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  text-align: center;
+  overflow: hidden;
+  animation: contractRevealPanelIn 620ms cubic-bezier(0.2, 0.84, 0.22, 1) both;
+}
+
+.contract-reveal-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.16) 44%, transparent 64%);
+  transform: translateX(-115%);
+  animation: contractRevealSweep 1200ms 180ms ease both;
+  pointer-events: none;
+}
+
+.contract-reveal-eyebrow {
+  color: var(--accent-2);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.contract-reveal-bid {
+  color: var(--ink);
+  font-size: clamp(3.2rem, 13vw, 6rem);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.contract-reveal-bid.strain-h,
+.contract-reveal-bid.strain-d {
+  color: #ffb6a8;
+  text-shadow: 0 0 24px rgba(223, 87, 72, 0.28);
+}
+
+.contract-reveal-bid.strain-c {
+  color: #9be6ce;
+  text-shadow: 0 0 24px rgba(96, 197, 185, 0.26);
+}
+
+.contract-reveal-bid.strain-nt,
+.contract-reveal-bid.strain-s {
+  color: #f7f4e8;
+  text-shadow: 0 0 24px rgba(224, 194, 95, 0.22);
+}
+
+.contract-reveal-strain {
+  margin-left: 0.04em;
+}
+
+.contract-reveal-meta,
+.contract-reveal-lead {
+  color: rgba(247, 244, 232, 0.88);
+  font-size: clamp(0.9rem, 2.8vw, 1.04rem);
+  font-weight: 780;
+  line-height: 1.35;
+}
+
+.contract-reveal-lead {
+  color: rgba(247, 244, 232, 0.72);
+  font-size: clamp(0.82rem, 2.5vw, 0.95rem);
+}
+
+.contract-reveal-hint {
+  margin-top: 4px;
+  border: 1px solid rgba(224, 194, 95, 0.42);
+  border-radius: 999px;
+  background: rgba(224, 194, 95, 0.12);
+  color: var(--ink);
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .contract {
   color: var(--ink);
   font-weight: 800;
@@ -299,6 +438,105 @@
 .lesson-banner strong {
   color: var(--ink);
   font-size: 0.78rem;
+}
+
+.lesson-banner.lesson-coach-card {
+  border: 1px solid rgba(224, 194, 95, 0.54);
+  border-left: 4px solid var(--accent);
+  background:
+    linear-gradient(135deg, rgba(224, 194, 95, 0.16), rgba(96, 197, 185, 0.1)),
+    rgba(22, 35, 28, 0.94);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.26);
+  gap: 7px;
+  padding: 10px 11px;
+  text-align: left;
+}
+
+.lesson-coach-eyebrow {
+  color: var(--accent-2);
+  font-size: 0.7rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.lesson-coach-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+}
+
+.lesson-banner .lesson-coach-title {
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.lesson-coach-badge {
+  border: 1px solid rgba(96, 197, 185, 0.42);
+  border-radius: 999px;
+  background: rgba(96, 197, 185, 0.12);
+  color: rgba(247, 244, 232, 0.88);
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.lesson-coach-body {
+  color: rgba(247, 244, 232, 0.9);
+  font-size: 0.88rem;
+  font-weight: 620;
+  line-height: 1.42;
+}
+
+.lesson-coach-action {
+  justify-self: start;
+  min-height: 36px;
+  border-color: rgba(224, 194, 95, 0.72);
+  background: rgba(224, 194, 95, 0.2);
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 950;
+}
+
+.table-area.has-lesson-highlight .hand,
+.table-area.has-lesson-highlight .trick-area,
+.table-area.has-lesson-highlight .contract {
+  transition: opacity 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.table-area.has-lesson-highlight .hand:not(.lesson-highlight-target),
+.table-area.has-lesson-highlight .trick-area:not(.lesson-highlight-target) {
+  opacity: 0.72;
+  filter: saturate(0.78) brightness(0.86);
+}
+
+.lesson-highlight-target {
+  position: relative;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow:
+    0 0 0 2px rgba(224, 194, 95, 0.78),
+    0 0 28px rgba(224, 194, 95, 0.36),
+    inset 0 0 22px rgba(96, 197, 185, 0.08);
+}
+
+.trick-slot.lesson-highlight-target::after {
+  border-color: rgba(224, 194, 95, 0.96);
+  opacity: 1;
+  box-shadow: 0 0 24px rgba(224, 194, 95, 0.38);
+}
+
+.card.lesson-highlight-card {
+  outline: 3px solid rgba(224, 194, 95, 0.96);
+  outline-offset: 3px;
+  box-shadow:
+    0 18px 26px rgba(0, 0, 0, 0.3),
+    0 0 22px rgba(224, 194, 95, 0.34);
+}
+
+.card.lesson-play-blocked {
+  cursor: default;
 }
 
 .table-feedback {
@@ -634,6 +872,53 @@
   transform: translateY(-13px);
 }
 
+@keyframes contractRevealPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.015);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes contractRevealSweep {
+  to {
+    transform: translateX(115%);
+  }
+}
+
+@keyframes contractRevealSuitFloat {
+  from {
+    opacity: 0;
+    transform: translateY(20px) rotate(12deg) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(8deg) scale(1);
+  }
+}
+
+@keyframes contractRevealRing {
+  from {
+    opacity: 0;
+    transform: scale(0.76);
+  }
+
+  to {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
 @keyframes feedbackPulse {
   0% { transform: translateY(2px); opacity: 0.2; }
   100% { transform: translateY(0); opacity: 1; }
@@ -699,6 +984,19 @@
 
   .card-play-flyer {
     transition: none;
+  }
+
+  .contract-reveal,
+  .contract-reveal::before,
+  .contract-reveal::after,
+  .contract-reveal-panel,
+  .contract-reveal-panel::before {
+    animation: none;
+    transition: none;
+  }
+
+  .contract-reveal-panel::before {
+    display: none;
   }
 }
 

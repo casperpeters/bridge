@@ -129,7 +129,7 @@ function startSituationSeed(seed) {
   state.animateDeal = false;
   state.seedMessage = t("situationSeedLoaded");
 
-  restoreSituationAuction(situation.a || []);
+  restoreSituationAuction(situation.a || [], situation.p);
   restoreSituationContractContext(situation);
   restoreSituationPlay(situation);
   setSituationStatus(situation.p);
@@ -140,7 +140,7 @@ function parseSituationSeed(seed) {
   return situationCodec.parseSituationSeed(seed);
 }
 
-function restoreSituationAuction(auction) {
+function restoreSituationAuction(auction, sourcePhase = "") {
   state.auction = [];
   for (const encodedCall of auction) {
     const seat = seatFromCode(encodedCall[0]) || seatAt(state.turnIndex);
@@ -178,18 +178,14 @@ function restoreSituationAuction(auction) {
     return;
   }
 
-  state.contract = bid;
-  state.declarer = findDeclarer(bid);
-  state.dummy = partnerOf(state.declarer);
-  state.leader = leftOf(state.declarer);
-  state.turnIndex = seats.indexOf(state.leader);
-  state.phase = "playing";
+  prepareContractFromAuction(bid);
+  state.phase = sourcePhase === "contract-reveal" ? "contract-reveal" : "playing";
 }
 
 function restoreSituationContractContext(situation) {
-  if (state.phase === "playing" || state.phase === "complete") return;
+  if (["contract-reveal", "playing", "complete"].includes(state.phase)) return;
   const explicitContract = contractFromSituationText(situation.x);
-  if (!explicitContract || !["playing", "complete"].includes(situation.p)) return;
+  if (!explicitContract || !["contract-reveal", "playing", "complete"].includes(situation.p)) return;
 
   const declarer = seatFromCode(situation.r);
   if (!declarer) throw new Error("Situation declarer is missing for explicit contract restore");
@@ -199,10 +195,11 @@ function restoreSituationContractContext(situation) {
   state.dummy = seatFromCode(situation.m) || partnerOf(declarer);
   state.leader = seatFromCode(situation.l) || leftOf(declarer);
   state.turnIndex = seats.indexOf(state.leader);
-  state.phase = "playing";
+  state.phase = situation.p === "contract-reveal" ? "contract-reveal" : "playing";
 }
 
 function restoreSituationPlay(situation) {
+  if (state.phase === "contract-reveal") return;
   if (state.phase !== "playing") {
     if (situation.p === "complete" && !state.contract) setStatus("fourPasses");
     return;
@@ -293,6 +290,10 @@ function setSituationStatus(sourcePhase) {
     setStatus("situationTurn", { seat: seatAt(state.turnIndex) });
     return;
   }
+  if (state.phase === "contract-reveal") {
+    setStatus("contractReady", { contract: formatBid(state.contract), declarer: state.declarer });
+    return;
+  }
   if (sourcePhase === "bidding" && seatAt(state.turnIndex) === "South") {
     setStatus("yourCall");
     return;
@@ -306,6 +307,7 @@ function renderRestoredSituation() {
   state.currentTrick.forEach((play) => renderPlayedCard(play.seat, play.card));
   renderTrickSlotFocus();
   renderTrickAdvanceHint();
+  if (state.phase === "contract-reveal") focusContractReveal();
 }
 
 function encodeSituationCall(call) {

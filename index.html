@@ -84,6 +84,15 @@
         <div class="turn-glow turn-glow-east" aria-hidden="true"></div>
         <div class="turn-glow turn-glow-south" aria-hidden="true"></div>
         <div class="turn-glow turn-glow-west" aria-hidden="true"></div>
+        <div id="contract-reveal" class="contract-reveal" role="button" tabindex="0" aria-live="polite" hidden>
+          <div class="contract-reveal-panel">
+            <span class="contract-reveal-eyebrow">Contract</span>
+            <strong id="contract-reveal-bid" class="contract-reveal-bid"></strong>
+            <span id="contract-reveal-meta" class="contract-reveal-meta"></span>
+            <span id="contract-reveal-lead" class="contract-reveal-lead"></span>
+            <span class="contract-reveal-hint">Klik of druk op Enter om te spelen.</span>
+          </div>
+        </div>
         <div class="opponent north">
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
           <div id="north-label" class="seat-label"><span class="seat-label-name">Noord</span> &bull; Partner</div>
@@ -154,7 +163,6 @@
           <div id="auction-log" class="auction-log" aria-labelledby="auction-log-title"></div>
           <h3 id="bid-controls-title" class="review-section-title" hidden>Biedbox</h3>
           <div id="bid-controls" class="bid-controls" aria-labelledby="bid-controls-title" aria-hidden="true"></div>
-          <div id="play-plan-panel" class="play-plan-panel" hidden></div>
           <div id="bid-explanations" class="bid-explanations" hidden></div>
         </section>
 
@@ -163,6 +171,7 @@
             <h2 id="history-title">Speelgeschiedenis</h2>
             <span id="trick-count">0 slagen</span>
           </div>
+          <div id="play-plan-panel" class="play-plan-panel" hidden></div>
           <div id="history" class="history"></div>
           <div id="play-explanations" class="play-explanations" hidden></div>
         </section>
@@ -357,13 +366,16 @@
     <script src="scripts/state/settings.js"></script>
     <script src="scripts/state/situation-codec.js"></script>
     <script src="scripts/state/seed.js"></script>
+    <script src="scripts/state/state-transitions.js"></script>
+    <script src="scripts/learning/lesson-board-coach.js"></script>
     <script src="scripts/render/score-table.js"></script>
     <script src="scripts/render/play-plan.js"></script>
+    <script src="scripts/render/contract-reveal.js"></script>
     <script src="scripts/render/render-hands.js"></script>
     <script src="scripts/render/card-animation.js"></script>
     <script src="scripts/render/render-auction.js"></script>
     <script src="scripts/render/render-review.js"></script>
-    <script src="scripts/state/state-transitions.js"></script>
+    <script src="scripts/flow/contract-reveal-flow.js"></script>
     <script src="scripts/flow/auction-flow.js"></script>
     <script src="scripts/flow/play-flow.js"></script>
     <script src="scripts/app.js"></script>

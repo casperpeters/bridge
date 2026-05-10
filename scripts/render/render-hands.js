@@ -70,11 +70,14 @@ function createHandCardEl(seat, card, visible, index, recommended) {
   }
   if (visible && isHumanControlledSeat(seat) && state.phase === "playing" && !state.awaitingTrickAdvance) {
     const legal = isLegalCard(seat, card);
+    const lessonBlocked = lessonBoardBlocksHumanPlay(seat);
     cardEl.classList.add(legal ? "legal" : "illegal");
+    cardEl.classList.toggle("lesson-play-blocked", lessonBlocked);
     if (seatAt(state.turnIndex) === seat) {
-      cardEl.tabIndex = 0;
+      if (!lessonBlocked) cardEl.tabIndex = 0;
       cardEl.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (lessonBlocked) return;
         if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
         if (legal) playCard(seat, card.id);
         else showIllegalCardFeedback(seat, card);
@@ -82,6 +85,7 @@ function createHandCardEl(seat, card, visible, index, recommended) {
       cardEl.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
+        if (lessonBlocked) return;
         if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
         if (legal) playCard(seat, card.id);
         else showIllegalCardFeedback(seat, card);

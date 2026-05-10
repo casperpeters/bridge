@@ -104,10 +104,11 @@ function renderReview() {
 }
 
 function syncHistoryPanelState(complete = state.phase === "complete") {
-  const visible = !complete && (shouldShowLiveHistory() || shouldReserveHistorySlot());
+  const hasVisiblePlayPlan = !els.playPlan.hidden;
+  const visible = !complete && (shouldShowLiveHistory() || shouldReserveHistorySlot() || hasVisiblePlayPlan);
   els.historyPanel.hidden = !visible;
   els.historyPanel.classList.toggle("is-inactive", visible && !shouldShowLiveHistory());
-  els.historyPanel.classList.toggle("is-empty-reserved", visible && !state.showPlayHistory);
+  els.historyPanel.classList.toggle("is-empty-reserved", visible && !state.showPlayHistory && !hasVisiblePlayPlan);
 }
 
 function shouldShowLiveHistory() {
@@ -548,19 +549,21 @@ function phaseName(phase) {
   return {
     idle: "Start",
     bidding: "Bieden",
+    "contract-reveal": "Contract tonen",
     playing: "Spelen",
     complete: t("review")
   }[phase] || phase;
 }
 
 function currentFeedbackTurnSeat() {
-  if (!["bidding", "playing"].includes(state.phase)) return "";
+  if (!["bidding", "contract-reveal", "playing"].includes(state.phase)) return "";
   return seatAt(state.turnIndex);
 }
 
 function feedbackDummyVisibility() {
   if (!state.contract || !state.dummy) return "N.v.t.";
   if (state.phase === "complete") return "Ja";
+  if (state.phase === "contract-reveal") return "Nee";
   if (state.phase !== "playing") return "N.v.t.";
   return openingLeadHasBeenMade() ? "Ja" : "Nee";
 }
@@ -569,6 +572,6 @@ function currentFeedbackStartMode() {
   if (state.practice?.lessonStartMode === "play") return "direct-play";
   if (state.practice?.lessonStartMode) return String(state.practice.lessonStartMode);
   if (state.phase === "playing" && state.contract && !state.auction.length) return "direct-play";
-  if (state.phase === "bidding") return "auction";
+  if (state.phase === "bidding" || state.phase === "contract-reveal") return "auction";
   return "";
 }

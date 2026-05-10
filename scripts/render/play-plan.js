@@ -1,7 +1,7 @@
 function renderPlayPlan() {
   els.playPlan.hidden = true;
   els.playPlan.innerHTML = "";
-  if (!state.developerMode) return;
+  if (!shouldShowPlayPlan()) return;
 
   const plan = currentPlayPlan();
   if (!plan) return;
@@ -31,6 +31,10 @@ function renderPlayPlan() {
     els.playPlan.appendChild(playPlanList(t("playPlanWarnings"), plan.warnings.map(playPlanWarningText), "warning"));
   }
   els.playPlan.hidden = false;
+}
+
+function shouldShowPlayPlan() {
+  return state.developerMode || state.guidanceMode;
 }
 
 function currentPlayPlan() {

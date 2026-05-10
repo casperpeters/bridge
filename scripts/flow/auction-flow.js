@@ -94,15 +94,8 @@ function finishAuction() {
     finishPassedOutHand();
     return;
   }
-  state.contract = bid;
-  state.declarer = findDeclarer(bid);
-  state.dummy = partnerOf(state.declarer);
-  state.leader = leftOf(state.declarer);
-  state.turnIndex = seats.indexOf(state.leader);
-  state.phase = "playing";
-  renderAll();
-  setStatus("lead", { leader: state.leader, declarer: state.declarer, dummy: state.dummy });
-  continuePlay();
+  prepareContractFromAuction(bid);
+  enterContractReveal();
 }
 
 function finishPassedOutHand() {
@@ -121,7 +114,7 @@ function finishPassedOutHand() {
   renderAll();
 }
 
-function autoCompleteAuction() {
+function autoCompleteAuction({ revealContract = false } = {}) {
   let callCount = 0;
   while (state.phase === "bidding" && !auctionComplete() && callCount < 80) {
     const seat = seatAt(state.turnIndex);
@@ -143,11 +136,11 @@ function autoCompleteAuction() {
     finishPassedOutHand();
     return;
   }
-  state.contract = bid;
-  state.declarer = findDeclarer(bid);
-  state.dummy = partnerOf(state.declarer);
-  state.leader = leftOf(state.declarer);
-  state.turnIndex = seats.indexOf(state.leader);
+  prepareContractFromAuction(bid);
+  if (revealContract) {
+    enterContractReveal();
+    return;
+  }
   state.phase = "playing";
   setStatus("lead", { leader: state.leader, declarer: state.declarer, dummy: state.dummy });
 }

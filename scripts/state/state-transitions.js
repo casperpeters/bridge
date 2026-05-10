@@ -86,9 +86,37 @@
     };
   }
 
+  function hasContractContext(state) {
+    return Boolean(state.contract && state.declarer && state.dummy && state.leader);
+  }
+
+  function enterContractRevealTransition(state) {
+    if (!hasContractContext(state)) return null;
+    return {
+      phase: "contract-reveal"
+    };
+  }
+
+  function startPlayFromContractRevealTransition(state) {
+    if (state.phase !== "contract-reveal" || !hasContractContext(state)) return null;
+    return {
+      phase: "playing"
+    };
+  }
+
+  function acknowledgeLessonBoardStepTransition(state, step) {
+    if (!step || step.gate === "none") return state.lessonBoardAcknowledged || [];
+    const acknowledged = state.lessonBoardAcknowledged || [];
+    if (acknowledged.includes(step.id)) return acknowledged;
+    return [...acknowledged, step.id];
+  }
+
   return {
     startPreparedHandTransition,
     applyCardPlayTransition,
-    advanceCompletedTrickTransition
+    advanceCompletedTrickTransition,
+    enterContractRevealTransition,
+    startPlayFromContractRevealTransition,
+    acknowledgeLessonBoardStepTransition
   };
 });

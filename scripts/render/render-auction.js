@@ -138,8 +138,16 @@ function renderBidExplanations() {
     const item = document.createElement("div");
     item.className = "bid-explanation";
     const callText = formatCall(call.bid);
+    const bidIndex = index + 1;
     const title = document.createElement("strong");
-    title.textContent = `${seatName(call.seat)} ${callText}`;
+    title.className = "bid-explanation-title";
+    const indexBadge = document.createElement("span");
+    indexBadge.className = "bid-explanation-index";
+    indexBadge.textContent = String(bidIndex);
+    indexBadge.setAttribute("aria-label", `Bod ${bidIndex}`);
+    const callLabel = document.createElement("span");
+    callLabel.textContent = `${seatName(call.seat)} ${callText}`;
+    title.append(indexBadge, document.createTextNode(" "), callLabel);
     item.append(title, document.createElement("br"), BridgeGlossary.linkifyText(explainBid(call, index)));
     els.bidExplanations.appendChild(item);
   });

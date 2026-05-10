@@ -85,6 +85,7 @@ test("situation codec validates compact payload shape before restore code runs",
   };
 
   assert.equal(codec.validateSituationPayload(valid), valid);
+  assert.equal(codec.validateSituationPayload({ ...valid, p: "contract-reveal", x: "4S", r: "S", m: "N", l: "W" }).p, "contract-reveal");
   assert.throws(() => codec.validateSituationPayload({ ...valid, v: 2 }), /Unsupported situation seed version/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, s: "" }), /missing the base seed/);
   assert.throws(() => codec.validateSituationPayload({ ...valid, b: 0 }), /positive integer/);

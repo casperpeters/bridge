@@ -12,9 +12,9 @@
       id: "les-01-wat-is-bridge",
       number: 1,
       title: "Wat is bridge?",
-      challenge: "Win slagen samen met partner en ontdek wanneer dummy verschijnt.",
-      summary: "Je leert hoe een bridgehand is opgebouwd: vier spelers, partners, dertien kaarten per speler, slagen winnen, dummy en de basisregel dat je kleur moet bekennen.",
-      focus: ["Spelen", "Slagen", "Dummy"],
+      challenge: "Win slagen samen met partner en ontdek hoe bieden, spelen en dummy bij elkaar horen.",
+      summary: "Je leert het doel van bridge, de twee fasen van een hand, slagen winnen, kleur bekennen, troef en sans-atout, leider en dummy.",
+      focus: ["Spelen", "Bieden", "Dummy"],
       handIds: ["draw-trumps-001"],
       pageHref: "lesson-01-cards.html",
       startMode: "play",
@@ -42,11 +42,21 @@
         },
         {
           id: "bieden-en-spelen",
-          title: "Bieden en spelen",
-          summary: "Eerst wordt het contract gekozen; daarna probeer je dat contract te maken of te verslaan.",
+          title: "De twee fasen",
+          summary: "Een bridgehand heeft eerst bieden en daarna spelen.",
           blocks: [
-            { type: "paragraph", text: "In het bieden zoeken de spelers uit welke speelsoort en hoeveel slagen haalbaar lijken." },
-            { type: "paragraph", text: "Na het bieden begint het spelen. De leider probeert het contract te maken; de tegenspelers proberen dat te voorkomen." }
+            { type: "paragraph", text: "Fase 1 is bieden. De spelers zoeken uit welke speelsoort en hoeveel slagen haalbaar lijken." },
+            { type: "paragraph", text: "Fase 2 is spelen. Dan probeer je met de kaarten zoveel slagen te winnen als nodig is." },
+            { type: "callout", text: "Het laatste bod wordt het contract: de afspraak over speelsoort en aantal benodigde slagen." }
+          ]
+        },
+        {
+          id: "doel-van-bridge",
+          title: "Het doel",
+          summary: "Je paar probeert het contract te maken of juist te verslaan.",
+          blocks: [
+            { type: "paragraph", text: "Noord/Zuid spelen samen tegen Oost/West. Een paar probeert genoeg slagen te winnen voor het contract." },
+            { type: "paragraph", text: "Ben je leider, dan probeer je het contract te maken. Ben je tegenspeler, dan probeer je te zorgen dat de leider te weinig slagen haalt." }
           ]
         },
         {
@@ -54,7 +64,8 @@
           title: "Een slag",
           summary: "Een slag is een rondje waarin iedere speler precies een kaart speelt.",
           blocks: [
-            { type: "paragraph", text: "De speler die de slag begint, bepaalt de gevraagde kleur. Daarna spelen de andere spelers met de klok mee een kaart." }
+            { type: "paragraph", text: "De speler die de slag begint, bepaalt de gevraagde kleur. Daarna spelen de andere spelers met de klok mee een kaart." },
+            { type: "paragraph", text: "Wie de slag wint, begint de volgende slag. Er zijn 13 slagen, omdat iedere speler 13 kaarten heeft." }
           ],
           quiz: [
             {
@@ -78,6 +89,34 @@
           ]
         },
         {
+          id: "speelsoorten",
+          title: "Troef en SA",
+          summary: "Een contract is met troef of zonder troef: sans-atout, ook NT genoemd.",
+          blocks: [
+            { type: "paragraph", text: "Bij een troefcontract is een van de vier kleuren troef. Als je geen gevraagde kleur meer hebt, mag je met troef de slag proberen te winnen." },
+            { type: "paragraph", text: "Bij SA, sans-atout of NT, is er geen troef. Dan wint gewoon de hoogste kaart van de gevraagde kleur." },
+            { type: "callout", text: "SA en NT betekenen hetzelfde: zonder troef." }
+          ]
+        },
+        {
+          id: "leider-en-dummy",
+          title: "Leider en dummy",
+          summary: "Na de uitkomst komt dummy open en speelt de leider twee handen.",
+          blocks: [
+            { type: "paragraph", text: "De speler die het contract voor zijn paar gaat spelen heet de leider. De partner van de leider heet dummy." },
+            { type: "paragraph", text: "Eerst komt de speler links van de leider uit. Daarna legt dummy alle kaarten open op tafel." },
+            { type: "paragraph", text: "Dummy kiest zelf geen kaarten. De leider kiest de kaarten uit de eigen hand en uit dummy." }
+          ]
+        },
+        {
+          id: "spelverloop",
+          title: "Het spelverloop",
+          summary: "Na elke slag begint de winnaar de volgende slag, tot alle 13 slagen gespeeld zijn.",
+          blocks: [
+            { type: "list", items: ["De uitkomer speelt de eerste kaart.", "Dummy komt open.", "Iedere speler speelt een kaart en moet kleur bekennen als dat kan.", "De hoogste kaart van de gevraagde kleur wint, behalve als iemand troeft.", "De winnaar begint de volgende slag.", "Na 13 slagen zie je contract, resultaat en score."] }
+          ]
+        },
+        {
           id: "bekennen-moet",
           title: "Bekennen moet",
           summary: "Als de gevraagde kleur in je hand zit, moet je een kaart van die kleur spelen.",
@@ -92,6 +131,88 @@
         "Je speelde een echt bord vanaf de uitkomst: vier spelers, vier kaarten per slag, dertien slagen totaal.",
         "Let vooral op het moment na de eerste kaart: dan verschijnt dummy en wordt de leider verantwoordelijk voor twee handen.",
         "De score is nu minder belangrijk dan het ritme: volgen van kleur, slagwinnaar zien, volgende slag starten."
+      ],
+      boardGuidance: [
+        {
+          id: "contractIntro",
+          title: "Je speelt 4 schoppen",
+          body: "Het contract is 4 schoppen door Zuid. Schoppen is troef en Noord/Zuid probeert genoeg slagen te maken.",
+          badge: "Contract en troef",
+          target: "contract",
+          buttonLabel: "Start aan tafel",
+          gate: "releaseAutoPlay"
+        },
+        {
+          id: "openingLeadIntro",
+          title: "Eerst komt West uit",
+          body: "West zit links van de leider en speelt straks de eerste kaart. Die eerste kaart heet de uitkomst.",
+          badge: "Uitkomst",
+          target: "openingLead",
+          buttonLabel: "Laat West uitkomen",
+          gate: "releaseAutoPlay"
+        },
+        {
+          id: "dummyReveal",
+          title: "Dummy komt open",
+          body: "Na de uitkomst komt Noord open op tafel. Noord is dummy.",
+          badge: "Dummy",
+          target: "dummy",
+          buttonLabel: "Bekijk dummy",
+          gate: "releaseAutoPlay"
+        },
+        {
+          id: "declarerControlsDummy",
+          title: "Jij speelt twee handen",
+          body: "Zuid is leider. Jij kiest de kaarten uit Zuid en uit dummy Noord.",
+          badge: "Leider en dummy",
+          target: "declarerAndDummy",
+          buttonLabel: "Ik speel beide handen",
+          gate: "releaseAutoPlay"
+        },
+        {
+          id: "trickMeaning",
+          title: "Vier kaarten maken een slag",
+          body: "Iedere speler speelt precies een kaart. Samen vormen die vier kaarten een slag.",
+          badge: "Slag",
+          target: "trickArea",
+          buttonLabel: "Verder",
+          gate: "releaseAutoPlay"
+        },
+        {
+          id: "followSuit",
+          title: "Bekennen moet",
+          body: "Er is een kleur gevraagd. Als je die kleur hebt, moet je een kaart van die kleur spelen.",
+          badge: "Bekennen",
+          target: "legalCards",
+          buttonLabel: "Ik ga bekennen",
+          gate: "allowHumanPlay"
+        },
+        {
+          id: "trumpMeaning",
+          title: "Schoppen is troef",
+          body: "Schoppenkaarten zijn troeven. Troef kan winnen als je de gevraagde kleur niet kunt bekennen.",
+          badge: "Troef",
+          target: "trumpCards",
+          buttonLabel: "Verder spelen",
+          gate: "allowHumanPlay"
+        },
+        {
+          id: "trickWinner",
+          title: "Wie wint de slag?",
+          body: "De gemarkeerde speler won deze slag. De winnaar begint de volgende slag.",
+          badge: "Slagwinnaar",
+          target: "trickWinner",
+          buttonLabel: "Volgende slag",
+          gate: "advanceTrick"
+        },
+        {
+          id: "reviewResult",
+          title: "Terugkijken",
+          body: "In de review zie je contract, leider, dummy, slagen, resultaat en score terug.",
+          badge: "Review",
+          target: "review",
+          gate: "none"
+        }
       ],
       teachingPoints: [
         "Een bridgebord bestaat uit 13 slagen; in elke slag speelt iedere speler precies een kaart.",
@@ -212,6 +333,7 @@
         }
       }
       validateLessonChapters(lesson, practiceApi);
+      validateBoardGuidance(lesson);
       if (lesson.startMode === "play") {
         const scenario = practiceApi?.findPracticeHand?.(lesson.handIds[0]);
         if (!scenario?.expectedContract) throw new Error(`Lesson ${lesson.id} needs an expected contract for play start`);
@@ -518,6 +640,7 @@
       chapters: (lesson.chapters || []).map(cloneChapter),
       miniQuiz: lesson.miniQuiz ? cloneQuiz(lesson.miniQuiz) : undefined,
       reviewFeedback: lesson.reviewFeedback ? [...lesson.reviewFeedback] : undefined,
+      boardGuidance: lesson.boardGuidance ? lesson.boardGuidance.map(cloneBoardGuidanceStep) : undefined,
       teachingPoints: lesson.teachingPoints ? [...lesson.teachingPoints] : undefined
     };
   }
@@ -538,6 +661,10 @@
       ...question,
       options: [...question.options]
     }));
+  }
+
+  function cloneBoardGuidanceStep(step) {
+    return { ...step };
   }
 
   function validateLessonChapters(lesson, practiceApi) {
@@ -563,6 +690,22 @@
       if (!Array.isArray(question.options) || !question.options.includes(question.answer)) {
         throw new Error(`Lesson ${lessonId} chapter ${chapterId} quiz ${index + 1} is missing the answer option`);
       }
+    });
+  }
+
+  function validateBoardGuidance(lesson) {
+    if (!lesson.boardGuidance) return;
+    if (!Array.isArray(lesson.boardGuidance)) throw new Error(`Lesson ${lesson.id} boardGuidance must be an array`);
+    const ids = new Set();
+    const validTargets = new Set(["contract", "openingLead", "dummy", "declarerAndDummy", "trickArea", "legalCards", "trumpCards", "trickWinner", "review"]);
+    const validGates = new Set(["releaseAutoPlay", "allowHumanPlay", "advanceTrick", "none"]);
+    lesson.boardGuidance.forEach((step, index) => {
+      if (!step.id || ids.has(step.id)) throw new Error(`Lesson ${lesson.id} boardGuidance step ${index + 1} has an invalid id`);
+      ids.add(step.id);
+      if (!step.title || !step.body || !step.badge) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} is incomplete`);
+      if (!validTargets.has(step.target)) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} has unknown target ${step.target}`);
+      if (!validGates.has(step.gate)) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} has unknown gate ${step.gate}`);
+      if (step.gate !== "none" && !step.buttonLabel) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} needs a button label`);
     });
   }
 

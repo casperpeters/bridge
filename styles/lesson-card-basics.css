@@ -501,6 +501,68 @@
   font-size: 1.5rem;
 }
 
+.concept-grid,
+.phase-flow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.phase-flow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.concept-tile,
+.phase-flow div {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  background: rgba(255, 255, 255, 0.045);
+  padding: 14px;
+}
+
+.concept-tile strong,
+.phase-flow strong {
+  color: var(--ink);
+  font-size: 1.08rem;
+}
+
+.concept-tile span,
+.phase-flow p {
+  color: rgba(247, 244, 232, 0.84);
+  font-weight: 560;
+  line-height: 1.45;
+}
+
+.phase-flow span {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(96, 197, 185, 0.48);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--accent-2);
+  font-weight: 950;
+}
+
+.trick-demo {
+  min-height: 130px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.trick-demo .mini-card {
+  position: static;
+  width: 72px;
+  height: 98px;
+  font-size: 1.45rem;
+  transform: none;
+}
+
 .choice-card.is-correct {
   border-color: rgba(85, 213, 126, 0.86);
   box-shadow: 0 0 0 3px rgba(85, 213, 126, 0.18), 0 14px 26px rgba(0, 0, 0, 0.22);
@@ -729,6 +791,11 @@
 
   .wind-mini-game {
     min-height: 430px;
+  }
+
+  .concept-grid,
+  .phase-flow {
+    grid-template-columns: 1fr;
   }
 
   .equation-total {

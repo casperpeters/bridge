@@ -70,7 +70,8 @@ const state = {
   practice: null,
   feedbackStatus: null,
   illegalActionFeedback: null,
-  handSuitFocus: null
+  handSuitFocus: null,
+  lessonBoardAcknowledged: []
 };
 
 let illegalActionFeedbackTimer = null;
@@ -129,6 +130,10 @@ const els = {
   copySeed: document.querySelector("#copy-seed"),
   seedDescription: document.querySelector("#seed-description"),
   tableArea: document.querySelector(".table-area"),
+  contractReveal: document.querySelector("#contract-reveal"),
+  contractRevealBid: document.querySelector("#contract-reveal-bid"),
+  contractRevealMeta: document.querySelector("#contract-reveal-meta"),
+  contractRevealLead: document.querySelector("#contract-reveal-lead"),
   sidePanel: document.querySelector(".side-panel"),
   auctionPanel: document.querySelector(".auction-panel"),
   mobileBiddingSlot: document.querySelector("#mobile-bidding-slot"),
@@ -166,6 +171,7 @@ const els = {
   auctionLog: document.querySelector("#auction-log"),
   dealerBadge: document.querySelector("#dealer-badge"),
   contract: document.querySelector("#contract"),
+  trickArea: document.querySelector("#trick-area"),
   status: document.querySelector("#status"),
   guidancePanel: document.querySelector("#guidance-panel"),
   dummyNotice: document.querySelector("#dummy-notice"),
@@ -243,14 +249,33 @@ els.playHistoryMode.addEventListener("change", () => {
   saveSettings();
   renderAll();
 });
+els.contractReveal?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  startPlayFromContractReveal();
+});
 els.tableArea.addEventListener("click", (event) => {
   if (clearHandSuitFocusFromOutsideClick(event.target)) return;
+  if (state.phase === "contract-reveal") {
+    if (isControlTarget(event.target)) return;
+    startPlayFromContractReveal();
+    return;
+  }
+  if (blockingLessonBoardStep()) return;
   if (state.awaitingTrickAdvance && state.trickAdvanceArmed) advanceCompletedTrick();
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeAppMenu();
   if (isControlTarget(event.target)) return;
+  if (event.key === "Enter" && state.phase === "contract-reveal") {
+    event.preventDefault();
+    startPlayFromContractReveal();
+    return;
+  }
   if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && moveReviewTrickCursor(event.key === "ArrowRight" ? 1 : -1)) {
+    event.preventDefault();
+    return;
+  }
+  if (event.key === "Enter" && blockingLessonBoardStep()) {
     event.preventDefault();
     return;
   }
@@ -352,6 +377,7 @@ function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null,
     originalHands: cloneHands(hands),
     practice
   }));
+  state.lessonBoardAcknowledged = [];
   if (illegalActionFeedbackTimer) {
     window.clearTimeout(illegalActionFeedbackTimer);
     illegalActionFeedbackTimer = null;
@@ -424,7 +450,8 @@ function practiceStateFromScenario(scenario, lesson = null) {
     lessonStartMode: lesson?.startMode || "",
     lessonFocus: lesson?.focus ? [...lesson.focus] : [],
     lessonIntro: lesson?.intro || "",
-    lessonReviewFeedback: lesson?.reviewFeedback ? [...lesson.reviewFeedback] : []
+    lessonReviewFeedback: lesson?.reviewFeedback ? [...lesson.reviewFeedback] : [],
+    lessonBoardGuidance: lesson?.boardGuidance ? lesson.boardGuidance.map((step) => ({ ...step })) : []
   };
 }
 
@@ -525,6 +552,7 @@ function renderAll() {
   renderContract();
   renderGuidance();
   renderLessonBanner();
+  renderContractReveal();
   renderFeedbackStatus();
   renderIllegalActionFeedback();
   renderReplayPanel();
@@ -541,12 +569,14 @@ function renderAll() {
 
 function renderResponsiveLayoutState() {
   const isBidding = state.phase === "bidding";
+  const isContractReveal = state.phase === "contract-reveal";
   const auctionReady = isBidding && !state.animateDeal;
   const useTableBiddingLayout = isBidding;
   const useMobileBiddingLayout = Boolean(useTableBiddingLayout && mobileBiddingLayoutQuery?.matches);
   const useStableSidebarLayout = Boolean(stableSidebarLayoutQuery?.matches);
   els.appShell?.classList.toggle("is-bidding", isBidding);
   els.appShell?.classList.toggle("is-playing", state.phase === "playing");
+  els.appShell?.classList.toggle("is-contract-reveal", isContractReveal);
   els.appShell?.classList.toggle("is-table-bidding", useTableBiddingLayout);
   els.appShell?.classList.toggle("is-mobile-bidding", useMobileBiddingLayout);
   els.appShell?.classList.toggle("has-stable-sidebars", useStableSidebarLayout);
@@ -809,6 +839,7 @@ function renderGuidance() {
   els.guidancePanel.hidden = true;
   els.guidancePanel.innerHTML = "";
   if (!state.guidanceMode || state.awaitingTrickAdvance) return;
+  if (blockingLessonBoardStep()) return;
 
   const guidance = currentGuidance();
   if (!guidance) return;
@@ -852,20 +883,6 @@ function renderSeatLabel(label, seat, role = "") {
   }
 
   name.after(document.createTextNode(roleText));
-}
-
-function renderLessonBanner() {
-  if (!els.lessonBanner) return;
-  els.lessonBanner.hidden = !state.practice?.challenge;
-  els.lessonBanner.innerHTML = "";
-  if (els.lessonBanner.hidden) return;
-
-  const label = document.createElement("strong");
-  const lessonPrefix = state.practice.lessonNumber ? `${t("lesson")} ${state.practice.lessonNumber}` : t("lesson");
-  label.textContent = state.practice.lessonTitle ? `${lessonPrefix}: ${state.practice.lessonTitle}` : lessonPrefix;
-  const challenge = document.createElement("span");
-  challenge.textContent = state.practice.challenge;
-  els.lessonBanner.append(label, challenge);
 }
 
 function currentGuidance() {
@@ -930,6 +947,7 @@ function renderTrickAdvanceHint() {
 function currentHint() {
   if (state.phase === "idle") return "Deel een nieuwe hand om te starten.";
   if (state.phase === "bidding") return biddingHint();
+  if (state.phase === "contract-reveal") return "Het contract is bekend. Klik op de tafel of druk op Enter om het spel te starten.";
   if (state.phase === "playing") return playingHint();
   if (state.phase === "complete") {
     return state.developerMode
@@ -1160,6 +1178,8 @@ const BridgeApp = {
     startPracticeHand,
     startLesson,
     autoCompleteAuction,
+    enterContractReveal,
+    startPlayFromContractReveal,
     autoCompletePlay,
     continuePlay,
     playCard,
@@ -1229,6 +1249,8 @@ function createBridgeAppTestHooks() {
     startPracticeHand,
     startLesson,
     autoCompleteAuction,
+    enterContractReveal,
+    startPlayFromContractReveal,
     autoCompletePlay,
     renderAll,
     continuePlay,

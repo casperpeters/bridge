@@ -73,6 +73,7 @@ See [docs/architecture.md](./docs/architecture.md) for the technical architectur
 - Bidding-box order for calls: `NT`, spades, hearts, diamonds, clubs.
 - Pass, Stop, Alert, Doublet, and Redoublet controls.
 - South bidding controls.
+- Animated contract reveal between the auction and opening lead; click the table or press Enter to start play.
 - Fixed play control: play Noord/Zuid when N/Z declare, otherwise defend as Zuid.
 - Legal card-play enforcement, including following suit.
 - Dummy visibility after the opening lead.

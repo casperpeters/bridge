@@ -54,6 +54,7 @@ function continuePlay() {
   }
   const seat = seatAt(state.turnIndex);
   renderAll();
+  if (blockingLessonBoardStep()) return;
   if (isHumanControlledSeat(seat)) {
     if (!openingLeadHasBeenMade()) {
       setStatus("yourOpeningLead");
@@ -409,6 +410,7 @@ function illegalCardFeedbackText(seat, card) {
 
 function playCard(seat, cardId) {
   if (state.phase !== "playing" || seat !== seatAt(state.turnIndex)) return;
+  if (lessonBoardBlocksHumanPlay(seat)) return;
   if (state.awaitingTrickAdvance) {
     showIllegalCardFeedback(seat, null);
     return;
@@ -458,6 +460,7 @@ function pauseCompletedTrick() {
   setStatus("winsTrick", { seat: winner.seat, number: state.trickHistory.length + 1 });
   renderTrickSlotFocus();
   renderGuidance();
+  renderLessonBanner();
   renderTrickAdvanceHint();
   const scheduledFlowGeneration = flowGeneration;
   window.setTimeout(() => {

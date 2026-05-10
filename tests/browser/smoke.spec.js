@@ -198,6 +198,94 @@ test("loads the live table and lets South make an auction call", async ({ page }
   expect(pageErrors).toEqual([]);
 });
 
+test("shows a contract reveal between the auction and opening lead", async ({ page }) => {
+  await openFreshApp(page);
+
+  const revealSnapshot = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "browser-smoke-0", skipFlow: true });
+    app.autoCompleteAuction({ revealContract: true });
+    app.renderAll();
+    const state = app.getState();
+    return {
+      phase: state.phase,
+      contract: state.contract ? `${state.contract.level}${state.contract.strain}` : null,
+      declarer: state.declarer,
+      leader: state.leader,
+      currentTrickLength: state.currentTrick.length,
+      statusText: document.querySelector("#status").textContent,
+      repeatCode: app.createSituationSeed()
+    };
+  });
+
+  expect(revealSnapshot).toMatchObject({
+    phase: "contract-reveal",
+    declarer: "South",
+    leader: "West",
+    currentTrickLength: 0
+  });
+  expect(revealSnapshot.contract).toBeTruthy();
+  expect(revealSnapshot.statusText).toContain("Klik of druk op Enter");
+  expect(revealSnapshot.repeatCode).toMatch(/^situatieseed:/);
+  await expect(page.locator("#contract-reveal")).toBeVisible();
+  await expect(page.locator("#contract-reveal")).toContainText(revealSnapshot.contract.replace("S", "♠").replace("H", "♥").replace("D", "♦").replace("C", "♣"));
+  await expect(page.locator("#contract-reveal")).toContainText("Zuid speelt");
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
+
+  await page.locator("#contract-reveal").click();
+  await expect(page.locator("#contract-reveal")).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().phase)).toBe("playing");
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
+
+  await page.evaluate((repeatCode) => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "contract-reveal-restore-scratch", skipFlow: true });
+    app.getEls().seedInput.value = repeatCode;
+    app.loadSeedFromInput();
+  }, revealSnapshot.repeatCode);
+  await expect(page.locator("#contract-reveal")).toBeVisible();
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#contract-reveal")).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().phase)).toBe("playing");
+});
+
+test("keeps the contract reveal open when South's final pass ends an East-West auction", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "west-final-south-0", skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      animateDeal: false,
+      turnIndex: 2,
+      auction: [
+        { seat: "North", bid: app.rules.Pass() },
+        { seat: "East", bid: app.rules.Pass() },
+        { seat: "South", bid: app.rules.Pass() },
+        { seat: "West", bid: app.rules.Bid(1, "NT") },
+        { seat: "North", bid: app.rules.Pass() },
+        { seat: "East", bid: app.rules.Pass() }
+      ]
+    });
+    app.renderAll();
+  });
+
+  await page.locator("#bid-controls button.pass").click();
+  await expect(page.locator("#contract-reveal")).toBeVisible();
+  await expect(page.locator("#contract-reveal")).toContainText("West speelt");
+  await expect(page.locator("#contract-reveal")).toContainText("Jij verdedigt als Zuid");
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().phase)).toBe("contract-reveal");
+
+  await page.locator("#contract-reveal").click();
+  await expect(page.locator("#contract-reveal")).toBeHidden();
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().phase)).toBe("playing");
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
+});
+
 test("waits for the deal animation before South can start bidding", async ({ page }) => {
   await openFreshApp(page);
 
@@ -1306,6 +1394,7 @@ test("rejects corrupt and out-of-order situation seeds without replacing the cur
 });
 
 test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
+  test.slow();
   await openFreshApp(page);
 
   await clickMenuButton(page, "#open-lessons");
@@ -1314,15 +1403,16 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator("#lesson-route-panel")).toContainText("Leerroute");
   await expect(page.locator(".lesson-route-button")).toHaveCount(12);
   await expect(page.locator("#lesson-content")).toContainText("Samenvatting");
-  await expect(page.locator("#lesson-content")).toContainText("vier spelers");
+  await expect(page.locator("#lesson-content")).toContainText("doel van bridge");
   await expect(page.locator("#lesson-content")).toContainText("Begin les");
   await expect(page.locator("#lesson-content")).not.toContainText("Hoofdstukken");
 
   await page.locator(".lesson-finish .lesson-chapter-link", { hasText: "Begin les" }).click();
   await expect(page).toHaveURL(/lesson-01-cards\.html\?testHooks=1/);
-  await expect(page.locator("#card-lesson-title")).toContainText("Leer eerst de kaarten lezen");
-  await expect(page.locator(".progress-step")).toHaveCount(5);
+  await expect(page.locator("#card-lesson-title")).toContainText("Van kaarten naar een hele bridgehand");
+  await expect(page.locator(".progress-step")).toHaveCount(10);
   await expect(page.locator(".progress-step", { hasText: "Windrichtingen" })).toBeVisible();
+  await expect(page.locator(".progress-step", { hasText: "Leider en dummy" })).toBeVisible();
   await expect(page.locator(".suit-tile")).toHaveCount(4);
   await expect(page.locator(".suit-tile", { hasText: "Harten" })).toBeVisible();
   await page.locator("#next-step").click();
@@ -1366,9 +1456,18 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
 
   await page.locator(".lesson-finish .lesson-practice-link", { hasText: "Start oefening" }).click();
   await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1/);
-  await expect(page.locator("#lesson-banner")).toContainText("Les 1: Wat is bridge?");
-  await expect(page.locator("#lesson-banner")).toContainText("dummy");
+  await expect(page.locator("#lesson-banner")).toContainText("Je speelt 4 schoppen");
+  await expect(page.locator("#lesson-banner .lesson-coach-action")).toHaveText("Start aan tafel");
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Start aan tafel" }).click();
+  await expect(page.locator("#lesson-banner")).toContainText("Eerst komt West uit");
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Laat West uitkomen" }).click();
   await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
+  await expect(page.locator("#lesson-banner")).toContainText("Dummy komt open");
+  await expect(page.locator("#north-hand")).toHaveClass(/lesson-highlight-target/);
   await expect(page.locator("#dummy-notice")).toContainText("dummy");
 
   const lessonSnapshot = await page.evaluate(() => {
@@ -1393,17 +1492,51 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
     practiceId: "draw-trumps-001",
     lessonId: "les-01-wat-is-bridge",
     lessonStartMode: "play",
-    challenge: "Win slagen samen met partner en ontdek wanneer dummy verschijnt.",
+    challenge: "Win slagen samen met partner en ontdek hoe bieden, spelen en dummy bij elkaar horen.",
     phase: "playing",
     contract: "4S",
     declarer: "South",
     turn: "North",
     currentTrick: ["West:TD"]
   });
+  const openingLeadSeed = await page.evaluate(() => window.BridgeAppTestHooks.createSituationSeed());
 
-  const restoredLessonSnapshot = await page.evaluate(() => {
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Bekijk dummy" }).click();
+  await expect(page.locator("#lesson-banner")).toContainText("Jij speelt twee handen");
+  await expect(page.locator("#south-hand")).toHaveClass(/lesson-highlight-target/);
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Ik speel beide handen" }).click();
+  await expect(page.locator("#lesson-banner")).toContainText("Vier kaarten maken een slag");
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Verder" }).click();
+  await expect(page.locator("#lesson-banner")).toContainText("Bekennen moet");
+  await expect(page.locator("#north-hand .lesson-play-blocked")).toHaveCount(13);
+  await expect(page.locator("#north-hand .lesson-highlight-card")).toHaveCount(3);
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Ik ga bekennen" }).click();
+  await expect(page.locator("#lesson-banner")).toContainText("Schoppen is troef");
+  await expect(page.locator("#north-hand .lesson-play-blocked")).not.toHaveCount(0);
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Verder spelen" }).click();
+  await expect(page.locator("#north-hand .lesson-play-blocked")).toHaveCount(0);
+  await page.locator('#north-hand [data-card-id="5D"]').click();
+  if ((page.viewportSize()?.width || 0) <= 760) {
+    await page.locator('#north-hand [data-card-id="5D"]').click();
+  }
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(3);
+  await page.locator('#south-hand [data-card-id="KD"]').press("Enter");
+  if ((page.viewportSize()?.width || 0) <= 760) {
+    await page.locator('#south-hand [data-card-id="KD"]').press("Enter");
+  }
+  await expect(page.locator("#lesson-banner")).toContainText("Wie wint de slag?");
+  await expect(page.locator("#lesson-banner .lesson-coach-action")).toHaveText("Volgende slag");
+  await expect(page.locator(".trick-south")).toHaveClass(/lesson-highlight-target/);
+
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Volgende slag" }).click();
+  await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
+
+  const restoredLessonSnapshot = await page.evaluate((seed) => {
     const app = window.BridgeAppTestHooks;
-    const seed = app.createSituationSeed();
     app.startHand({ seed: "lesson-seed-restore", skipFlow: true });
     app.getEls().seedInput.value = seed;
     app.loadSeedFromInput();
@@ -1422,7 +1555,7 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
       currentTrick: state.currentTrick.map((play) => `${play.seat}:${play.card.id}`),
       statusText: document.querySelector("#status").textContent
     };
-  });
+  }, openingLeadSeed);
 
   expect(restoredLessonSnapshot).toEqual({
     seed: "draw-trumps-001",
@@ -1461,6 +1594,8 @@ test("submits structured lesson metadata in feedback payload", async ({ page }) 
   await clickMenuButton(page, "#open-lessons");
   await page.locator(".lesson-finish .lesson-practice-link", { hasText: "Start oefening" }).click();
   await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1/);
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Start aan tafel" }).click();
+  await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Laat West uitkomen" }).click();
   await expect(page.locator("#trick-area .card.played")).toHaveCount(1);
   await expect(page.locator("#dummy-notice")).toContainText("dummy");
 
@@ -1705,7 +1840,7 @@ test("developer bid explanations show the newest call first", async ({ page }) =
       .map((item) => item.textContent);
   });
 
-  expect(labels).toEqual(["West Pas", "Zuid 1♠", "Oost Pas", "Noord 1♥"]);
+  expect(labels).toEqual(["4 West Pas", "3 Zuid 1♠", "2 Oost Pas", "1 Noord 1♥"]);
 });
 
 test("developer bid explanations flag South calls that differ from the heuristic", async ({ page }) => {
@@ -2194,7 +2329,7 @@ test("hides the target card while the play animation flyer moves", async ({ page
   });
 });
 
-test("keeps dummy hidden until the opening lead and shows the play plan only in developer mode", async ({ page }, testInfo) => {
+test("keeps dummy hidden until the opening lead and shows the play plan with AI suggestions or developer mode", async ({ page }, testInfo) => {
   await openFreshApp(page);
   await prepareNorthSouthDeclarerHand(page);
 
@@ -2232,12 +2367,29 @@ test("keeps dummy hidden until the opening lead and shows the play plan only in 
   await expect(page.locator("#dummy-notice")).toContainText("dummy");
   await expect(page.locator("#play-plan-panel")).toBeHidden();
 
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({ guidanceMode: true });
+    app.renderAll();
+  });
+  await expect(page.locator("#play-plan-panel")).toBeVisible();
+  const playPlanAboveHistory = await page.evaluate(
+    () => {
+      const playPlan = document.querySelector("#play-plan-panel");
+      return playPlan?.parentElement?.id === "history-panel" && playPlan.nextElementSibling?.id === "history";
+    }
+  );
+  expect(playPlanAboveHistory).toBe(true);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({ guidanceMode: false });
+    app.renderAll();
+  });
+  await expect(page.locator("#play-plan-panel")).toBeHidden();
+
   await page.evaluate(() => window.BridgeAppTestHooks.setDeveloperMode(true));
   await expect(page.locator("#play-plan-panel")).toBeVisible();
-  const playPlanBeforeBidExplanations = await page.evaluate(
-    () => document.querySelector("#play-plan-panel").nextElementSibling?.id === "bid-explanations"
-  );
-  expect(playPlanBeforeBidExplanations).toBe(true);
 
   await page.locator("#north-hand .card.legal").first().focus();
   await page.keyboard.press("Enter");
@@ -2300,9 +2452,15 @@ test("developer play explanations flag cards that differ from the heuristic", as
   const historyToExplanationGap = await page.evaluate(() => {
     const history = document.querySelector("#history").getBoundingClientRect();
     const explanations = document.querySelector("#play-explanations").getBoundingClientRect();
-    return explanations.top - history.bottom;
+    return {
+      gap: explanations.top - history.bottom,
+      historyHeight: history.height,
+      historyText: document.querySelector("#history").textContent
+    };
   });
-  expect(historyToExplanationGap).toBeLessThanOrEqual(14);
+  expect(historyToExplanationGap.gap).toBeLessThanOrEqual(14);
+  expect(historyToExplanationGap.historyHeight).toBeGreaterThan(80);
+  expect(historyToExplanationGap.historyText).toContain("Slag");
 });
 
 test("can finish a hand and copy or submit a feedback report from the review", async ({ page, context, baseURL }) => {

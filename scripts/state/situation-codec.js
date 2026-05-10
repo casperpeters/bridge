@@ -11,7 +11,7 @@
   const maxSeedLength = 5000;
   const validSeats = new Set(["N", "NORTH", "NOORD", "E", "EAST", "OOST", "S", "SOUTH", "ZUID", "W", "WEST"]);
   const validVulnerabilities = new Set(["none", "NS", "EW", "both"]);
-  const validPhases = new Set(["idle", "bidding", "playing", "complete"]);
+  const validPhases = new Set(["idle", "bidding", "contract-reveal", "playing", "complete"]);
   const validCallPattern = /^(?:P|PASS|PAS|X|DOUBLE|DBL|XX|REDOUBLE|RDBL|[1-7](?:C|D|H|S|NT|SA))$/;
   const validContractPattern = /^[1-7](?:C|D|H|S|NT|SA)(?:XX|X)?$/;
   const validCardPattern = /^(?:10|[2-9TJQKA])(?:C|D|H|S)$/;

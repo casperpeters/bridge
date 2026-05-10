@@ -310,12 +310,26 @@
 .history-panel {
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  grid-template-rows: auto auto auto auto;
   gap: 12px;
-  overflow: hidden;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
-.history-panel:has(.play-explanations:not([hidden])) {
-  grid-template-rows: auto auto minmax(0, 1fr);
+.history-panel .panel-head {
+  grid-row: 1;
 }
 
+.history-panel .play-plan-panel {
+  grid-row: 2;
+  margin-top: 0;
+}
+
+.history-panel .history {
+  grid-row: 3;
+}
+
+.history-panel .play-explanations {
+  grid-row: 4;
+}

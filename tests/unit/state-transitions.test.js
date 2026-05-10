@@ -77,3 +77,40 @@ test("advanceCompletedTrickTransition scores the winner and makes them next lead
   assert.deepEqual(patch.currentTrick, []);
   assert.equal(patch.turnIndex, 3);
 });
+
+test("contract reveal transitions only move when contract context is complete", () => {
+  const contractContext = {
+    contract: { level: 4, strain: "S" },
+    declarer: "South",
+    dummy: "North",
+    leader: "West"
+  };
+
+  assert.equal(transitions.enterContractRevealTransition({ contract: null }), null);
+  assert.deepEqual(transitions.enterContractRevealTransition(contractContext), {
+    phase: "contract-reveal"
+  });
+  assert.equal(transitions.startPlayFromContractRevealTransition({ ...contractContext, phase: "playing" }), null);
+  assert.deepEqual(transitions.startPlayFromContractRevealTransition({ ...contractContext, phase: "contract-reveal" }), {
+    phase: "playing"
+  });
+});
+
+test("acknowledgeLessonBoardStepTransition records each gated lesson step once", () => {
+  const state = { lessonBoardAcknowledged: ["contractIntro"] };
+  const next = transitions.acknowledgeLessonBoardStepTransition(state, {
+    id: "openingLeadIntro",
+    gate: "releaseAutoPlay"
+  });
+
+  assert.deepEqual(next, ["contractIntro", "openingLeadIntro"]);
+  assert.deepEqual(state.lessonBoardAcknowledged, ["contractIntro"]);
+  assert.deepEqual(transitions.acknowledgeLessonBoardStepTransition({ lessonBoardAcknowledged: next }, {
+    id: "openingLeadIntro",
+    gate: "releaseAutoPlay"
+  }), next);
+  assert.deepEqual(transitions.acknowledgeLessonBoardStepTransition({ lessonBoardAcknowledged: next }, {
+    id: "reviewResult",
+    gate: "none"
+  }), next);
+});

@@ -2,7 +2,6 @@
   display: grid;
   align-content: start;
   gap: 8px;
-  overflow: auto;
   min-height: 0;
   padding-right: 2px;
 }
@@ -23,11 +22,14 @@
 
 .history {
   min-height: 0;
-  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding-right: 2px;
+}
+
+.history-panel:has(.play-explanations:not([hidden])) .history {
+  min-height: 88px;
 }
 
 .history .review-trick-table {

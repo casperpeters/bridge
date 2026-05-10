@@ -176,7 +176,7 @@ De publieke herhaalcode is bij voorkeur een compacte `situatieseed:`. Die herste
 
 - `dealSeed`, bordnummer, deler en kwetsbaarheid;
 - oefenhand-context wanneer de seed naar een `practice-hands/` scenario verwijst;
-- fase: bieden, spelen of complete hand;
+- fase: bieden, contract tonen, spelen of complete hand;
 - actuele beurt, inclusief de speler die na herstel aan zet is;
 - volledig biedverloop, inclusief passen, contractbiedingen, doubletten, redoubletten, Stop en Alert;
 - afgeleid contract, leider, dummy en uitkomsthand zodra de veiling klaar is;
@@ -234,7 +234,7 @@ Richtlijn:
 
 De centrale runtime state leeft nu in `scripts/app.js`. Belangrijke velden:
 
-- `phase` - idle, bidding, playing, hand-over enzovoort.
+- `phase` - idle, bidding, contract-reveal, playing, complete.
 - `hands`, `originalHands` - actuele en oorspronkelijke kaarten.
 - `auction`, `contract`, `declarer`, `dummy` - veilingresultaat.
 - `currentTrick`, `trickHistory`, `tricks` - speelverloop.

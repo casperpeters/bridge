@@ -167,6 +167,7 @@ const text = {
   opensAuction: "{seat} opent het bieden.",
   yourCall: "Jij bent aan de beurt om te bieden.",
   fourPasses: "Vier passen. Score 0 op dit bord.",
+  contractReady: "{contract} door {declarer}. Klik of druk op Enter om te spelen.",
   lead: "{leader} komt uit. Leider: {declarer}. Dummy: {dummy}.",
   dummyNoticeDeclaring: "{dummy} is dummy: {declarer} is leider, dus jij speelt nu beide Noord/Zuid-handen.",
   dummyNoticeDefending: "{dummy} is dummy: {declarer} is leider, dus {dummy} ligt open. Jij verdedigt als Zuid.",
