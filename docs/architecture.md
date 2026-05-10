@@ -133,10 +133,10 @@ Aanbevolen eigenaarschap:
 - `rules/card-play.js` - compatibele orchestrator: bepaalt de kaartkeuzevolgorde in `chooseCardPlay`, maar houdt geen tweede handmatige helperexportlijst bij. De entrypoint compose't exports uit de card-play deelmodules automatisch en voegt `chooseCardPlay` toe.
 - `rules/play-plan/common.js` - gedeelde tellingen, winners/losers en helpers.
 - `rules/play-plan/notrump.js` - sans-atout plannen.
-- `rules/play-plan/suit-contract.js` - kleurcontractplannen.
+- `rules/play-plan/suit-contract.js` - composer voor kleurcontractplannen; domeinlogica staat in `rules/play-plan/suit-contract/` voor basis/verliezers, troef-timing, introevers, snits en zijkleur/afgooiplannen.
 - `rules/card-play/common.js` - gedeelde card-play context en result helpers.
 - `rules/card-play/opening-leads.js` - uitkomsten.
-- `rules/card-play/play-plan-following.js` - kaartkeuzes die expliciet het plan volgen.
+- `rules/card-play/play-plan-following.js` - dispatcher voor kaartkeuzes die expliciet het plan volgen; domeinlogica staat in `rules/card-play/play-plan-following/` voor SA, introevers, troeven, zijkleur/afgooien en gedeelde planhelpers.
 - `rules/card-play/declarer-play.js` - leider-specifieke heuristiek.
 - `rules/card-play/defense.js` - basisverdediging.
 

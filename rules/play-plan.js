@@ -82,6 +82,7 @@
     "shortSuitRuffPriorities",
     "longSuitRuffDevelopmentPriorities",
     "suitCrossRuffPriorities",
+    "suitLateCrossRuffPriorities",
     "crossRuffPairScore",
     "longSuitRuffEntryCandidates",
     "longSuitRuffEntryCandidate",
