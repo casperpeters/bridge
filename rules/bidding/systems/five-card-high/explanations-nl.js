@@ -1,6 +1,34 @@
 (function initFiveCardHighBidExplanationsNl(root) {
   "use strict";
 
+  const bridgeRules = root.BridgeRules || null;
+
+  function isPass(bid) {
+    return bridgeRules?.isPass ? bridgeRules.isPass(bid) : root.isPass(bid);
+  }
+
+  function isDouble(bid) {
+    return bridgeRules?.isDouble ? bridgeRules.isDouble(bid) : root.isDouble(bid);
+  }
+
+  function isRedouble(bid) {
+    return bridgeRules?.isRedouble ? bridgeRules.isRedouble(bid) : root.isRedouble(bid);
+  }
+
+  function bidEquals(bid, level, strain) {
+    return bridgeRules?.isContractBid ? bridgeRules.isContractBid(bid) && bid.level === level && bid.strain === strain : root.bidEquals(bid, level, strain);
+  }
+
+  function suitName(suit) {
+    return root.BridgeTextNl?.suits?.[suit] || root.suitName?.(suit) || suit;
+  }
+
+  function t(key, args = {}) {
+    if (typeof root.t === "function") return root.t(key, args);
+    const template = root.BridgeTextNl?.[key] || key;
+    return Object.entries(args).reduce((message, [name, value]) => message.replaceAll(`{${name}}`, value), template);
+  }
+
   function explainBidChoiceResult(result) {
     const ruleName = bidRuleName(result);
     if (isPass(result.bid)) return explainPassChoiceResult(ruleName, result);

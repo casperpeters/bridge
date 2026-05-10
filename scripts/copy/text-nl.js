@@ -17,7 +17,7 @@ const text = {
   guidanceMode: "AI-suggesties",
   playHistoryMode: "Speelgeschiedenis",
   bidExplanations: "Bieduitleg",
-  replayTitle: "Speel opnieuw",
+  replayTitle: "Scoreoverzicht",
   newHand: "Nieuwe hand",
   sameHand: "Zelfde hand",
   quickReview: "Test slagenoverzicht",
@@ -100,7 +100,7 @@ const text = {
   bidBox: "Biedbox",
   bidBoxYourTurn: "Biedbox · jij bent aan zet",
   history: "Speelgeschiedenis",
-  review: "Handoverzicht",
+  review: "Scoreoverzicht",
   openingLead: "Eerste kaart",
   finalContract: "Contract",
   passedOut: "Rondpas",
@@ -121,7 +121,7 @@ const text = {
   auction: "Biedverloop",
   hands: "Handen",
   trickOverview: "Slagenoverzicht",
-  reviewTrickKeyboardHelp: "Developermodus: gebruik \u2190 en \u2192 om door de slagen te lopen.",
+  reviewTrickKeyboardHelp: "Klik op een slagnummer of gebruik \u2190/\u2192 om kaart voor kaart terug te kijken.",
   trickLegendLead: "Uit",
   trickLegendNSWin: "Noord/Zuid wint",
   trickLegendEWWin: "Oost/West wint",
@@ -191,3 +191,5 @@ const text = {
   seats: { North: "Noord", East: "Oost", South: "Zuid", West: "West" },
   suits: { C: "klaveren", D: "ruiten", H: "harten", S: "schoppen", NT: "sans-atout" }
 };
+
+globalThis.BridgeTextNl = text;

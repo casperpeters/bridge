@@ -1,3 +1,41 @@
+(function registerBridgePlayFlow(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerPlayFlow = function registerPlayFlow(runtime) {
+    const { actions, constants, dom, els, helpers, render, rules, state, timers, transitions } = runtime;
+    const { rankLabel, seats, suitSymbols } = constants;
+    const { slotEls } = dom;
+    const bridgeRules = rules;
+    const BridgeStateTransitions = transitions;
+    const {
+      cardText,
+      currentWinningPlay,
+      isLegalCard,
+      legalCards,
+      partnerOf,
+      seatAt,
+      seatName,
+      suitName,
+      t,
+      teamOf
+    } = helpers;
+    const blockingLessonBoardStep = (...args) => actions.blockingLessonBoardStep(...args);
+    const ensurePlayPlan = (...args) => actions.ensurePlayPlan(...args);
+    const finishHand = (...args) => actions.finishHand(...args);
+    const lessonBoardBlocksHumanPlay = (...args) => actions.lessonBoardBlocksHumanPlay(...args);
+    const playPlanReferenceText = (...args) => actions.playPlanReferenceText(...args);
+    const renderGuidance = (...args) => render.renderGuidance(...args);
+    const renderHands = (...args) => render.renderHands(...args);
+    const renderIllegalActionFeedback = (...args) => render.renderIllegalActionFeedback(...args);
+    const renderLessonBanner = (...args) => render.renderLessonBanner(...args);
+    const renderPlayPlan = (...args) => render.renderPlayPlan(...args);
+    const renderTrickAdvanceHint = (...args) => render.renderTrickAdvanceHint(...args);
+    const renderTrickSlotFocus = (...args) => render.renderTrickSlotFocus(...args);
+    const renderAll = (...args) => render.renderAll(...args);
+    const setStatus = (...args) => actions.setStatus(...args);
+
 function autoCompletePlay() {
   let playCount = 0;
   while (state.phase === "playing" && playCount < 60) {
@@ -63,13 +101,17 @@ function continuePlay() {
     setStatus("yourPlay");
     return;
   }
-  const scheduledFlowGeneration = flowGeneration;
+  const scheduledFlowGeneration = timers.flowGeneration;
   window.setTimeout(() => {
-    if (scheduledFlowGeneration !== flowGeneration) return;
+    if (scheduledFlowGeneration !== timers.flowGeneration) return;
     const card = chooseCard(seat);
     if (!card) return;
     playCard(seat, card.id);
-  }, seat === state.dummy ? 480 : 680);
+  }, firstResponseAfterOpeningLead() ? 900 : seat === state.dummy ? 480 : 680);
+}
+
+function firstResponseAfterOpeningLead() {
+  return state.trickHistory.length === 0 && state.currentTrick.length === 1;
 }
 
 function chooseCard(seat) {
@@ -403,11 +445,11 @@ function confidenceName(confidence) {
 function showIllegalCardFeedback(seat, card) {
   state.illegalActionFeedback = illegalCardFeedbackText(seat, card);
   renderIllegalActionFeedback();
-  if (illegalActionFeedbackTimer) window.clearTimeout(illegalActionFeedbackTimer);
-  illegalActionFeedbackTimer = window.setTimeout(() => {
+  if (timers.illegalActionFeedbackTimer) window.clearTimeout(timers.illegalActionFeedbackTimer);
+  timers.illegalActionFeedbackTimer = window.setTimeout(() => {
     state.illegalActionFeedback = null;
     renderIllegalActionFeedback();
-    illegalActionFeedbackTimer = null;
+    timers.illegalActionFeedbackTimer = null;
   }, 2200);
 }
 
@@ -438,7 +480,7 @@ function playCard(seat, cardId) {
   state.illegalActionFeedback = null;
   state.handSuitFocus = null;
   renderIllegalActionFeedback();
-  const animationSource = captureCardPlayAnimationSource(seat, cardId);
+  const animationSource = render.captureCardPlayAnimationSource(seat, cardId);
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
   Object.assign(state, BridgeStateTransitions.applyCardPlayTransition(state, { seat, card, cardId, ruleResult, explanation }));
@@ -457,14 +499,17 @@ function playCard(seat, cardId) {
 
 function renderPlayedCard(seat, card, options = {}) {
   slotEls[seat].innerHTML = "";
-  const cardEl = createCardEl(card, true);
+  const cardEl = render.createCardEl(card, true);
   cardEl.classList.add("played");
+  if (options.reviewPlayback) cardEl.classList.add("review-playback-card");
   slotEls[seat].appendChild(cardEl);
-  animateCardPlayToSlot({
-    source: options.animationSource,
-    targetEl: cardEl,
-    card
-  });
+  if (options.animate !== false) {
+    render.animateCardPlayToSlot({
+      source: options.animationSource,
+      targetEl: cardEl,
+      card
+    });
+  }
 }
 
 function pauseCompletedTrick() {
@@ -477,25 +522,39 @@ function pauseCompletedTrick() {
   renderGuidance();
   renderLessonBanner();
   renderTrickAdvanceHint();
-  const scheduledFlowGeneration = flowGeneration;
+  const scheduledFlowGeneration = timers.flowGeneration;
   window.setTimeout(() => {
-    if (scheduledFlowGeneration !== flowGeneration) return;
+    if (scheduledFlowGeneration !== timers.flowGeneration) return;
     state.trickAdvanceArmed = true;
   }, 0);
 }
 
 function advanceCompletedTrick() {
   if (!state.awaitingTrickAdvance || !state.currentTrick.length) return;
+  if (state.trickClearAnimating) return;
   const winner = state.pendingTrickWinner || currentWinningPlay().seat;
-  Object.assign(state, BridgeStateTransitions.advanceCompletedTrickTransition(state, {
+  const finishAdvance = () => {
+    state.trickClearAnimating = false;
+    Object.assign(state, BridgeStateTransitions.advanceCompletedTrickTransition(state, {
+      winner,
+      winningTeam: teamOf(winner),
+      seats
+    }));
+    clearTrickSlots();
+    setStatus("winsTrick", { seat: winner, number: state.trickHistory.length });
+    renderAll();
+    continuePlay();
+  };
+
+  state.trickClearAnimating = true;
+  state.trickAdvanceArmed = false;
+  const animated = render.animateCompletedTrickToWinner({
+    trickArea: els.trickArea,
+    slotEls,
     winner,
-    winningTeam: teamOf(winner),
-    seats
-  }));
-  clearTrickSlots();
-  setStatus("winsTrick", { seat: winner, number: state.trickHistory.length });
-  renderAll();
-  continuePlay();
+    onComplete: finishAdvance
+  });
+  if (!animated) finishAdvance();
 }
 
 function clearTrickSlots() {
@@ -503,3 +562,29 @@ function clearTrickSlots() {
     slot.innerHTML = "";
   });
 }
+
+    Object.assign(actions, {
+      advanceCompletedTrick,
+      autoCompletePlay,
+      autoPlayCard,
+      chooseCard,
+      chooseCardPlayResult,
+      confidenceName,
+      continuePlay,
+      currentRecommendedCard,
+      explainCardPlay,
+      explainCardPlayResult,
+      illegalCardFeedbackText,
+      isHumanControlledSeat,
+      isSeatVisible,
+      openingLeadHasBeenMade,
+      playCard,
+      pauseCompletedTrick,
+      showIllegalCardFeedback
+    });
+    Object.assign(render, {
+      clearTrickSlots,
+      renderPlayedCard
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

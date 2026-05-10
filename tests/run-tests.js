@@ -7,6 +7,7 @@ require("./unit/score-table.test.js");
 require("./unit/auction.test.js");
 require("./unit/script-order.test.js");
 require("./unit/state-transitions.test.js");
+require("./unit/review-playback.test.js");
 require("./unit/situation-codec.test.js");
 require("./unit/bidding-dispatcher.test.js");
 require("./unit/bridgespelen-concordance.test.js");

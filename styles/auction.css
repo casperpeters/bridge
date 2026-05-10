@@ -24,6 +24,13 @@
 
 .auction-log {
   margin: 6px 0 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.auction-log .review-trick-table-wrap {
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .auction-log .review-trick-table {
@@ -507,6 +514,16 @@
   justify-content: center;
 }
 
+.auction-call[role="button"] {
+  cursor: pointer;
+}
+
+.auction-call[role="button"]:focus-visible {
+  outline: 2px solid rgba(118, 214, 255, 0.72);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
 .auction-call-token {
   min-width: 38px;
   min-height: 26px;
@@ -536,6 +553,8 @@
   display: grid;
   gap: 6px;
   margin: 8px 0 0;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .bid-explanation {
@@ -546,6 +565,9 @@
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.35;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .bid-explanation strong {
@@ -556,6 +578,15 @@
   display: inline-flex;
   gap: 6px;
   align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.bid-explanation-title span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .bid-explanation-index {

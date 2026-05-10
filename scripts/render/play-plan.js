@@ -1,3 +1,14 @@
+(function registerBridgePlayPlanRenderer(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerPlayPlanRenderer = function registerPlayPlanRenderer(runtime) {
+    const { actions, constants, els, helpers, render, rules, state } = runtime;
+    const { rankLabel } = constants;
+    const { formatBid, seatName, suitName, t, teamOf } = helpers;
+    const openingLeadHasBeenMade = () => actions.openingLeadHasBeenMade();
+
 function renderPlayPlan() {
   els.playPlan.hidden = true;
   els.playPlan.innerHTML = "";
@@ -46,7 +57,7 @@ function ensurePlayPlan() {
   if (!canCreatePlayPlan()) return state.playPlan || null;
   const key = playPlanStateKey();
   if (state.playPlan && state.playPlanKey === key) return state.playPlan;
-  state.playPlan = bridgeRules.createPlayPlan({
+  state.playPlan = rules.createPlayPlan({
     declarerHand: state.hands[state.declarer],
     dummyHand: state.hands[state.dummy],
     contract: state.contract,
@@ -339,3 +350,11 @@ function playPlanPriorityBriefText(priority) {
   if (priority.kind === "cashWinners" || priority.kind === "cashSureWinners") return `zekere slagen incasseren`;
   return "de zichtbare planregel";
 }
+
+    Object.assign(actions, {
+      ensurePlayPlan,
+      playPlanReferenceText
+    });
+    Object.assign(render, { renderPlayPlan });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

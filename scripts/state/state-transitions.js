@@ -23,19 +23,63 @@
       currentTrick: [],
       awaitingTrickAdvance: false,
       trickAdvanceArmed: false,
+      trickClearAnimating: false,
       pendingTrickWinner: null,
       tricks: { NS: 0, EW: 0 },
       trickHistory: [],
       reviewTrickCursor: null,
+      reviewCursor: null,
       playExplanations: [],
       playPlan: null,
       playPlanKey: null,
       animateDeal: true,
       finalScore: null,
+      scoreOverviewDismissed: false,
       feedbackStatus: null,
       illegalActionFeedback: null,
       pendingStop: false,
       pendingAlert: false
+    };
+  }
+
+  function applyBidTransition(state, { seat, bid, stop = false, alert = false, bidResult = null, recommendedBidResult = null, seatCount = 4 }) {
+    const call = { seat, bid, stop, alert };
+    if (bidResult) call.bidResult = bidResult;
+    if (recommendedBidResult) call.recommendedBidResult = recommendedBidResult;
+    return {
+      auction: [...state.auction, call],
+      pendingStop: false,
+      pendingAlert: false,
+      turnIndex: (state.turnIndex + 1) % seatCount
+    };
+  }
+
+  function finishAuctionTransition(state, { contract, declarer, dummy, leader, seats }) {
+    return {
+      contract,
+      declarer,
+      dummy,
+      leader,
+      turnIndex: seats.indexOf(leader),
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickAdvanceArmed: false,
+      trickClearAnimating: false,
+      pendingTrickWinner: null
+    };
+  }
+
+  function finishPassedOutAuctionTransition(state, { finalScore }) {
+    return {
+      phase: "complete",
+      scoreOverviewDismissed: false,
+      reviewTrickCursor: null,
+      reviewCursor: null,
+      contract: null,
+      declarer: null,
+      dummy: null,
+      leader: null,
+      finalScore
     };
   }
 
@@ -68,6 +112,7 @@
     return {
       awaitingTrickAdvance: false,
       trickAdvanceArmed: false,
+      trickClearAnimating: false,
       pendingTrickWinner: null,
       tricks: {
         ...state.tricks,
@@ -111,12 +156,26 @@
     return [...acknowledged, step.id];
   }
 
+  function finishHandTransition(state, { finalScore }) {
+    return {
+      phase: "complete",
+      scoreOverviewDismissed: false,
+      reviewTrickCursor: null,
+      reviewCursor: null,
+      finalScore
+    };
+  }
+
   return {
     startPreparedHandTransition,
+    applyBidTransition,
+    finishAuctionTransition,
+    finishPassedOutAuctionTransition,
     applyCardPlayTransition,
     advanceCompletedTrickTransition,
     enterContractRevealTransition,
     startPlayFromContractRevealTransition,
-    acknowledgeLessonBoardStepTransition
+    acknowledgeLessonBoardStepTransition,
+    finishHandTransition
   };
 });

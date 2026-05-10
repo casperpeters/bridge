@@ -1,21 +1,30 @@
+(function registerBridgeContractRevealFlow(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerContractRevealFlow = function registerContractRevealFlow(runtime) {
+    const { actions, constants, els, helpers, render, state, transitions } = runtime;
+    const { seats } = constants;
+    const findDeclarer = (...args) => actions.findDeclarer(...args);
+
 function prepareContractFromAuction(bid) {
-  state.contract = bid;
-  state.declarer = findDeclarer(bid);
-  state.dummy = partnerOf(state.declarer);
-  state.leader = leftOf(state.declarer);
-  state.turnIndex = seats.indexOf(state.leader);
-  state.currentTrick = [];
-  state.awaitingTrickAdvance = false;
-  state.trickAdvanceArmed = false;
-  state.pendingTrickWinner = null;
+  const declarer = findDeclarer(bid);
+  Object.assign(state, transitions.finishAuctionTransition(state, {
+    contract: bid,
+    declarer,
+    dummy: helpers.partnerOf(declarer),
+    leader: helpers.leftOf(declarer),
+    seats
+  }));
 }
 
 function enterContractReveal() {
-  const patch = BridgeStateTransitions.enterContractRevealTransition(state);
+  const patch = transitions.enterContractRevealTransition(state);
   if (!patch) return false;
   Object.assign(state, patch);
-  setStatus("contractReady", { contract: formatBid(state.contract), declarer: state.declarer });
-  renderAll();
+  actions.setStatus("contractReady", { contract: helpers.formatBid(state.contract), declarer: state.declarer });
+  render.renderAll();
   focusContractReveal();
   return true;
 }
@@ -26,11 +35,20 @@ function focusContractReveal() {
 }
 
 function startPlayFromContractReveal() {
-  const patch = BridgeStateTransitions.startPlayFromContractRevealTransition(state);
+  const patch = transitions.startPlayFromContractRevealTransition(state);
   if (!patch) return false;
   Object.assign(state, patch);
-  setStatus("lead", { leader: state.leader, declarer: state.declarer, dummy: state.dummy });
-  renderAll();
-  continuePlay();
+  actions.setStatus("lead", { leader: state.leader, declarer: state.declarer, dummy: state.dummy });
+  render.renderAll();
+  actions.continuePlay();
   return true;
 }
+
+    Object.assign(actions, {
+      enterContractReveal,
+      focusContractReveal,
+      prepareContractFromAuction,
+      startPlayFromContractReveal
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

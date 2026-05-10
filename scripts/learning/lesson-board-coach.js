@@ -1,4 +1,21 @@
-const lessonBoardCoachLessonId = "les-01-wat-is-bridge";
+(function registerBridgeLessonBoardCoach(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+  const lessonBoardCoachLessonId = "les-01-wat-is-bridge";
+
+  modules.registerLessonBoardCoach = function registerLessonBoardCoach(runtime) {
+    const { actions, constants, dom, els, helpers, render, state, transitions } = runtime;
+    const { separatorDot } = constants;
+    const { seatEls, slotEls } = dom;
+    const legalCards = (...args) => helpers.legalCards(...args);
+    const openingLeadHasBeenMade = (...args) => actions.openingLeadHasBeenMade(...args);
+    const isHumanControlledSeat = (...args) => actions.isHumanControlledSeat(...args);
+    const seatAt = (...args) => helpers.seatAt(...args);
+    const t = (...args) => helpers.t(...args);
+    const advanceCompletedTrick = (...args) => actions.advanceCompletedTrick(...args);
+    const continuePlay = (...args) => actions.continuePlay(...args);
+    const renderAll = (...args) => render.renderAll(...args);
 
 function renderLessonBanner() {
   if (!els.lessonBanner) return;
@@ -89,7 +106,7 @@ function lessonBoardStepReady(step) {
 
 function acknowledgeLessonBoardStep(step) {
   if (!step || step.gate === "none") return;
-  state.lessonBoardAcknowledged = BridgeStateTransitions.acknowledgeLessonBoardStepTransition(state, step);
+  state.lessonBoardAcknowledged = transitions.acknowledgeLessonBoardStepTransition(state, step);
   renderAll();
   if (step.gate === "advanceTrick") {
     advanceCompletedTrick();
@@ -171,3 +188,22 @@ function lessonBoardHighlightCards(step) {
   }
   return [];
 }
+
+    Object.assign(actions, {
+      activeLessonBoardStep,
+      acknowledgeLessonBoardStep,
+      blockingLessonBoardStep,
+      lessonBoardBlocksHumanPlay,
+      lessonBoardHighlightCards,
+      lessonBoardHighlightTargets,
+      lessonBoardStepAcknowledged,
+      lessonBoardStepReady,
+      lessonBoardSteps
+    });
+    Object.assign(render, {
+      clearLessonBoardHighlights,
+      renderLessonBanner,
+      renderLessonBoardHighlights
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

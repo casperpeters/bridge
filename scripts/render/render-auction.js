@@ -1,3 +1,34 @@
+(function registerBridgeAuctionRenderer(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerAuctionRenderer = function registerAuctionRenderer(runtime) {
+    const { actions, constants, dom, els, helpers, render, rules, state } = runtime;
+    const { biddingBoxStrains, seats, separatorDot, suitSymbols } = constants;
+    const { seatAuctionEls } = dom;
+    const bridgeRules = rules;
+    const {
+      formatCall,
+      highestBid,
+      isBidHigher,
+      isContractBid,
+      isDouble,
+      isPass,
+      isRedouble,
+      sameCall,
+      seatAt,
+      seatName,
+      t
+    } = helpers;
+    const canDouble = (...args) => actions.canDouble(...args);
+    const canRedouble = (...args) => actions.canRedouble(...args);
+    const chooseRecommendedBidResult = (...args) => actions.chooseRecommendedBidResult(...args);
+    const explainBid = (...args) => actions.explainBid(...args);
+    const makeBid = (...args) => actions.makeBid(...args);
+    const saveSettings = (...args) => actions.saveSettings(...args);
+    const scrollBidExplanationIntoView = (...args) => actions.scrollBidExplanationIntoView(...args);
+
 function renderAuction() {
   els.auctionLog.innerHTML = "";
   renderSeatAuctionCalls();
@@ -30,8 +61,8 @@ function auctionHistoryTable() {
   const cellCount = Math.max(4, offset + state.auction.length + (isAuctionReady() ? 1 : 0));
   const rowCount = Math.ceil(cellCount / 4);
   const callByPosition = new Map();
-  state.auction.forEach((call) => {
-    callByPosition.set(offset + callByPosition.size, call);
+  state.auction.forEach((call, index) => {
+    callByPosition.set(offset + callByPosition.size, { call, index });
   });
 
   for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
@@ -39,8 +70,8 @@ function auctionHistoryTable() {
     for (let seatIndex = 0; seatIndex < headers.length; seatIndex++) {
       const position = rowIndex * 4 + seatIndex;
       const seat = headers[seatIndex];
-      const call = callByPosition.get(position);
-      row.appendChild(auctionHistoryCell(call, position, position < offset, seat));
+      const entry = callByPosition.get(position);
+      row.appendChild(auctionHistoryCell(entry, position, position < offset, seat));
     }
     tbody.appendChild(row);
   }
@@ -50,13 +81,13 @@ function auctionHistoryTable() {
   return wrapper;
 }
 
-function auctionHistoryCell(call, position, isDealerOffset, seat) {
+function auctionHistoryCell(entry, position, isDealerOffset, seat) {
   const cell = document.createElement("td");
   cell.className = "auction-history-cell";
   const nextCallPosition = state.dealerIndex + state.auction.length;
   cell.classList.toggle("auction-active-seat", isAuctionReady() && seatAt(state.turnIndex) === seat && position === nextCallPosition);
-  if (call) {
-    cell.appendChild(auctionCallContent(call));
+  if (entry) {
+    cell.appendChild(auctionCallContent(entry.call, entry.index));
   } else {
     cell.textContent = isDealerOffset ? separatorDot : "-";
   }
@@ -92,9 +123,21 @@ function nextAuctionCallPlaceholder(seat) {
   return placeholder;
 }
 
-function auctionCallContent(call) {
+function auctionCallContent(call, index = null) {
   const wrapper = document.createElement("span");
   wrapper.className = "auction-call";
+  if (Number.isInteger(index)) {
+    wrapper.dataset.bidIndex = String(index);
+    wrapper.setAttribute("role", "button");
+    wrapper.tabIndex = 0;
+    wrapper.setAttribute("aria-label", `Ga naar bieduitleg voor bod ${index + 1}: ${seatName(call.seat)} ${formatCall(call.bid)}`);
+    wrapper.addEventListener("click", () => scrollBidExplanationIntoView(index));
+    wrapper.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      scrollBidExplanationIntoView(index);
+    });
+  }
   if (call.stop) wrapper.appendChild(auctionBadge(t("stop"), "stop"));
   const textEl = document.createElement("span");
   textEl.className = `auction-call-token ${auctionCallStyleClasses(call.bid)}`;
@@ -124,7 +167,8 @@ function auctionBadge(label, kind) {
 }
 
 function renderBidExplanations() {
-  els.bidExplanations.hidden = state.phase !== "bidding" || !state.developerMode || !state.auction.length;
+  const canShowBidExplanations = ["bidding", "contract-reveal", "playing", "complete"].includes(state.phase);
+  els.bidExplanations.hidden = !canShowBidExplanations || !state.developerMode || !state.auction.length;
   els.bidExplanations.innerHTML = "";
   if (els.bidExplanations.hidden) return;
 
@@ -137,6 +181,7 @@ function renderBidExplanations() {
     const index = state.auction.length - 1 - reversedIndex;
     const item = document.createElement("div");
     item.className = "bid-explanation";
+    item.dataset.bidExplanationIndex = String(index);
     const callText = formatCall(call.bid);
     const bidIndex = index + 1;
     const title = document.createElement("strong");
@@ -273,3 +318,11 @@ function appendBidContent(parent, bid, symbolClassName) {
     parent.append(document.createTextNode(" x"));
   }
 }
+
+    Object.assign(render, {
+      appendBidContent,
+      renderAuction,
+      renderBidControls
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

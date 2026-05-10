@@ -1,3 +1,29 @@
+(function registerBridgeReviewRenderer(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerReviewRenderer = function registerReviewRenderer(runtime) {
+    const { actions, constants, els, helpers, render, state } = runtime;
+    const { seats, suitSymbols } = constants;
+    const {
+      cardText,
+      formatBid,
+      formatCall,
+      isContractBid,
+      seatName,
+      suitName,
+      t,
+      teamOf
+    } = helpers;
+    const ensureReviewTrickCursor = (...args) => actions.ensureReviewTrickCursor(...args);
+    const explainBid = (...args) => actions.explainBid(...args);
+    const renderFeedbackStatus = (...args) => render.renderFeedbackStatus(...args);
+    const reviewPlayIsSelected = (...args) => actions.reviewPlayIsSelected(...args);
+    const selectReviewPlayExplanation = (...args) => actions.selectReviewPlayExplanation(...args);
+    const selectReviewTrickNumber = (...args) => actions.selectReviewTrickNumber(...args);
+    const usesStableSidebarLayout = (...args) => actions.usesStableSidebarLayout(...args);
+
 function renderHistory() {
   syncHistoryPanelState();
   els.history.innerHTML = "";
@@ -32,10 +58,17 @@ function renderPlayExplanations() {
 function playExplanationEl(explanation) {
   const item = document.createElement("div");
   item.className = "play-explanation";
+  item.dataset.playExplanationTrick = String(explanation.trick);
+  item.dataset.playExplanationKey = playExplanationKey(explanation.trick, explanation.seat, explanation.card);
   const title = document.createElement("strong");
   title.textContent = `${t("trick")} ${explanation.trick}: ${seatName(explanation.seat)} ${cardText(explanation.card)}`;
   item.append(title, document.createElement("br"), BridgeGlossary.linkifyText(explanation.text));
   return item;
+}
+
+function playExplanationKey(trickNumber, seat, card) {
+  const cardId = typeof card === "string" ? card : card?.id;
+  return `${trickNumber}:${seat}:${cardId || ""}`;
 }
 
 function renderReview() {
@@ -44,49 +77,17 @@ function renderReview() {
   els.reviewPanel.hidden = !complete;
   if (!complete) return;
 
-  const passOut = Boolean(state.finalScore.passOut);
-  const openingPlay = state.trickHistory[0]?.cards[0] || null;
-  const contractText = passOut ? t("passedOut") : `${formatBid(state.contract)} ${t("by")} ${seatName(state.declarer)}`;
-  const resultText = passOut ? t("passOutResult") : t(state.status.args.resultKey, state.status.args.resultArgs || {});
+  const resultText = state.finalScore.passOut ? t("passOutResult") : t(state.status.args.resultKey, state.status.args.resultArgs || {});
 
   els.reviewResult.textContent = resultText;
   els.reviewSummary.innerHTML = "";
-  els.reviewSummary.appendChild(reviewSectionTitle("Samenvatting"));
-  [
-    [t("finalContract"), contractText],
-    [t("declarer"), passOut ? t("none") : seatName(state.declarer)],
-    [t("dummy"), passOut ? t("none") : seatName(state.dummy)],
-    [t("result"), resultText],
-    [t("bridgeScore"), state.finalScore.scoreText],
-    [t("vulnerability"), vulnerabilityName()],
-    [t("openingLead"), openingPlay ? `${seatName(openingPlay.seat)} ${cardText(openingPlay.card)}` : t("none")]
-  ].forEach(([label, value]) => els.reviewSummary.appendChild(reviewRow(label, value)));
-  appendScoreExplanation(passOut, resultText);
-  appendLessonFeedback(passOut, resultText);
-  appendLessonPoints();
-  els.reviewSummary.appendChild(reviewRow(t("board"), state.dealNumber));
-  if (state.developerMode) {
-    els.reviewSummary.appendChild(reviewRow(t("seed"), currentRepeatCode() || t("none")));
-  }
+  els.reviewSummary.hidden = true;
   renderFeedbackStatus();
-  if (state.playPlan) {
-    els.reviewSummary.appendChild(reviewSectionTitle(t("playPlan")));
-    els.reviewSummary.appendChild(reviewRow(t("playPlanGoal"), playPlanGoalText(state.playPlan)));
-    playPlanMetricTexts(state.playPlan).forEach((metric) => {
-      els.reviewSummary.appendChild(reviewRow(t("playPlan"), metric));
-    });
-    if (state.playPlan.priorities?.length) {
-      els.reviewSummary.appendChild(playPlanList(t("playPlanPriorities"), state.playPlan.priorities.map(playPlanPriorityText)));
-    }
-    if (state.playPlan.warnings?.length) {
-      els.reviewSummary.appendChild(playPlanList(t("playPlanWarnings"), state.playPlan.warnings.map(playPlanWarningText), "warning"));
-    }
-  }
 
   els.reviewTricks.innerHTML = "";
   els.reviewTricks.appendChild(reviewSectionTitle(t("trickOverview")));
   const selectedTrickNumber = ensureReviewTrickCursor();
-  if (state.developerMode && state.trickHistory.length) {
+  if (state.trickHistory.length) {
     const hint = document.createElement("p");
     hint.className = "review-trick-keyboard-help";
     hint.textContent = t("reviewTrickKeyboardHelp");
@@ -345,12 +346,22 @@ function reviewTricksTable() {
     const numberCell = document.createElement("th");
     numberCell.scope = "row";
     numberCell.className = "review-trick-number";
-    numberCell.textContent = trick.number;
+    if (state.phase === "complete") {
+      const indexButton = document.createElement("button");
+      indexButton.type = "button";
+      indexButton.className = "review-trick-index-button";
+      indexButton.textContent = trick.number;
+      indexButton.setAttribute("aria-label", `Bekijk slag ${trick.number} vanaf de eerste kaart`);
+      indexButton.addEventListener("click", () => selectReviewTrickNumber(trick.number));
+      numberCell.appendChild(indexButton);
+    } else {
+      numberCell.textContent = trick.number;
+    }
     row.appendChild(numberCell);
 
     const leader = trick.cards[0]?.seat;
     const playsBySeat = new Map(trick.cards.map((play) => [play.seat, play]));
-    seats.forEach((seat) => row.appendChild(reviewTrickCell(playsBySeat.get(seat), seat, leader, trick.winner)));
+    seats.forEach((seat) => row.appendChild(reviewTrickCell(playsBySeat.get(seat), seat, leader, trick.winner, trick.number)));
     tbody.appendChild(row);
   });
   table.appendChild(tbody);
@@ -359,7 +370,7 @@ function reviewTricksTable() {
   return wrapper;
 }
 
-function reviewTrickCell(play, seat, leader, winner) {
+function reviewTrickCell(play, seat, leader, winner, trickNumber) {
   const cell = document.createElement("td");
   cell.className = "review-trick-cell";
   if (seat === leader) cell.classList.add("is-leader");
@@ -368,6 +379,22 @@ function reviewTrickCell(play, seat, leader, winner) {
   }
 
   if (play) {
+    const key = playExplanationKey(trickNumber, seat, play.card);
+    if (reviewPlayIsSelected(trickNumber, seat, play.card)) {
+      cell.classList.add("is-review-play-selected");
+      cell.setAttribute("aria-current", "step");
+    }
+    if (state.developerMode && state.playExplanations.some((explanation) => playExplanationKey(explanation.trick, explanation.seat, explanation.card) === key)) {
+      cell.dataset.playExplanationKey = key;
+      cell.tabIndex = 0;
+      cell.setAttribute("role", "button");
+      cell.addEventListener("click", () => selectReviewPlayExplanation(trickNumber, seat, play.card));
+      cell.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        selectReviewPlayExplanation(trickNumber, seat, play.card);
+      });
+    }
     const card = document.createElement("span");
     card.className = "review-card-pill";
     if (play.card.suit === "D" || play.card.suit === "H") card.classList.add("red");
@@ -404,174 +431,14 @@ function reviewTrickLegend() {
   return legend;
 }
 
-async function copyFeedbackReport() {
-  try {
-    await copyText(buildFeedbackReport());
-    state.feedbackStatus = t("feedbackCopied");
-  } catch {
-    state.feedbackStatus = t("feedbackCopyFailed");
-  }
-  renderFeedbackStatus();
-}
-
-async function submitFeedbackReport(event) {
-  event?.preventDefault();
-  const endpoint = feedbackSubmitEndpoint();
-  if (!endpoint) {
-    state.feedbackStatus = t("feedbackSubmitMissingEndpoint");
-    renderFeedbackStatus();
-    return;
-  }
-
-  setFeedbackSubmitting(true);
-  state.feedbackStatus = t("feedbackSubmitSending");
-  renderFeedbackStatus();
-
-  try {
-    await sendFeedbackReport(endpoint, buildFeedbackPayload());
-    state.feedbackStatus = t("feedbackSubmitSent");
-  } catch {
-    state.feedbackStatus = t("feedbackSubmitFailed");
-  } finally {
-    setFeedbackSubmitting(false);
-  }
-  renderFeedbackStatus();
-}
-
-function feedbackSubmitEndpoint() {
-  return String(globalThis.BridgeFeedbackConfig?.endpoint || "").trim();
-}
-
-function setFeedbackSubmitting(isSubmitting) {
-  if (!els.mailFeedback) return;
-  els.mailFeedback.disabled = isSubmitting;
-  els.mailFeedback.textContent = isSubmitting ? t("feedbackSubmitting") : t("mailFeedback");
-}
-
-async function sendFeedbackReport(endpoint, payload) {
-  await fetch(endpoint, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify(payload)
-  });
-}
-
-function buildFeedbackPayload() {
-  const feedbackTypes = t("feedbackTypes");
-  const type = els.feedbackType.value;
-  const typeLabel = feedbackTypes[type] || type;
-  const repeatCode = currentRepeatCode() || "";
-  const answers = currentFeedbackAnswers();
-  return {
-    source: "bridge-app",
-    type,
-    typeLabel,
-    message: answers.message,
-    feedbackQuestion: answers.primaryLabel,
-    feedbackAnswer: answers.primary,
-    feedbackDetailQuestion: answers.secondaryLabel,
-    feedbackDetail: answers.secondary,
-    report: buildFeedbackReport(),
-    repeatCode,
-    phase: state.phase,
-    phaseLabel: phaseName(state.phase),
-    dealNumber: state.dealNumber || "",
-    vulnerability: state.vulnerability || "",
-    vulnerabilityLabel: vulnerabilityName(),
-    contract: feedbackContractText(),
-    declarer: state.declarer || "",
-    turnSeat: currentFeedbackTurnSeat(),
-    dummyVisible: feedbackDummyVisibility(),
-    lessonId: state.practice?.lessonId || "",
-    practiceHandId: state.practice?.id || "",
-    startMode: currentFeedbackStartMode(),
-    pageUrl: globalThis.location?.href || "",
-    userAgent: globalThis.navigator?.userAgent || "",
-    language: globalThis.navigator?.language || "",
-    createdAt: new Date().toISOString()
+    Object.assign(actions, {
+      playExplanationKey
+    });
+    Object.assign(render, {
+      renderHistory,
+      renderPlayExplanations,
+      renderReview
+    });
   };
-}
+})(typeof globalThis !== "undefined" ? globalThis : this);
 
-function renderFeedbackStatus() {
-  els.feedbackState.textContent = state.feedbackStatus || "";
-}
-
-function buildFeedbackReport() {
-  const feedbackTypes = t("feedbackTypes");
-  const type = feedbackTypes[els.feedbackType.value] || els.feedbackType.value;
-  const answers = currentFeedbackAnswers();
-  const answerLines = [
-    answers.primaryLabel,
-    answers.primary || t("feedbackNoMessage")
-  ];
-  if (answers.secondaryLabel) {
-    answerLines.push("", answers.secondaryLabel, answers.secondary || t("feedbackAnswerMissing"));
-  }
-  return [
-    "## Feedback",
-    "",
-    `Type: ${type}`,
-    ...answerLines,
-    "",
-    `${t("feedbackSituationSeed")}: ${currentRepeatCode() || t("none")}`
-  ].join("\n").trimEnd();
-}
-
-function currentFeedbackAnswers() {
-  const prompts = t("feedbackPrompts") || {};
-  const prompt = prompts[els.feedbackType.value] || prompts.confusion || {};
-  const primaryLabel = prompt.primaryLabel || t("feedbackMessageLabel");
-  const secondaryLabel = prompt.secondaryLabel || "";
-  const primary = els.feedbackMessage.value.trim();
-  const secondary = secondaryLabel ? els.feedbackDetail.value.trim() : "";
-  const message = secondaryLabel
-    ? [
-        `${primaryLabel} ${primary || t("feedbackNoMessage")}`,
-        `${secondaryLabel} ${secondary || t("feedbackAnswerMissing")}`
-      ].join("\n")
-    : primary;
-  return {
-    primaryLabel,
-    primary,
-    secondaryLabel,
-    secondary,
-    message
-  };
-}
-
-function feedbackContractText() {
-  if (state.finalScore?.passOut) return t("passedOut");
-  if (!state.contract) return "";
-  return `${formatBid(state.contract)} ${t("by")} ${seatName(state.declarer)}`;
-}
-
-function phaseName(phase) {
-  return {
-    idle: "Start",
-    bidding: "Bieden",
-    "contract-reveal": "Contract tonen",
-    playing: "Spelen",
-    complete: t("review")
-  }[phase] || phase;
-}
-
-function currentFeedbackTurnSeat() {
-  if (!["bidding", "contract-reveal", "playing"].includes(state.phase)) return "";
-  return seatAt(state.turnIndex);
-}
-
-function feedbackDummyVisibility() {
-  if (!state.contract || !state.dummy) return "N.v.t.";
-  if (state.phase === "complete") return "Ja";
-  if (state.phase === "contract-reveal") return "Nee";
-  if (state.phase !== "playing") return "N.v.t.";
-  return openingLeadHasBeenMade() ? "Ja" : "Nee";
-}
-
-function currentFeedbackStartMode() {
-  if (state.practice?.lessonStartMode === "play") return "direct-play";
-  if (state.practice?.lessonStartMode) return String(state.practice.lessonStartMode);
-  if (state.phase === "playing" && state.contract && !state.auction.length) return "direct-play";
-  if (state.phase === "bidding" || state.phase === "contract-reveal") return "auction";
-  return "";
-}

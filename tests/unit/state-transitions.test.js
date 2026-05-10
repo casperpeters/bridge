@@ -23,6 +23,8 @@ test("startPreparedHandTransition resets volatile game flow state", () => {
   assert.deepEqual(patch.tricks, { NS: 0, EW: 0 });
   assert.equal(patch.practice.id, "demo");
   assert.equal(patch.finalScore, null);
+  assert.equal(patch.scoreOverviewDismissed, false);
+  assert.equal(patch.reviewCursor, null);
   assert.equal(patch.pendingStop, false);
 });
 
@@ -51,6 +53,71 @@ test("applyCardPlayTransition removes the card and records the explanation immut
   assert.equal(patch.playExplanations[0].trick, 2);
   assert.equal(patch.playExplanations[0].text, "Speel de aas.");
   assert.equal(patch.illegalActionFeedback, null);
+});
+
+test("applyBidTransition appends the call and clears pending call flags", () => {
+  const state = {
+    auction: [{ seat: "North", bid: { type: "pass" } }],
+    turnIndex: 2,
+    pendingStop: true,
+    pendingAlert: true
+  };
+  const bid = { level: 1, strain: "S" };
+  const bidResult = { bid, ruleId: "test.bid" };
+
+  const patch = transitions.applyBidTransition(state, {
+    seat: "South",
+    bid,
+    stop: true,
+    alert: true,
+    bidResult
+  });
+
+  assert.equal(patch.auction.length, 2);
+  assert.deepEqual(state.auction, [{ seat: "North", bid: { type: "pass" } }]);
+  assert.equal(patch.auction[1].seat, "South");
+  assert.equal(patch.auction[1].stop, true);
+  assert.equal(patch.auction[1].alert, true);
+  assert.equal(patch.auction[1].bidResult.ruleId, "test.bid");
+  assert.equal(patch.pendingStop, false);
+  assert.equal(patch.pendingAlert, false);
+  assert.equal(patch.turnIndex, 3);
+});
+
+test("finishAuctionTransition stores contract context and opening leader", () => {
+  const contract = { level: 3, strain: "NT" };
+  const patch = transitions.finishAuctionTransition({}, {
+    contract,
+    declarer: "South",
+    dummy: "North",
+    leader: "West",
+    seats: ["North", "East", "South", "West"]
+  });
+
+  assert.equal(patch.contract, contract);
+  assert.equal(patch.declarer, "South");
+  assert.equal(patch.dummy, "North");
+  assert.equal(patch.leader, "West");
+  assert.equal(patch.turnIndex, 3);
+  assert.deepEqual(patch.currentTrick, []);
+  assert.equal(patch.awaitingTrickAdvance, false);
+});
+
+test("finish hand and pass-out transitions mark the hand complete", () => {
+  const passOutScore = { passOut: true, score: 0 };
+  const passOutPatch = transitions.finishPassedOutAuctionTransition({}, { finalScore: passOutScore });
+  assert.equal(passOutPatch.phase, "complete");
+  assert.equal(passOutPatch.contract, null);
+  assert.equal(passOutPatch.scoreOverviewDismissed, false);
+  assert.equal(passOutPatch.reviewCursor, null);
+  assert.equal(passOutPatch.finalScore, passOutScore);
+
+  const finalScore = { score: 420, made: 10 };
+  const handPatch = transitions.finishHandTransition({}, { finalScore });
+  assert.equal(handPatch.phase, "complete");
+  assert.equal(handPatch.scoreOverviewDismissed, false);
+  assert.equal(handPatch.reviewCursor, null);
+  assert.equal(handPatch.finalScore, finalScore);
 });
 
 test("advanceCompletedTrickTransition scores the winner and makes them next leader", () => {

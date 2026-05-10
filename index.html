@@ -93,6 +93,36 @@
             <span class="contract-reveal-hint">Klik of druk op Enter om te spelen.</span>
           </div>
         </div>
+        <div id="replay-panel" class="replay-panel" aria-live="polite" hidden>
+          <div class="replay-reveal-panel">
+            <div class="replay-head">
+              <p id="replay-title" class="replay-title">Scoreoverzicht</p>
+              <button id="replay-close" class="replay-close" type="button" aria-label="Scoreoverzicht sluiten">X</button>
+            </div>
+            <div class="replay-summary">
+              <div class="replay-summary-item replay-contract-card">
+                <span>Contract</span>
+                <strong id="replay-contract">-</strong>
+              </div>
+              <div class="replay-summary-item">
+                <span>Resultaat</span>
+                <strong id="replay-result">-</strong>
+              </div>
+            </div>
+            <div class="replay-score-card">
+              <div class="replay-score-head">
+                <span>Eindscore</span>
+                <button id="replay-score-help" class="replay-score-help" type="button" aria-label="Waarom deze score?" aria-expanded="false" aria-controls="replay-score-explanation">?</button>
+              </div>
+              <strong id="replay-score">-</strong>
+              <div id="replay-score-explanation" class="replay-score-explanation" hidden></div>
+            </div>
+            <div class="replay-actions">
+              <button id="replay-new-hand" type="button">Nieuwe hand</button>
+              <button id="replay-same-hand" type="button">Zelfde hand</button>
+            </div>
+          </div>
+        </div>
         <div class="opponent north">
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
           <div id="north-label" class="seat-label"><span class="seat-label-name">Noord</span> &bull; Partner</div>
@@ -114,13 +144,6 @@
               <div class="trick-slot trick-south" data-seat="Zuid"></div>
             </div>
             <div id="mobile-bidding-slot" class="table-bidding-slot" aria-hidden="true"></div>
-            <div id="replay-panel" class="replay-panel" hidden>
-              <p id="replay-title">Speel opnieuw</p>
-              <div class="replay-actions">
-                <button id="replay-new-hand" type="button">Nieuwe hand</button>
-                <button id="replay-same-hand" type="button">Zelfde hand</button>
-              </div>
-            </div>
             <div class="table-help-stack">
               <div id="status" class="status sr-only" aria-live="polite">Deel een nieuwe hand om te starten.</div>
               <div id="dummy-notice" class="table-note" aria-live="polite" hidden></div>
@@ -176,9 +199,9 @@
           <div id="play-explanations" class="play-explanations" hidden></div>
         </section>
 
-        <section id="review-panel" class="review-panel" aria-label="Handoverzicht" hidden>
+        <section id="review-panel" class="review-panel" aria-label="Scoreoverzicht" hidden>
           <div class="panel-head">
-            <h2 id="review-title">Handoverzicht</h2>
+            <h2 id="review-title">Scoreoverzicht</h2>
             <span id="review-result"></span>
           </div>
           <div id="review-summary" class="review-summary"></div>
@@ -373,11 +396,18 @@
     <script src="scripts/learning/bid-explanations.js"></script>
     <script src="scripts/learning/glossary.js"></script>
     <script src="scripts/learning/lessons.js"></script>
+    <script src="scripts/app/runtime.js"></script>
+    <script src="scripts/app/helpers.js"></script>
     <script src="scripts/state/settings.js"></script>
+    <script src="scripts/ui/menu.js"></script>
+    <script src="scripts/ui/dialogs.js"></script>
     <script src="scripts/state/situation-codec.js"></script>
     <script src="scripts/state/seed.js"></script>
     <script src="scripts/state/state-transitions.js"></script>
+    <script src="scripts/state/review-playback.js"></script>
     <script src="scripts/learning/lesson-board-coach.js"></script>
+    <script src="scripts/learning/lesson-start.js"></script>
+    <script src="scripts/feedback/controller.js"></script>
     <script src="scripts/render/score-table.js"></script>
     <script src="scripts/render/play-plan.js"></script>
     <script src="scripts/render/contract-reveal.js"></script>
@@ -385,9 +415,14 @@
     <script src="scripts/render/card-animation.js"></script>
     <script src="scripts/render/render-auction.js"></script>
     <script src="scripts/render/render-review.js"></script>
+    <script src="scripts/render/render-app.js"></script>
     <script src="scripts/flow/contract-reveal-flow.js"></script>
     <script src="scripts/flow/auction-flow.js"></script>
+    <script src="scripts/flow/hand-finish-flow.js"></script>
     <script src="scripts/flow/play-flow.js"></script>
+    <script src="scripts/app/hand-start.js"></script>
+    <script src="scripts/app/bootstrap.js"></script>
+    <script src="scripts/app/public-api.js"></script>
     <script src="scripts/app.js"></script>
   </body>
 </html>

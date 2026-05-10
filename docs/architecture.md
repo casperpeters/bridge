@@ -161,14 +161,26 @@ Verantwoordelijk voor:
 
 Huidige kern:
 
-- `scripts/app.js` - bootstrap, gedeelde state, DOM refs, shared helpers en top-level orchestration.
-- `scripts/flow/` - veilingflow, kaartspelflow, legaliteit, automatic play en slagvoortgang.
-- `scripts/render/` - rendering per UI-deel, zichtbare speelplantekst en scoretabel-UI.
-- `scripts/state/` - pure state-transitions, localStorage settings, `situatieseed:` codec, herhaalcode en herstel.
-- `scripts/learning/` - lessen, standalone lespagina, woordenlijst en bieduitleg voor AI-suggesties/review.
+- `scripts/app.js` - dunne bootstrap-shell: dependencies controleren, runtime maken, modules registreren, bootstrap starten, public API publiceren en de eerste hand/les starten.
+- `scripts/app/runtime.js` - bouwt `BridgeAppRuntime` met `runtime.state`, `runtime.els`, `runtime.dom`, `runtime.constants`, `runtime.rules`, `runtime.transitions`, `runtime.media` en `runtime.timers`.
+- `scripts/app/helpers.js` - gedeelde formatting-, seat-, kaart-, bied- en scorehelpers op `runtime.helpers`.
+- `scripts/app/hand-start.js`, `scripts/app/bootstrap.js`, `scripts/app/public-api.js` - handstart/replay, top-level DOM-listeners en compatibele `BridgeApp`/`BridgeAppTestHooks`.
+- `scripts/flow/` - veilingflow, contract reveal, kaartspelflow, legaliteit, automatic play, slagvoortgang en handafronding.
+- `scripts/render/` - rendering per UI-deel, render-orchestratie, layout/status/guidance, zichtbare speelplantekst en scoretabel-UI.
+- `scripts/state/` - pure state-transitions, afgeleide review-playback, localStorage settings, `situatieseed:` codec, herhaalcode en herstel.
+- `scripts/ui/` - kleine UI-controllers voor app-menu, instellingen en dialogs.
+- `scripts/feedback/` - feedbackdialog, rapportpayload, kopieer- en submitflow.
+- `scripts/learning/` - lessen, lesson-start vanuit URL/oefenhand, standalone lespagina, woordenlijst en bieduitleg voor AI-suggesties/review.
 - `scripts/copy/text-nl.js` - Nederlandse UI-copy.
 
-Richtlijn: `scripts/app.js` mag bootstrap en gedeelde infrastructuur blijven, maar nieuwe UI-flow hoort waar mogelijk in de passende submap. Als een flow groeit, eerst extracten naar een gerichte module in plaats van `app.js` groter maken.
+Runtime/factory-contract:
+
+- Browsermodules registreren zichzelf onder `globalThis.BridgeAppModules`, bijvoorbeeld `BridgeAppModules.registerPlayFlow(runtime)`.
+- Modules lezen app-context via de ontvangen `runtime`; geen impliciete vrije `state`, `els`, `seats`, `slotEls`, `seatEls`, timers of layoutqueries.
+- Flowmodules vullen vooral `runtime.actions`; rendermodules vullen vooral `runtime.render`; gedeelde kleine helpers horen in `runtime.helpers`.
+- Public API-namen blijven compatibel via `BridgeApp`, `BridgeAppContext` en `BridgeAppTestHooks`, maar intern is `runtime` de enige app-context.
+
+Richtlijn: `scripts/app.js` blijft alleen de shell. Nieuwe UI-flow hoort in de passende submap en registreert zichzelf via het runtime/factory-contract.
 
 #### Herhaalcode-herstelcontract
 
@@ -232,12 +244,13 @@ Richtlijn:
 
 ## State model
 
-De centrale runtime state leeft nu in `scripts/app.js`. Belangrijke velden:
+De centrale runtime state wordt gemaakt in `scripts/app/runtime.js` en leeft tijdens de app-run op `runtime.state`. Belangrijke velden:
 
 - `phase` - idle, bidding, contract-reveal, playing, complete.
 - `hands`, `originalHands` - actuele en oorspronkelijke kaarten.
 - `auction`, `contract`, `declarer`, `dummy` - veilingresultaat.
 - `currentTrick`, `trickHistory`, `tricks` - speelverloop.
+- `reviewCursor` - afgeleide kaart-voor-kaart replaypositie na afloop; verandert geen echte hand-, slag- of scorestate.
 - `playPlan`, `playExplanations` - uitlegbare speelkeuzes.
 - `dealSeed`, `practice`, `feedbackStatus` - reproduceerbaarheid en feedback.
 - `developerMode`, `guidanceMode`, `showPlayHistory` - UX-instellingen.
@@ -253,6 +266,7 @@ user action
 ```
 
 Nieuwe kernacties moeten bij voorkeur eerst als pure transition ontworpen worden, daarna pas aan DOM/UI gekoppeld worden.
+Huidige eerste transitions staan in `scripts/state/state-transitions.js` voor handstart, bieding toepassen, veilingcontext afronden, rondpas, kaart spelen, slag doorschuiven en hand afronden.
 
 ## Uitleg-architectuur
 
@@ -319,8 +333,8 @@ Zie `DEPLOY.md` voor hostingdetails.
 
 ## Belangrijkste architectuurrisico's
 
-1. `scripts/app.js` blijft een zwaartepunt.  
-   Mitigatie: nieuwe flows naar gerichte modules; pure transitions uitbreiden.
+1. Scriptvolgorde en runtime-registraties blijven fragiel door de build-vrije architectuur.  
+   Mitigatie: `script-order.test.js`, duidelijke `BridgeAppModules.register...` functies en harde dependency-errors in `scripts/app.js`.
 
 2. Biedprofielbestanden worden groot, vooral `rebids.js`, `competitive.js` en `explanations-nl.js`.  
    Mitigatie: splitsen per auction family wanneer eraan gewerkt wordt, niet als losse megarewrite.
@@ -328,8 +342,8 @@ Zie `DEPLOY.md` voor hostingdetails.
 3. Uitleg kan losraken van engine-regels.  
    Mitigatie: `rule-copy-coverage.test.js` bewaakt dat geteste `ruleId`s een Nederlands uitlegpad houden.
 
-4. Scriptvolgorde is fragiel door build-vrije architectuur.  
-   Mitigatie: `script-order.test.js` en stabiele facade via `bridge-rules.js`.
+4. Public API en test hooks kunnen ongemerkt afwijken van browsermodules.  
+   Mitigatie: `scripts/app/public-api.js` als enige public API-builder en browser-smoke met `BridgeAppTestHooks`.
 
 5. Beginner-UX kan overladen raken door developer/testfunctionaliteit.  
    Mitigatie: normale flow compact houden; geavanceerde uitleg in developer mode, review, lessen of woordenlijst.
@@ -362,6 +376,6 @@ Zie `DEPLOY.md` voor hostingdetails.
 
 1. Bespreek of deze laagindeling klopt als gewenste richting.
 2. Voeg een klein `docs/decisions.md` toe voor architectuurbesluiten, bijvoorbeeld build-vrij blijven en facade stabiel houden.
-3. Splits toekomstige uitbreidingen van `scripts/app.js` standaard naar gerichte modules.
+3. Houd toekomstige app-uitbreidingen aan het runtime/factory-contract en voorkom nieuwe impliciete app-globals.
 4. Splits grote Vijfkaart Hoog-bestanden alleen wanneer een concreet roadmapitem dat gebied raakt.
 5. Houd nieuwe `ruleId`-fixtures gekoppeld aan Nederlandse uitleg, zodat de coverage-test nuttig blijft.

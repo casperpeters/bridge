@@ -1,3 +1,34 @@
+(function registerBridgeAuctionFlow(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerAuctionFlow = function registerAuctionFlow(runtime) {
+    const { actions, constants, helpers, render, rules, state, timers, transitions } = runtime;
+    const { seats, separatorDot } = constants;
+    const bridgeRules = rules;
+    const BridgeStateTransitions = transitions;
+    const {
+      calculateBridgeScore,
+      formatBid,
+      highestBid,
+      highestBidCall,
+      isBidHigher,
+      isContractBid,
+      isDouble,
+      isPass,
+      isRedouble,
+      normalizeBid,
+      sameCall,
+      seatAt,
+      t,
+      teamOf
+    } = helpers;
+    const enterContractReveal = (...args) => actions.enterContractReveal(...args);
+    const prepareContractFromAuction = (...args) => actions.prepareContractFromAuction(...args);
+    const renderAll = (...args) => render.renderAll(...args);
+    const setStatus = (...args) => actions.setStatus(...args);
+
 function continueAuction() {
   if (state.phase !== "bidding") return;
   if (state.animateDeal) return;
@@ -11,9 +42,9 @@ function continueAuction() {
     setStatus("yourCall");
     return;
   }
-  const scheduledFlowGeneration = flowGeneration;
+  const scheduledFlowGeneration = timers.flowGeneration;
   window.setTimeout(() => {
-    if (scheduledFlowGeneration !== flowGeneration) return;
+    if (scheduledFlowGeneration !== timers.flowGeneration) return;
     const bidResult = chooseBidResult(seat);
     makeBid(seat, bidResult.bid, bidResult);
   }, 560);
@@ -35,10 +66,7 @@ function makeBid(seat, bid, bidResult = null) {
   };
   if (bidResult && sameCall(bidResult.bid, typedBid)) call.bidResult = bidResult;
   if (bidResult && !sameCall(bidResult.bid, typedBid)) call.recommendedBidResult = bidResult;
-  state.auction.push(call);
-  state.pendingStop = false;
-  state.pendingAlert = false;
-  state.turnIndex = (state.turnIndex + 1) % 4;
+  Object.assign(state, BridgeStateTransitions.applyBidTransition(state, { ...call, seatCount: seats.length }));
   renderAll();
   continueAuction();
 }
@@ -99,17 +127,11 @@ function finishAuction() {
 }
 
 function finishPassedOutHand() {
-  state.phase = "complete";
-  state.contract = null;
-  state.declarer = null;
-  state.dummy = null;
-  state.leader = null;
-  state.finalScore = calculateBridgeScore({
-    contract: null
-  });
-  state.finalScore.scoreText = `${t("northSouth")} 0 ${separatorDot} ${t("eastWest")} 0`;
-  state.finalScore.made = 0;
-  state.finalScore.defenders = 0;
+  const finalScore = calculateBridgeScore({ contract: null });
+  finalScore.scoreText = `${t("northSouth")} 0 ${separatorDot} ${t("eastWest")} 0`;
+  finalScore.made = 0;
+  finalScore.defenders = 0;
+  Object.assign(state, BridgeStateTransitions.finishPassedOutAuctionTransition(state, { finalScore }));
   setStatus("fourPasses");
   renderAll();
 }
@@ -119,14 +141,14 @@ function autoCompleteAuction({ revealContract = false } = {}) {
   while (state.phase === "bidding" && !auctionComplete() && callCount < 80) {
     const seat = seatAt(state.turnIndex);
     const bidResult = legalAutoBidResult(seat);
-    state.auction.push({
+    Object.assign(state, BridgeStateTransitions.applyBidTransition(state, {
       seat,
       bid: normalizeBid(bidResult.bid),
       bidResult,
       stop: false,
-      alert: false
-    });
-    state.turnIndex = (state.turnIndex + 1) % 4;
+      alert: false,
+      seatCount: seats.length
+    }));
     callCount += 1;
   }
   if (state.phase !== "bidding" || !auctionComplete()) return;
@@ -164,3 +186,24 @@ function legalAutoBidResult(seat) {
 function findDeclarer(contract) {
   return bridgeRules.findDeclarer(state.auction, contract);
 }
+
+    Object.assign(actions, {
+      auctionComplete,
+      autoCompleteAuction,
+      bidEquals,
+      canDouble,
+      canRedouble,
+      chooseBid,
+      chooseBidResult,
+      chooseRecommendedBid,
+      chooseRecommendedBidResult,
+      continueAuction,
+      findDeclarer,
+      finishAuction,
+      finishPassedOutHand,
+      legalAutoBid,
+      legalAutoBidResult,
+      makeBid
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

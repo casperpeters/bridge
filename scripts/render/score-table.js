@@ -1,6 +1,15 @@
+(function registerBridgeScoreTable(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+  const scoreTableSuitSymbols = { C: "\u2663", D: "\u2666", H: "\u2665", S: "\u2660" };
+
+  modules.registerScoreTable = function registerScoreTable(runtime) {
+    const { render, rules } = runtime;
+
 function renderScoreTable() {
-  if (!bridgeRules.getScoreTableData) return;
-  const data = bridgeRules.getScoreTableData();
+  if (!rules.getScoreTableData) return;
+  const data = rules.getScoreTableData();
   renderContractScoreTable(data.contractRows);
   renderOvertrickScoreTable(data.overtrickRows);
   renderUndertrickScoreTable(data.undertrickRows);
@@ -124,4 +133,6 @@ function scoreValueCell(label, value) {
   return cell;
 }
 
-const scoreTableSuitSymbols = { C: "\u2663", D: "\u2666", H: "\u2665", S: "\u2660" };
+    Object.assign(render, { renderScoreTable });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

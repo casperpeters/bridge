@@ -1,15 +1,27 @@
+(function registerBridgeHandsRenderer(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerHandsRenderer = function registerHandsRenderer(runtime) {
+    const { actions, constants, dom, helpers, render, state } = runtime;
+    const { handSuitOrder, rankLabel, rankOrder, seats, suitSymbols } = constants;
+    const { seatEls } = dom;
+
 function renderHands() {
-  const recommended = state.guidanceMode ? currentRecommendedCard() : null;
+  const recommended = state.guidanceMode ? actions.currentRecommendedCard() : null;
+  const playback = actions.currentReviewPlayback();
   for (const seat of seats) {
     seatEls[seat].innerHTML = "";
-    const activePlayHand = state.phase === "playing" && !state.awaitingTrickAdvance && seatAt(state.turnIndex) === seat;
-    const humanControlled = isHumanControlledSeat(seat) && state.phase === "playing";
+    const activePlayHand = state.phase === "playing" && !state.awaitingTrickAdvance && helpers.seatAt(state.turnIndex) === seat;
+    const activeReviewHand = playback?.activeSeat === seat;
+    const humanControlled = actions.isHumanControlledSeat(seat) && state.phase === "playing";
     seatEls[seat].classList.toggle("playable", humanControlled);
-    seatEls[seat].classList.toggle("active-play-hand", activePlayHand);
-    seatEls[seat].classList.toggle("inactive-play-hand", state.phase === "playing" && !activePlayHand);
+    seatEls[seat].classList.toggle("active-play-hand", activePlayHand || activeReviewHand);
+    seatEls[seat].classList.toggle("inactive-play-hand", (state.phase === "playing" && !activePlayHand) || (Boolean(playback?.activeSeat) && !activeReviewHand));
     const complete = state.phase === "complete";
-    const visible = state.developerMode || complete || isSeatVisible(seat);
-    const sourceHand = complete ? state.originalHands[seat] : state.hands[seat];
+    const visible = state.developerMode || complete || actions.isSeatVisible(seat);
+    const sourceHand = playback ? playback.hands[seat] : complete ? state.originalHands[seat] : state.hands[seat];
     const cards = sortedHandCards(sourceHand || []);
     const suitFocus = visible ? activeHandSuitFocus(seat, cards) : null;
     seatEls[seat].classList.toggle("suit-focus-active", Boolean(suitFocus));
@@ -26,7 +38,7 @@ function renderHands() {
       });
     }
   }
-  lockDealAnimationHands();
+  actions.lockDealAnimationHands();
 }
 
 function renderVisibleHandCards(seat, cards, recommended, suitFocus = null) {
@@ -68,33 +80,33 @@ function createHandCardEl(seat, card, visible, index, recommended) {
   if (!state.awaitingTrickAdvance && state.currentTrick.length < 4 && recommended?.seat === seat && recommended.card.id === card.id) {
     cardEl.classList.add("recommended-card");
   }
-  if (visible && isHumanControlledSeat(seat) && state.phase === "playing" && !state.awaitingTrickAdvance) {
-    const legal = isLegalCard(seat, card);
-    const lessonBlocked = lessonBoardBlocksHumanPlay(seat);
+  if (visible && actions.isHumanControlledSeat(seat) && state.phase === "playing" && !state.awaitingTrickAdvance) {
+    const legal = helpers.isLegalCard(seat, card);
+    const lessonBlocked = actions.lessonBoardBlocksHumanPlay(seat);
     cardEl.classList.add(legal ? "legal" : "illegal");
     cardEl.classList.toggle("lesson-play-blocked", lessonBlocked);
-    if (seatAt(state.turnIndex) === seat) {
+    if (helpers.seatAt(state.turnIndex) === seat) {
       if (!lessonBlocked) cardEl.tabIndex = 0;
       cardEl.addEventListener("click", (event) => {
         event.stopPropagation();
         if (lessonBlocked) return;
-        if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
-        if (legal) playCard(seat, card.id);
-        else showIllegalCardFeedback(seat, card);
+        if (shouldFocusSuitBeforePlay(seat, card)) return actions.focusHandSuit(seat, card.suit);
+        if (legal) actions.playCard(seat, card.id);
+        else actions.showIllegalCardFeedback(seat, card);
       });
       cardEl.addEventListener("keydown", (event) => {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
         if (lessonBlocked) return;
-        if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
-        if (legal) playCard(seat, card.id);
-        else showIllegalCardFeedback(seat, card);
+        if (shouldFocusSuitBeforePlay(seat, card)) return actions.focusHandSuit(seat, card.suit);
+        if (legal) actions.playCard(seat, card.id);
+        else actions.showIllegalCardFeedback(seat, card);
       });
     } else {
       cardEl.addEventListener("click", (event) => {
         event.stopPropagation();
-        if (shouldFocusSuitBeforePlay(seat, card)) return focusHandSuit(seat, card.suit);
-        showIllegalCardFeedback(seat, card);
+        if (shouldFocusSuitBeforePlay(seat, card)) return actions.focusHandSuit(seat, card.suit);
+        actions.showIllegalCardFeedback(seat, card);
       });
     }
   }
@@ -102,13 +114,13 @@ function createHandCardEl(seat, card, visible, index, recommended) {
 }
 
 function activeHandSuitFocus(seat, cards) {
-  if (!isMobileLayout() || state.handSuitFocus?.seat !== seat) return null;
+  if (!actions.isMobileLayout() || state.handSuitFocus?.seat !== seat) return null;
   const suit = state.handSuitFocus.suit;
   return cards.some((card) => card.suit === suit) ? suit : null;
 }
 
 function shouldFocusSuitBeforePlay(seat, card) {
-  if (!isMobileLayout() || state.phase !== "playing") return false;
+  if (!actions.isMobileLayout() || state.phase !== "playing") return false;
   if (state.handSuitFocus?.seat === seat && state.handSuitFocus.suit === card.suit) return false;
   return seat === "South" || seat === "North";
 }
@@ -146,7 +158,7 @@ function createEmptySuitEl(suit) {
   emptyEl.className = "suit-empty";
   if (suit === "D" || suit === "H") emptyEl.classList.add("red");
   emptyEl.textContent = suitSymbols[suit];
-  emptyEl.setAttribute("aria-label", `geen ${suitName(suit)}`);
+  emptyEl.setAttribute("aria-label", `geen ${helpers.suitName(suit)}`);
   return emptyEl;
 }
 
@@ -174,6 +186,13 @@ function createCardEl(card, visible = true) {
     <div class="playing-card-suit">${suitSymbols[card.suit]}</div>
     <div class="playing-card-mini">${label}${suitSymbols[card.suit]}</div>
   `;
-  cardEl.setAttribute("aria-label", `${label} ${suitName(card.suit)}`);
+  cardEl.setAttribute("aria-label", `${label} ${helpers.suitName(card.suit)}`);
   return cardEl;
 }
+
+    Object.assign(render, {
+      createCardEl,
+      renderHands
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);

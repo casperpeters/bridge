@@ -184,29 +184,242 @@
 
 .replay-panel {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 4;
-  width: min(320px, calc(100% - 24px));
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(224, 194, 95, 0.45);
-  border-radius: 8px;
-  background: rgba(22, 35, 28, 0.92);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
-  padding: 13px;
+  inset: 0;
+  z-index: 10;
   display: grid;
-  gap: 10px;
-  text-align: center;
+  place-items: center;
+  padding: clamp(14px, 3vw, 28px);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(224, 194, 95, 0.24), rgba(224, 194, 95, 0) 35%),
+    radial-gradient(circle at 18% 18%, rgba(96, 197, 185, 0.26), rgba(96, 197, 185, 0) 30%),
+    linear-gradient(145deg, rgba(8, 18, 16, 0.6), rgba(8, 18, 16, 0.84));
+  backdrop-filter: blur(3px);
+  overflow: hidden;
 }
 
-.replay-panel p {
+.replay-panel::before {
+  position: absolute;
+  right: max(12px, 8%);
+  top: max(10px, 8%);
+  color: rgba(247, 244, 232, 0.1);
+  content: attr(data-strain-symbol);
+  font-size: clamp(6rem, 22vw, 14rem);
+  font-weight: 950;
+  line-height: 1;
+  transform: rotate(8deg);
+  animation: contractRevealSuitFloat 1600ms cubic-bezier(0.2, 0.8, 0.22, 1) both;
+  pointer-events: none;
+}
+
+.replay-panel::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px solid rgba(224, 194, 95, 0.26);
+  border-radius: 999px;
+  opacity: 0.8;
+  animation: contractRevealRing 1300ms ease both;
+  pointer-events: none;
+}
+
+.replay-reveal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  border: 1px solid rgba(224, 194, 95, 0.52);
+  border-radius: 8px;
+  background:
+    linear-gradient(160deg, rgba(37, 46, 38, 0.96), rgba(17, 37, 33, 0.96)),
+    rgba(24, 32, 28, 0.98);
+  box-shadow:
+    0 28px 60px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: clamp(16px, 3.5vw, 26px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  overflow: hidden;
+  animation: contractRevealPanelIn 620ms cubic-bezier(0.2, 0.84, 0.22, 1) both;
+}
+
+.replay-reveal-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.16) 44%, transparent 64%);
+  transform: translateX(-115%);
+  animation: contractRevealSweep 1200ms 180ms ease both;
+  pointer-events: none;
+}
+
+.replay-reveal-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.replay-head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.replay-title {
+  grid-column: 2;
   margin: 0;
+  color: var(--accent-2);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.replay-close {
+  grid-column: 3;
+  justify-self: end;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  border-radius: 50%;
+  border-color: rgba(224, 194, 95, 0.42);
+  background: rgba(224, 194, 95, 0.1);
   color: var(--ink);
-  font-size: 1rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.replay-close:hover,
+.replay-close:focus-visible {
+  border-color: rgba(224, 194, 95, 0.78);
+  background: rgba(224, 194, 95, 0.18);
+}
+
+.replay-summary {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 8px;
+}
+
+.replay-summary-item,
+.replay-score-card {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--ink);
+  padding: 8px 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.replay-summary-item span,
+.replay-score-card span {
+  color: rgba(247, 244, 232, 0.72);
+  font-size: 0.68rem;
   font-weight: 900;
+  text-transform: uppercase;
+}
+
+.replay-summary-item strong {
+  color: var(--ink);
+  font-size: clamp(0.98rem, 2.3vw, 1.22rem);
+  font-weight: 780;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+
+.replay-contract-card strong {
+  color: #ffb6a8;
+  text-shadow: 0 0 18px rgba(223, 87, 72, 0.22);
+}
+
+.replay-score-card {
+  border-color: rgba(224, 194, 95, 0.42);
+  background: rgba(224, 194, 95, 0.12);
+  padding: 10px 12px;
+}
+
+.replay-score-card.is-positive {
+  border-color: rgba(85, 213, 126, 0.62);
+  background: rgba(85, 213, 126, 0.12);
+}
+
+.replay-score-card.is-negative {
+  border-color: rgba(231, 97, 97, 0.62);
+  background: rgba(231, 97, 97, 0.12);
+}
+
+.replay-score-head {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.replay-score-help {
+  width: 23px;
+  height: 23px;
+  min-height: 23px;
+  border-radius: 50%;
+  border-color: rgba(224, 194, 95, 0.42);
+  background: rgba(224, 194, 95, 0.12);
+  color: var(--ink);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.78rem;
+  font-weight: 640;
+  line-height: 1;
+}
+
+.replay-score-help:hover,
+.replay-score-help:focus-visible {
+  border-color: rgba(224, 194, 95, 0.78);
+  background: rgba(224, 194, 95, 0.18);
+}
+
+.replay-score-card strong {
+  color: var(--ink);
+  font-size: clamp(2.6rem, 10vw, 4.8rem);
+  font-weight: 950;
+  line-height: 0.95;
+  text-shadow: 0 0 24px rgba(224, 194, 95, 0.22);
+  overflow-wrap: anywhere;
+}
+
+.replay-score-card.is-positive strong {
+  color: #bdf4cb;
+  text-shadow: 0 0 24px rgba(85, 213, 126, 0.22);
+}
+
+.replay-score-card.is-negative strong {
+  color: #ffb6a8;
+  text-shadow: 0 0 24px rgba(223, 87, 72, 0.28);
+}
+
+.replay-score-explanation {
+  border-top: 1px solid rgba(247, 244, 232, 0.14);
+  color: rgba(247, 244, 232, 0.82);
+  font-size: 0.8rem;
+  line-height: 1.38;
+  padding-top: 8px;
+  text-align: left;
 }
 
 .replay-actions {
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -217,6 +430,32 @@
   min-height: 38px;
   padding: 0 10px;
   font-weight: 900;
+}
+
+@media (max-width: 760px) {
+  .replay-reveal-panel {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .replay-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .replay-summary-item,
+  .replay-score-card {
+    padding: 7px 9px;
+  }
+
+  .replay-score-card strong {
+    font-size: clamp(2.1rem, 12vw, 3.1rem);
+  }
+
+  .replay-actions button {
+    padding: 0 6px;
+    font-size: 0.78rem;
+    line-height: 1.05;
+  }
 }
 
 .contract-reveal {
@@ -393,6 +632,7 @@
 
 .guidance-panel {
   width: 100%;
+  min-width: 0;
   border: 1px solid rgba(224, 194, 95, 0.34);
   border-radius: 8px;
   background: rgba(224, 194, 95, 0.1);
@@ -402,6 +642,7 @@
   gap: 3px;
   font-size: 0.84rem;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .guidance-panel strong {
@@ -640,18 +881,49 @@
 }
 
 .trick-slot.pending-trick-winner::after {
-  border-color: rgba(224, 194, 95, 0.96);
-  opacity: 1;
-  box-shadow:
-    0 0 0 2px rgba(19, 104, 63, 0.7),
-    0 0 22px rgba(224, 194, 95, 0.42);
+  border-color: rgba(224, 194, 95, 0);
+  opacity: 0;
+  box-shadow: none;
 }
 
 .trick-slot.pending-trick-winner .card.played {
+  animation: winnerCardGlowBreathe 1500ms ease-in-out infinite;
+  overflow: hidden;
   transform: translateY(-8px);
   box-shadow:
     0 18px 28px rgba(0, 0, 0, 0.34),
-    0 0 0 3px rgba(224, 194, 95, 0.92);
+    0 0 0 3px rgba(224, 194, 95, 0.92),
+    0 0 20px rgba(224, 194, 95, 0.34);
+}
+
+.trick-slot.pending-trick-winner .card.played::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      112deg,
+      transparent 0%,
+      transparent 30%,
+      rgba(255, 242, 166, 0.16) 40%,
+      rgba(255, 221, 82, 0.86) 48%,
+      rgba(255, 255, 235, 0.72) 54%,
+      rgba(255, 228, 96, 0.24) 62%,
+      transparent 74%,
+      transparent 100%
+    );
+  opacity: 0.88;
+  pointer-events: none;
+  transform: translateX(-130%);
+  animation: winnerCardShineSweep 1500ms ease-in-out infinite;
+}
+
+@media (max-width: 760px) {
+  .trick-north.pending-trick-winner .card.played {
+    transform: none;
+  }
 }
 
 .trick-slot.active-trick-slot,
@@ -834,10 +1106,41 @@
   margin: 0;
 }
 
+.card.played.played-card-settled {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+
 .card.card-animation-target {
   animation: none;
   opacity: 0;
   transform: none;
+}
+
+.card.played.played-card-settled.card-animation-target {
+  opacity: 0;
+}
+
+.trick-slot.pending-trick-winner .card.played.trick-card-clearing,
+.card.played.trick-card-clearing {
+  animation: none;
+  opacity: 0;
+  pointer-events: none;
+  transform:
+    translate(var(--trick-clear-x, 0), var(--trick-clear-y, 0))
+    rotate(var(--trick-clear-rotate, 0deg))
+    scale(0.88);
+  transition:
+    transform 360ms cubic-bezier(0.18, 0.82, 0.24, 1),
+    opacity 260ms ease;
+  transition-delay: var(--trick-clear-delay, 0ms);
+  z-index: 8;
+}
+
+.trick-slot.pending-trick-winner .card.played.trick-card-clearing::before {
+  animation: none;
+  opacity: 0;
 }
 
 .card-play-flyer {
@@ -973,9 +1276,38 @@
   }
 }
 
+@keyframes winnerCardGlowBreathe {
+  0%, 100% {
+    box-shadow:
+      0 18px 28px rgba(0, 0, 0, 0.34),
+      0 0 0 3px rgba(224, 194, 95, 0.94),
+      0 0 22px rgba(224, 194, 95, 0.42),
+      0 0 44px rgba(224, 194, 95, 0.16);
+  }
+
+  50% {
+    box-shadow:
+      0 18px 28px rgba(0, 0, 0, 0.34),
+      0 0 0 3px rgba(224, 194, 95, 1),
+      0 0 34px rgba(224, 194, 95, 0.72),
+      0 0 64px rgba(224, 194, 95, 0.28);
+  }
+}
+
+@keyframes winnerCardShineSweep {
+  0%, 24% {
+    transform: translateX(-130%);
+  }
+
+  58%, 100% {
+    transform: translateX(130%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card,
-  .card.played {
+  .card.played,
+  .trick-slot.pending-trick-winner .card.played {
     animation: none;
     opacity: 1;
     transform: none;
@@ -986,16 +1318,31 @@
     transition: none;
   }
 
+  .card.played.trick-card-clearing {
+    transition: none;
+  }
+
+  .trick-slot.pending-trick-winner .card.played::before {
+    animation: none;
+    opacity: 0;
+  }
+
   .contract-reveal,
   .contract-reveal::before,
   .contract-reveal::after,
   .contract-reveal-panel,
-  .contract-reveal-panel::before {
+  .contract-reveal-panel::before,
+  .replay-panel,
+  .replay-panel::before,
+  .replay-panel::after,
+  .replay-reveal-panel,
+  .replay-reveal-panel::before {
     animation: none;
     transition: none;
   }
 
-  .contract-reveal-panel::before {
+  .contract-reveal-panel::before,
+  .replay-reveal-panel::before {
     display: none;
   }
 }
@@ -1012,6 +1359,9 @@
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.4;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .play-plan-title {

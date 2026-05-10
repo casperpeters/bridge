@@ -1,7 +1,58 @@
-const situationCodec = globalThis.BridgeSituationCodec;
-if (!situationCodec) throw new Error("situation-codec.js must load before seed.js");
-const normalizeSeed = situationCodec.normalizeSeed;
-const isSituationSeed = situationCodec.isSituationSeed;
+(function registerBridgeSeedController(root) {
+  "use strict";
+
+  const modules = root.BridgeAppModules = root.BridgeAppModules || {};
+
+  modules.registerSeed = function registerSeed(runtime) {
+    const situationCodec = root.BridgeSituationCodec;
+    if (!situationCodec) throw new Error("situation-codec.js must load before seed.js");
+
+    const { actions, constants, els, helpers, render, rules, state, transitions } = runtime;
+    const { seats, separatorDot } = constants;
+    const bridgeRules = rules;
+    const BridgeStateTransitions = transitions;
+    const normalizeSeed = situationCodec.normalizeSeed;
+    const isSituationSeed = situationCodec.isSituationSeed;
+    const {
+      calculateBridgeScore,
+      currentWinningPlay,
+      dealHands,
+      dealerIndexForDeal,
+      formatBid,
+      highestBid,
+      isContractBid,
+      isDouble,
+      isLegalCard,
+      isPass,
+      isRedouble,
+      leftOf,
+      partnerOf,
+      sameCall,
+      seatAt,
+      t,
+      teamOf,
+      vulnerabilityForDeal
+    } = helpers;
+    const auctionComplete = (...args) => actions.auctionComplete(...args);
+    const chooseBidResult = (...args) => actions.chooseBidResult(...args);
+    const chooseCardPlayResult = (...args) => actions.chooseCardPlayResult(...args);
+    const clearTrickSlots = (...args) => render.clearTrickSlots(...args);
+    const ensurePlayPlan = (...args) => actions.ensurePlayPlan(...args);
+    const explainCardPlay = (...args) => actions.explainCardPlay(...args);
+    const finalScoreForCurrentContract = (...args) => actions.finalScoreForCurrentContract(...args);
+    const focusContractReveal = (...args) => actions.focusContractReveal(...args);
+    const isHumanControlledSeat = (...args) => actions.isHumanControlledSeat(...args);
+    const openingLeadHasBeenMade = (...args) => actions.openingLeadHasBeenMade(...args);
+    const practiceStateFromScenario = (...args) => actions.practiceStateFromScenario(...args);
+    const prepareContractFromAuction = (...args) => actions.prepareContractFromAuction(...args);
+    const renderAll = (...args) => render.renderAll(...args);
+    const renderPlayedCard = (...args) => render.renderPlayedCard(...args);
+    const renderTrickAdvanceHint = (...args) => render.renderTrickAdvanceHint(...args);
+    const renderTrickSlotFocus = (...args) => render.renderTrickSlotFocus(...args);
+    const setStatus = (...args) => actions.setStatus(...args);
+    const startHand = (...args) => actions.startHand(...args);
+    const startPracticeHand = (...args) => actions.startPracticeHand(...args);
+    const startPreparedHand = (...args) => actions.startPreparedHand(...args);
 
 function loadSeedFromInput() {
   const seed = normalizeSeed(els.seedInput.value);
@@ -155,8 +206,10 @@ function restoreSituationAuction(auction, sourcePhase = "") {
     };
     if (bidResult && sameCall(bidResult.bid, bid)) call.bidResult = bidResult;
     if (bidResult && !sameCall(bidResult.bid, bid)) call.recommendedBidResult = bidResult;
-    state.auction.push(call);
-    state.turnIndex = (state.turnIndex + 1) % seats.length;
+    Object.assign(state, BridgeStateTransitions.applyBidTransition(state, {
+      ...call,
+      seatCount: seats.length
+    }));
   }
 
   if (!auctionComplete()) {
@@ -166,15 +219,11 @@ function restoreSituationAuction(auction, sourcePhase = "") {
 
   const bid = highestBid();
   if (!bid) {
-    state.phase = "complete";
-    state.contract = null;
-    state.declarer = null;
-    state.dummy = null;
-    state.leader = null;
-    state.finalScore = calculateBridgeScore({ contract: null });
-    state.finalScore.scoreText = `${t("northSouth")} 0 ${separatorDot} ${t("eastWest")} 0`;
-    state.finalScore.made = 0;
-    state.finalScore.defenders = 0;
+    const finalScore = calculateBridgeScore({ contract: null });
+    finalScore.scoreText = `${t("northSouth")} 0 ${separatorDot} ${t("eastWest")} 0`;
+    finalScore.made = 0;
+    finalScore.defenders = 0;
+    Object.assign(state, BridgeStateTransitions.finishPassedOutAuctionTransition(state, { finalScore }));
     return;
   }
 
@@ -254,9 +303,10 @@ function completeRestoredTrick() {
 }
 
 function finishRestoredHand() {
-  state.phase = "complete";
   if (!state.contract) return;
-  recomputeFinalScore();
+  const finalScore = finalScoreForCurrentContract();
+  if (!finalScore) return;
+  Object.assign(state, BridgeStateTransitions.finishHandTransition(state, { finalScore }));
   const needed = state.contract.level + 6;
   const made = state.finalScore.made;
   const resultKey = made >= needed ? "made" : "down";
@@ -411,3 +461,20 @@ function renderSeedControls() {
   els.copySeed.disabled = !repeatCode;
   els.seedDescription.textContent = state.seedMessage || t("seedHelp");
 }
+
+    Object.assign(actions, {
+      copyCurrentSeed,
+      copyText,
+      createDealSeed,
+      createSituationSeed,
+      currentRepeatCode,
+      isSituationSeed,
+      loadSeedFromInput,
+      normalizeSeed,
+      startSituationSeed
+    });
+    Object.assign(render, {
+      renderSeedControls
+    });
+  };
+})(typeof globalThis !== "undefined" ? globalThis : this);
