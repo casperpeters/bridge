@@ -19,6 +19,7 @@
     suits,
     compareLowCards,
     lowestCard,
+    teamOf,
     partnerOf
   } = core;
   const { beats } = playMechanics;
@@ -173,6 +174,7 @@
 
       const winningTrumps = trumpCards.filter((card) => beats(card, winning.card, leadSuit, trump));
       if (!winningTrumps.length) return null;
+      if (teamOf(winning.seat) !== teamOf(seat)) return null;
 
       const card = lowestCard(discardCards);
       if (!card) return null;

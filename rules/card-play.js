@@ -61,6 +61,7 @@
     chooseReturnPartnerLeadSuit,
     chooseSafeDefensiveWinner,
     chooseTrumpSwitchAgainstDummyRuff,
+    chooseAvoidUnsupportedHonorUnderDummy,
     chooseOpeningLeadAttitudeSignal,
     chooseThirdHandHighOverLowLead,
     chooseThirdHandUnblockHonor,
@@ -158,6 +159,17 @@
           trump
         });
         if (safeDefensiveWinner) return withPlayPlanFallback(safeDefensiveWinner, planDecision);
+
+        const avoidUnsupportedHonorUnderDummy = chooseAvoidUnsupportedHonorUnderDummy({
+          legal,
+          dummyHand,
+          trickHistory,
+          currentTrick,
+          seat,
+          declarer,
+          trump
+        });
+        if (avoidUnsupportedHonorUnderDummy) return withPlayPlanFallback(avoidUnsupportedHonorUnderDummy, planDecision);
 
         return withPlayPlanFallback(
           chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead, auction }),

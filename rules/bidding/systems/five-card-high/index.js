@@ -160,6 +160,7 @@
     openerAfterNotrumpResponseRuleName,
     openerRebidAfterNewSuitFiveCardHigh,
     isSingleRaiseInviteFiveCardHigh,
+    isAcceptedMajorRaiseGameFiveCardHigh,
     rebidResponderAfterSingleRaiseInviteFiveCardHigh,
     rebidResponderAfterOneNotrumpFiveCardHigh,
     rebidResponderAfterTwoNotrumpFiveCardHigh,
@@ -379,6 +380,19 @@
             category: "continuation",
             partnerSuit: openerRebidCall.bid.strain,
             support: shape.counts[openerRebidCall.bid.strain] || 0
+          });
+        }
+        if (
+          openingCall?.seat === partnerOf(seat) &&
+          isAcceptedMajorRaiseGameFiveCardHigh?.(openingCall?.bid, responseCall?.bid, openerRebidCall?.bid)
+        ) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.responderAfterAcceptedMajorRaiseGame", "basic", "Pass because opener accepted the major-suit invite by bidding game; responder should not raise to the five-level without slam interest.", {
+            ...base,
+            category: "continuation",
+            suit: openingCall.bid.strain,
+            partnerSuit: openingCall.bid.strain,
+            support: shape.counts[openingCall.bid.strain] || 0,
+            range: "noSlamInterest"
           });
         }
         const openerTransferSuit = openingCall?.seat === seat && bidEquals(openingCall?.bid, 1, "NT")

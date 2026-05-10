@@ -2018,11 +2018,14 @@ test("chooseCardPlay discards the planned loser while partner's side winner is c
   assert.equal(result.action, "discardLoserOnWinner");
 });
 
-test("chooseCardPlay avoids an unnecessary ruff with the long trump hand", () => {
+test("chooseCardPlay discards low when partner is already winning instead of overruffing with the long trump hand", () => {
   const result = rules.chooseCardPlay({
     hand: hand("AH", "KH", "QH", "2D"),
     partnerHand: hand("TH", "9H", "3C"),
-    currentTrick: [{ seat: "West", card: card("5C") }],
+    currentTrick: [
+      { seat: "West", card: card("5C") },
+      { seat: "North", card: card("9H") }
+    ],
     seat: "South",
     declarer: "South",
     dummy: "North",
@@ -2031,7 +2034,65 @@ test("chooseCardPlay avoids an unnecessary ruff with the long trump hand", () =>
   });
 
   assert.equal(result.card.id, "2D");
-  assert.equal(result.ruleId, "avoidLongHandRuff");
-  assert.equal(result.action, "discardInsteadOfLongHandRuff");
-  assert.equal(result.longSeat, "South");
+  assert.equal(result.ruleId, "partnerWinningLow");
+});
+
+test("chooseCardPlay ruffs cheaply instead of avoiding the long-hand ruff when the trick would be lost", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AS", "KS", "4S", "6H", "5H", "4H"),
+    partnerHand: hand("JS", "8S", "TH", "8C"),
+    currentTrick: [
+      { seat: "West", card: card("6D") },
+      { seat: "North", card: card("7D") }
+    ],
+    seat: "East",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 5, strain: "H" },
+    trump: "H",
+    playPlan: {
+      priorities: [{
+        kind: "cashWinners",
+        confidence: "basic",
+        suit: "S",
+        winnerCount: 2,
+        cashableWinners: 2,
+        cashRanks: ["A", "K"],
+        timing: "afterTrumps"
+      }]
+    }
+  });
+
+  assert.equal(result.card.id, "4H");
+  assert.equal(result.ruleId, "cheapestWinner");
+});
+
+test("chooseCardPlay wins the current trick before cashing a planned side winner", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("AS", "5H"),
+    partnerHand: hand("JS", "TH"),
+    currentTrick: [
+      { seat: "West", card: card("5D") },
+      { seat: "North", card: card("8D") }
+    ],
+    seat: "East",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 5, strain: "H" },
+    trump: "H",
+    playPlan: {
+      priorities: [{
+        kind: "cashWinners",
+        confidence: "basic",
+        suit: "S",
+        winnerCount: 1,
+        cashableWinners: 1,
+        cashRanks: ["A"],
+        timing: "afterTrumps"
+      }]
+    }
+  });
+
+  assert.equal(result.card.id, "5H");
+  assert.equal(result.ruleId, "cheapestWinner");
 });

@@ -187,6 +187,97 @@ test("chooseCardPlay returns partner's opening lead suit when a defender wins th
   assert.equal(result.leadRank, "4");
 });
 
+test("chooseCardPlay avoids a loose honor lead under a visible dummy honor mid-hand", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("5S", "QC", "TC", "7C", "9D", "4D"),
+    dummyHand: hand("9S", "6S", "TH", "KC", "5C", "7D"),
+    currentTrick: [],
+    trickHistory: [
+      {
+        number: 1,
+        winner: "North",
+        cards: [
+          { seat: "West", card: card("7S") },
+          { seat: "North", card: card("AS") },
+          { seat: "East", card: card("4S") },
+          { seat: "South", card: card("2S") }
+        ]
+      },
+      {
+        number: 2,
+        winner: "North",
+        cards: [
+          { seat: "North", card: card("8H") },
+          { seat: "East", card: card("4H") },
+          { seat: "South", card: card("3H") },
+          { seat: "West", card: card("2H") }
+        ]
+      },
+      {
+        number: 3,
+        winner: "North",
+        cards: [
+          { seat: "North", card: card("9H") },
+          { seat: "East", card: card("5H") },
+          { seat: "South", card: card("7H") },
+          { seat: "West", card: card("6H") }
+        ]
+      },
+      {
+        number: 4,
+        winner: "East",
+        cards: [
+          { seat: "North", card: card("KH") },
+          { seat: "East", card: card("AH") },
+          { seat: "South", card: card("JH") },
+          { seat: "West", card: card("3D") }
+        ]
+      },
+      {
+        number: 5,
+        winner: "North",
+        cards: [
+          { seat: "East", card: card("8S") },
+          { seat: "South", card: card("TS") },
+          { seat: "West", card: card("3S") },
+          { seat: "North", card: card("KS") }
+        ]
+      },
+      {
+        number: 6,
+        winner: "West",
+        cards: [
+          { seat: "North", card: card("5D") },
+          { seat: "East", card: card("JD") },
+          { seat: "South", card: card("QD") },
+          { seat: "West", card: card("AD") }
+        ]
+      },
+      {
+        number: 7,
+        winner: "West",
+        cards: [
+          { seat: "West", card: card("AC") },
+          { seat: "North", card: card("3C") },
+          { seat: "East", card: card("8C") },
+          { seat: "South", card: card("2C") }
+        ]
+      }
+    ],
+    seat: "West",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 2, strain: "H" },
+    trump: "H"
+  });
+
+  assert.equal(result.card.id, "7C");
+  assert.equal(result.ruleId, "avoidUnsupportedHonorUnderDummy");
+  assert.equal(result.avoidedSuit, "C");
+  assert.equal(result.avoidedHonor, "Q");
+  assert.equal(result.dummyHonor, "K");
+});
+
 test("chooseCardPlay returns partner's opening lead suit in suit contracts too", () => {
   const result = rules.chooseCardPlay({
     hand: hand("9H", "7H", "AC", "2S"),
