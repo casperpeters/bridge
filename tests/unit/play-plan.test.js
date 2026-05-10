@@ -11,6 +11,117 @@ const {
   chooseFiveCardHigh,
   chooseFiveCardHighResult
 } = require("./harness.js");
+const playPlanRules = require("../../rules/play-plan.js");
+
+function reportedLateCrossRuffTricks() {
+  return [
+    {
+      number: 1,
+      winner: "North",
+      cards: [
+        { seat: "North", card: card("AH") },
+        { seat: "East", card: card("3H") },
+        { seat: "South", card: card("4H") },
+        { seat: "West", card: card("QH") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "East",
+      cards: [
+        { seat: "North", card: card("6D") },
+        { seat: "East", card: card("9D") },
+        { seat: "South", card: card("3D") },
+        { seat: "West", card: card("7D") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "East",
+      cards: [
+        { seat: "East", card: card("JH") },
+        { seat: "South", card: card("5H") },
+        { seat: "West", card: card("KH") },
+        { seat: "North", card: card("2H") }
+      ]
+    },
+    {
+      number: 4,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("AD") },
+        { seat: "North", card: card("TD") },
+        { seat: "East", card: card("2D") },
+        { seat: "South", card: card("2S") }
+      ]
+    },
+    {
+      number: 5,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("JS") },
+        { seat: "North", card: card("4S") },
+        { seat: "East", card: card("KS") },
+        { seat: "South", card: card("AS") }
+      ]
+    },
+    {
+      number: 6,
+      winner: "East",
+      cards: [
+        { seat: "South", card: card("6H") },
+        { seat: "West", card: card("3S") },
+        { seat: "North", card: card("3C") },
+        { seat: "East", card: card("7H") }
+      ]
+    },
+    {
+      number: 7,
+      winner: "South",
+      cards: [
+        { seat: "East", card: card("9C") },
+        { seat: "South", card: card("KC") },
+        { seat: "West", card: card("8S") },
+        { seat: "North", card: card("4C") }
+      ]
+    },
+    {
+      number: 8,
+      winner: "South",
+      cards: [
+        { seat: "South", card: card("9H") },
+        { seat: "West", card: card("9S") },
+        { seat: "North", card: card("5C") },
+        { seat: "East", card: card("TH") }
+      ]
+    }
+  ];
+}
+
+function lateCrossRuffTrumpHistory() {
+  return [
+    {
+      number: 1,
+      winner: "West",
+      cards: [
+        { seat: "North", card: card("AD") },
+        { seat: "East", card: card("TD") },
+        { seat: "South", card: card("9D") },
+        { seat: "West", card: card("7D") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "West",
+      cards: [
+        { seat: "North", card: card("6D") },
+        { seat: "East", card: card("3D") },
+        { seat: "South", card: card("2D") },
+        { seat: "West", card: card("3H") }
+      ]
+    }
+  ];
+}
 
 test("createPlayPlan returns null until contract and dummy hand are known", () => {
   assert.equal(rules.createPlayPlan({
@@ -754,6 +865,35 @@ test("createPlayPlan delays drawing trumps to unblock a side suit first", () => 
   assert.equal(result.ruleId, "playPlan.cashWinners");
 });
 
+test("suitCashPriorities keeps the same cash-winner shape through the shared winner helper", () => {
+  const priorities = playPlanRules.suitCashPriorities(
+    hand("AC", "AH", "2S"),
+    hand("KC", "QC", "JC", "AD"),
+    "S",
+    "South",
+    "North",
+    []
+  );
+
+  const clubs = priorities.find((item) => item.suit === "C");
+  assert.deepEqual(clubs, {
+    kind: "cashWinners",
+    confidence: "basic",
+    suit: "C",
+    winnerCount: 4,
+    cashableWinners: 1,
+    cashRanks: ["A"],
+    blocked: true,
+    firstSeat: "South",
+    targetSeat: "North",
+    entrySuit: "D",
+    entryRank: "A",
+    strandedRanks: ["K", "Q", "J"],
+    timing: "unblockBeforeEntry",
+    score: 73
+  });
+});
+
 test("createPlayPlan delays trumps to discard an attacked-suit loser on side winners", () => {
   const plan = rules.createPlayPlan({
     declarerHand: hand("AS", "KS", "QS", "JS", "9S", "2H", "3H", "KD", "QD", "JD", "AC", "6C", "4C"),
@@ -797,6 +937,113 @@ test("createPlayPlan chooses a cross ruff before drawing trumps", () => {
   assert.ok(crossRuff.crossSuits.some((item) => item.suit === "D" && item.longSeat === "South" && item.shortSeat === "North"));
   assert.equal(trumps.timing, "afterCrossRuff");
   assert.equal(trumps.delayReason, "crossRuff");
+});
+
+test("createPlayPlan finds a late cross ruff when defenders have no trumps left", () => {
+  const trickHistory = reportedLateCrossRuffTricks();
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("TS", "KD", "QD", "JD", "8D"),
+    dummyHand: hand("8H", "2C", "5D", "4D"),
+    contract: { level: 3, strain: "D" },
+    declarer: "West",
+    dummy: "East",
+    trickHistory,
+    currentTrick: [
+      { seat: "East", card: card("8C") },
+      { seat: "South", card: card("6C") }
+    ]
+  });
+
+  const lateCrossRuff = plan.priorities.find((item) => item.kind === "lateCrossRuff");
+  assert.ok(lateCrossRuff);
+  assert.equal(plan.priorities[0].kind, "lateCrossRuff");
+  assert.equal(lateCrossRuff.defendersRemainingTrumps, 0);
+  assert.equal(lateCrossRuff.currentSuit, "C");
+  assert.equal(lateCrossRuff.nextSuit, "S");
+  assert.ok(lateCrossRuff.crossSuits.some((item) => (
+    item.suit === "C" &&
+    item.longSeat === "East" &&
+    item.shortSeat === "West" &&
+    item.leadCardIds.includes("8C") &&
+    item.leadCardIds.includes("2C")
+  )));
+  assert.ok(lateCrossRuff.crossSuits.some((item) => (
+    item.suit === "S" &&
+    item.longSeat === "West" &&
+    item.shortSeat === "East" &&
+    item.leadCardIds.includes("TS")
+  )));
+});
+
+test("createPlayPlan adds safe side winners before a late cross ruff", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("TS", "AH", "KD", "QD", "JD", "8D"),
+    dummyHand: hand("2C", "2H", "5D", "4D"),
+    contract: { level: 3, strain: "D" },
+    declarer: "West",
+    dummy: "East",
+    trickHistory: lateCrossRuffTrumpHistory()
+  });
+
+  const lateCrossRuff = plan.priorities.find((item) => item.kind === "lateCrossRuff");
+  assert.ok(lateCrossRuff);
+  const cash = lateCrossRuff.cashFirst.find((item) => item.cardId === "AH");
+  assert.ok(cash);
+  assert.equal(cash.suit, "H");
+  assert.equal(cash.rank, "A");
+  assert.equal(cash.seat, "West");
+  assert.equal(cash.reason, "sideWinner");
+});
+
+test("createPlayPlan can cash a surplus winner in a late-crossruff suit", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("TS", "KD", "QD", "JD", "8D"),
+    dummyHand: hand("AC", "2C", "5D", "4D"),
+    contract: { level: 3, strain: "D" },
+    declarer: "West",
+    dummy: "East",
+    trickHistory: lateCrossRuffTrumpHistory()
+  });
+
+  const lateCrossRuff = plan.priorities.find((item) => item.kind === "lateCrossRuff");
+  assert.ok(lateCrossRuff);
+  const cash = lateCrossRuff.cashFirst.find((item) => item.cardId === "AC");
+  assert.ok(cash);
+  assert.equal(cash.suit, "C");
+  assert.equal(cash.seat, "East");
+  assert.equal(cash.reason, "surplusCrossRuffWinner");
+});
+
+test("createPlayPlan preserves the only card that feeds a late cross ruff", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("TS", "KD", "QD", "JD", "8D"),
+    dummyHand: hand("AC", "5D", "4D"),
+    contract: { level: 3, strain: "D" },
+    declarer: "West",
+    dummy: "East",
+    trickHistory: lateCrossRuffTrumpHistory()
+  });
+
+  const lateCrossRuff = plan.priorities.find((item) => item.kind === "lateCrossRuff");
+  assert.ok(lateCrossRuff);
+  assert.ok(!lateCrossRuff.cashFirst.some((item) => item.cardId === "AC"));
+});
+
+test("createPlayPlan skips late cross ruff when defenders can still hold trump", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("TS", "KD", "QD", "JD", "8D"),
+    dummyHand: hand("8H", "2C", "5D"),
+    contract: { level: 3, strain: "D" },
+    declarer: "West",
+    dummy: "East",
+    trickHistory: reportedLateCrossRuffTricks(),
+    currentTrick: [
+      { seat: "East", card: card("8C") },
+      { seat: "South", card: card("6C") }
+    ]
+  });
+
+  assert.ok(!plan.priorities.some((item) => item.kind === "lateCrossRuff"));
 });
 
 test("createPlayPlan skips cross ruff without high trump control", () => {

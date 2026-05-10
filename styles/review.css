@@ -183,6 +183,14 @@
   background: rgba(255, 255, 255, 0.045);
 }
 
+.review-trick-overview {
+  overflow-x: hidden;
+}
+
+.review-trick-overview .review-trick-table {
+  min-width: 0;
+}
+
 .review-trick-legend {
   display: flex;
   flex-wrap: wrap;

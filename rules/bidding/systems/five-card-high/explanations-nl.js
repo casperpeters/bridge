@@ -153,7 +153,7 @@
       case "response.newSuitOverPreempt":
         return `nieuwe kleur tegenover partners preempt, met eigen kleurkwaliteit. ${handFactsText({ ruleName, result })}`;
       case "response.raise":
-        return `steun voor partners ${suitName(result.partnerSuit)}. ${handFactsText({ ruleName, result })}`;
+        return responseRaiseDetail(ruleName, result);
       case "response.notrump":
         return `gebalanceerd antwoord zonder betere fit of nieuwe kleur. ${handFactsText({ ruleName, result })}`;
       case "response.newSuit":
@@ -539,6 +539,52 @@
     }
     return `natuurlijk antwoord in ${suitName(result.suit)} met voldoende waarden. ${handFactsText({ ruleName, result })}`;
   }
+
+  function responseRaiseDetail(ruleName, result) {
+    if (result?.partnerSuit === "H" || result?.partnerSuit === "S") {
+      const suit = suitName(result.partnerSuit);
+      const fitText = result.knownFit && Number.isInteger(result.combinedTrumpLength)
+        ? `partner belooft minstens een ${result.partnerMinTrumpLength}-kaart, dus met jouw ${result.support}-kaart is er samen minstens een ${result.combinedTrumpLength}-kaart fit`
+        : `je hebt ${result.support || 0} kaart(en) steun`;
+      const thresholdText = result.raiseLabel === "game"
+        ? "Bij steun voor een 1H/1S-opening is de grove ladder: 2 hoog met 6-9 fitpunten, 3 hoog met 10-11 fitpunten, en direct 4 hoog met 12+ fitpunten."
+        : "Bij steun voor een 1H/1S-opening bepaalt de fitpuntentelling of je laag blijft, inviteert of de manche biedt.";
+      const chosenText = responseRaiseChosenText(result);
+      const passedHandText = result.hcp < 12 && result.raiseLabel === "game"
+        ? "Dat de hand eerder geen opening was, is niet tegenstrijdig: tegenover partners opening mag de bekende fit worden meegeteld."
+        : "";
+      return `steun voor partners ${suit}: ${fitText}. ${thresholdText} ${chosenText}${passedHandText ? ` ${passedHandText}` : ""} ${handFactsText({ ruleName, result, suit: null })}`;
+    }
+    if (result?.partnerSuit === "C" || result?.partnerSuit === "D") {
+      const suit = suitName(result.partnerSuit);
+      return `steun voor partners ${suit}: na een lage-kleuropening zoekt de regel eerst naar een hoge kleur; als die er niet is, toont steun de fit en kracht. ${responseRaiseChosenText(result)} ${handFactsText({ ruleName, result, suit: null })}`;
+    }
+    return `steun voor partners ${suitName(result.partnerSuit)}. ${handFactsText({ ruleName, result, suit: null })}`;
+  }
+
+  function responseRaiseChosenText(result) {
+    const bidText = result?.bid ? bidLabelNl(result.bid.level, result.bid.strain) : "dit bod";
+    if (result.raiseLabel === "game" && Number.isInteger(result.raiseMinimum)) {
+      return `Deze hand haalt met ${valueSummaryText(result)} de manchegrens, daarom ${bidText}.`;
+    }
+    if (result.raiseLabel === "invite" && Number.isInteger(result.raiseMinimum) && Number.isInteger(result.raiseMaximum)) {
+      return `Deze hand valt met ${valueSummaryText(result)} in de inviterende range ${result.raiseMinimum}-${result.raiseMaximum}, daarom ${bidText}.`;
+    }
+    if (result.raiseLabel === "single" && Number.isInteger(result.raiseMinimum) && Number.isInteger(result.raiseMaximum)) {
+      return `Deze hand valt met ${valueSummaryText(result)} in de steunrange ${result.raiseMinimum}-${result.raiseMaximum}, daarom ${bidText}.`;
+    }
+    if (result.raiseLabel === "strongMinorSupport" && Number.isInteger(result.raiseMinimum)) {
+      return `Deze hand heeft ${valueSummaryText(result)} en is niet geschikt om simpel SA te kiezen, daarom ${bidText}.`;
+    }
+    return `De hand past bij ${bidText}.`;
+  }
+
+  function valueSummaryText(result) {
+    if (result?.valuation === "fitPoints" && Number.isInteger(result.fitPoints)) return `${result.fitPoints} fitpunten`;
+    if (Number.isInteger(result?.points) && result.points !== result.hcp) return `${result.points} totaalpunten`;
+    if (Number.isInteger(result?.hcp)) return `${result.hcp} HCP`;
+    return "genoeg waarden";
+  }
   
   function isOpenerAfterNotrumpRule(ruleName) {
     return /openerAfter(One|Two)Nt/.test(ruleName || "");
@@ -580,6 +626,9 @@
   
   function supportText(result) {
     if (!result?.support || !result.partnerSuit) return "";
+    if (Number.isInteger(result.partnerMinTrumpLength)) {
+      return `${result.support}-kaart ${suitName(result.partnerSuit)} tegenover partners bekende ${result.partnerMinTrumpLength}+-kaart`;
+    }
     return `${result.support}-kaart ${suitName(result.partnerSuit)}`;
   }
   

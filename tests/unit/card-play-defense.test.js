@@ -240,6 +240,159 @@ test("chooseCardPlay returns the top of an honor sequence in partner's lead suit
   assert.equal(result.sequence, "KQ");
 });
 
+test("chooseCardPlay avoids returning a visibly dead partner suit into declarer's ruff", () => {
+  const trickHistory = [
+    {
+      number: 1,
+      winner: "North",
+      cards: [
+        { seat: "North", card: card("AC") },
+        { seat: "East", card: card("5C") },
+        { seat: "South", card: card("3C") },
+        { seat: "West", card: card("2C") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "East",
+      cards: [
+        { seat: "North", card: card("6D") },
+        { seat: "East", card: card("QD") },
+        { seat: "South", card: card("2D") },
+        { seat: "West", card: card("4D") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "South",
+      cards: [
+        { seat: "East", card: card("QS") },
+        { seat: "South", card: card("7D") },
+        { seat: "West", card: card("4S") },
+        { seat: "North", card: card("3S") }
+      ]
+    },
+    {
+      number: 4,
+      winner: "North",
+      cards: [
+        { seat: "South", card: card("4C") },
+        { seat: "West", card: card("8C") },
+        { seat: "North", card: card("QC") },
+        { seat: "East", card: card("JC") }
+      ]
+    },
+    {
+      number: 5,
+      winner: "North",
+      cards: [
+        { seat: "North", card: card("AS") },
+        { seat: "East", card: card("2S") },
+        { seat: "South", card: card("3H") },
+        { seat: "West", card: card("8S") }
+      ]
+    },
+    {
+      number: 6,
+      winner: "North",
+      cards: [
+        { seat: "North", card: card("AH") },
+        { seat: "East", card: card("2H") },
+        { seat: "South", card: card("TH") },
+        { seat: "West", card: card("4H") }
+      ]
+    },
+    {
+      number: 7,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("JS") },
+        { seat: "East", card: card("5S") },
+        { seat: "South", card: card("8D") },
+        { seat: "West", card: card("KS") }
+      ]
+    }
+  ];
+
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "KC", "TC", "9C", "7C", "6C"),
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    dummyHand: hand("TS", "7S", "9H", "7H", "6H", "3D"),
+    contract: { level: 2, strain: "D" },
+    trump: "D"
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "safeDefensiveWinner");
+  assert.deepEqual(result.avoidedSuits, ["C"]);
+  assert.equal(result.avoidedReason, "deadSuitRuffRisk");
+});
+
+test("chooseCardPlay can still return a dead partner suit in notrump", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("8H", "AC", "2S"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("4H") },
+        { seat: "East", card: card("AH") },
+        { seat: "South", card: card("QH") },
+        { seat: "West", card: card("3H") }
+      ]
+    }],
+    seat: "South",
+    declarer: "East",
+    dummy: "West",
+    dummyHand: hand("KH", "JH", "TH", "9H", "7H", "6H", "5H", "2H"),
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "8H");
+  assert.equal(result.ruleId, "returnPartnerLeadSuit");
+});
+
+test("chooseCardPlay may lead a dead suit when there is no safe defensive winner", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KC", "TC", "9C", "7C", "6C"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "South",
+      cards: [
+        { seat: "North", card: card("AC") },
+        { seat: "East", card: card("5C") },
+        { seat: "South", card: card("3C") },
+        { seat: "West", card: card("2C") }
+      ]
+    }, {
+      number: 2,
+      winner: "South",
+      cards: [
+        { seat: "South", card: card("4C") },
+        { seat: "West", card: card("8C") },
+        { seat: "North", card: card("QC") },
+        { seat: "East", card: card("JC") }
+      ]
+    }],
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    dummyHand: hand("AS", "KS", "QS", "AD", "KD", "QD"),
+    contract: { level: 4, strain: "S" },
+    trump: "S"
+  });
+
+  assert.equal(result.card.suit, "C");
+  assert.notEqual(result.ruleId, "returnPartnerLeadSuit");
+});
+
 test("chooseCardPlay does not return partner's opening lead suit for the declarer side", () => {
   const result = rules.chooseCardPlay({
     hand: hand("8H", "AC", "2S"),

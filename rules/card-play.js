@@ -59,6 +59,7 @@
 
   const {
     chooseReturnPartnerLeadSuit,
+    chooseSafeDefensiveWinner,
     chooseTrumpSwitchAgainstDummyRuff,
     chooseOpeningLeadAttitudeSignal,
     chooseThirdHandHighOverLowLead,
@@ -128,9 +129,11 @@
 
         const returnPartnerLeadSuit = chooseReturnPartnerLeadSuit({
           legal,
+          dummyHand,
           trickHistory,
           seat,
-          declarer
+          declarer,
+          trump
         });
         if (returnPartnerLeadSuit) return withPlayPlanFallback(returnPartnerLeadSuit, planDecision);
 
@@ -144,6 +147,17 @@
           });
           if (trumpSwitchAgainstDummyRuff) return withPlayPlanFallback(trumpSwitchAgainstDummyRuff, planDecision);
         }
+
+        const safeDefensiveWinner = chooseSafeDefensiveWinner({
+          legal,
+          dummyHand,
+          trickHistory,
+          currentTrick,
+          seat,
+          declarer,
+          trump
+        });
+        if (safeDefensiveWinner) return withPlayPlanFallback(safeDefensiveWinner, planDecision);
 
         return withPlayPlanFallback(
           chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead, auction }),

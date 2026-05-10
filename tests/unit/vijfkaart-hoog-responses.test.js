@@ -11,6 +11,37 @@ const {
   chooseFiveCardHigh,
   chooseFiveCardHighResult
 } = require("./harness.js");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+const auctionRules = require("../../rules/auction.js");
+const fiveCardHighConventions = require("../../rules/bidding/systems/five-card-high/conventions.js");
+
+function loadDutchBidExplanationsForTest() {
+  const context = {
+    BridgeRulesParts: {
+      biddingFiveCardHighConventions: fiveCardHighConventions
+    },
+    isPass: rules.isPass,
+    isDouble: rules.isDouble,
+    isRedouble: rules.isRedouble,
+    bidEquals: auctionRules.bidEquals,
+    cheapestLevelForStrain: auctionRules.cheapestLevelForStrain,
+    suitName: (suit) => ({
+      C: "klaveren",
+      D: "ruiten",
+      H: "harten",
+      S: "schoppen",
+      NT: "sans-atout"
+    }[suit] || suit),
+    t: (key, args = {}) => args.detail || key
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  const source = fs.readFileSync(path.join(__dirname, "../../rules/bidding/systems/five-card-high/explanations-nl.js"), "utf8");
+  vm.runInContext(source, context, { filename: "explanations-nl.js" });
+  return context.FiveCardHighBidExplanationsNl;
+}
 
 test("Vijfkaart Hoog bid result identifies artificial transfer choices", () => {
   const auction = [
@@ -431,6 +462,39 @@ test("Vijfkaart Hoog revalues a one-major raise with fit points", () => {
   ], auction);
   assert.deepEqual(shortHonor.bid, bid(3, "H"));
   assert.equal(shortHonor.fitPoints, 11);
+});
+
+test("Vijfkaart Hoog explains a direct one-major raise to game with fit-point thresholds", () => {
+  const auction = [
+    { seat: "North", bid: pass() },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(1, "H") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const result = chooseFiveCardHighResult([
+    "5S", "2S",
+    "QH", "JH", "5H",
+    "AD", "JD", "6D",
+    "QC", "JC", "TC", "9C", "8C"
+  ], auction, "North");
+
+  assert.deepEqual(result.bid, bid(4, "H"));
+  assert.equal(result.ruleId, "fiveCardHigh.response.raise");
+  assert.equal(result.hcp, 11);
+  assert.equal(result.fitPoints, 12);
+  assert.equal(result.support, 3);
+  assert.equal(result.partnerMinTrumpLength, 5);
+  assert.equal(result.combinedTrumpLength, 8);
+  assert.equal(result.raiseMinimum, 12);
+  assert.equal(result.raiseLabel, "game");
+
+  const explanation = loadDutchBidExplanationsForTest().explainBidChoiceResult(result);
+  assert.match(explanation, /minstens een 5-kaart/);
+  assert.match(explanation, /minstens een 8-kaart fit/);
+  assert.match(explanation, /12\+ fitpunten/);
+  assert.match(explanation, /daarom 4H/);
+  assert.match(explanation, /eerder geen opening/);
 });
 
 test("Vijfkaart Hoog responds to a one-major opening with a new suit from four cards", () => {

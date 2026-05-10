@@ -310,7 +310,7 @@ function reviewRow(label, value, className = "") {
 
 function reviewTricksTable() {
   const wrapper = document.createElement("div");
-  wrapper.className = "review-trick-table-wrap";
+  wrapper.className = "review-trick-table-wrap review-trick-overview";
 
   const table = document.createElement("table");
   table.className = "review-trick-table";

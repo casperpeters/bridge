@@ -34,9 +34,9 @@
     openingLeadPlay,
     isDefensivePlaySeat
   } = cardPlayLeads;
-  const { cardPlayResult } = cardPlayCommon;
+  const { cardPlayResult, visibleSuitStatus, visibleSuitStatuses } = cardPlayCommon;
 
-  function chooseReturnPartnerLeadSuit({ legal, trickHistory, seat, declarer }) {
+  function chooseReturnPartnerLeadSuit({ legal, dummyHand, trickHistory, seat, declarer, trump }) {
     if (!isDefensivePlaySeat(seat, declarer) || !trickHistory.length) return null;
 
     const openingLead = openingLeadPlay(trickHistory);
@@ -45,6 +45,8 @@
     const leadSuit = openingLead.card.suit;
     const suitedLegal = cardsInSuit(legal, leadSuit);
     if (!suitedLegal.length) return null;
+    const status = visibleSuitStatus({ suit: leadSuit, hand: legal, dummyHand, trickHistory, trump });
+    if (deadSuitRuffRisk(status)) return null;
 
     const returnChoice = choosePartnerLeadSuitReturnCard(suitedLegal);
     return cardPlayResult(
@@ -74,6 +76,54 @@
     }
 
     return { card: lowestCard(suitedLegal), type: "onlyHonors" };
+  }
+
+  function deadSuitRuffRisk(status) {
+    return Boolean(status?.exhaustedForHiddenHands && status.declarerCanRuffSuit);
+  }
+
+  function chooseSafeDefensiveWinner({ legal, dummyHand, trickHistory, currentTrick = [], seat, declarer, trump }) {
+    if (!isDefensivePlaySeat(seat, declarer) || !trump || currentTrick.length) return null;
+
+    const statuses = visibleSuitStatuses({ hand: legal, dummyHand, trickHistory, currentTrick, trump });
+    const dangerousSuits = statuses.filter(deadSuitRuffRisk).map((status) => status.suit);
+    if (!dangerousSuits.length) return null;
+
+    const winners = legal
+      .filter((card) => card.suit !== trump && !dangerousSuits.includes(card.suit))
+      .filter((card) => isVisibleTopWinner(card, { hand: legal, dummyHand, trickHistory, currentTrick }))
+      .sort(compareLowCards);
+    const card = winners[0];
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      "safeDefensiveWinner",
+      "basic",
+      "Avoid a visibly dead side-suit return that declarer can ruff; cash the cheapest visible side-suit winner instead.",
+      {
+        avoidedSuits: dangerousSuits,
+        avoidedReason: "deadSuitRuffRisk",
+        suit: card.suit,
+        action: "cashSafeDefensiveWinner"
+      }
+    );
+  }
+
+  function isVisibleTopWinner(card, { hand = [], dummyHand = [], trickHistory = [], currentTrick = [] } = {}) {
+    if (!card) return false;
+    const visibleRanks = new Set(
+      [
+        ...cardsInSuit(hand, card.suit),
+        ...cardsInSuit(dummyHand || [], card.suit),
+        ...trickHistory.flatMap((trick) => trick.cards || []).map((play) => play.card).filter(Boolean),
+        ...currentTrick.map((play) => play.card).filter(Boolean)
+      ]
+        .filter((visibleCard) => visibleCard.suit === card.suit)
+        .map((visibleCard) => visibleCard.rank)
+    );
+    const cardRankIndex = rankOrder.indexOf(card.rank);
+    return rankOrder.slice(cardRankIndex + 1).every((rank) => visibleRanks.has(rank));
   }
 
   function dummyRuffThreat(dummyHand, trump) {
@@ -401,6 +451,9 @@
   return {
     chooseReturnPartnerLeadSuit,
     choosePartnerLeadSuitReturnCard,
+    deadSuitRuffRisk,
+    chooseSafeDefensiveWinner,
+    isVisibleTopWinner,
     dummyRuffThreat,
     chooseTrumpSwitchAgainstDummyRuff,
     isLowPromisesHonorLead,

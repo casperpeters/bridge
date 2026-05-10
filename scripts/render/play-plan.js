@@ -200,6 +200,15 @@ function playPlanPriorityText(priority) {
       : "";
     return `Trek nu geen troef: dit lijkt op een cross ruff. Je wilt om-en-om ${suitsText} troeven, zolang de hoge troeven controle geven.${cash}`;
   }
+  if (priority.kind === "lateCrossRuff") {
+    const suitsText = (priority.crossSuits || [])
+      .map((item) => `${suitName(item.suit)} naar ${seatName(item.shortSeat)}`)
+      .join(" en ");
+    if (priority.cashFirst?.length) {
+      return `De tegenpartij heeft geen troef meer. Incasseer eerst de zekere zijkleurslag(en) die de crossruff niet verstoren; speel daarna om-en-om ${suitsText} en troef laag.`;
+    }
+    return `De tegenpartij heeft geen troef meer. Speel om-en-om ${suitsText} en troef laag; zo worden de resterende troeven aan beide kanten slagen.`;
+  }
   if (priority.kind === "useTrumpEntriesForRepeatedFinesse") {
     const entry = rankLabel[priority.entryRank] || priority.entryRank;
     const lead = rankLabel[priority.entryLeadRank] || priority.entryLeadRank;
@@ -243,6 +252,8 @@ function playPlanPriorityText(priority) {
               ? `nadat de troefentrees zijn benut voor de herhaalde snit in ${suitName(priority.delaySuit)}`
               : priority.timing === "afterWorkSuitBeforeTrumpEntry"
                 ? `nadat de werkkleur ${suitName(priority.delaySuit)} is ontwikkeld vóór de enige troefentree`
+                : priority.timing === "afterLateCrossRuff"
+                  ? "nadat de late cross ruff is uitgevoerd"
                 : priority.timing === "afterCrossRuff"
                   ? "nadat de cross ruff is uitgevoerd"
                   : priority.timing === "afterUrgentDiscard"
@@ -319,6 +330,7 @@ function playPlanPriorityBriefText(priority) {
   if (priority.kind === "ruffShortSuit") return `de introever in ${suitName(priority.suit)}`;
   if (priority.kind === "establishLongSuitByRuffing") return `de lange ${suitName(priority.suit)} vrijtroeven`;
   if (priority.kind === "crossRuff") return `cross ruff in ${suitName(priority.suit)}`;
+  if (priority.kind === "lateCrossRuff") return `late cross ruff met ${suitName(priority.trump)} als troef`;
   if (priority.kind === "useTrumpEntriesForRepeatedFinesse") return `troefentrees benutten voor de herhaalde snit`;
   if (priority.kind === "establishSideSuitForDiscard") return `${suitName(priority.suit)} ontwikkelen voor afgooien op hoge kaart`;
   if (priority.kind === "developSideSuitBeforeTrumpEntry") return `${suitName(priority.suit)} ontwikkelen voor de enige troefentree`;

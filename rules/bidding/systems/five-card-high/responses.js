@@ -342,13 +342,55 @@
         if (partnerBid?.strain !== "NT" && chosenBid.strain === partnerBid?.strain) {
           return fiveCardHighBidChoiceResult(chosenBid, "response.raise", "basic", "Raise partner's suit with enough support.", {
             ...extra,
-            ...fitExtra
+            ...fitExtra,
+            ...raiseExplanationContext(chosenBid, partnerBid, support, fitExtra)
           });
         }
         if (chosenBid.strain === "NT") {
           return fiveCardHighBidChoiceResult(chosenBid, "response.notrump", "basic", "Answer in notrump with balanced values and no better fit or new suit.", extra);
         }
         return fiveCardHighBidChoiceResult(chosenBid, "response.newSuit", "basic", "Bid the cheapest suitable new suit with responding values.", extra);
+      }
+
+  function raiseExplanationContext(chosenBid, partnerBid, support, fitExtra = {}) {
+        const partnerSuit = partnerBid?.strain || null;
+        const combinedTrumpLength = Number.isInteger(fitExtra.partnerMinTrumpLength)
+          ? support + fitExtra.partnerMinTrumpLength
+          : null;
+        const context = {
+          combinedTrumpLength,
+          knownFit: Number.isInteger(combinedTrumpLength) ? combinedTrumpLength >= 8 : false
+        };
+        if (partnerSuit === "H" || partnerSuit === "S") {
+          context.raiseScale = "oneMajor";
+          if (chosenBid?.level >= 4) {
+            context.raiseMinimum = 12;
+            context.raiseLabel = "game";
+          } else if (chosenBid?.level === 3) {
+            context.raiseMinimum = 10;
+            context.raiseMaximum = 11;
+            context.raiseLabel = "invite";
+          } else if (chosenBid?.level === 2) {
+            context.raiseMinimum = 6;
+            context.raiseMaximum = 9;
+            context.raiseLabel = "single";
+          }
+        } else if (partnerSuit === "C" || partnerSuit === "D") {
+          context.raiseScale = "oneMinor";
+          if (chosenBid?.level >= 4) {
+            context.raiseMinimum = 12;
+            context.raiseLabel = "strongMinorSupport";
+          } else if (chosenBid?.level === 3) {
+            context.raiseMinimum = 10;
+            context.raiseMaximum = 11;
+            context.raiseLabel = "invite";
+          } else if (chosenBid?.level === 2) {
+            context.raiseMinimum = 6;
+            context.raiseMaximum = 9;
+            context.raiseLabel = "single";
+          }
+        }
+        return context;
       }
 
 
@@ -362,6 +404,7 @@
     weakTwoResponseContext,
     respondToPreemptFiveCardHigh,
     preemptResponseContext,
+    raiseExplanationContext,
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,
     respondToOneMajorFiveCardHigh,

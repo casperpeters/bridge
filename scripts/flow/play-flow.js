@@ -174,6 +174,8 @@ function explainCardPlayResult(result) {
         ? "nadat de lange zijkleur is vrijgetroefd"
         : result.timing === "afterUnblock"
           ? "na het deblokkeren"
+          : result.timing === "afterLateCrossRuff"
+            ? "nadat de late cross ruff is uitgevoerd"
           : result.timing === "afterUrgentDiscard"
             ? "nadat eerst een verliezer op een hoge bijkleur is weggegooid"
             : "nu";
@@ -199,6 +201,15 @@ function explainCardPlayResult(result) {
   }
   if (ruleName === "ruffOutLongSuit") {
     return `Troef ${suitName(result.suit)} in ${seatName(result.shortSeat)} om de lange kleur van ${seatName(result.longSeat)} vrij te spelen.`;
+  }
+  if (ruleName === "lateCrossRuff") {
+    if (result.action === "cashWinnerBeforeLateCrossRuff") {
+      return "Incasseer deze zekere slag voor de late crossruff.";
+    }
+    if (result.action === "leadLateCrossRuff") {
+      return `Speel ${suitName(result.suit)} naar partners renonce: de tegenpartij heeft geen troef meer, dus partner kan laag troeven.`;
+    }
+    return `Troef laag in ${suitName(result.suit)} om de slag zeker te maken; de tegenpartij heeft geen troef meer.`;
   }
   if (ruleName === "cashSureWinners") return "Speel een hoge zekere slag uit voordat je een nieuwe kleur openbreekt.";
   if (ruleName === "cashWinners") return "Incasseer de geplande zekere slag uit het speelplan.";
@@ -321,6 +332,10 @@ function explainCardPlayResult(result) {
     const lead = result.leadCard ? `${rankLabel[result.leadCard.rank] || result.leadCard.rank}${suitSymbols[result.leadCard.suit] || ""}` : suitName(result.suit);
     const sequence = result.returnType === "honorSequence" && result.sequence ? ` met de hoogste kaart van je serie (${result.sequence})` : "";
     return `Partner kwam in de eerste slag uit met ${lead}. Speel die kleur (${suitName(result.suit)}) terug${sequence}, zolang er geen sterker plan is.`;
+  }
+  if (ruleName === "safeDefensiveWinner") {
+    const avoided = result.avoidedSuits?.map(suitName).join(", ");
+    return `Speel partners kleur nu niet terug${avoided ? ` (${avoided})` : ""}: die kleur is zichtbaar leeg bij de andere handen en kan worden getroefd. Incasseer daarom eerst een veilige winnaar.`;
   }
   if (ruleName === "trumpSwitchAgainstDummyRuff") {
     const shortText = result.dummyShortLength === 0 ? "renonce" : "kort";
