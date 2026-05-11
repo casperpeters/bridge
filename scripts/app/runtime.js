@@ -104,8 +104,11 @@
       practice: null,
       feedbackStatus: null,
       illegalActionFeedback: null,
+      lessonActionFeedback: null,
       handSuitFocus: null,
-      lessonBoardAcknowledged: []
+      lessonBoardAcknowledged: [],
+      lessonModeSettingsSnapshot: null,
+      lessonTableTaskDone: false
     };
   }
 
@@ -201,6 +204,7 @@
         westLabel: document.querySelector("#west-label"),
         biddingTitle: document.querySelector("#bidding-title"),
         historyPanel: document.querySelector("#history-panel"),
+        lessonPanel: document.querySelector("#lesson-panel"),
         historyTitle: document.querySelector("#history-title"),
         reviewPanel: document.querySelector("#review-panel"),
         reviewTitle: document.querySelector("#review-title"),

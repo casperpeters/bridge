@@ -1426,12 +1426,15 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator("#lesson-page-title")).toContainText("Wat is bridge?");
   await expect(page.locator("#lesson-route-panel")).toContainText("Leerroute");
   await expect(page.locator(".lesson-route-button")).toHaveCount(12);
-  await expect(page.locator("#lesson-content")).toContainText("Samenvatting");
-  await expect(page.locator("#lesson-content")).toContainText("doel van bridge");
-  await expect(page.locator("#lesson-content")).toContainText("Begin les");
-  await expect(page.locator("#lesson-content")).not.toContainText("Hoofdstukken");
+  await expect(page.locator("#lesson-content")).toContainText("Leerdoelen");
+  await expect(page.locator("#lesson-content")).toContainText("Je herkent Noord, Oost, Zuid en West");
+  await expect(page.locator("#lesson-content")).toContainText("Start les");
+  await expect(page.locator("#lesson-content .lesson-chapter")).toHaveCount(0);
+  await expect(page.locator("#lesson-content .lesson-finish h3")).toHaveCount(0);
+  await expect(page.locator("#lesson-content .lesson-finish .lesson-chapter-link", { hasText: "Start les" })).toHaveCount(1);
+  await expect(page.locator("#lesson-content")).not.toContainText("De kaarten van de spelers");
 
-  await page.locator(".lesson-finish .lesson-chapter-link", { hasText: "Begin les" }).click();
+  await page.locator(".lesson-finish .lesson-chapter-link", { hasText: "Start les" }).click();
   await expect(page).toHaveURL(/lesson-01-cards\.html\?testHooks=1/);
   await expect(page.locator("#card-lesson-title")).toContainText("Van kaarten naar een hele bridgehand");
   await expect(page.locator(".progress-step")).toHaveCount(10);
@@ -1440,7 +1443,7 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator(".suit-tile")).toHaveCount(4);
   await expect(page.locator(".suit-tile", { hasText: "Harten" })).toBeVisible();
   await page.locator("#next-step").click();
-  await expect(page.locator(".lesson-slide.is-active")).toContainText("Elke kleur heeft 13 kaarten");
+  await expect(page.locator(".lesson-slide.is-active-lesson-card")).toContainText("Elke kleur heeft 13 kaarten");
   await expect(page.locator(".compact-ranks .lesson-rank-card")).toHaveCount(13);
   await page.locator(".suit-count-card", { hasText: "♥" }).click();
   await expect(page.locator("#suit-count-feedback")).toContainText("hartenkaarten");
@@ -1449,10 +1452,10 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await page.locator(".choice-card", { hasText: "A" }).click();
   await expect(page.locator("#rank-feedback")).toContainText("De aas is de hoogste kaart");
   await page.locator("#next-step").click();
-  await expect(page.locator(".lesson-slide.is-active")).toContainText("speler recht tegenover je");
-  await expect(page.locator(".lesson-slide.is-active")).toContainText("Partner");
-  await expect(page.locator(".lesson-slide.is-active")).not.toContainText("Noord");
-  await expect(page.locator(".lesson-slide.is-active")).not.toContainText("Zuid");
+  await expect(page.locator(".lesson-slide.is-active-lesson-card")).toContainText("speler recht tegenover je");
+  await expect(page.locator(".lesson-slide.is-active-lesson-card")).toContainText("Partner");
+  await expect(page.locator(".lesson-slide.is-active-lesson-card")).not.toContainText("Noord");
+  await expect(page.locator(".lesson-slide.is-active-lesson-card")).not.toContainText("Zuid");
   await page.locator("#deal-demo").click();
   await expect(page.locator(".table-demo")).toHaveClass(/is-dealt/);
   await expect(page.locator(".deal-card")).toHaveCount(52);
@@ -1466,7 +1469,7 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator('[data-seat-count="West"]')).toHaveText("13");
   await expect(page.locator("#deal-status")).toContainText("Iedere speler heeft nu 13 kaarten");
   await page.locator("#next-step").click();
-  await expect(page.locator(".lesson-slide.is-active")).toContainText("Noord, Oost, Zuid en West");
+  await expect(page.locator(".lesson-slide.is-active-lesson-card")).toContainText("Noord, Oost, Zuid en West");
   await page.locator(".wind-mini-seat", { hasText: "Zuid" }).click();
   await expect(page.locator("#wind-feedback")).toContainText("Jij speelt vanuit Zuid");
   await page.locator(".wind-mini-seat", { hasText: "Noord" }).click();
@@ -1478,8 +1481,8 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await page.goto("/lessons.html?testHooks=1");
   await expect(page).toHaveURL(/lessons\.html\?testHooks=1/);
 
-  await page.locator(".lesson-finish .lesson-practice-link", { hasText: "Start oefening" }).click();
-  await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1/);
+  await page.goto("/index.html?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1");
+  await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001.*testHooks=1/);
   await expect(page.locator("#lesson-banner")).toContainText("Je speelt 4 schoppen");
   await expect(page.locator("#lesson-banner .lesson-coach-action")).toHaveText("Start aan tafel");
   await expect(page.locator("#trick-area .card.played")).toHaveCount(0);
@@ -1609,12 +1612,159 @@ test("opens lesson picker and starts a quiet challenge", async ({ page }) => {
   await expect(page.locator("#review-summary")).toBeEmpty();
 });
 
+test("lesson summaries stay compact and lesson 2 starts from one action", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.goto("/lessons.html?lesson=les-02-punten-en-handtypen&testHooks=1#een-sa-opening-herkennen");
+  await expect(page.locator("#lesson-page-title")).toContainText("Kaarten waarderen");
+  await expect(page.locator("#lesson-content")).toContainText("Leerdoelen");
+  await expect(page.locator("#lesson-content")).toContainText("Je telt HCP met Aas 4");
+  await expect(page.locator("#lesson-content .lesson-chapter")).toHaveCount(0);
+  await expect(page.locator("#lesson-content")).not.toContainText("1SA-hand herkennen");
+  await page.locator(".lesson-finish .lesson-chapter-link", { hasText: "Start les" }).click();
+  await expect(page).toHaveURL(/lesson-02-card-valuation\.html\?testHooks=1/);
+});
+
+test("lesson table task rejects a wrong but legal card before retry", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const lesson = window.BridgeLessons.findLesson("les-01-wat-is-bridge");
+    app.startLesson(lesson, "draw-trumps-001", { chapterId: "bekennen-moet" });
+    const state = app.getState();
+    app.setState({
+      animateDeal: false,
+      currentTrick: [{ seat: "West", card: app.makeCard("TD") }],
+      hands: {
+        ...state.hands,
+        West: state.hands.West.filter((card) => card.id !== "TD")
+      },
+      turnIndex: 0,
+      lessonBoardAcknowledged: [
+        "contractIntro",
+        "openingLeadIntro",
+        "dummyReveal",
+        "declarerControlsDummy",
+        "trickMeaning",
+        "followSuit",
+        "trumpMeaning"
+      ]
+    });
+    app.renderAll();
+  });
+
+  await expect(page.locator("#lesson-panel")).toContainText("Bekennen moet");
+  await page.evaluate(() => window.BridgeAppTestHooks.playCard("North", "QD"));
+  await expect(page.locator("#table-feedback")).toContainText("Probeer 5 ruiten");
+  await expect(page.locator("#lesson-panel")).toContainText("Probeer opnieuw");
+  expect(await page.evaluate(() => window.BridgeAppTestHooks.getState().currentTrick.map((play) => `${play.seat}:${play.card.id}`))).toEqual(["West:TD"]);
+
+  await page.evaluate(() => window.BridgeAppTestHooks.playCard("North", "5D"));
+  await expect(page.locator("#table-feedback")).toBeHidden();
+  await expect(page.locator("#lesson-panel")).toContainText("Kaart gekozen");
+  expect(await page.evaluate(() => window.BridgeAppTestHooks.getState().currentTrick.map((play) => `${play.seat}:${play.card.id}`))).toEqual(["West:TD", "North:5D"]);
+});
+
+test("completes a short lesson table task and returns to the same chapter", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.evaluate(() => {
+    localStorage.setItem("bridge-app-settings", JSON.stringify({
+      developerMode: true,
+      guidanceMode: true,
+      showPlayHistory: true
+    }));
+  });
+
+  await page.goto("/lesson-02-card-valuation.html?testHooks=1#handgenerator");
+  await expect(page.locator("#lesson-card-title")).toContainText("Genereer handen");
+  await page.locator(".practice-links a", { hasText: "Oefen 1SA-opening" }).click();
+
+  await expect(page).toHaveURL(/index\.html\?lesson=les-02-punten-en-handtypen&hand=one-nt-opening-001&chapter=een-sa-opening-herkennen/);
+  await expect(page.locator("#history-panel")).toHaveClass(/is-lesson-mode/);
+  await expect(page.locator("#lesson-panel")).toBeVisible();
+  await expect(page.locator("#lesson-panel")).toContainText("1SA-hand herkennen");
+  await expect(page.locator("#lesson-banner")).toContainText("Waardeer eerst Zuid");
+  await expect(page.locator("#bid-controls")).toHaveClass(/active-bid-box/);
+  await expect(page.locator("#bid-controls")).toHaveClass(/lesson-highlight-target/);
+
+  const settingsDuringLesson = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      developerMode: state.developerMode,
+      guidanceMode: state.guidanceMode,
+      showPlayHistory: state.showPlayHistory,
+      stored: JSON.parse(localStorage.getItem("bridge-app-settings"))
+    };
+  });
+  expect(settingsDuringLesson).toEqual({
+    developerMode: false,
+    guidanceMode: false,
+    showPlayHistory: false,
+    stored: {
+      developerMode: true,
+      guidanceMode: true,
+      showPlayHistory: true
+    }
+  });
+
+  await page.locator("#bid-controls button.bid", { hasText: "1NT" }).click();
+  expect(await page.evaluate(() => window.BridgeAppTestHooks.getState().auction.length)).toBe(0);
+
+  await page.locator("#lesson-panel .lesson-coach-action", { hasText: "Ik kies mijn bod" }).click();
+  await page.locator("#bid-controls button.pass", { hasText: "Pas" }).click();
+  await expect(page.locator("#lesson-panel")).toContainText("Nog niet");
+  await expect(page.locator("#table-feedback")).toContainText("1SA-opening");
+  expect(await page.evaluate(() => window.BridgeAppTestHooks.getState().auction.length)).toBe(0);
+
+  await page.locator("#bid-controls button.bid", { hasText: "1NT" }).click();
+  await expect(page.locator("#lesson-panel")).toContainText("Bod gedaan");
+  await expect(page.locator("#lesson-banner")).toContainText("Bod gedaan");
+  await expect(page.locator("#lesson-panel .lesson-done-return")).toHaveText("Terug naar les");
+
+  const doneState = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      auctionLength: state.auction.length,
+      done: state.lessonTableTaskDone,
+      phase: state.phase
+    };
+  });
+  expect(doneState).toEqual({ auctionLength: 1, done: true, phase: "bidding" });
+
+  await page.locator("#lesson-panel .lesson-done-return").click();
+  await expect(page).toHaveURL(/lesson-02-card-valuation\.html\?testHooks=1#handgenerator/);
+  await expect(page.locator("#handgenerator")).toBeVisible();
+});
+
+test("returns from a standalone lesson card to the same lesson point", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.goto("/lesson-02-card-valuation.html?testHooks=1#handgenerator");
+  await expect(page.locator("#lesson-card-title")).toContainText("Genereer handen");
+  await expect(page.locator("#handgenerator")).toBeVisible();
+
+  await page.locator(".practice-links a", { hasText: "Oefen 1SA-opening" }).click();
+  await expect(page).toHaveURL(/index\.html\?lesson=les-02-punten-en-handtypen&hand=one-nt-opening-001&chapter=een-sa-opening-herkennen/);
+  await expect(page.locator("#lesson-panel")).toContainText("1SA-hand herkennen");
+  await expect(page.locator("#bid-controls")).toHaveClass(/active-bid-box/);
+
+  await page.locator("#lesson-panel .lesson-coach-action", { hasText: "Ik kies mijn bod" }).click();
+  await page.locator("#bid-controls button.bid", { hasText: "1NT" }).click();
+  await expect(page.locator("#lesson-panel .lesson-done-return")).toHaveText("Terug naar les");
+
+  await page.locator("#lesson-panel .lesson-done-return").click();
+  await expect(page).toHaveURL(/lesson-02-card-valuation\.html\?testHooks=1#handgenerator/);
+  await expect(page.locator("#lesson-card-title")).toContainText("Genereer handen");
+  await expect(page.locator("#handgenerator")).toBeVisible();
+});
+
 test("submits structured lesson metadata in feedback payload", async ({ page }) => {
   await openFreshApp(page);
 
-  await clickMenuButton(page, "#open-lessons");
-  await page.locator(".lesson-finish .lesson-practice-link", { hasText: "Start oefening" }).click();
-  await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1/);
+  await page.goto("/index.html?lesson=les-01-wat-is-bridge&hand=draw-trumps-001&testHooks=1");
+  await expect(page).toHaveURL(/index\.html\?lesson=les-01-wat-is-bridge&hand=draw-trumps-001.*testHooks=1/);
   await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Start aan tafel" }).click();
   await page.locator("#lesson-banner .lesson-coach-action", { hasText: "Laat West uitkomen" }).click();
   await expect(page.locator("#trick-area .card.played")).toHaveCount(1);

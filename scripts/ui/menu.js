@@ -23,16 +23,28 @@
 
     function initSettingsControls() {
       els.developerMode.addEventListener("change", () => {
+        if (actions.isLessonModeActive?.()) {
+          render.renderAll();
+          return;
+        }
         state.developerMode = els.developerMode.checked;
         actions.saveSettings();
         render.renderAll();
       });
       els.guidanceMode.addEventListener("change", () => {
+        if (actions.isLessonModeActive?.()) {
+          render.renderAll();
+          return;
+        }
         state.guidanceMode = els.guidanceMode.checked;
         actions.saveSettings();
         render.renderAll();
       });
       els.playHistoryMode.addEventListener("change", () => {
+        if (actions.isLessonModeActive?.()) {
+          render.renderAll();
+          return;
+        }
         state.showPlayHistory = els.playHistoryMode.checked;
         actions.saveSettings();
         render.renderAll();
@@ -62,10 +74,13 @@
       els.settingsSummary.title = "Menu";
       els.developerModeLabel.textContent = helpers.t("developerMode");
       els.developerMode.checked = state.developerMode;
+      els.developerMode.disabled = Boolean(actions.isLessonModeActive?.());
       els.guidanceModeLabel.textContent = helpers.t("guidanceMode");
       els.guidanceMode.checked = state.guidanceMode;
+      els.guidanceMode.disabled = Boolean(actions.isLessonModeActive?.());
       els.playHistoryModeLabel.textContent = helpers.t("playHistoryMode");
       els.playHistoryMode.checked = state.showPlayHistory;
+      els.playHistoryMode.disabled = Boolean(actions.isLessonModeActive?.());
       setSettingInfo(els.playHistoryModeDescription, helpers.t("playHistoryModeHelp"));
       setSettingInfo(els.guidanceModeDescription, helpers.t("guidanceModeHelp"));
       setSettingInfo(els.developerModeDescription, helpers.t("developerModeHelp"));

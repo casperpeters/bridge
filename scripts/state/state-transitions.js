@@ -37,6 +37,7 @@
       scoreOverviewDismissed: false,
       feedbackStatus: null,
       illegalActionFeedback: null,
+      lessonActionFeedback: null,
       pendingStop: false,
       pendingAlert: false
     };
@@ -104,7 +105,8 @@
       },
       currentTrick: [...state.currentTrick, { seat, card, ruleId: ruleResult?.ruleId || null }],
       playExplanations: [...state.playExplanations, ...playExplanation],
-      illegalActionFeedback: null
+      illegalActionFeedback: null,
+      lessonActionFeedback: null
     };
   }
 

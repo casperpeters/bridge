@@ -175,14 +175,18 @@
 
 .progress-step {
   min-height: 54px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
   align-items: center;
+  padding: 0 12px;
   text-align: left;
   background: rgba(255, 255, 255, 0.045);
   color: var(--ink);
   font-weight: 760;
+  text-decoration: none;
 }
 
 .progress-step[aria-current="true"] {
@@ -212,14 +216,19 @@
 }
 
 .lesson-slide {
-  display: none;
-}
-
-.lesson-slide.is-active {
   display: grid;
   align-content: start;
   gap: 16px;
+}
+
+.lesson-slide[hidden] {
+  display: none;
+}
+
+.lesson-slide.is-active-lesson-card {
   animation: slide-in 260ms ease both;
+  box-shadow: none;
+  min-height: 0;
 }
 
 .lesson-slide h2 {
@@ -755,7 +764,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lesson-slide.is-active,
+  .lesson-slide.is-active-lesson-card,
   .lesson-rank-card.playing-card,
   .deal-card {
     animation: none;

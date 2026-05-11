@@ -26,7 +26,9 @@
 
 function renderHistory() {
   syncHistoryPanelState();
+  if (els.lessonPanel) els.lessonPanel.hidden = !actions.isLessonModeActive?.() || state.phase === "complete";
   els.history.innerHTML = "";
+  if (actions.isLessonModeActive?.() && state.phase !== "complete") return;
   if (!state.showPlayHistory) return;
   if (!shouldShowLiveHistory()) {
     const inactive = document.createElement("div");
@@ -106,10 +108,12 @@ function renderReview() {
 
 function syncHistoryPanelState(complete = state.phase === "complete") {
   const hasVisiblePlayPlan = !els.playPlan.hidden;
-  const visible = !complete && (shouldShowLiveHistory() || shouldReserveHistorySlot() || hasVisiblePlayPlan);
+  const hasLessonPanel = actions.isLessonModeActive?.() && !complete;
+  const visible = !complete && (hasLessonPanel || shouldShowLiveHistory() || shouldReserveHistorySlot() || hasVisiblePlayPlan);
   els.historyPanel.hidden = !visible;
-  els.historyPanel.classList.toggle("is-inactive", visible && !shouldShowLiveHistory());
-  els.historyPanel.classList.toggle("is-empty-reserved", visible && !state.showPlayHistory && !hasVisiblePlayPlan);
+  els.historyPanel.classList.toggle("is-lesson-mode", Boolean(hasLessonPanel));
+  els.historyPanel.classList.toggle("is-inactive", visible && !hasLessonPanel && !shouldShowLiveHistory());
+  els.historyPanel.classList.toggle("is-empty-reserved", visible && !hasLessonPanel && !state.showPlayHistory && !hasVisiblePlayPlan);
 }
 
 function shouldShowLiveHistory() {

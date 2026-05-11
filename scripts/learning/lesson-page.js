@@ -79,40 +79,32 @@
     eyebrow.textContent = `Les ${lesson.number}`;
 
     const title = document.createElement("h2");
-    title.textContent = "Samenvatting";
+    title.textContent = lesson.title;
 
-    const intro = document.createElement("p");
-    intro.className = "lesson-intro";
-    intro.textContent = lesson.summary || lesson.intro || lesson.challenge;
-
-    header.append(eyebrow, title, intro);
+    header.append(eyebrow, title);
     els.content.appendChild(header);
 
-    const lessonChapters = lesson.chapters?.length ? lesson.chapters : fallbackChapters(lesson);
-    els.content.appendChild(lessonSummaryEl(lesson, lessonChapters));
-    els.content.appendChild(lessonStartEl(lesson, lessonChapters));
+    els.content.appendChild(lessonGoalsEl(lesson));
+    els.content.appendChild(lessonStartEl(lesson));
+    scrollHashIntoView();
   }
 
-  function lessonSummaryEl(lesson, chapters) {
+  function lessonGoalsEl(lesson) {
     const summary = document.createElement("section");
     summary.className = "lesson-summary-panel";
 
     const title = document.createElement("h3");
-    title.textContent = "Wat zit erin?";
+    title.textContent = "Leerdoelen";
 
-    const copy = document.createElement("p");
-    copy.className = "lesson-chapter-paragraph";
-    copy.textContent = lesson.intro || "Begin de les en loop stap voor stap door de onderdelen heen.";
+    const goals = document.createElement("ul");
+    goals.className = "lesson-goal-list";
+    lessonGoals(lesson).forEach((goal) => {
+      const item = document.createElement("li");
+      item.textContent = goal;
+      goals.appendChild(item);
+    });
 
-    summary.append(title, copy, focusEl(lesson.focus || []));
-
-    if (chapters.length) {
-      const chapterCopy = document.createElement("p");
-      chapterCopy.className = "lesson-chapter-paragraph";
-      chapterCopy.textContent = `De les bestaat uit ${chapters.length} korte onderdelen. Je opent ze met de knop hieronder.`;
-      summary.appendChild(chapterCopy);
-    }
-
+    summary.append(title, goals);
     return summary;
   }
 
@@ -153,7 +145,7 @@
     }
 
     if (chapter.handId) {
-      footer.appendChild(practiceLink(lesson, chapter.handId, "Oefenen"));
+      footer.appendChild(practiceLink(lesson, chapter.handId, "Oefenen", chapter));
     }
 
     return footer.childElementCount ? footer : null;
@@ -169,21 +161,24 @@
     return link;
   }
 
-  function lessonStartEl(lesson, chapters) {
-    const finish = document.createElement("section");
+  function lessonStartEl(lesson) {
+    const finish = document.createElement("div");
     finish.className = "lesson-finish";
 
-    const title = document.createElement("h3");
-    title.textContent = lesson.pageHref ? "Begin de les" : "Aan tafel oefenen";
-
-    finish.appendChild(title);
     if (lesson.pageHref) {
-      finish.appendChild(chapterPageLink(lesson.pageHref, "Begin les"));
+      finish.appendChild(chapterPageLink(lesson.pageHref, "Start les"));
+      return finish;
     }
 
-    const handId = chapters.find((chapter) => chapter.handId)?.handId || lesson.handIds[0];
-    finish.appendChild(practiceLink(lesson, handId, "Start oefening"));
+    finish.appendChild(practiceLink(lesson, lesson.handIds[0], "Start oefening"));
     return finish;
+  }
+
+  function lessonGoals(lesson) {
+    if (lesson.learningGoals?.length) return lesson.learningGoals;
+    if (lesson.teachingPoints?.length) return lesson.teachingPoints;
+    if (lesson.summary) return [lesson.summary];
+    return [lesson.challenge];
   }
 
   function blockEl(block) {
@@ -243,16 +238,26 @@
     return wrapper;
   }
 
-  function practiceLink(lesson, handId, label = "Start oefening") {
+  function practiceLink(lesson, handId, label = "Start oefening", chapter = null) {
     const link = document.createElement("a");
     link.className = "lesson-practice-link";
     const href = new URL("index.html", root.location.href);
     href.searchParams.set("lesson", lesson.id);
     href.searchParams.set("hand", handId);
+    if (chapter?.id) href.searchParams.set("chapter", chapter.id);
+    href.searchParams.set("return", lessonReturnHref(lesson, chapter));
     if (params.has("testHooks")) href.searchParams.set("testHooks", "1");
     link.href = href.pathname.split("/").pop() + href.search;
     link.textContent = label;
     return link;
+  }
+
+  function lessonReturnHref(lesson, chapter = null) {
+    const href = new URL("lessons.html", root.location.href);
+    href.searchParams.set("lesson", lesson.id);
+    if (params.has("testHooks")) href.searchParams.set("testHooks", "1");
+    if (chapter?.id) href.hash = chapter.id;
+    return `${href.pathname.split("/").pop()}${href.search}${href.hash}`;
   }
 
   function focusEl(labels) {
@@ -284,7 +289,16 @@
   function updateUrlLesson(lessonId) {
     const next = new URL(root.location.href);
     next.searchParams.set("lesson", lessonId);
+    next.hash = "";
     root.history.replaceState(null, "", next);
+  }
+
+  function scrollHashIntoView() {
+    const id = decodeURIComponent((root.location.hash || "").replace(/^#/, ""));
+    if (!id) return;
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ block: "start" });
+    }, 0);
   }
 
   function setupResponsiveRoute() {

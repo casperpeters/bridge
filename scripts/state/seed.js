@@ -168,6 +168,7 @@ function startSituationSeed(seed) {
     : null;
   const hands = scenario ? scenario.hands : dealHands(state.dealSeed);
   const lesson = scenario && situation.e ? globalThis.BridgeLessons?.findLesson?.(String(situation.e)) || null : null;
+  if (lesson) actions.enterLessonMode?.();
   const practice = scenario ? practiceStateFromScenario(scenario, lesson) : null;
 
   startPreparedHand({

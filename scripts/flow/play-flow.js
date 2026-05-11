@@ -25,6 +25,7 @@
     const ensurePlayPlan = (...args) => actions.ensurePlayPlan(...args);
     const finishHand = (...args) => actions.finishHand(...args);
     const lessonBoardBlocksHumanPlay = (...args) => actions.lessonBoardBlocksHumanPlay(...args);
+    const maybeCompleteLessonTableTask = (...args) => actions.maybeCompleteLessonTableTask?.(...args);
     const playPlanReferenceText = (...args) => actions.playPlanReferenceText(...args);
     const renderGuidance = (...args) => render.renderGuidance(...args);
     const renderHands = (...args) => render.renderHands(...args);
@@ -86,6 +87,7 @@ function autoPlayCard(seat, card) {
 function continuePlay() {
   if (state.phase !== "playing") return;
   if (state.awaitingTrickAdvance) return;
+  if (actions.maybeCompleteLessonTableTask?.()) return;
   if (state.hands.South.length === 0 && state.currentTrick.length === 0) {
     finishHand();
     return;
@@ -477,9 +479,12 @@ function playCard(seat, cardId) {
     showIllegalCardFeedback(seat, card);
     return;
   }
+  if (!actions.validateLessonTableAction?.("card", { seat, card })) return;
   state.illegalActionFeedback = null;
+  state.lessonActionFeedback = null;
   state.handSuitFocus = null;
   renderIllegalActionFeedback();
+  render.renderLessonPanel?.();
   const animationSource = render.captureCardPlayAnimationSource(seat, cardId);
   const ruleResult = chooseCardPlayResult(seat);
   const explanation = explainCardPlay(seat, card, ruleResult);
@@ -489,6 +494,7 @@ function playCard(seat, cardId) {
   renderHands();
   renderPlayedCard(seat, card, { animationSource });
   setStatus("played", { seat, card: cardText(card) });
+  if (maybeCompleteLessonTableTask("card")) return;
   if (state.currentTrick.length === 4) {
     pauseCompletedTrick();
   } else {

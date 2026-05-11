@@ -14,6 +14,13 @@
       title: "Wat is bridge?",
       challenge: "Win slagen samen met partner en ontdek hoe bieden, spelen en dummy bij elkaar horen.",
       summary: "Je leert het doel van bridge, de twee fasen van een hand, slagen winnen, kleur bekennen, troef en sans-atout, leider en dummy.",
+      learningGoals: [
+        "Je herkent Noord, Oost, Zuid en West en weet wie partners zijn.",
+        "Je begrijpt dat een slag uit vier kaarten bestaat.",
+        "Je weet dat het contract vertelt hoeveel slagen de leider moet maken.",
+        "Je ziet wat troef doet en wat sans-atout betekent.",
+        "Je weet wanneer dummy open komt en wie de kaarten van dummy speelt."
+      ],
       focus: ["Spelen", "Bieden", "Dummy"],
       handIds: ["draw-trumps-001"],
       pageHref: "lesson-01-cards.html",
@@ -121,6 +128,22 @@
           title: "Bekennen moet",
           summary: "Als de gevraagde kleur in je hand zit, moet je een kaart van die kleur spelen.",
           handId: "draw-trumps-001",
+          tableTask: {
+            type: "card",
+            completion: "northSouthCard",
+            expectedAction: {
+              type: "card",
+              seat: "North",
+              cardIds: ["5D"],
+              retryTitle: "Bijna",
+              retryBody: "Die kaart bekent wel ruiten, maar deze oefening zoekt de rustige lage ruiten. Probeer 5 ruiten.",
+              hint: "Kies 5 ruiten om laag te bekennen."
+            },
+            doneTitle: "Kaart gekozen",
+            doneBody: "Je hebt aan tafel een kaart gespeeld terwijl de gevraagde kleur zichtbaar was. Dat is precies het lesmoment.",
+            returnLabel: "Terug naar les",
+            retryLabel: "Nog eens proberen"
+          },
           blocks: [
             { type: "paragraph", text: "Als iemand bijvoorbeeld harten vraagt en jij hebt harten, dan moet je harten spelen. Alleen als je die kleur niet hebt, mag je een andere kleur spelen." },
             { type: "callout", text: "De oefening start meteen in het spelen, zodat je beurten, dummy en kleur bekennen in een echt bord ziet." }
@@ -223,10 +246,114 @@
     {
       id: "les-02-punten-en-handtypen",
       number: 2,
-      title: "Punten en handtypen",
-      challenge: "Tel de kracht van Zuid en herken waarom 1SA logisch kan zijn.",
-      focus: ["Bieden", "Punten"],
-      handIds: ["one-nt-opening-001"]
+      title: "Kaarten waarderen",
+      challenge: "Tel HCP, herken verdeling en ontdek wanneer een fit je hand later meer waard maakt.",
+      summary: "Je leert HCP tellen, basisverdelingen herkennen, evenwichtige en onevenwichtige handen onderscheiden en begrijpen waarom een fit waardevol is.",
+      learningGoals: [
+        "Je telt HCP met Aas 4, Heer 3, Vrouw 2 en Boer 1.",
+        "Je herkent een evenwichtige verdeling.",
+        "Je ziet waarom lengte in een kleur belangrijk is.",
+        "Je begrijpt fit als samen minstens acht kaarten in een kleur.",
+        "Je maakt een eerste simpele keuze: pas, 1SA of een kleur openen."
+      ],
+      focus: ["Bieden", "HCP", "Fit"],
+      handIds: ["one-nt-opening-001", "opening-pass-001", "one-heart-opening-001"],
+      pageHref: "lesson-02-card-valuation.html",
+      intro: "Deze les is een handpaspoort voor Zuid: eerst HCP, dan verdeling, langste kleur en pas daarna herwaarderen zodra een fit in beeld komt.",
+      chapters: [
+        {
+          id: "hcp-tellen",
+          title: "HCP tellen",
+          summary: "Aas telt 4, Heer 3, Vrouw 2, Boer 1; de 10 is wel een honneur maar telt niet mee.",
+          pageHref: "lesson-02-card-valuation.html",
+          blocks: [
+            { type: "paragraph", text: "HCP is de eerste snelle krachtmeter voordat je gaat bieden." },
+            { type: "paragraph", text: "De losse lespagina bevat interactieve handen en feedback per antwoord." }
+          ]
+        },
+        {
+          id: "verdeling-en-fit",
+          title: "Verdeling en fit",
+          summary: "Je herkent 4-3-3-3, 4-4-3-2 en 5-3-3-2 als evenwichtig en ziet waarom korte kleuren later tellen.",
+          pageHref: "lesson-02-card-valuation.html",
+          blocks: [
+            { type: "paragraph", text: "Een fit is samen minstens acht kaarten in een kleur." },
+            { type: "callout", text: "Tel eerst HCP; herwaardeer pas wanneer een fit waarschijnlijk is." }
+          ]
+        },
+        {
+          id: "een-sa-opening-herkennen",
+          title: "1SA-hand herkennen",
+          summary: "15-17 HCP met een evenwichtige verdeling maakt 1SA de eerste kandidaat.",
+          handId: "one-nt-opening-001",
+          tableTask: {
+            type: "bid",
+            completion: "southBid",
+            expectedAction: {
+              type: "bid",
+              seat: "South",
+              calls: ["1NT"],
+              retryTitle: "Nog niet",
+              retryBody: "Deze hand heeft 15 HCP en is evenwichtig. In deze les zoek je daarom de 1SA-opening.",
+              hint: "Kies 1SA."
+            },
+            doneTitle: "Bod gedaan",
+            doneBody: "Zuid heeft de hand gewaardeerd en het eerste bod gekozen. Ga terug naar de les om dit handpaspoort naast de uitleg te leggen.",
+            returnLabel: "Terug naar les",
+            retryLabel: "Nog eens proberen"
+          },
+          boardGuidance: [
+            {
+              id: "valueThenBid",
+              title: "Waardeer eerst Zuid",
+              body: "Tel HCP, kijk of de verdeling evenwichtig is en kies daarna het openingsbod.",
+              badge: "Openingskeuze",
+              target: "bidControls",
+              buttonLabel: "Ik kies mijn bod",
+              gate: "allowHumanBid"
+            }
+          ],
+          blocks: [
+            { type: "paragraph", text: "Start deze oefenhand en tel voor het eerste bod de HCP van Zuid." }
+          ]
+        },
+        {
+          id: "openingskracht-of-pas",
+          title: "Openingskracht of pas",
+          summary: "Niet elke hand heeft genoeg kracht om te openen; passen kan de juiste actie zijn.",
+          handId: "opening-pass-001",
+          tableTask: {
+            type: "bid",
+            completion: "southBid",
+            expectedAction: {
+              type: "bid",
+              seat: "South",
+              calls: ["PASS"],
+              retryTitle: "Rustiger",
+              retryBody: "Zuid heeft te weinig openingskracht. In deze oefening is passen de bedoelde keuze.",
+              hint: "Kies Pas."
+            },
+            doneTitle: "Keuze gemaakt",
+            doneBody: "Zuid heeft gekozen of deze hand genoeg openingskracht heeft. Terug in de les kun je de HCP en verdeling nog eens vergelijken.",
+            returnLabel: "Terug naar les",
+            retryLabel: "Nog eens proberen"
+          },
+          boardGuidance: [
+            {
+              id: "openingStrengthChoice",
+              title: "Openen of passen?",
+              body: "Kijk alleen naar Zuid: heeft deze hand genoeg kracht om te openen, of is passen rustiger?",
+              badge: "Openingskracht",
+              target: "bidControls",
+              buttonLabel: "Ik maak mijn keuze",
+              gate: "allowHumanBid"
+            }
+          ],
+          blocks: [
+            { type: "paragraph", text: "Vergelijk deze hand met de HCP- en verdelingsvragen uit de les." }
+          ]
+        }
+      ]
     },
     {
       id: "les-03-eerste-openingen",
@@ -318,6 +445,104 @@
     return allLessons().find((lesson) => lesson.id === id) || null;
   }
 
+  function findLessonChapter(lessonId, chapterId) {
+    const lesson = findLesson(lessonId);
+    if (!lesson || !chapterId) return null;
+    return lesson.chapters?.find((chapter) => chapter.id === chapterId) || null;
+  }
+
+  function tableTaskCompleted(task, context = {}) {
+    if (!task) return false;
+    const plays = allPlayedCards(context);
+    const auction = Array.isArray(context.auction) ? context.auction : [];
+    if (task.type === "bid") {
+      if (task.completion === "southBid") return auction.some((call) => call.seat === "South");
+      if (task.completion === "humanBid") return auction.some((call) => call.seat === "South");
+      return auction.length > 0;
+    }
+    if (task.type === "card") {
+      if (task.completion === "northSouthCard" || task.completion === "humanCard") {
+        return plays.some((play) => play.seat === "North" || play.seat === "South");
+      }
+      return plays.length > 0;
+    }
+    if (task.type === "trick") {
+      return Boolean(context.awaitingTrickAdvance || context.pendingTrickWinner || (context.trickHistory || []).length);
+    }
+    if (task.type === "review" || task.type === "hand") {
+      return context.phase === "complete";
+    }
+    return false;
+  }
+
+  function tableTaskActionFeedback(task, action = {}) {
+    const expected = task?.expectedAction;
+    if (!expected) return null;
+    if (expected.type && action.type && expected.type !== action.type) return null;
+    if (expected.seat && action.seat && expected.seat !== action.seat) return null;
+
+    const ok = expected.type === "bid"
+      ? expectedBidMatches(expected, action.bid)
+      : expected.type === "card"
+        ? expectedCardMatches(expected, action.card)
+        : true;
+    if (ok) return null;
+
+    return {
+      title: expected.retryTitle || "Probeer nog eens",
+      body: expected.retryBody || "Deze keuze is legaal, maar niet de bedoelde actie voor dit lesmoment. Probeer opnieuw.",
+      hint: expected.hint || ""
+    };
+  }
+
+  function expectedBidMatches(expected, bid) {
+    const codes = normalizeList(expected.calls || expected.call || expected.bid);
+    if (!codes.length) return true;
+    const bidCode = callCode(bid);
+    return codes.some((code) => normalizeCallCode(code) === bidCode);
+  }
+
+  function expectedCardMatches(expected, card) {
+    if (!card) return false;
+    const cardIds = normalizeList(expected.cardIds || expected.cards || expected.cardId);
+    if (cardIds.length && !cardIds.includes(card.id)) return false;
+    const suits = normalizeList(expected.suits || expected.suit);
+    if (suits.length && !suits.includes(card.suit)) return false;
+    return Boolean(cardIds.length || suits.length);
+  }
+
+  function normalizeList(value) {
+    if (!value) return [];
+    return (Array.isArray(value) ? value : [value]).map(String);
+  }
+
+  function callCode(bid) {
+    if (!bid) return "";
+    if (bid.type === "Pass") return "PASS";
+    if (bid.type === "Double") return "X";
+    if (bid.type === "Redouble") return "XX";
+    if (bid.type === "Bid") return normalizeCallCode(`${bid.level}${bid.strain}`);
+    return normalizeCallCode(bid.call || bid.code || "");
+  }
+
+  function normalizeCallCode(value) {
+    return String(value || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "")
+      .replace(/SA$/, "NT")
+      .replace(/^P$/, "PASS")
+      .replace(/^PAS$/, "PASS");
+  }
+
+  function allPlayedCards(context) {
+    const current = Array.isArray(context.currentTrick) ? context.currentTrick : [];
+    const historical = Array.isArray(context.trickHistory)
+      ? context.trickHistory.flatMap((trick) => Array.isArray(trick.cards) ? trick.cards : [])
+      : [];
+    return [...historical, ...current];
+  }
+
   function validateLessons(practiceApi = practiceHands) {
     const ids = new Set();
     for (const lesson of lessons) {
@@ -334,6 +559,7 @@
       }
       validateLessonChapters(lesson, practiceApi);
       validateBoardGuidance(lesson);
+      validateTableTask(lesson.id, "lesson", lesson.tableTask);
       if (lesson.startMode === "play") {
         const scenario = practiceApi?.findPracticeHand?.(lesson.handIds[0]);
         if (!scenario?.expectedContract) throw new Error(`Lesson ${lesson.id} needs an expected contract for play start`);
@@ -530,7 +756,7 @@
       action.className = "lesson-start";
       action.textContent = labels.startPractice || labels.start || "Start oefening";
       action.addEventListener("click", () => {
-        startLessonFromHand({ lesson, handId: chapter.handId, startLesson, dialog });
+        startLessonFromHand({ lesson, handId: chapter.handId, chapter, startLesson, dialog });
       });
       detail.appendChild(action);
     }
@@ -539,8 +765,8 @@
     back.focus();
   }
 
-  function startLessonFromHand({ lesson, handId, startLesson, dialog }) {
-    startLesson?.(findLesson(lesson.id), handId);
+  function startLessonFromHand({ lesson, handId, chapter = null, startLesson, dialog }) {
+    startLesson?.(findLesson(lesson.id), handId, { chapterId: chapter?.id || null });
     closeDialog(dialog);
   }
 
@@ -640,8 +866,10 @@
       chapters: (lesson.chapters || []).map(cloneChapter),
       miniQuiz: lesson.miniQuiz ? cloneQuiz(lesson.miniQuiz) : undefined,
       reviewFeedback: lesson.reviewFeedback ? [...lesson.reviewFeedback] : undefined,
+      tableTask: lesson.tableTask ? cloneTableTask(lesson.tableTask) : undefined,
       boardGuidance: lesson.boardGuidance ? lesson.boardGuidance.map(cloneBoardGuidanceStep) : undefined,
-      teachingPoints: lesson.teachingPoints ? [...lesson.teachingPoints] : undefined
+      teachingPoints: lesson.teachingPoints ? [...lesson.teachingPoints] : undefined,
+      learningGoals: lesson.learningGoals ? [...lesson.learningGoals] : undefined
     };
   }
 
@@ -652,7 +880,26 @@
         ...block,
         items: block.items ? [...block.items] : undefined
       })),
+      tableTask: chapter.tableTask ? cloneTableTask(chapter.tableTask) : undefined,
+      boardGuidance: chapter.boardGuidance ? chapter.boardGuidance.map(cloneBoardGuidanceStep) : undefined,
       quiz: chapter.quiz ? cloneQuiz(chapter.quiz) : undefined
+    };
+  }
+
+  function cloneTableTask(task) {
+    return {
+      ...task,
+      expectedAction: task.expectedAction ? cloneExpectedAction(task.expectedAction) : undefined
+    };
+  }
+
+  function cloneExpectedAction(action) {
+    return {
+      ...action,
+      calls: action.calls ? [...action.calls] : undefined,
+      cardIds: action.cardIds ? [...action.cardIds] : undefined,
+      cards: action.cards ? [...action.cards] : undefined,
+      suits: action.suits ? [...action.suits] : undefined
     };
   }
 
@@ -679,6 +926,8 @@
       if (chapter.handId && !practiceApi?.findPracticeHand?.(chapter.handId)) {
         throw new Error(`Lesson ${lesson.id} chapter ${chapter.id} refers to unknown practice hand ${chapter.handId}`);
       }
+      validateTableTask(lesson.id, chapter.id, chapter.tableTask);
+      if (chapter.boardGuidance) validateBoardGuidance({ ...lesson, id: `${lesson.id} chapter ${chapter.id}`, boardGuidance: chapter.boardGuidance });
       if (chapter.quiz) validateQuiz(lesson.id, chapter.id, chapter.quiz);
     }
   }
@@ -697,8 +946,8 @@
     if (!lesson.boardGuidance) return;
     if (!Array.isArray(lesson.boardGuidance)) throw new Error(`Lesson ${lesson.id} boardGuidance must be an array`);
     const ids = new Set();
-    const validTargets = new Set(["contract", "openingLead", "dummy", "declarerAndDummy", "trickArea", "legalCards", "trumpCards", "trickWinner", "review"]);
-    const validGates = new Set(["releaseAutoPlay", "allowHumanPlay", "advanceTrick", "none"]);
+    const validTargets = new Set(["contract", "openingLead", "dummy", "declarerAndDummy", "trickArea", "legalCards", "trumpCards", "trickWinner", "review", "bidControls", "auctionLog", "lessonPanel"]);
+    const validGates = new Set(["releaseAutoPlay", "allowHumanPlay", "allowHumanBid", "advanceTrick", "none"]);
     lesson.boardGuidance.forEach((step, index) => {
       if (!step.id || ids.has(step.id)) throw new Error(`Lesson ${lesson.id} boardGuidance step ${index + 1} has an invalid id`);
       ids.add(step.id);
@@ -709,11 +958,37 @@
     });
   }
 
+  function validateTableTask(lessonId, ownerId, task) {
+    if (!task) return;
+    const validTypes = new Set(["bid", "card", "trick", "review", "hand"]);
+    const validCompletions = new Set(["southBid", "humanBid", "northSouthCard", "humanCard", "trickWinnerShown", "reviewReached", "handComplete"]);
+    if (!validTypes.has(task.type)) throw new Error(`Lesson ${lessonId} ${ownerId} tableTask has unknown type ${task.type}`);
+    if (!validCompletions.has(task.completion)) throw new Error(`Lesson ${lessonId} ${ownerId} tableTask has unknown completion ${task.completion}`);
+    if (!task.doneTitle || !task.doneBody || !task.returnLabel) throw new Error(`Lesson ${lessonId} ${ownerId} tableTask is incomplete`);
+    validateExpectedAction(lessonId, ownerId, task);
+  }
+
+  function validateExpectedAction(lessonId, ownerId, task) {
+    const expected = task.expectedAction;
+    if (!expected) return;
+    if (expected.type !== task.type) throw new Error(`Lesson ${lessonId} ${ownerId} expectedAction type must match tableTask type`);
+    if (expected.type === "bid" && !normalizeList(expected.calls || expected.call || expected.bid).length) {
+      throw new Error(`Lesson ${lessonId} ${ownerId} bid expectedAction needs calls`);
+    }
+    if (expected.type === "card" && !normalizeList(expected.cardIds || expected.cards || expected.cardId || expected.suits || expected.suit).length) {
+      throw new Error(`Lesson ${lessonId} ${ownerId} card expectedAction needs cardIds or suits`);
+    }
+    if (!expected.retryBody) throw new Error(`Lesson ${lessonId} ${ownerId} expectedAction needs retryBody`);
+  }
+
   validateLessons();
 
   return {
     allLessons,
     findLesson,
+    findLessonChapter,
+    tableTaskActionFeedback,
+    tableTaskCompleted,
     validateLessons,
     init
   };

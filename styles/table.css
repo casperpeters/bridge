@@ -740,6 +740,145 @@
   font-weight: 950;
 }
 
+.lesson-done-card {
+  border-color: rgba(85, 213, 126, 0.58);
+  border-left-color: rgba(85, 213, 126, 0.9);
+  background:
+    linear-gradient(135deg, rgba(85, 213, 126, 0.14), rgba(96, 197, 185, 0.1)),
+    rgba(20, 38, 30, 0.96);
+}
+
+.lesson-done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.lesson-done-return,
+.lesson-done-retry {
+  min-height: 36px;
+  border: 1px solid rgba(224, 194, 95, 0.58);
+  border-radius: 8px;
+  padding: 8px 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 0.84rem;
+  font-weight: 950;
+  line-height: 1.1;
+  text-decoration: none;
+}
+
+.lesson-done-return {
+  background: rgba(224, 194, 95, 0.24);
+}
+
+.lesson-done-retry {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.lesson-done-return:hover,
+.lesson-done-return:focus-visible,
+.lesson-done-retry:hover,
+.lesson-done-retry:focus-visible {
+  border-color: rgba(224, 194, 95, 0.88);
+  transform: translateY(-1px);
+}
+
+.history-panel.is-lesson-mode {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.history-panel.is-lesson-mode > .panel-head,
+.history-panel.is-lesson-mode > .history,
+.history-panel.is-lesson-mode > .play-plan-panel,
+.history-panel.is-lesson-mode > .play-explanations {
+  display: none;
+}
+
+.lesson-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  color: rgba(247, 244, 232, 0.86);
+}
+
+.lesson-panel[hidden] {
+  display: none;
+}
+
+.lesson-panel-eyebrow {
+  margin: 0;
+  color: var(--accent-2);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.lesson-panel h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.15rem;
+  line-height: 1.16;
+}
+
+.lesson-panel-progress {
+  width: fit-content;
+  border: 1px solid rgba(96, 197, 185, 0.42);
+  border-radius: 999px;
+  background: rgba(96, 197, 185, 0.12);
+  color: rgba(247, 244, 232, 0.9);
+  padding: 4px 9px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.lesson-panel-mission,
+.lesson-panel-card p {
+  margin: 0;
+  color: rgba(247, 244, 232, 0.84);
+  font-size: 0.88rem;
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+.lesson-panel-card {
+  border: 1px solid rgba(224, 194, 95, 0.34);
+  border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 255, 255, 0.055);
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.lesson-panel-card h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.lesson-panel-done {
+  border-color: rgba(85, 213, 126, 0.42);
+  border-left-color: rgba(85, 213, 126, 0.9);
+  background: rgba(85, 213, 126, 0.1);
+}
+
+.lesson-panel-retry {
+  border-color: rgba(255, 189, 89, 0.48);
+  border-left-color: rgba(255, 189, 89, 0.92);
+  background: rgba(255, 189, 89, 0.1);
+}
+
+.lesson-feedback-hint {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
 .table-area.has-lesson-highlight .hand,
 .table-area.has-lesson-highlight .trick-area,
 .table-area.has-lesson-highlight .contract {

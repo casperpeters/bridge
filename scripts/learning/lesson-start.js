@@ -13,10 +13,12 @@
     const setStatus = (...args) => actions.setStatus(...args);
     const startPracticeHand = (...args) => actions.startPracticeHand(...args);
 
-function startLesson(lesson, handId) {
+function startLesson(lesson, handId, options = {}) {
   if (!lesson?.id || !handId) return;
+  const lessonContext = lessonContextFromOptions(lesson, options);
+  enterLessonMode();
   const startAtPlay = lesson.startMode === "play";
-  const scenario = startPracticeHand(handId, { lesson, skipFlow: startAtPlay });
+  const scenario = startPracticeHand(handId, { lesson, lessonContext, skipFlow: startAtPlay });
   if (!startAtPlay) return scenario;
 
   const expected = scenario.expectedContract;
@@ -30,7 +32,6 @@ function startLesson(lesson, handId) {
     seats
   }));
   state.phase = "playing";
-  if (lesson.enableGuidance) state.guidanceMode = true;
   renderAll();
   setStatus("lead", { leader: state.leader, declarer: state.declarer, dummy: state.dummy });
   continuePlay();
@@ -46,11 +47,77 @@ function startLessonFromUrl() {
   const lesson = globalThis.BridgeLessons?.findLesson?.(lessonId);
   if (!lesson) return false;
 
-  startLesson(lesson, handId);
+  startLesson(lesson, handId, {
+    chapterId: params.get("chapter") || null,
+    returnHref: safeReturnHref(params.get("return"), lessonId, params.get("chapter"))
+  });
   return true;
 }
 
+function lessonContextFromOptions(lesson, options = {}) {
+  const chapter = options.chapterId ? globalThis.BridgeLessons?.findLessonChapter?.(lesson.id, options.chapterId) : null;
+  return {
+    chapterId: chapter?.id || options.chapterId || null,
+    chapterTitle: chapter?.title || "",
+    returnHref: options.returnHref || defaultReturnHref(lesson.id, chapter?.id || options.chapterId || null),
+    tableTask: chapter?.tableTask || lesson.tableTask || null,
+    boardGuidance: chapter?.boardGuidance || lesson.boardGuidance || []
+  };
+}
+
+function enterLessonMode() {
+  if (!state.lessonModeSettingsSnapshot) {
+    state.lessonModeSettingsSnapshot = {
+      developerMode: state.developerMode,
+      guidanceMode: state.guidanceMode,
+      showPlayHistory: state.showPlayHistory
+    };
+  }
+  state.developerMode = false;
+  state.guidanceMode = false;
+  state.showPlayHistory = false;
+  state.lessonTableTaskDone = false;
+}
+
+function exitLessonMode() {
+  if (state.lessonModeSettingsSnapshot) {
+    state.developerMode = Boolean(state.lessonModeSettingsSnapshot.developerMode);
+    state.guidanceMode = Boolean(state.lessonModeSettingsSnapshot.guidanceMode);
+    state.showPlayHistory = Boolean(state.lessonModeSettingsSnapshot.showPlayHistory);
+  }
+  state.lessonModeSettingsSnapshot = null;
+  state.lessonTableTaskDone = false;
+}
+
+function isLessonModeActive() {
+  return Boolean(state.practice?.lessonId);
+}
+
+function defaultReturnHref(lessonId, chapterId = null) {
+  const href = new URL("lessons.html", globalThis.location?.href || "http://localhost/");
+  href.searchParams.set("lesson", lessonId);
+  if (chapterId) href.hash = chapterId;
+  return `${href.pathname.split("/").pop()}${href.search}${href.hash}`;
+}
+
+function safeReturnHref(value, lessonId, chapterId = null) {
+  if (!value) return defaultReturnHref(lessonId, chapterId);
+  try {
+    const href = new URL(value, globalThis.location?.href || "http://localhost/");
+    const file = href.pathname.split("/").pop();
+    if (file !== "lessons.html" && !/^lesson-\d+-.+\.html$/.test(file)) return defaultReturnHref(lessonId, chapterId);
+    return `${file}${href.search}${href.hash}`;
+  } catch {
+    return defaultReturnHref(lessonId, chapterId);
+  }
+}
+
     Object.assign(actions, {
+      defaultLessonReturnHref: defaultReturnHref,
+      enterLessonMode,
+      exitLessonMode,
+      isLessonModeActive,
+      lessonContextFromOptions,
       startLesson,
       startLessonFromUrl
     });

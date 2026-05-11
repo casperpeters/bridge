@@ -6,10 +6,11 @@
     <link rel="icon" type="image/png" href="assets/branding/logo.png" />
     <link rel="stylesheet" href="styles/base.css" />
     <link rel="stylesheet" href="styles/card.css" />
+    <link rel="stylesheet" href="styles/lesson-cards.css" />
     <link rel="stylesheet" href="styles/lesson-card-basics.css" />
   </head>
   <body class="card-lesson-body">
-    <main class="card-lesson-shell">
+    <main class="card-lesson-shell" data-lesson-card-page>
       <header class="card-lesson-topbar">
         <a class="card-lesson-brand" href="lessons.html" aria-label="Terug naar alle lessen">
           <img class="card-lesson-logo" src="assets/branding/logo.png" alt="" aria-hidden="true" />
@@ -36,51 +37,51 @@
       </section>
 
       <section class="lesson-player" aria-label="Interactieve kaartles">
-        <aside class="lesson-progress" aria-label="Onderdelen">
-          <button class="progress-step" type="button" data-step-target="0" aria-current="true">
+        <nav class="lesson-progress" aria-label="Onderdelen" data-lesson-card-nav>
+          <a class="progress-step" href="#kleuren" data-step-target="0" aria-current="true">
             <span>1</span>
             Kleuren
-          </button>
-          <button class="progress-step" type="button" data-step-target="1">
+          </a>
+          <a class="progress-step" href="#dertien-per-kleur" data-step-target="1">
             <span>2</span>
             13 per kleur
-          </button>
-          <button class="progress-step" type="button" data-step-target="2">
+          </a>
+          <a class="progress-step" href="#hoog-naar-laag" data-step-target="2">
             <span>3</span>
             Hoog naar laag
-          </button>
-          <button class="progress-step" type="button" data-step-target="3">
+          </a>
+          <a class="progress-step" href="#vier-spelers" data-step-target="3">
             <span>4</span>
             Vier spelers
-          </button>
-          <button class="progress-step" type="button" data-step-target="4">
+          </a>
+          <a class="progress-step" href="#windrichtingen" data-step-target="4">
             <span>5</span>
             Windrichtingen
-          </button>
-          <button class="progress-step" type="button" data-step-target="5">
+          </a>
+          <a class="progress-step" href="#doel" data-step-target="5">
             <span>6</span>
             Doel
-          </button>
-          <button class="progress-step" type="button" data-step-target="6">
+          </a>
+          <a class="progress-step" href="#bieden-en-spelen" data-step-target="6">
             <span>7</span>
             Bieden en spelen
-          </button>
-          <button class="progress-step" type="button" data-step-target="7">
+          </a>
+          <a class="progress-step" href="#slag-en-bekennen" data-step-target="7">
             <span>8</span>
             Slag en bekennen
-          </button>
-          <button class="progress-step" type="button" data-step-target="8">
+          </a>
+          <a class="progress-step" href="#troef-en-sa" data-step-target="8">
             <span>9</span>
             Troef en SA
-          </button>
-          <button class="progress-step" type="button" data-step-target="9">
+          </a>
+          <a class="progress-step" href="#leider-en-dummy" data-step-target="9">
             <span>10</span>
             Leider en dummy
-          </button>
-        </aside>
+          </a>
+        </nav>
 
         <article class="lesson-stage">
-          <section class="lesson-slide is-active" data-step="0" aria-labelledby="suits-title">
+          <section id="kleuren" class="lesson-slide lesson-section-card" data-step="0" aria-labelledby="suits-title" data-lesson-card>
             <p class="card-lesson-kicker">Eerst herkennen</p>
             <h2 id="suits-title">Een kaart heeft altijd een kleur</h2>
             <p>In bridge betekent kleur niet rood of zwart, maar een van deze vier families.</p>
@@ -107,7 +108,7 @@
             <p class="lesson-feedback">Schoppen en klaveren zijn zwart. Harten en ruiten zijn rood.</p>
           </section>
 
-          <section class="lesson-slide" data-step="1" aria-labelledby="thirteen-title">
+          <section id="dertien-per-kleur" class="lesson-slide lesson-section-card" data-step="1" aria-labelledby="thirteen-title" data-lesson-card>
             <p class="card-lesson-kicker">Daarna tellen</p>
             <h2 id="thirteen-title">Elke kleur heeft 13 kaarten</h2>
             <p>Een volledig spel heeft 4 kleuren. Elke kleur heeft 13 kaarten. Samen zijn dat 52 kaarten.</p>
@@ -136,7 +137,7 @@
             <div class="rank-row compact-ranks" aria-label="Dertien rangen in schoppen"></div>
           </section>
 
-          <section class="lesson-slide" data-step="2" aria-labelledby="rank-title">
+          <section id="hoog-naar-laag" class="lesson-slide lesson-section-card" data-step="2" aria-labelledby="rank-title" data-lesson-card>
             <p class="card-lesson-kicker">Dan vergelijken</p>
             <h2 id="rank-title">De aas is hoog, de twee is laag</h2>
             <p>In een slag wint meestal de hoogste kaart van de gevraagde kleur. Leer daarom eerst de volgorde.</p>
@@ -154,7 +155,7 @@
             </div>
           </section>
 
-          <section class="lesson-slide" data-step="3" aria-labelledby="deal-title">
+          <section id="vier-spelers" class="lesson-slide lesson-section-card" data-step="3" aria-labelledby="deal-title" data-lesson-card>
             <p class="card-lesson-kicker">Tot slot delen</p>
             <h2 id="deal-title">Vier spelers krijgen elk 13 kaarten</h2>
             <p>Je speelt samen met de speler recht tegenover je. De twee andere spelers vormen het andere team.</p>
@@ -202,7 +203,7 @@
             </aside>
           </section>
 
-          <section class="lesson-slide" data-step="4" aria-labelledby="wind-title">
+          <section id="windrichtingen" class="lesson-slide lesson-section-card" data-step="4" aria-labelledby="wind-title" data-lesson-card>
             <p class="card-lesson-kicker">Tafelkompas</p>
             <h2 id="wind-title">Noord, Oost, Zuid en West</h2>
             <p>De tafel werkt als een kompas. Jij zit Zuid, je partner zit Noord, en Oost/West zijn de tegenstanders.</p>
@@ -238,7 +239,7 @@
             </div>
           </section>
 
-          <section class="lesson-slide" data-step="5" aria-labelledby="goal-title">
+          <section id="doel" class="lesson-slide lesson-section-card" data-step="5" aria-labelledby="goal-title" data-lesson-card>
             <p class="card-lesson-kicker">Waarom speel je?</p>
             <h2 id="goal-title">Het doel is genoeg slagen winnen</h2>
             <p>Noord/Zuid spelen samen tegen Oost/West. Na het bieden ligt er een contract: hoeveel slagen een paar denkt te kunnen maken, en in welke speelsoort.</p>
@@ -260,7 +261,7 @@
             </aside>
           </section>
 
-          <section class="lesson-slide" data-step="6" aria-labelledby="phases-title">
+          <section id="bieden-en-spelen" class="lesson-slide lesson-section-card" data-step="6" aria-labelledby="phases-title" data-lesson-card>
             <p class="card-lesson-kicker">De twee fasen</p>
             <h2 id="phases-title">Eerst bieden, daarna spelen</h2>
             <p>Elke bridgehand heeft twee duidelijke fasen. De app laat eerst de bieding zien en daarna de kaartfase.</p>
@@ -281,7 +282,7 @@
             <p class="lesson-feedback">Een bod is dus nog geen gespeelde kaart. Het is een afspraak over het doel van het spel.</p>
           </section>
 
-          <section class="lesson-slide" data-step="7" aria-labelledby="trick-title">
+          <section id="slag-en-bekennen" class="lesson-slide lesson-section-card" data-step="7" aria-labelledby="trick-title" data-lesson-card>
             <p class="card-lesson-kicker">Een slag</p>
             <h2 id="trick-title">Vier kaarten vormen samen een slag</h2>
             <p>De speler die begint vraagt een kleur. Daarna speelt iedereen met de klok mee precies een kaart.</p>
@@ -305,7 +306,7 @@
             </div>
           </section>
 
-          <section class="lesson-slide" data-step="8" aria-labelledby="strain-title">
+          <section id="troef-en-sa" class="lesson-slide lesson-section-card" data-step="8" aria-labelledby="strain-title" data-lesson-card>
             <p class="card-lesson-kicker">Speelsoorten</p>
             <h2 id="strain-title">Je speelt met troef of zonder troef</h2>
             <p>Er zijn twee typen speelsoorten. Een kleurcontract heeft een troefkleur. SA, sans-atout of NT, betekent dat er geen troef is.</p>
@@ -324,7 +325,7 @@
             <p class="lesson-feedback">Je mag alleen troeven als je de gevraagde kleur niet kunt bekennen.</p>
           </section>
 
-          <section class="lesson-slide" data-step="9" aria-labelledby="dummy-title">
+          <section id="leider-en-dummy" class="lesson-slide lesson-section-card" data-step="9" aria-labelledby="dummy-title" data-lesson-card>
             <p class="card-lesson-kicker">Na de uitkomst</p>
             <h2 id="dummy-title">De leider speelt ook de kaarten van dummy</h2>
             <p>De leider is de speler die het contract speelt. De partner van de leider heet dummy en legt de kaarten open na de eerste kaart van het spelen.</p>
@@ -348,14 +349,19 @@
             </div>
           </section>
 
-          <footer class="lesson-controls">
-            <button id="previous-step" type="button">Vorige</button>
-            <button id="next-step" type="button">Volgende</button>
+          <footer class="lesson-card-controls lesson-controls" aria-label="Navigatie door leskaarten" data-lesson-card-controls>
+            <button id="previous-step" class="lesson-card-nav" type="button" data-lesson-previous>Vorige</button>
+            <p class="lesson-card-status" aria-live="polite">
+              <span data-lesson-card-position>Kaart 1 van 10</span>
+              <strong data-lesson-card-title>Kleuren</strong>
+            </p>
+            <button id="next-step" class="lesson-card-nav" type="button" data-lesson-next>Volgende</button>
           </footer>
         </article>
       </section>
     </main>
 
+    <script src="scripts/learning/lesson-cards.js"></script>
     <script src="scripts/learning/card-basics-page.js"></script>
   </body>
 </html>

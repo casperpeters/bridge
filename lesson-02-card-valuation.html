@@ -1,0 +1,394 @@
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Les 2 - Kaarten waarderen</title>
+    <link rel="icon" type="image/png" href="assets/branding/logo.png" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/card.css" />
+    <link rel="stylesheet" href="styles/lesson-cards.css" />
+    <link rel="stylesheet" href="styles/lesson-hand-valuation.css" />
+  </head>
+  <body class="valuation-lesson-body">
+    <main class="valuation-lesson-shell" data-lesson-card-page>
+      <header class="valuation-topbar">
+        <a class="valuation-brand" href="lessons.html" aria-label="Terug naar alle lessen">
+          <img class="valuation-logo" src="assets/branding/logo.png" alt="" aria-hidden="true" />
+          <span>
+            <span class="valuation-kicker">Les 2</span>
+            <strong>Kaarten waarderen</strong>
+          </span>
+        </a>
+        <nav class="valuation-toplinks" aria-label="Lesnavigatie">
+          <a href="lessons.html">Alle lessen</a>
+          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-nt-opening-001">Aan tafel</a>
+        </nav>
+      </header>
+
+      <section class="valuation-hero" aria-labelledby="valuation-lesson-title">
+        <div class="valuation-hero-copy">
+          <p class="valuation-kicker">Welkom aan tafel</p>
+          <h1 id="valuation-lesson-title">Kaarten waarderen voordat je biedt</h1>
+          <p>
+            Vandaag geef je Zuid eerst een rustig handpaspoort: HCP, verdeling, langste kleur en mogelijke fitwaarde.
+            Je hoeft nog geen perfecte bieding te vinden; je leert zien hoeveel de hand waard is en waarom die waarde later kan veranderen.
+          </p>
+        </div>
+        <div class="hcp-meter" aria-label="HCP-puntentelling">
+          <span class="score-card">Aas <strong>4</strong></span>
+          <span class="score-card">Heer <strong>3</strong></span>
+          <span class="score-card">Vrouw <strong>2</strong></span>
+          <span class="score-card">Boer <strong>1</strong></span>
+        </div>
+      </section>
+
+      <section class="lesson-metadata" hidden>
+        <p>Lesnummer: 2</p>
+        <p>Titel: Kaarten waarderen</p>
+        <p>Hoofdfocus: Bieden</p>
+        <p>Biedprofiel: fiveCardHigh</p>
+        <p>Nieuwe glossary-termen: HCP, Honneur, Evenwichtige verdeling, Singleton, Doubleton, Renonce, Fit, Fitpunten, Herwaarderen, Openingskracht</p>
+      </section>
+
+      <nav class="lesson-anchor-nav" aria-label="Onderdelen van deze les" data-lesson-card-nav>
+        <a href="#leerdoelen">Leerdoelen</a>
+        <a href="#situatie">Situatie</a>
+        <a href="#theorie">Theorie</a>
+        <a href="#voorbeeld">Voorbeeld</a>
+        <a href="#waarderingsvragen">Vragen</a>
+        <a href="#handgenerator">Handen</a>
+        <a href="#valkuilen">Valkuilen</a>
+        <a href="#mini-quiz-sectie">Quiz</a>
+        <a href="#puntenrace">Puntenrace</a>
+        <a href="#samenvatting">Samenvatting</a>
+      </nav>
+
+      <section id="leerdoelen" class="valuation-section valuation-grid-section lesson-section-card" aria-labelledby="goals-title" data-lesson-card>
+        <div>
+          <p class="valuation-kicker">Wat leer je vandaag?</p>
+          <h2 id="goals-title">Vijf dingen die elke hand sneller leesbaar maken</h2>
+          <ul class="lesson-goal-list">
+            <li>Je telt HCP met Aas 4, Heer 3, Vrouw 2 en Boer 1.</li>
+            <li>Je herkent een Evenwichtige verdeling: 4-3-3-3, 4-4-3-2 en 5-3-3-2.</li>
+            <li>Je ziet het verschil tussen singleton, doubleton en renonce.</li>
+            <li>Je herkent een Fit als samen minstens acht kaarten in een kleur.</li>
+            <li>Je begrijpt waarom je eerst HCP telt en later pas gaat herwaarderen.</li>
+          </ul>
+        </div>
+        <aside class="term-panel" aria-label="Begrippen in deze les">
+          <h3>Begrippen</h3>
+          <div class="term-cloud">
+            <span>HCP</span>
+            <span>Honneur</span>
+            <span>Evenwichtige verdeling</span>
+            <span>Singleton</span>
+            <span>Doubleton</span>
+            <span>Renonce</span>
+            <span>Fit</span>
+            <span>Fitpunten</span>
+            <span>Herwaarderen</span>
+            <span>Openingskracht</span>
+          </div>
+        </aside>
+      </section>
+
+      <section id="situatie" class="valuation-section situation-section lesson-section-card" aria-labelledby="situation-title" data-lesson-card>
+        <div>
+          <p class="valuation-kicker">De situatie</p>
+          <h2 id="situation-title">Zuid is aan de beurt. Wat weet je al?</h2>
+          <p>
+            Je pakt je kaarten op. Voor je aan een Opening denkt, stel je drie vragen: hoeveel HCP heb ik, hoe is mijn verdeling,
+            en welke kleur is het langst? Pas daarna vraag je of de hand Openingskracht heeft.
+          </p>
+        </div>
+        <div class="sample-hand-card">
+          <div class="sample-hand" data-sample-hand="AS KS 8S 3S QH 7H 4H KD QD 6D JC 9C 2C" aria-label="Voorbeeldhand Zuid"></div>
+          <p class="lesson-callout">
+            Deze hand heeft 15 HCP en een 4-3-3-3 verdeling. In Vijfkaart Hoog wijst dat naar 1SA: 15-17 HCP en evenwichtig.
+          </p>
+        </div>
+      </section>
+
+      <section id="theorie" class="valuation-section lesson-section-card" aria-labelledby="theory-title" data-lesson-card>
+        <p class="valuation-kicker">De theorie in kleine stappen</p>
+        <h2 id="theory-title">Van losse plaatjes naar een biedbare hand</h2>
+
+        <div class="theory-steps">
+          <article class="theory-step">
+            <span class="lesson-step-number">1</span>
+            <div>
+              <h3>HCP telt alleen Aas, Heer, Vrouw en Boer</h3>
+              <p class="kernel">Kernzin: HCP is je eerste snelle krachtmeter.</p>
+              <p>
+                HCP betekent honneurpunten. Aas telt 4, Heer 3, Vrouw 2 en Boer 1. De 10 is wel een Honneur,
+                maar telt niet mee als HCP. Een hand met Aas, Heer, Vrouw en Boer heeft dus 10 HCP.
+              </p>
+              <p class="step-terms">Glossary-termen: HCP, Honneur.</p>
+              <div class="quick-check" aria-label="Korte HCP-check">
+                <p>Probeer zelf: hoeveel HCP is Aas-Heer-Vrouw-Boer-10 samen?</p>
+                <div class="quick-options">
+                  <button type="button" data-correct="false" data-feedback="Bijna. De 10 is wel een Honneur, maar telt 0 HCP.">11</button>
+                  <button type="button" data-correct="true" data-feedback="Goed. 4 + 3 + 2 + 1 + 0 = 10 HCP.">10</button>
+                  <button type="button" data-correct="false" data-feedback="Tel Aas, Heer, Vrouw en Boer nog eens op: 4 + 3 + 2 + 1.">9</button>
+                </div>
+                <p class="quick-feedback" aria-live="polite">Kies het totaal.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="theory-step">
+            <span class="lesson-step-number">2</span>
+            <div>
+              <h3>Verdeling vertelt hoe de hand gebouwd is</h3>
+              <p class="kernel">Kernzin: dezelfde HCP kunnen in een rustige of juist grillige hand zitten.</p>
+              <p>
+                Je verdeling is het aantal kaarten per kleur. 4-3-3-3, 4-4-3-2 en 5-3-3-2 heten een Evenwichtige verdeling.
+                Met zo'n hand past sans-atout vaker in beeld. Een 6-4-2-1 hand is onevenwichtiger en vraagt later meer kleurdenken.
+              </p>
+              <p class="step-terms">Glossary-termen: Evenwichtige verdeling, HCP.</p>
+              <div class="quick-check" aria-label="Korte verdelingscheck">
+                <p>Probeer zelf: welke verdeling is evenwichtig?</p>
+                <div class="quick-options">
+                  <button type="button" data-correct="true" data-feedback="Precies. 5-3-3-2 is een van de drie evenwichtige verdelingen.">5-3-3-2</button>
+                  <button type="button" data-correct="false" data-feedback="6-4-2-1 heeft een singleton en is niet evenwichtig.">6-4-2-1</button>
+                  <button type="button" data-correct="false" data-feedback="7-3-2-1 is duidelijk onevenwichtig.">7-3-2-1</button>
+                </div>
+                <p class="quick-feedback" aria-live="polite">Kies de rustige SA-verdeling.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="theory-step">
+            <span class="lesson-step-number">3</span>
+            <div>
+              <h3>Korte kleuren krijgen namen</h3>
+              <p class="kernel">Kernzin: hoe korter een zijkleur is, hoe meer die later kan gaan betekenen.</p>
+              <p>
+                Een doubleton is precies twee kaarten in een kleur. Een singleton is precies een kaart. Een renonce is nul kaarten.
+                Voor de eerste telling leveren die korte kleuren nog geen gewone HCP op. Ze worden pas extra interessant zodra je een Fit hebt.
+              </p>
+              <p class="step-terms">Glossary-termen: Doubleton, Singleton, Renonce, Fit.</p>
+              <div class="quick-check" aria-label="Korte kleur-check">
+                <p>Probeer zelf: hoe heet nul kaarten in een kleur?</p>
+                <div class="quick-options">
+                  <button type="button" data-correct="false" data-feedback="Een doubleton is twee kaarten.">Doubleton</button>
+                  <button type="button" data-correct="false" data-feedback="Een singleton is een kaart.">Singleton</button>
+                  <button type="button" data-correct="true" data-feedback="Ja. Een renonce betekent dat je nul kaarten in die kleur hebt.">Renonce</button>
+                </div>
+                <p class="quick-feedback" aria-live="polite">Kies de naam voor nul kaarten.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="theory-step">
+            <span class="lesson-step-number">4</span>
+            <div>
+              <h3>Een fit maakt troefcontrole mogelijk</h3>
+              <p class="kernel">Kernzin: een Fit is samen minstens acht kaarten in een kleur.</p>
+              <p>
+                Als partner vijf harten belooft en jij hebt drie harten, hebben jullie samen acht harten. Dat is een Fit.
+                Met een Fit kan die kleur troef worden. Dan zijn extra troeven en korte zijkleuren waardevoller, omdat je verliezers kunt aftroeven.
+              </p>
+              <p class="step-terms">Glossary-termen: Fit, Fitpunten, Singleton, Doubleton.</p>
+              <div class="quick-check" aria-label="Korte fit-check">
+                <p>Probeer zelf: partner heeft vijf harten, jij hebt drie harten. Is dat een Fit?</p>
+                <div class="quick-options">
+                  <button type="button" data-correct="true" data-feedback="Klopt. 5 + 3 = 8 kaarten samen, dus een Fit.">Ja</button>
+                  <button type="button" data-correct="false" data-feedback="Tel samen: vijf bij partner en drie bij jou maakt acht.">Nee</button>
+                </div>
+                <p class="quick-feedback" aria-live="polite">Tel de kaarten samen.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="theory-step">
+            <span class="lesson-step-number">5</span>
+            <div>
+              <h3>Eerst tellen, daarna herwaarderen</h3>
+              <p class="kernel">Kernzin: HCP is het startpunt; Fitpunten komen pas met meer informatie.</p>
+              <p>
+                Aan het begin weet je nog niet of partner jouw korte kleur kan benutten. Daarom tel je eerst HCP en herken je de basisverdeling.
+                Zodra de bieding een Fit laat zien, ga je herwaarderen. Dan kunnen singleton, doubleton, renonce en extra troeven meer waard worden.
+              </p>
+              <p class="step-terms">Glossary-termen: HCP, Fitpunten, Herwaarderen, Openingskracht.</p>
+              <div class="quick-check" aria-label="Korte herwaarderingscheck">
+                <p>Probeer zelf: wat tel je als eerste, voordat je weet of er een Fit is?</p>
+                <div class="quick-options">
+                  <button type="button" data-correct="true" data-feedback="Precies. HCP is je eerste anker. Later kun je met Fitpunten herwaarderen.">HCP</button>
+                  <button type="button" data-correct="false" data-feedback="Fitpunten gebruik je pas nadat een Fit waarschijnlijk is.">Fitpunten</button>
+                </div>
+                <p class="quick-feedback" aria-live="polite">Kies het startpunt.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="voorbeeld" class="valuation-section lesson-section-card" aria-labelledby="table-example-title" data-lesson-card>
+        <p class="valuation-kicker">Kijk mee aan tafel</p>
+        <h2 id="table-example-title">Een handpaspoort voor Zuid</h2>
+        <div class="table-example-grid">
+          <div class="sample-hand" data-sample-hand="AS KS 8S 3S QH 7H 4H KD QD 6D JC 9C 2C" aria-label="Uitgewerkt voorbeeld Zuid"></div>
+          <div class="example-notes">
+            <h3>Wat zie je?</h3>
+            <ol>
+              <li>HCP: Aas schoppen 4, Heer schoppen 3, Vrouw harten 2, Heer ruiten 3, Vrouw ruiten 2, Boer klaveren 1. Samen 15.</li>
+              <li>Verdeling: 4 schoppen, 3 harten, 3 ruiten, 3 klaveren. Dat is 4-3-3-3 en dus evenwichtig.</li>
+              <li>Langste kleur: schoppen met vier kaarten, maar geen vijfkaart.</li>
+              <li>Eerste biedidee: 1SA is logisch in dit systeem, want 15-17 HCP en een Evenwichtige verdeling.</li>
+            </ol>
+            <p class="lesson-callout">
+              Let op: je noemt nu nog geen Fitpunten. Die komen pas als partner later steun of een mogelijke Fit laat zien.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="waarderingsvragen" class="valuation-section lesson-section-card" aria-labelledby="questions-title" data-lesson-card>
+        <p class="valuation-kicker">Jij bent aan de beurt</p>
+        <h2 id="questions-title">Interactieve handwaarderingsvragen</h2>
+        <p class="section-intro">
+          Kijk steeds eerst naar de hand, kies je antwoord en lees daarna de feedback. De vragen wisselen HCP, verdeling,
+          langste kleur en mogelijke fitwaarde af.
+        </p>
+        <div id="valuation-questions" class="valuation-question-grid"></div>
+      </section>
+
+      <section id="handgenerator" class="valuation-section lesson-section-card" aria-labelledby="generator-title" data-lesson-card>
+        <p class="valuation-kicker">Oefenen met handen</p>
+        <h2 id="generator-title">Genereer handen met duidelijke criteria</h2>
+        <p class="section-intro">
+          Deze oefenknoppen maken telkens een nieuwe Zuid-hand die aan het criterium voldoet. De ids hieronder zijn voorstel-ids
+          voor latere vaste oefenhanden; de pagina gebruikt nu live gegenereerde handen om sneller te kunnen oefenen.
+        </p>
+
+        <div class="criteria-layout">
+          <div class="criteria-list" aria-label="Handcriteria">
+            <button type="button" data-criterion="exact12">
+              <strong>lesson-02-exact-12-hcp-generated-001</strong>
+              <span>Exact 12 HCP: openingskracht tellen zonder extra verhaal.</span>
+            </button>
+            <button type="button" data-criterion="balanced1517">
+              <strong>lesson-02-balanced-15-17-generated-001</strong>
+              <span>15-17 HCP en een Evenwichtige verdeling: 1SA-kandidaat.</span>
+            </button>
+            <button type="button" data-criterion="fitSingleton">
+              <strong>lesson-02-fit-singleton-generated-001</strong>
+              <span>Singleton naast drie of meer harten: later waardevoller met een hartenfit.</span>
+            </button>
+            <button type="button" data-criterion="rule20Intro">
+              <strong>lesson-02-rule-of-20-intro-generated-001</strong>
+              <span>10-11 HCP met twee lange kleuren: introductie van de Regel van 20, nog zonder alle details.</span>
+            </button>
+          </div>
+
+          <article class="generated-hand-panel" aria-live="polite">
+            <div id="generated-hand" class="generated-hand"></div>
+            <div id="generated-facts" class="generated-facts">
+              Kies links een criterium om een oefenhand te maken.
+            </div>
+          </article>
+        </div>
+
+        <div class="practice-links">
+          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-nt-opening-001">Oefen 1SA-opening</a>
+          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=opening-pass-001">Oefen passen zonder openingskracht</a>
+          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-heart-opening-001">Oefen vijfkaart hoog openen</a>
+        </div>
+      </section>
+
+      <section id="valkuilen" class="valuation-section lesson-section-card" aria-labelledby="mistakes-title" data-lesson-card>
+        <p class="valuation-kicker">Veelgemaakte beginnersfouten</p>
+        <h2 id="mistakes-title">Valkuilen die bijna iedereen een keer maakt</h2>
+        <div class="mistake-grid">
+          <article>
+            <h3>De 10 als HCP tellen</h3>
+            <p>Waarom begrijpelijk: de 10 is echt een Honneur. Betere vraag: telt deze honneur ook in de HCP-telling? Nee, de 10 telt 0.</p>
+          </article>
+          <article>
+            <h3>Een 5-3-3-2 hand onevenwichtig noemen</h3>
+            <p>Waarom begrijpelijk: er zit een vijfkaart in. Betere vraag: staat 5-3-3-2 op de lijst met evenwichtige verdelingen? Ja.</p>
+          </article>
+          <article>
+            <h3>Te vroeg fitpunten bijtellen</h3>
+            <p>Waarom begrijpelijk: korte kleuren zien er spannend uit. Betere vraag: weet ik al dat we een Fit hebben? Zo niet, eerst HCP tellen.</p>
+          </article>
+          <article>
+            <h3>Lengte en kracht door elkaar halen</h3>
+            <p>Waarom begrijpelijk: een lange kleur voelt sterk. Betere vraag: hoeveel HCP heb ik, en waar zitten die punten?</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="mini-quiz-sectie" class="valuation-section lesson-section-card" aria-labelledby="quiz-title" data-lesson-card>
+        <p class="valuation-kicker">Mini-quiz</p>
+        <h2 id="quiz-title">Zeven korte checks voordat je gaat racen</h2>
+        <div id="mini-quiz" class="mini-quiz"></div>
+      </section>
+
+      <section id="puntenrace" class="valuation-section race-section lesson-section-card" aria-labelledby="race-title" data-lesson-card>
+        <div>
+          <p class="valuation-kicker">Eindchallenge</p>
+          <h2 id="race-title">Puntenrace</h2>
+          <p class="section-intro">
+            Je krijgt 10 handen. Kies per hand het HCP-totaal en of de verdeling evenwichtig is.
+            Het gaat om snel en rustig herkennen, niet om perfecte biedkunst.
+          </p>
+        </div>
+
+        <article class="race-panel" aria-live="polite">
+          <header class="race-status">
+            <span id="race-progress">Hand 0 van 10</span>
+            <span id="race-timer">75 sec</span>
+            <span id="race-score">Score 0</span>
+          </header>
+          <div id="race-hand" class="race-hand-placeholder">
+            Start de Puntenrace om de eerste hand te zien.
+          </div>
+          <div class="race-answer-grid">
+            <fieldset>
+              <legend>Hoeveel HCP?</legend>
+              <div id="race-hcp-options" class="race-options"></div>
+            </fieldset>
+            <fieldset>
+              <legend>Evenwichtige verdeling?</legend>
+              <div id="race-balance-options" class="race-options">
+                <button type="button" data-race-balanced="true">Ja</button>
+                <button type="button" data-race-balanced="false">Nee</button>
+              </div>
+            </fieldset>
+          </div>
+          <div class="race-actions">
+            <button id="race-start" type="button">Start Puntenrace</button>
+            <button id="race-submit" type="button" disabled>Controleer</button>
+          </div>
+          <p id="race-feedback" class="race-feedback">Je score telt alleen wanneer HCP en verdeling allebei kloppen.</p>
+        </article>
+      </section>
+
+      <section id="samenvatting" class="valuation-section summary-section lesson-section-card" aria-labelledby="summary-title" data-lesson-card>
+        <p class="valuation-kicker">Samenvatting</p>
+        <h2 id="summary-title">Vijf zinnen om mee te nemen</h2>
+        <ol>
+          <li>HCP tel je met Aas 4, Heer 3, Vrouw 2 en Boer 1.</li>
+          <li>De 10 is wel een Honneur, maar telt niet mee als HCP.</li>
+          <li>4-3-3-3, 4-4-3-2 en 5-3-3-2 zijn evenwichtige verdelingen.</li>
+          <li>Een Fit is samen minstens acht kaarten in een kleur, en daarna kunnen korte kleuren meer waard worden.</li>
+          <li>Tel eerst HCP, herken daarna verdeling en langste kleur, en ga pas herwaarderen wanneer de bieding meer informatie geeft.</li>
+        </ol>
+      </section>
+
+      <div class="lesson-card-controls" aria-label="Navigatie door leskaarten" data-lesson-card-controls>
+        <button id="lesson-previous-card" class="lesson-card-nav lesson-card-nav-previous" type="button" data-lesson-previous>Vorige</button>
+        <p class="lesson-card-status" aria-live="polite">
+          <span id="lesson-card-position" data-lesson-card-position>Kaart 1 van 10</span>
+          <strong id="lesson-card-title" data-lesson-card-title>Leerdoelen</strong>
+        </p>
+        <button id="lesson-next-card" class="lesson-card-nav lesson-card-nav-next" type="button" data-lesson-next>Volgende</button>
+      </div>
+    </main>
+
+    <script src="scripts/learning/lesson-cards.js"></script>
+    <script src="scripts/learning/hand-valuation-page.js"></script>
+  </body>
+</html>

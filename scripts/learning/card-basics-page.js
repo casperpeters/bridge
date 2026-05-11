@@ -5,10 +5,6 @@
   const rankLabel = { T: "10", J: "J", Q: "Q", K: "K", A: "A" };
   const suitSymbols = { C: "\u2663", D: "\u2666", H: "\u2665", S: "\u2660" };
   const suitNames = { C: "klaveren", D: "ruiten", H: "harten", S: "schoppen" };
-  const slides = [...document.querySelectorAll(".lesson-slide")];
-  const progressButtons = [...document.querySelectorAll(".progress-step")];
-  const previous = document.querySelector("#previous-step");
-  const next = document.querySelector("#next-step");
   const rankFeedback = document.querySelector("#rank-feedback");
   const suitCountFeedback = document.querySelector("#suit-count-feedback");
   const dealButton = document.querySelector("#deal-demo");
@@ -27,18 +23,12 @@
   ];
   const sampleDeal = buildSampleDeal();
   let dealTimers = [];
-  let currentStep = 0;
   let windStep = 0;
 
   preserveTestHooksOnLessonLinks();
   renderRanks(".compact-ranks", "S");
   renderRanks(".full-ranks", "H");
   renderWindStep();
-  showStep(0);
-
-  progressButtons.forEach((button) => {
-    button.addEventListener("click", () => showStep(Number(button.dataset.stepTarget || 0)));
-  });
 
   document.querySelectorAll(".suit-count-card").forEach((button) => {
     button.addEventListener("click", () => {
@@ -53,12 +43,6 @@
         suitCountFeedback.textContent = `Je bekijkt nu de 13 ${suitNames[suit] || "schoppen"}kaarten.`;
       }
     });
-  });
-
-  previous?.addEventListener("click", () => showStep(currentStep - 1));
-  next?.addEventListener("click", () => {
-    if (currentStep === slides.length - 1) showStep(0);
-    else showStep(currentStep + 1);
   });
 
   document.querySelectorAll(".choice-card").forEach((button) => {
@@ -79,19 +63,6 @@
   windSeats.forEach((button) => {
     button.addEventListener("click", () => chooseWindSeat(button));
   });
-
-  function showStep(step) {
-    currentStep = Math.max(0, Math.min(slides.length - 1, step));
-    slides.forEach((slide, index) => {
-      slide.classList.toggle("is-active", index === currentStep);
-    });
-    progressButtons.forEach((button, index) => {
-      if (index === currentStep) button.setAttribute("aria-current", "true");
-      else button.removeAttribute("aria-current");
-    });
-    if (previous) previous.disabled = currentStep === 0;
-    if (next) next.textContent = currentStep === slides.length - 1 ? "Nog eens bekijken" : "Volgende";
-  }
 
   function renderRanks(selector, suit) {
     const row = document.querySelector(selector);

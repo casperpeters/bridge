@@ -134,6 +134,7 @@
       render.renderBidControls();
       render.renderPlayPlan();
       render.renderHistory();
+      render.renderLessonPanel?.();
       render.renderPlayExplanations();
       render.renderReview();
       renderContract();

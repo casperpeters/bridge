@@ -8,6 +8,7 @@
     const { seats } = runtime.constants;
 
     function startHand({ replay = false, seed = null, preserveBoard = false, skipFlow = false } = {}) {
+      actions.exitLessonMode?.();
       const reuseCurrentDeal = replay && state.dealSeed && state.dealNumber > 0;
       const loadedSeed = actions.normalizeSeed(seed);
       if (!reuseCurrentDeal) {
@@ -24,8 +25,9 @@
       });
     }
 
-    function startPracticeHand(handId, { preserveBoard = false, skipFlow = false, lesson = null } = {}) {
+    function startPracticeHand(handId, { preserveBoard = false, skipFlow = false, lesson = null, lessonContext = null } = {}) {
       if (!globalThis.PracticeHands) throw new Error("practice-hands/index.js must load before practice hands can be used");
+      if (!lesson) actions.exitLessonMode?.();
       const scenario = globalThis.PracticeHands.preparePracticeHand(handId);
       if (!preserveBoard || state.dealNumber === 0) state.dealNumber += 1;
 
@@ -34,7 +36,7 @@
         dealerIndex: seats.indexOf(scenario.dealer),
         vulnerability: scenario.vulnerability,
         hands: scenario.hands,
-        practice: practiceStateFromScenario(scenario, lesson),
+        practice: practiceStateFromScenario(scenario, lesson, lessonContext),
         skipFlow
       });
       return scenario;
@@ -52,6 +54,8 @@
         practice
       }));
       state.lessonBoardAcknowledged = [];
+      state.lessonTableTaskDone = false;
+      state.lessonActionFeedback = null;
       if (timers.illegalActionFeedbackTimer) {
         window.clearTimeout(timers.illegalActionFeedbackTimer);
         timers.illegalActionFeedbackTimer = null;
@@ -97,13 +101,27 @@
 
     function replayHand() {
       if (state.practice?.id) {
-        startPracticeHand(state.practice.id, { preserveBoard: true });
+        const lesson = state.practice.lessonId ? globalThis.BridgeLessons?.findLesson?.(state.practice.lessonId) || null : null;
+        const lessonContext = lesson ? lessonContextFromPractice() : null;
+        if (lesson) actions.enterLessonMode?.();
+        startPracticeHand(state.practice.id, { preserveBoard: true, lesson, lessonContext });
         return;
       }
       startHand({ replay: true });
     }
 
-    function practiceStateFromScenario(scenario, lesson = null) {
+    function lessonContextFromPractice() {
+      return {
+        chapterId: state.practice?.lessonChapterId || null,
+        chapterTitle: state.practice?.lessonChapterTitle || "",
+        returnHref: state.practice?.lessonReturnHref || "",
+        tableTask: state.practice?.lessonTableTask || null,
+        boardGuidance: state.practice?.lessonBoardGuidance || []
+      };
+    }
+
+    function practiceStateFromScenario(scenario, lesson = null, lessonContext = null) {
+      const context = lesson ? lessonContext || {} : {};
       return {
         id: scenario.id,
         title: scenario.title,
@@ -125,12 +143,17 @@
         lessonFocus: lesson?.focus ? [...lesson.focus] : [],
         lessonIntro: lesson?.intro || "",
         lessonReviewFeedback: lesson?.reviewFeedback ? [...lesson.reviewFeedback] : [],
-        lessonBoardGuidance: lesson?.boardGuidance ? lesson.boardGuidance.map((step) => ({ ...step })) : []
+        lessonChapterId: context.chapterId || null,
+        lessonChapterTitle: context.chapterTitle || "",
+        lessonReturnHref: context.returnHref || "",
+        lessonTableTask: context.tableTask ? { ...context.tableTask } : null,
+        lessonBoardGuidance: context.boardGuidance ? context.boardGuidance.map((step) => ({ ...step })) : (lesson?.boardGuidance ? lesson.boardGuidance.map((step) => ({ ...step })) : [])
       };
     }
 
     Object.assign(actions, {
       clearDealAnimationTimer,
+      lessonContextFromPractice,
       practiceStateFromScenario,
       replayHand,
       resetScheduledFlow,

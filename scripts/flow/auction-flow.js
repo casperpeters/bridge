@@ -25,6 +25,8 @@
       teamOf
     } = helpers;
     const enterContractReveal = (...args) => actions.enterContractReveal(...args);
+    const lessonBoardBlocksHumanBid = (...args) => actions.lessonBoardBlocksHumanBid?.(...args);
+    const maybeCompleteLessonTableTask = (...args) => actions.maybeCompleteLessonTableTask?.(...args);
     const prepareContractFromAuction = (...args) => actions.prepareContractFromAuction(...args);
     const renderAll = (...args) => render.renderAll(...args);
     const setStatus = (...args) => actions.setStatus(...args);
@@ -32,6 +34,7 @@
 function continueAuction() {
   if (state.phase !== "bidding") return;
   if (state.animateDeal) return;
+  if (actions.lessonTableTaskIsDone?.()) return;
   const seat = seatAt(state.turnIndex);
   renderAll();
   if (auctionComplete()) {
@@ -53,11 +56,13 @@ function continueAuction() {
 function makeBid(seat, bid, bidResult = null) {
   if (state.phase !== "bidding" || seat !== seatAt(state.turnIndex)) return;
   if (state.animateDeal) return;
+  if (lessonBoardBlocksHumanBid(seat)) return;
   const typedBid = normalizeBid(bid);
   if (!typedBid) return;
   if (isContractBid(typedBid) && !isBidHigher(typedBid, highestBid())) return;
   if (isDouble(typedBid) && !canDouble(seat)) return;
   if (isRedouble(typedBid) && !canRedouble(seat)) return;
+  if (!actions.validateLessonTableAction?.("bid", { seat, bid: typedBid })) return;
   const call = {
     seat,
     bid: typedBid,
@@ -68,6 +73,7 @@ function makeBid(seat, bid, bidResult = null) {
   if (bidResult && !sameCall(bidResult.bid, typedBid)) call.recommendedBidResult = bidResult;
   Object.assign(state, BridgeStateTransitions.applyBidTransition(state, { ...call, seatCount: seats.length }));
   renderAll();
+  if (maybeCompleteLessonTableTask("bid")) return;
   continueAuction();
 }
 
