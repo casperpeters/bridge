@@ -82,7 +82,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Lessen en oefenmodus
 
-- Werk lessen 3-12 later net zo rijk uit als les 1 en 2, met interactieve vragen, gerichte oefenstart en betrouwbare reviewfeedback per lesdoel.
+- Werk lessen 4-12 later net zo rijk uit als les 1, 2 en 3, met interactieve vragen, gerichte oefenstart en betrouwbare reviewfeedback per lesdoel.
 - Voeg ongedaan maken/herhalen toe voor de leermodus, minstens voor de meest recente kaart.
 - Voeg keuze-feedback toe in lessen, niet in de rustige basisgame, en alleen wanneer de engine de uitleg betrouwbaar kan onderbouwen.
 

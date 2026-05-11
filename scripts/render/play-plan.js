@@ -314,6 +314,33 @@ function playPlanReferenceText(result) {
 function playPlanFallbackText(fallback) {
   const priority = fallback.priority;
   const priorityText = playPlanPriorityBriefText(priority);
+  if (fallback.reason === "finesseCardNotWinning") {
+    const finesse = fallback.finesseCard ? cardText(fallback.finesseCard) : rankLabel[fallback.finesseRank] || fallback.finesseRank;
+    const winner = fallback.winningCard ? cardText(fallback.winningCard) : "de huidige winnaar";
+    const seat = fallback.winningSeat ? ` van ${seatName(fallback.winningSeat)}` : "";
+    return `${priorityText} kan nu niet: ${finesse} wint niet van ${winner}${seat}.`;
+  }
+  if (fallback.reason === "finesseCardUnnecessary") {
+    const winner = fallback.winningCard ? cardText(fallback.winningCard) : "de huidige winnaar";
+    const seat = fallback.winningSeat ? ` bij ${seatName(fallback.winningSeat)}` : "";
+    return `${priorityText} is nu niet nodig: ${winner}${seat} wint de slag al.`;
+  }
+  if (fallback.reason === "roundLimitReached") {
+    const rounds = typeof fallback.roundLimit === "number" ? `${fallback.roundLimit} ronde${fallback.roundLimit === 1 ? "" : "s"}` : "de afgesproken rondes";
+    return `${priorityText} wacht: ${rounds} troef trekken is nu genoeg voor dit plan.`;
+  }
+  if (fallback.reason === "preserveTrumpForRuff") {
+    const seat = fallback.preserveSeat ? ` bij ${seatName(fallback.preserveSeat)}` : "";
+    const count = fallback.preserveTrumpCount ? ` ${fallback.preserveTrumpCount} troef${fallback.preserveTrumpCount === 1 ? "" : "en"}` : " troef";
+    return `${priorityText} wacht: bewaar${count}${seat} voor de geplande introever.`;
+  }
+  if (fallback.reason === "missingEntry") {
+    const target = fallback.targetSeat ? seatName(fallback.targetSeat) : "de juiste hand";
+    const entry = fallback.entrySuit && fallback.entryRank
+      ? ` via ${rankLabel[fallback.entryRank] || fallback.entryRank} ${suitName(fallback.entrySuit)}`
+      : "";
+    return `${priorityText} wacht: er is nu geen duidelijke entree${entry} naar ${target}.`;
+  }
   if (fallback.reason === "followSuit") {
     return `je moet eerst ${suitName(fallback.leadSuit)} bekennen; ${priorityText} is nu niet legaal.`;
   }
@@ -328,6 +355,11 @@ function playPlanFallbackText(fallback) {
     return `maak deze slag eerst af; ${priorityText} kan pas op een passende slag.`;
   }
   return `${priorityText} is nu niet direct speelbaar.`;
+}
+
+function cardText(card) {
+  if (!card) return "die kaart";
+  return `${rankLabel[card.rank] || card.rank} ${suitName(card.suit)}`;
 }
 
 function playPlanPriorityBriefText(priority) {

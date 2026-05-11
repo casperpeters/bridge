@@ -33,7 +33,7 @@
 
       els.openLessons?.addEventListener("click", () => actions.closeAppMenu());
       if (els.openLessons && new URLSearchParams(root.location?.search || "").has("testHooks")) {
-        els.openLessons.href = "lessons.html?testHooks=1";
+        els.openLessons.href = "lessons/index.html?testHooks=1";
       }
 
       els.openScoreTable?.addEventListener("click", actions.openScoreTableDialog);

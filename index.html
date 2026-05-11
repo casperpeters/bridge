@@ -33,7 +33,7 @@
                 </section>
                 <section class="menu-section" aria-labelledby="help-menu-title">
                   <p id="help-menu-title" class="menu-section-title">Hulp</p>
-                  <a id="open-lessons" class="button-link" href="lessons.html">Lessen</a>
+                  <a id="open-lessons" class="button-link" href="lessons/index.html">Lessen</a>
                   <button id="open-glossary" type="button">Woordenlijst</button>
                   <button id="open-score-table" type="button">Scoretabel</button>
                 </section>
@@ -299,20 +299,6 @@
       </section>
     </dialog>
 
-    <dialog id="lessons-dialog" class="lessons-dialog" aria-labelledby="lessons-title">
-      <section class="lessons-panel" aria-label="Lessen">
-        <div class="feedback-head">
-          <div>
-            <p id="lessons-eyebrow" class="review-section-title">Vijfkaart Hoog</p>
-            <h2 id="lessons-title">Lessen</h2>
-          </div>
-          <button id="close-lessons" class="feedback-close" type="button" aria-label="Sluiten">x</button>
-        </div>
-        <p id="lessons-intro" class="lessons-intro"></p>
-        <div id="lessons-list" class="lessons-list" aria-label="Oefeningen"></div>
-      </section>
-    </dialog>
-
     <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title">
       <section id="feedback-panel" class="feedback-panel" aria-label="Feedback">
         <div class="feedback-head">
@@ -396,6 +382,10 @@
     <script src="rules/bidding/systems/five-card-high/explanations-nl.js"></script>
     <script src="scripts/learning/bid-explanations.js"></script>
     <script src="scripts/learning/glossary.js"></script>
+    <script src="scripts/learning/catalog/lesson-data.js"></script>
+    <script src="scripts/learning/catalog/lesson-cloning.js"></script>
+    <script src="scripts/learning/table/lesson-table-task.js"></script>
+    <script src="scripts/learning/catalog/lesson-validation.js"></script>
     <script src="scripts/learning/lessons.js"></script>
     <script src="scripts/app/runtime.js"></script>
     <script src="scripts/app/helpers.js"></script>

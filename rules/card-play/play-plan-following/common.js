@@ -108,6 +108,16 @@
 
 
 
+  function planFallbackOnly(fallback) {
+      if (!fallback) return null;
+      return {
+        planFallbackOnly: true,
+        fallback
+      };
+    }
+
+
+
   function legalPlanCard(card, legal) {
         if (!card) return null;
         return legal.find((item) => item.id === card.id) || null;
@@ -118,6 +128,7 @@
   return {
     describePlayPlanFallback,
     withPlayPlanFallback,
+    planFallbackOnly,
     legalPlanCard
   };
 });

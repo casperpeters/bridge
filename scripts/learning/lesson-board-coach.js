@@ -220,7 +220,7 @@ function returnToLessonLink(label) {
 }
 
 function lessonReturnHref() {
-  return state.practice?.lessonReturnHref || actions.defaultLessonReturnHref?.(state.practice?.lessonId, state.practice?.lessonChapterId) || "lessons.html";
+  return state.practice?.lessonReturnHref || actions.defaultLessonReturnHref?.(state.practice?.lessonId, state.practice?.lessonChapterId) || "lessons/index.html";
 }
 
 function isLessonModeActive() {

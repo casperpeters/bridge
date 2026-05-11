@@ -246,6 +246,24 @@ function explainCardPlayResult(result) {
   if (ruleName === "ruffOutLongSuit") {
     return `Troef ${suitName(result.suit)} in ${seatName(result.shortSeat)} om de lange kleur van ${seatName(result.longSeat)} vrij te spelen.`;
   }
+  if (ruleName === "skipRuffPartnerWinning") {
+    return `Partner wint ${suitName(result.suit)} al, dus troef nu niet in en bewaar de troef voor de geplande introever.`;
+  }
+  if (ruleName === "crossRuff") {
+    if (result.action === "cashWinnerBeforeCrossRuff") {
+      return "Incasseer eerst deze hoge zijkleurkaart voordat je de crossruff voortzet.";
+    }
+    if (result.action === "leadCrossRuff") {
+      return `Speel ${suitName(result.suit)} naar de renonce van ${seatName(result.shortSeat)} voor de crossruff.`;
+    }
+    if (result.action === "skipCrossRuffPartnerWinning") {
+      return `Partner wint ${suitName(result.suit)} al veilig, dus troef nu niet en bewaar de troef voor de volgende crossruff.`;
+    }
+    if (result.action === "winSideSuitForCrossRuff") {
+      return `Win eerst ${suitName(result.suit)} zodat de crossruff daarna onder controle blijft.`;
+    }
+    return `Troef ${suitName(result.suit)} laag in ${seatName(result.shortSeat)} voor de crossruff.`;
+  }
   if (ruleName === "lateCrossRuff") {
     if (result.action === "cashWinnerBeforeLateCrossRuff") {
       return "Incasseer deze zekere slag voor de late crossruff.";
@@ -254,6 +272,10 @@ function explainCardPlayResult(result) {
       return `Speel ${suitName(result.suit)} naar partners renonce: de tegenpartij heeft geen troef meer, dus partner kan laag troeven.`;
     }
     return `Troef laag in ${suitName(result.suit)} om de slag zeker te maken; de tegenpartij heeft geen troef meer.`;
+  }
+  if ((ruleName === "cashSureWinners" || ruleName === "cashWinners") && result.action === "preserveWinnerUnderPartnerWinner") {
+    const winner = result.winningSeat ? seatName(result.winningSeat) : "Partner";
+    return `${winner} wint deze slag al; speel laag en bewaar de geplande hoge kaart.`;
   }
   if (ruleName === "cashSureWinners") return "Speel een hoge zekere slag uit voordat je een nieuwe kleur openbreekt.";
   if (ruleName === "cashWinners") return "Incasseer de geplande zekere slag uit het speelplan.";

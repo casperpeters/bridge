@@ -94,19 +94,19 @@ function isLessonModeActive() {
 }
 
 function defaultReturnHref(lessonId, chapterId = null) {
-  const href = new URL("lessons.html", globalThis.location?.href || "http://localhost/");
+  const href = new URL("lessons/index.html", globalThis.location?.href || "http://localhost/");
   href.searchParams.set("lesson", lessonId);
   if (chapterId) href.hash = chapterId;
-  return `${href.pathname.split("/").pop()}${href.search}${href.hash}`;
+  return `${href.pathname.replace(/^\/+/, "")}${href.search}${href.hash}`;
 }
 
 function safeReturnHref(value, lessonId, chapterId = null) {
   if (!value) return defaultReturnHref(lessonId, chapterId);
   try {
     const href = new URL(value, globalThis.location?.href || "http://localhost/");
-    const file = href.pathname.split("/").pop();
-    if (file !== "lessons.html" && !/^lesson-\d+-.+\.html$/.test(file)) return defaultReturnHref(lessonId, chapterId);
-    return `${file}${href.search}${href.hash}`;
+    const path = href.pathname.replace(/^\/+/, "");
+    if (path !== "lessons/index.html" && !/^lessons\/\d+-.+\.html$/.test(path)) return defaultReturnHref(lessonId, chapterId);
+    return `${path}${href.search}${href.hash}`;
   } catch {
     return defaultReturnHref(lessonId, chapterId);
   }

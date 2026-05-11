@@ -7,8 +7,7 @@
   color: var(--ink);
 }
 
-.glossary-dialog,
-.lessons-dialog {
+.glossary-dialog {
   width: min(720px, calc(100vw - 28px));
   max-height: min(720px, calc(100vh - 28px));
   border: 0;
@@ -18,8 +17,7 @@
 }
 
 .feedback-dialog::backdrop,
-.glossary-dialog::backdrop,
-.lessons-dialog::backdrop {
+.glossary-dialog::backdrop {
   background: rgba(0, 0, 0, 0.64);
 }
 
@@ -37,8 +35,7 @@
 }
 
 .score-table-panel,
-.glossary-panel,
-.lessons-panel {
+.glossary-panel {
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(205, 154, 64, 0.58);
@@ -58,8 +55,7 @@
 }
 
 .score-table-hero,
-.glossary-panel::before,
-.lessons-panel::before {
+.glossary-panel::before {
   position: absolute;
   inset: 0;
   background:
@@ -69,13 +65,11 @@
   pointer-events: none;
 }
 
-.glossary-panel::before,
-.lessons-panel::before {
+.glossary-panel::before {
   content: "";
 }
 
-.glossary-panel > *,
-.lessons-panel > * {
+.glossary-panel > * {
   position: relative;
   z-index: 1;
 }
@@ -223,284 +217,6 @@
   display: grid;
   gap: 12px;
   padding: 12px;
-}
-
-.lessons-panel {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-}
-
-.lessons-panel h2 {
-  color: var(--ink);
-  font-size: 1.35rem;
-}
-
-.lessons-intro {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.lessons-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  max-height: min(540px, calc(100vh - 180px));
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.lessons-list[data-view="detail"],
-.lessons-list[data-view="chapter"] {
-  grid-template-columns: 1fr;
-}
-
-.lesson-card {
-  position: relative;
-  display: grid;
-  align-content: start;
-  gap: 9px;
-  min-width: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  padding: 11px;
-}
-
-.lesson-card-featured {
-  grid-column: 1 / -1;
-  border-color: rgba(224, 194, 95, 0.44);
-  background:
-    linear-gradient(135deg, rgba(224, 194, 95, 0.12), rgba(96, 197, 185, 0.075)),
-    rgba(255, 255, 255, 0.055);
-}
-
-.lesson-number {
-  width: 28px;
-  height: 28px;
-  border: 1px solid rgba(224, 194, 95, 0.55);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(224, 194, 95, 0.12);
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 950;
-}
-
-.lesson-card h3 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.lesson-challenge {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.lesson-intro {
-  margin: 0;
-  color: rgba(247, 244, 232, 0.86);
-  font-size: 0.9rem;
-  font-weight: 740;
-  line-height: 1.4;
-}
-
-.lesson-focus {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.lesson-focus-pill {
-  border: 1px solid rgba(96, 197, 185, 0.36);
-  border-radius: 999px;
-  background: rgba(96, 197, 185, 0.1);
-  color: rgba(247, 244, 232, 0.86);
-  padding: 3px 7px;
-  font-size: 0.72rem;
-  font-weight: 850;
-}
-
-.lesson-start,
-.lesson-view {
-  width: 100%;
-  margin-top: 2px;
-  font-weight: 900;
-}
-
-.lesson-detail {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-}
-
-.lesson-detail-header {
-  display: grid;
-  gap: 9px;
-  border: 1px solid rgba(224, 194, 95, 0.28);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  padding: 12px;
-}
-
-.lesson-detail h3 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.08rem;
-  line-height: 1.2;
-}
-
-.lesson-back {
-  justify-self: start;
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 0.82rem;
-  font-weight: 900;
-}
-
-.lesson-chapter-list {
-  display: grid;
-  gap: 8px;
-}
-
-.lesson-chapter-card {
-  width: 100%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 64px;
-  border-radius: 8px;
-  padding: 10px;
-  text-align: left;
-}
-
-.lesson-chapter-number {
-  width: 26px;
-  height: 26px;
-  border: 1px solid rgba(96, 197, 185, 0.42);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--accent-2);
-  font-size: 0.78rem;
-  font-weight: 950;
-}
-
-.lesson-chapter-text {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.lesson-chapter-text strong {
-  color: var(--ink);
-  font-size: 0.92rem;
-  line-height: 1.25;
-}
-
-.lesson-chapter-text span {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 760;
-  line-height: 1.35;
-}
-
-.lesson-chapter-practice {
-  border: 1px solid rgba(224, 194, 95, 0.38);
-  border-radius: 999px;
-  color: var(--accent);
-  padding: 3px 7px;
-  font-size: 0.7rem;
-  font-weight: 900;
-}
-
-.lesson-chapter-detail {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.055);
-  padding: 12px;
-}
-
-.lesson-chapter-paragraph,
-.lesson-chapter-points,
-.lesson-chapter-callout {
-  margin: 0;
-  color: rgba(247, 244, 232, 0.86);
-  font-size: 0.9rem;
-  font-weight: 740;
-  line-height: 1.45;
-}
-
-.lesson-chapter-points {
-  padding-left: 20px;
-}
-
-.lesson-chapter-callout {
-  border-left: 3px solid var(--accent-2);
-  border-radius: 0 8px 8px 0;
-  background: rgba(20, 55, 45, 0.72);
-  padding: 8px 10px;
-}
-
-.lesson-mini-quiz {
-  display: grid;
-  gap: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 9px;
-}
-
-.lesson-mini-question {
-  display: grid;
-  gap: 6px;
-}
-
-.lesson-mini-question p {
-  margin: 0;
-  color: var(--ink);
-  font-size: 0.84rem;
-  font-weight: 850;
-  line-height: 1.35;
-}
-
-.lesson-mini-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.lesson-mini-option {
-  min-height: 32px;
-  padding: 0 9px;
-  font-size: 0.8rem;
-  font-weight: 850;
-}
-
-.lesson-mini-option.is-correct {
-  border-color: rgba(85, 213, 126, 0.82);
-  background: rgba(85, 213, 126, 0.18);
-  color: #d8ffe3;
-}
-
-.lesson-mini-option.is-missed {
-  border-color: rgba(231, 97, 97, 0.72);
-  background: rgba(231, 97, 97, 0.14);
-}
-
-.lesson-mini-feedback {
-  min-height: 18px;
-  color: var(--muted) !important;
-  font-size: 0.8rem !important;
-  font-weight: 740 !important;
 }
 
 .glossary-layout {

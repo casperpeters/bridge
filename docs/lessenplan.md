@@ -86,7 +86,7 @@ Oefenhanden hieronder gebruiken bestaande ids waar mogelijk. Ontbrekende situati
 
 ### Lesoverzicht in de app
 
-Het overzicht op `lessons.html` blijft bewust compact. Per geselecteerde les toont het alleen:
+Het overzicht op `lessons/index.html` blijft bewust compact. Per geselecteerde les toont het alleen:
 
 - de titel;
 - de leerdoelen;
@@ -101,7 +101,7 @@ De lesmodus gebruikt de bestaande bridgetafel niet als losse volledige game, maa
 Standaard flow:
 
 1. Het hoofdstuk legt de situatie kort uit.
-2. De oefenlink opent `index.html` met `lesson`, `hand`, `chapter` en een `return`-URL naar de oorspronkelijke lesplek, bijvoorbeeld `lessons.html?lesson=...#chapter-id` of een losse `lesson-...html#stap`.
+2. De oefenlink opent `index.html` met `lesson`, `hand`, `chapter` en een `return`-URL naar de oorspronkelijke lesplek, bijvoorbeeld `lessons/index.html?lesson=...#chapter-id` of een losse `lessons/NN-slug.html#stap`.
 3. De tafel toont het gewone bord, met het lespaneel op de plek van de speelgeschiedenis.
 4. De coachkaart/spotlight wijst het relevante onderdeel aan, bijvoorbeeld biedbox, legale kaarten, Dummy, slaggebied of review.
 5. De speler doet de afgesproken actie: meestal 1 bod of 1 kaart.
@@ -298,7 +298,7 @@ Maak een "handpaspoort" van Zuid: HCP, verdeling, langste kleur, en je eerste bi
 
 ### Kernbegrippen
 
-Opening, Openaar, Openingskracht, Hoge kleuren, Lage kleuren, Sans-atout, Evenwichtige verdeling, Regel van 20.
+Opening, Openaar, Openingskracht, Hoge kleuren, Lage kleuren, Sans-atout, Evenwichtige verdeling, Regel van 20, Eenkleurenspel, Tweekleurenspel, Zwakke twee.
 
 ### Korte theorieblokken
 
@@ -315,6 +315,7 @@ Opening, Openaar, Openingskracht, Hoge kleuren, Lage kleuren, Sans-atout, Evenwi
 - "De vijfkaart hoog, tenzij...": toon 13 HCP met vijf schoppen en vier harten. Vraag: "Welke hoge kleur open je?"
 - "1SA gaat voor": toon 16 HCP met vijf schoppen en 5-3-3-2. Vraag waarom 1SA hier de systeemopening is.
 - "Langste kleur niet verstoppen": toon 12 HCP met vijf schoppen en zes klaveren. Vraag waarom 1 klaveren in beeld komt.
+- "Openingscasino": toon twaalf handen achter elkaar. De speler kiest snel uit pas, 1 klaveren, 1 ruiten, 1 harten, 1 schoppen, 1SA of zwakke twee.
 
 ### Interactieve speelvoorbeelden op het bridge-bord
 
@@ -338,10 +339,16 @@ Opening, Openaar, Openingskracht, Hoge kleuren, Lage kleuren, Sans-atout, Evenwi
 - `one-heart-opening-001` - bestaand: 1 harten met vijfkaart, geen 1SA-prioriteit.
 - `one-spade-opening-001` - bestaand: 1 schoppen met vijfkaart, geen 1SA-prioriteit.
 - `minor-opening-find-major-001` - bestaand: lage-kleur Opening als startpunt.
+- `lesson-03-one-nt-*` - geimplementeerd: extra 1SA-herkenning, inclusief 1SA met vijfkaart hoog.
+- `lesson-03-one-heart-*`, `lesson-03-one-spade-*` en `lesson-03-two-five-majors-001` - geimplementeerd: hoge-kleur openingen.
+- `lesson-03-one-club-*` en `lesson-03-one-diamond-*` - geimplementeerd: lage-kleur openingen en 1 klaveren als vangnet.
+- `lesson-03-pass-*` - geimplementeerd: passen, inclusief afgewezen Regel van 20 en slechte zwakke-twee-kleur.
+- `lesson-03-rule20-*` - geimplementeerd: lichte openingen via Regel van 20.
+- `lesson-03-weak-two-*` - geimplementeerd: zwakke twee als bonusherkenning.
 
 ### Eindopdracht
 
-Speel "openingsbingo": vind in vier oefenhanden minstens een keer pas, 1SA, een hoge-kleur Opening en een lage-kleur Opening.
+Speel "Openingscasino": kies snel per hand uit pas, 1 klaveren, 1 ruiten, 1 harten, 1 schoppen, 1SA of zwakke twee. Daarna kun je openingsbingo aan tafel doen: vind minstens een keer pas, 1SA, een hoge-kleur Opening en een lage-kleur Opening.
 
 ---
 
@@ -878,14 +885,15 @@ Speel de "slemthermometer": geef na de bieding een temperatuur van 1 tot 5. 1 is
 
 Deze cursusstructuur is inhoudelijk. Implementatie kan per les klein gebeuren:
 
-1. Werk een les uit in `scripts/learning/lessons.js` met korte hoofdstukken en quiz.
-2. Voeg alleen ontbrekende oefenhanden toe die echt nodig zijn voor die les.
-3. Houd de kaart op `lessons.html` compact: titel, leerdoelen en een knop `Start les`.
-4. Koppel tafeloefeningen vanuit hoofdstukken met `chapter`, `return`, een compacte `tableTask` en alleen noodzakelijke `boardGuidance`.
-5. Kies voor korte tafelsituaties bij voorkeur 1 bod, 1 kaart, 1 slagmoment of 1 reviewcheck; gebruik `type: hand` alleen als de les echt een volledige hand vraagt.
-6. Houd normale gameplay rustig; uitgebreide tekst hoort in lesmodus, review, AI-suggesties of developer mode.
-7. Laat lesfeedback alleen hard corrigeren als de engine de regel betrouwbaar kan onderbouwen.
-8. Draai voor lesdata minimaal `npm run test:unit`; draai browser smoke wanneer lesson navigation, startflow, `tableTask` completion of bordbegeleiding wijzigt.
+1. Werk het gedeelde lescontract uit in `scripts/learning/lessons.js` met korte hoofdstukken, oefenhanden, `tableTask` en `boardGuidance`.
+2. Zet rijke vraagsets, casinos, races of filters voor standalone pagina's in een lesdata-module, zodat de pagina-controller alleen rendert en interactie afhandelt.
+3. Voeg alleen ontbrekende oefenhanden toe die echt nodig zijn voor die les.
+4. Houd de kaart op `lessons/index.html` compact: titel, leerdoelen en een knop `Start les`.
+5. Koppel tafeloefeningen vanuit hoofdstukken met `chapter`, `return`, een compacte `tableTask` en alleen noodzakelijke `boardGuidance`.
+6. Kies voor korte tafelsituaties bij voorkeur 1 bod, 1 kaart, 1 slagmoment of 1 reviewcheck; gebruik `type: hand` alleen als de les echt een volledige hand vraagt.
+7. Houd normale gameplay rustig; uitgebreide tekst hoort in lesmodus, review, AI-suggesties of developer mode.
+8. Laat lesfeedback alleen hard corrigeren als de engine de regel betrouwbaar kan onderbouwen.
+9. Draai voor lesdata minimaal `npm run test:unit`; draai browser smoke wanneer lesson navigation, startflow, `tableTask` completion of bordbegeleiding wijzigt.
 
 ## Acceptatiecriteria voor de hele cursus
 

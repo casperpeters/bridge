@@ -1,148 +1,33 @@
 (function initHandValuationPage() {
   "use strict";
 
-  const suits = ["S", "H", "D", "C"];
-  const suitSymbols = { S: "\u2660", H: "\u2665", D: "\u2666", C: "\u2663" };
-  const suitNames = { S: "schoppen", H: "harten", D: "ruiten", C: "klaveren" };
-  const rankOrder = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
-  const descendingRanks = [...rankOrder].reverse();
-  const rankLabel = { T: "10", J: "J", Q: "Q", K: "K", A: "A" };
-  const hcpValue = { A: 4, K: 3, Q: 2, J: 1 };
+  const lessonHand = globalThis.BridgeLessonHand;
+  const lessonRender = globalThis.BridgeLessonRender;
+  const lessonPageHelpers = globalThis.BridgeLessonPageHelpers;
+  if (!lessonHand) throw new Error("scripts/learning/shared/lesson-hand.js must load before hand-valuation-page.js");
+  if (!lessonRender) throw new Error("scripts/learning/shared/lesson-render.js must load before hand-valuation-page.js");
+  if (!lessonPageHelpers) throw new Error("scripts/learning/shared/lesson-page-helpers.js must load before hand-valuation-page.js");
 
-  const valuationQuestions = [
-    {
-      kind: "hcp",
-      prompt: "Hoeveel HCP heeft deze hand?",
-      hand: "AS QS 7S KH 9H 4H QD 8D 3D JC 6C 5C 2C",
-      good: "Goed. Aas, Heer, Vrouw, Vrouw en Boer maken samen 12 HCP.",
-      wrong: "Tel alleen A, K, Q en J. De kleine kaarten tellen niet mee."
-    },
-    {
-      kind: "hcp",
-      prompt: "Hoeveel HCP heeft deze hand? Let op de tienen.",
-      hand: "AS TS 8S KH TH 6H QD JD 4D TC 9C 7C 3C",
-      good: "Precies. De drie tienen zijn honneurs, maar leveren 0 HCP op.",
-      wrong: "De 10 is een Honneur, maar geen HCP. Tel A, K, Q en J."
-    },
-    {
-      kind: "balanced",
-      prompt: "Is deze hand evenwichtig?",
-      hand: "AS 8S 5S 2S KH 9H 4H QD 6D 3D 8C 7C 5C",
-      good: "Ja. De verdeling is 4-3-3-3, dus evenwichtig.",
-      wrong: "Kijk naar het patroon: 4-3-3-3 staat op de evenwichtige lijst."
-    },
-    {
-      kind: "balanced",
-      prompt: "Is deze hand evenwichtig?",
-      hand: "AS KS 9S 7S 6S 4S QH 8H 2H 7D 5D 3D 4C",
-      good: "Goed gezien. 6-3-3-1 is onevenwichtig en heeft een singleton.",
-      wrong: "Deze hand heeft zes schoppen en een singleton klaveren. Dat is geen SA-verdeling."
-    },
-    {
-      kind: "longest",
-      prompt: "Welke kleur is het langst?",
-      hand: "KS 8S 4S AH QH 9H 7H 3H JD 6D 2D 8C 5C",
-      answerSuit: "H",
-      good: "Klopt. Harten heeft vijf kaarten en is de langste kleur.",
-      wrong: "Tel per kleur. Harten heeft hier vijf kaarten."
-    },
-    {
-      kind: "longest",
-      prompt: "Welke kleur is het langst?",
-      hand: "QS 9S 8H 6H 3H AD KD 7D 5D 2D JC TC 4C",
-      answerSuit: "D",
-      good: "Ja. Ruiten heeft vijf kaarten en is de langste kleur.",
-      wrong: "Tel de ruiten nog eens: A, K, 7, 5 en 2."
-    },
-    {
-      kind: "fitValue",
-      prompt: "Zou deze hand later meer waard worden met een hartenfit?",
-      hand: "AS 8S 6S 4S 2S KH 9H 5H QD 7D 6D 2D 3C",
-      answer: "yes",
-      good: "Ja. Met drie harten tegenover partners vijf harten is er een Fit, en de singleton klaveren wordt nuttig.",
-      wrong: "Partner met vijf harten plus jouw drie harten geeft een Fit. Dan is de singleton klaveren extra interessant."
-    },
-    {
-      kind: "fitValue",
-      prompt: "Zou deze hand later meer waard worden met een hartenfit?",
-      hand: "AS QS 8S 7H 4H KD JD 6D 9C 8C 7C 5C 2C",
-      answer: "no",
-      good: "Goed. Met maar twee harten heb je tegenover vijf harten nog geen achtkaartfit.",
-      wrong: "Vijf harten bij partner plus twee bij jou is zeven. Dat is nog geen Fit."
-    },
-    {
-      kind: "balanced",
-      prompt: "Is deze 5-3-3-2 hand evenwichtig?",
-      hand: "AS QS 8S 6S 3S KH 7H 2H JD 8D 4D 9C 5C",
-      good: "Ja. 5-3-3-2 is evenwichtig, ook al zit er een vijfkaart in.",
-      wrong: "5-3-3-2 hoort bij de drie evenwichtige verdelingen."
-    }
-  ];
+  const {
+    countSuits,
+    distributionPattern,
+    hcp,
+    isBalanced,
+    longestSuits,
+    parseHand,
+    shortSuits,
+    suitLengthsText,
+    suitNames,
+    suits
+  } = lessonHand;
 
-  const miniQuiz = [
-    {
-      question: "Welke kaarten leveren HCP op?",
-      options: ["Aas, Heer, Vrouw en Boer", "Aas tot en met 10", "Alle honneurs evenveel"],
-      answer: "Aas, Heer, Vrouw en Boer",
-      feedback: "Juist. De 10 is wel een Honneur, maar telt 0 HCP."
-    },
-    {
-      question: "Welke verdeling is evenwichtig?",
-      options: ["4-4-3-2", "6-4-2-1", "7-3-2-1"],
-      answer: "4-4-3-2",
-      feedback: "Klopt. 4-4-3-2 staat samen met 4-3-3-3 en 5-3-3-2 op de lijst."
-    },
-    {
-      question: "Wat is een Fit?",
-      options: ["Samen minstens acht kaarten in een kleur", "Zelf precies vijf kaarten in een kleur", "Samen minstens acht HCP"],
-      answer: "Samen minstens acht kaarten in een kleur",
-      feedback: "Precies. Fit gaat over gezamenlijke lengte in een kleur."
-    },
-    {
-      question: "Wanneer ga je herwaarderen met Fitpunten?",
-      options: ["Nadat een Fit waarschijnlijk is", "Voordat je HCP telt", "Alleen bij sans-atout"],
-      answer: "Nadat een Fit waarschijnlijk is",
-      feedback: "Ja. Eerst HCP, daarna pas Fitpunten wanneer de bieding een Fit laat zien."
-    },
-    {
-      question: "Hoe heet precies een kaart in een kleur?",
-      options: ["Singleton", "Doubleton", "Renonce"],
-      answer: "Singleton",
-      feedback: "Goed. Een doubleton is twee kaarten; een renonce is nul."
-    },
-    {
-      question: "Waarom is een Fit waardevol?",
-      options: ["Troef kan controle en aftroevers geven", "Elke kaart wordt automatisch HCP", "Je hoeft geen kleur meer te bekennen"],
-      answer: "Troef kan controle en aftroevers geven",
-      feedback: "Klopt. Met een troeffit kunnen korte kleuren en extra troeven meer werk doen."
-    },
-    {
-      question: "Wat is de eerste vraag bij Openingskracht?",
-      options: ["Heb ik genoeg kracht om te openen?", "Welke kaart vind ik het mooist?", "Kan ik meteen slem bieden?"],
-      answer: "Heb ik genoeg kracht om te openen?",
-      feedback: "Precies. De eerste waardering is kracht plus verdeling, nog niet het hele eindcontract."
-    }
-  ];
+  const lessonData = globalThis.BridgeLesson02ValuationData;
+  if (!lessonData) throw new Error("scripts/learning/lesson-02-valuation-data.js must load before hand-valuation-page.js");
 
-  const fallbackHands = {
-    exact12: "AS QS 7S KH 9H 4H QD 8D 3D JC 6C 5C 2C",
-    balanced1517: "AS KS 8S 3S QH 7H 4H KD QD 6D JC 9C 2C",
-    fitSingleton: "AS 8S 6S 4S 2S KH 9H 5H QD 7D 6D 2D 3C",
-    rule20Intro: "KS QS 9S 7S 5S AH JH 8H 6H 4H 7D 3D 6C"
-  };
-
-  const raceHandTexts = [
-    "AS QS 7S KH 9H 4H QD 8D 3D JC 6C 5C 2C",
-    "AS TS 8S KH TH 6H QD JD 4D TC 9C 7C 3C",
-    "AS KS 9S 7S 6S 4S QH 8H 2H 7D 5D 3D 4C",
-    "KS 8S 4S AH QH 9H 7H 3H JD 6D 2D 8C 5C",
-    "AS QS 8S KH 7H 4H AD 8D 6D 3D JC 9C 2C",
-    "KS QS 9S 7S 5S AH JH 8H 6H 4H 7D 3D 6C",
-    "AS 8S 6S 4S KH 9H 5H QD 7D 6D 2D 3C 2C",
-    "QS 9S 3S 2S AH KH 8H 4H 2H AD TD 7D 5C",
-    "AS KS QS 3S 2S 3H 2H 4C 3C AD QD 4D 3D",
-    "AS KS 8S 3S QH 7H 4H KD QD 6D JC 9C 2C"
-  ].map(parseHand);
+  const valuationQuestions = lessonData.allValuationQuestions();
+  const miniQuiz = lessonData.allMiniQuizQuestions();
+  const fallbackHands = lessonData.allFallbackHands();
+  const raceHandTexts = lessonData.allRaceHandTexts().map(parseHand);
 
   let generatorSeed = 2102;
   let raceTimerId = null;
@@ -166,7 +51,13 @@
 
   function renderSampleHands() {
     document.querySelectorAll("[data-sample-hand]").forEach((target) => {
-      renderHand(target, parseHand(target.dataset.sampleHand || ""));
+      renderValuationHand(target, parseHand(target.dataset.sampleHand || ""));
+    });
+  }
+
+  function renderValuationHand(target, cards) {
+    return lessonRender.renderHand(target, cards, {
+      cardOptions: { className: "playing-card valuation-card" }
     });
   }
 
@@ -202,7 +93,7 @@
 
       const hand = document.createElement("div");
       hand.className = "question-hand";
-      renderHand(hand, cards);
+      renderValuationHand(hand, cards);
 
       const options = document.createElement("div");
       options.className = "question-options";
@@ -331,7 +222,7 @@
     if (!handRoot || !factsRoot) return;
 
     const cards = generateMatchingHand(criterion);
-    renderHand(handRoot, cards);
+    renderValuationHand(handRoot, cards);
 
     const facts = generatedFacts(criterion, cards);
     factsRoot.innerHTML = "";
@@ -349,8 +240,8 @@
   function generateMatchingHand(criterion) {
     const matcher = criterionMatchers()[criterion] || criterionMatchers().exact12;
     for (let attempt = 0; attempt < 5000; attempt += 1) {
-      const deck = shuffledDeck();
-      const hand = sortCards(deck.slice(0, 13));
+      const deck = lessonHand.shuffledDeck(nextRandom);
+      const hand = lessonHand.sortCards(deck.slice(0, 13));
       if (matcher(hand)) return hand;
     }
     return parseHand(fallbackHands[criterion] || fallbackHands.exact12);
@@ -471,7 +362,7 @@
 
     if (handRoot) {
       handRoot.className = "race-hand";
-      renderHand(handRoot, cards);
+      renderValuationHand(handRoot, cards);
     }
 
     if (hcpRoot) {
@@ -586,167 +477,40 @@
     return [...values].sort((a, b) => a - b);
   }
 
-  function parseHand(text) {
-    return sortCards(String(text || "").trim().split(/\s+/).filter(Boolean).map(parseCard));
-  }
-
-  function parseCard(token) {
-    const suit = token.slice(-1).toUpperCase();
-    const rawRank = token.slice(0, -1).toUpperCase();
-    const rank = rawRank === "10" ? "T" : rawRank;
-    return { rank, suit, id: `${rank}${suit}` };
-  }
-
-  function renderHand(target, cards) {
-    if (!target) return;
-    target.innerHTML = "";
-    const counts = countSuits(cards);
-    suits.forEach((suit) => {
-      const row = document.createElement("div");
-      row.className = "hand-suit-row";
-
-      const label = document.createElement("span");
-      label.className = "hand-suit-label";
-      label.textContent = `${suitSymbols[suit]} ${suitNames[suit]} (${counts[suit]})`;
-
-      const cardRow = document.createElement("div");
-      cardRow.className = "hand-cards";
-      const suitCards = cards.filter((card) => card.suit === suit);
-      if (!suitCards.length) {
-        const empty = document.createElement("span");
-        empty.className = "empty-suit";
-        empty.textContent = "geen";
-        cardRow.appendChild(empty);
-      } else {
-        suitCards.forEach((card) => cardRow.appendChild(cardElement(card)));
-      }
-
-      row.append(label, cardRow);
-      target.appendChild(row);
-    });
-  }
-
-  function cardElement(card) {
-    const cardEl = document.createElement("div");
-    cardEl.className = "playing-card valuation-card";
-    if (card.suit === "H" || card.suit === "D") cardEl.classList.add("red");
-    const label = rankLabel[card.rank] || card.rank;
-    const symbol = suitSymbols[card.suit] || card.suit;
-    cardEl.innerHTML = `
-      <div class="playing-card-rank">${label}${symbol}</div>
-      <div class="playing-card-suit">${symbol}</div>
-      <div class="playing-card-mini">${label}${symbol}</div>
-    `;
-    cardEl.setAttribute("aria-label", `${label} ${suitNames[card.suit] || card.suit}`);
-    return cardEl;
-  }
-
-  function sortCards(cards) {
-    return [...cards].sort((a, b) => {
-      const suitDiff = suits.indexOf(a.suit) - suits.indexOf(b.suit);
-      if (suitDiff) return suitDiff;
-      return descendingRanks.indexOf(a.rank) - descendingRanks.indexOf(b.rank);
-    });
-  }
-
-  function createDeck() {
-    const deck = [];
-    suits.forEach((suit) => {
-      rankOrder.forEach((rank) => deck.push({ rank, suit, id: `${rank}${suit}` }));
-    });
-    return deck;
-  }
-
-  function shuffledDeck() {
-    const deck = createDeck();
-    for (let index = deck.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(nextRandom() * (index + 1));
-      [deck[index], deck[swapIndex]] = [deck[swapIndex], deck[index]];
-    }
-    return deck;
-  }
-
   function nextRandom() {
     generatorSeed = (Math.imul(generatorSeed, 1664525) + 1013904223) >>> 0;
     return generatorSeed / 4294967296;
   }
 
-  function hcp(cards) {
-    return cards.reduce((sum, card) => sum + (hcpValue[card.rank] || 0), 0);
-  }
-
-  function countSuits(cards) {
-    return suits.reduce((counts, suit) => {
-      counts[suit] = cards.filter((card) => card.suit === suit).length;
-      return counts;
-    }, {});
-  }
-
-  function distributionPattern(cards) {
-    return Object.values(countSuits(cards)).sort((a, b) => b - a).join("-");
-  }
-
-  function isBalanced(cards) {
-    const pattern = distributionPattern(cards);
-    return pattern === "4-3-3-3" || pattern === "4-4-3-2" || pattern === "5-3-3-2";
-  }
-
-  function longestSuits(cards) {
-    const counts = countSuits(cards);
-    const max = Math.max(...Object.values(counts));
-    return suits.filter((suit) => counts[suit] === max);
-  }
-
   function longestSuitText(cards) {
-    return longestSuits(cards).map((suit) => `${suitNames[suit]} (${countSuits(cards)[suit]})`).join(", ");
-  }
-
-  function suitLengthsText(cards) {
-    const counts = countSuits(cards);
-    return suits.map((suit) => `${suitSymbols[suit]} ${counts[suit]}`).join(", ");
-  }
-
-  function shortSuits(cards) {
-    const counts = countSuits(cards);
-    return suits
-      .filter((suit) => counts[suit] <= 2)
-      .map((suit) => {
-        const length = counts[suit];
-        const label = length === 0 ? "renonce" : length === 1 ? "singleton" : "doubleton";
-        return `${label} ${suitNames[suit]}`;
-      });
+    return lessonHand.longestSuitText(cards, { includeCounts: true, separator: ", " });
   }
 
   function renderFactChips(target, cards) {
-    if (!target) return;
-    target.innerHTML = "";
-    [
+    return lessonRender.renderChips(target, [
       `${hcp(cards)} HCP`,
       distributionPattern(cards),
       isBalanced(cards) ? "evenwichtig" : "onevenwichtig",
       `langste: ${longestSuitText(cards)}`
-    ].forEach((text) => {
-      const chip = document.createElement("span");
-      chip.className = "fact-chip";
-      chip.textContent = text;
-      target.appendChild(chip);
-    });
+    ]);
   }
 
   function preserveTestHooksOnLessonLinks() {
     const params = new URLSearchParams(window.location.search || "");
-    document.querySelectorAll('a[href^="lessons.html"], a[href^="index.html"]').forEach((link) => {
-      const href = new URL(link.getAttribute("href"), window.location.href);
-      if (href.pathname.endsWith("index.html")) {
+    document.querySelectorAll('a[href^="index.html"], a[href^="../index.html"]').forEach((link) => {
+      const rawHref = link.getAttribute("href") || "";
+      const href = new URL(rawHref, window.location.href);
+      const tableLink = rawHref.startsWith("../index.html");
+      if (tableLink) {
         applyTableLinkContext(href, params);
         link.addEventListener("click", () => {
           const nextHref = new URL(link.getAttribute("href"), window.location.href);
           applyTableLinkContext(nextHref, params);
-          link.href = relativeHref(nextHref);
+          link.href = `../${lessonPageHelpers.rootRelativeHref(nextHref)}`;
         });
       }
       if (params.has("testHooks")) href.searchParams.set("testHooks", "1");
-      link.href = relativeHref(href);
+      link.href = tableLink ? `../${lessonPageHelpers.rootRelativeHref(href)}` : lessonPageHelpers.relativeHref(href);
     });
   }
 
@@ -765,11 +529,7 @@
       const activeCard = document.querySelector("[data-lesson-card].is-active-lesson-card") || document.querySelector("[data-lesson-card]:not([hidden])");
       if (activeCard?.id) href.hash = activeCard.id;
     }
-    return relativeHref(href);
-  }
-
-  function relativeHref(href) {
-    return `${href.pathname.split("/").pop()}${href.search}${href.hash}`;
+    return lessonPageHelpers.rootRelativeHref(href);
   }
 
   function chapterForHand(handId) {

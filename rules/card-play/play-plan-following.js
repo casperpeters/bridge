@@ -67,6 +67,7 @@
     choosePlanCrossRuffInTrickPlay,
     choosePlanLateCrossRuffPlay,
     choosePlanLateCrossRuffInTrickPlay,
+    isPartnerWinnerSafeForCrossRuff,
     shouldRuffForLateCrossRuff,
     unseenHigherCardsInSuit,
     choosePlanDrawTrumpsPlay,
@@ -134,6 +135,7 @@
       if (!partnerHand?.length || !declarer || !dummy) return { result: null, fallback: null };
       if (seat !== declarer && seat !== dummy) return { result: null, fallback: null };
 
+      let explicitFallback = null;
       for (const priority of playPlan.priorities) {
         const result = chooseCardForPlanPriority({
           priority,
@@ -147,12 +149,16 @@
           legal,
           winning
         });
+        if (result?.planFallbackOnly) {
+          explicitFallback = explicitFallback || result.fallback;
+          continue;
+        }
         if (result) return { result, fallback: null };
       }
 
       return {
         result: null,
-        fallback: describePlayPlanFallback({
+        fallback: explicitFallback || describePlayPlanFallback({
           priority: playPlan.priorities[0],
           hand,
           currentTrick,
@@ -273,7 +279,7 @@
         return choosePlanRuffInTrickPlay({ playPlan: { priorities: [priority] }, hand, currentTrick, seat, trump, legal, winning });
       }
       if (priority.kind === "crossRuff") {
-        return choosePlanCrossRuffInTrickPlay({ priority, hand, currentTrick, seat, trump, legal, winning });
+        return choosePlanCrossRuffInTrickPlay({ priority, hand, partnerHand, currentTrick, trickHistory, seat, trump, legal, winning });
       }
       if (priority.kind === "lateCrossRuff") {
         return choosePlanLateCrossRuffInTrickPlay({ priority, hand, partnerHand, currentTrick, trickHistory, seat, trump, legal, winning });

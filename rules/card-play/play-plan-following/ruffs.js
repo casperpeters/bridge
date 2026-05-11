@@ -45,7 +45,7 @@
     longSuitRuffEntryCandidates
   } = playPlan;
   const { cardPlayResult } = cardPlayCommon;
-  const { legalPlanCard } = followingCommon || {};
+  const { legalPlanCard, planFallbackOnly } = followingCommon || {};
 
   function choosePlanLongSuitRuffDevelopmentPlay({ priority, hand, partnerHand, trickHistory, seat, trump, legal }) {
       if (!trump) return null;
@@ -79,7 +79,15 @@
         ruffSuit: priority.suit
       });
       const candidate = entries.find((entry) => legalPlanCard(entry.card, legal));
-      if (!candidate) return null;
+      if (!candidate) {
+        return missingEntryFallback({
+          priority,
+          seat,
+          targetSeat: priority.longSeat,
+          suit: priority.suit,
+          trump
+        });
+      }
 
       return cardPlayResult(
         candidate.card,
@@ -115,7 +123,26 @@
 
       const trumpCards = cardsInSuit(legal, trump);
       if (!trumpCards.length) return null;
-      if (winning && teamOf(winning.seat) === teamOf(seat)) return null;
+      if (winning && teamOf(winning.seat) === teamOf(seat)) {
+        const harmlessCards = legal.filter((card) => !beats(card, winning.card, leadSuit, trump));
+        const card = lowestCard(harmlessCards);
+        if (!card) return null;
+        return cardPlayResult(
+          card,
+          "playPlan.skipRuffPartnerWinning",
+          priority.confidence || "basic",
+          "Follow the visible play plan by preserving trump when partner is already winning the planned ruff suit.",
+          {
+            planPriority: priority,
+            suit: priority.suit,
+            shortSeat: priority.shortSeat,
+            longSeat: priority.longSeat || partnerOf(seat),
+            trump,
+            winningSeat: winning.seat,
+            action: "skipRuffPartnerWinning"
+          }
+        );
+      }
 
       const winningTrumps = winning
         ? trumpCards.filter((card) => beats(card, winning.card, leadSuit, trump)).sort(compareLowCards)
@@ -215,7 +242,15 @@
         legal
       })
         .sort((a, b) => b.score - a.score)[0];
-      if (!candidate) return null;
+      if (!candidate) {
+        return missingEntryFallback({
+          priority,
+          seat,
+          targetSeat: partnerOf(seat),
+          suit: priority.suit,
+          trump
+        });
+      }
 
       return cardPlayResult(
         candidate.card,
@@ -266,6 +301,23 @@
         entryRank,
         score: partnerWinnerRanks.length * 20 + winnerRanks.length * 8 + leadCards.length + partnerSuitCards.length
       };
+    }
+
+
+
+  function missingEntryFallback({ priority, seat, targetSeat, suit, trump }) {
+      return planFallbackOnly({
+        priority,
+        reason: "missingEntry",
+        seat,
+        targetSeat,
+        suit,
+        trump,
+        shortSeat: priority.shortSeat || null,
+        longSeat: priority.longSeat || targetSeat || null,
+        entrySuit: priority.entrySuit || null,
+        entryRank: priority.entryRank || null
+      });
     }
 
 
@@ -324,7 +376,7 @@
 
 
 
-  function choosePlanCrossRuffInTrickPlay({ priority, hand, currentTrick, seat, trump, legal, winning }) {
+  function choosePlanCrossRuffInTrickPlay({ priority, hand, partnerHand, currentTrick, trickHistory, seat, trump, legal, winning }) {
       if (!trump || priority.trump !== trump || !currentTrick.length) return null;
       const leadSuit = currentTrick[0].card.suit;
       const crossSuit = (priority.crossSuits || []).find((item) => item.suit === leadSuit);
@@ -333,7 +385,27 @@
       if (seat === crossSuit.shortSeat && !cardsInSuit(hand, leadSuit).length) {
         const trumpCards = cardsInSuit(legal, trump);
         if (!trumpCards.length) return null;
-        if (winning && teamOf(winning.seat) === teamOf(seat)) return null;
+        if (isPartnerWinnerSafeForCrossRuff({ hand, partnerHand, currentTrick, trickHistory, seat, trump, legal, winning })) {
+          const harmlessCards = legal.filter((card) => !beats(card, winning.card, leadSuit, trump));
+          const card = lowestCard(harmlessCards);
+          if (card) {
+            return cardPlayResult(
+              card,
+              "playPlan.crossRuff",
+              priority.confidence || "basic",
+              "Follow the visible play plan by preserving trump when partner is safely winning the cross-ruff suit.",
+              {
+                planPriority: priority,
+                suit: leadSuit,
+                trump,
+                longSeat: crossSuit.longSeat,
+                shortSeat: crossSuit.shortSeat,
+                winningSeat: winning.seat,
+                action: "skipCrossRuffPartnerWinning"
+              }
+            );
+          }
+        }
         const winningTrumps = winning
           ? trumpCards.filter((card) => beats(card, winning.card, leadSuit, trump)).sort(compareLowCards)
           : trumpCards;
@@ -505,6 +577,23 @@
 
 
 
+  function isPartnerWinnerSafeForCrossRuff({ hand, partnerHand, currentTrick, trickHistory, seat, trump, legal, winning }) {
+      if (!winning) return false;
+      if (teamOf(winning.seat) !== teamOf(seat)) return false;
+      if (winning.card.suit === trump) return true;
+      if (currentTrick.length >= 3) return true;
+
+      const leadSuit = currentTrick[0].card.suit;
+      const visibleCards = [
+        ...playedCardsFrom(trickHistory, currentTrick),
+        ...hand,
+        ...(partnerHand || [])
+      ];
+      return unseenHigherCardsInSuit(visibleCards, leadSuit, winning.card.rank).length === 0;
+    }
+
+
+
   function shouldRuffForLateCrossRuff({ hand, partnerHand, currentTrick, trickHistory, seat, trump, winning }) {
       if (!winning) return true;
       if (teamOf(winning.seat) !== teamOf(seat)) return true;
@@ -543,6 +632,7 @@
     choosePlanCrossRuffInTrickPlay,
     choosePlanLateCrossRuffPlay,
     choosePlanLateCrossRuffInTrickPlay,
+    isPartnerWinnerSafeForCrossRuff,
     shouldRuffForLateCrossRuff,
     unseenHigherCardsInSuit
   };

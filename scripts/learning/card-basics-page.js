@@ -1,10 +1,15 @@
 (function initCardBasicsPage() {
   "use strict";
 
-  const ranks = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
-  const rankLabel = { T: "10", J: "J", Q: "Q", K: "K", A: "A" };
-  const suitSymbols = { C: "\u2663", D: "\u2666", H: "\u2665", S: "\u2660" };
-  const suitNames = { C: "klaveren", D: "ruiten", H: "harten", S: "schoppen" };
+  const lessonHand = globalThis.BridgeLessonHand;
+  const lessonRender = globalThis.BridgeLessonRender;
+  const lessonPageHelpers = globalThis.BridgeLessonPageHelpers;
+  if (!lessonHand) throw new Error("scripts/learning/shared/lesson-hand.js must load before card-basics-page.js");
+  if (!lessonRender) throw new Error("scripts/learning/shared/lesson-render.js must load before card-basics-page.js");
+  if (!lessonPageHelpers) throw new Error("scripts/learning/shared/lesson-page-helpers.js must load before card-basics-page.js");
+
+  const ranks = lessonHand.descendingRanks;
+  const suitNames = lessonHand.suitNames;
   const rankFeedback = document.querySelector("#rank-feedback");
   const suitCountFeedback = document.querySelector("#suit-count-feedback");
   const dealButton = document.querySelector("#deal-demo");
@@ -13,7 +18,6 @@
   const windSeats = [...document.querySelectorAll(".wind-mini-seat")];
   const windQuestion = document.querySelector("#wind-question");
   const windFeedback = document.querySelector("#wind-feedback");
-  const params = new URLSearchParams(window.location.search || "");
   const dealSeats = ["North", "East", "South", "West"];
   const windQuestions = [
     { seat: "South", text: "Klik op Zuid: jouw plek aan tafel.", ok: "Precies. Jij speelt vanuit Zuid." },
@@ -69,34 +73,16 @@
     if (!row) return;
     row.innerHTML = "";
     ranks.forEach((rank, index) => {
-      const card = createLessonCard({ rank, suit });
+      const card = lessonRender.createPlayingCard({ rank, suit }, {
+        className: "playing-card lesson-rank-card"
+      });
       card.style.animationDelay = `${index * 28}ms`;
       row.appendChild(card);
     });
   }
 
-  function createLessonCard(card) {
-    const cardEl = document.createElement("div");
-    cardEl.className = "playing-card lesson-rank-card";
-    if (card.suit === "D" || card.suit === "H") cardEl.classList.add("red");
-    const label = rankLabel[card.rank] || card.rank;
-    const symbol = suitSymbols[card.suit] || card.suit;
-    cardEl.innerHTML = `
-      <div class="playing-card-rank">${label}${symbol}</div>
-      <div class="playing-card-suit">${symbol}</div>
-      <div class="playing-card-mini">${label}${symbol}</div>
-    `;
-    cardEl.setAttribute("aria-label", `${label} ${suitNames[card.suit] || card.suit}`);
-    return cardEl;
-  }
-
   function preserveTestHooksOnLessonLinks() {
-    if (!params.has("testHooks")) return;
-    document.querySelectorAll('a[href^="lessons.html"]').forEach((link) => {
-      const href = new URL(link.getAttribute("href"), window.location.href);
-      href.searchParams.set("testHooks", "1");
-      link.href = `${href.pathname.split("/").pop()}${href.search}`;
-    });
+    lessonPageHelpers.preserveTestHooksOnLinks('a[href^="index.html"]');
   }
 
   function runDealDemo() {
@@ -181,8 +167,8 @@
 
     const dealCard = document.createElement("span");
     dealCard.className = "deal-card";
-    if (card.suit === "D" || card.suit === "H") dealCard.classList.add("red");
-    dealCard.textContent = `${rankLabel[card.rank] || card.rank}${suitSymbols[card.suit] || card.suit}`;
+    if (lessonHand.isRedSuit(card.suit)) dealCard.classList.add("red");
+    dealCard.textContent = lessonHand.cardText(card);
     const stackIndex = nextCount - 1;
     dealCard.style.setProperty("--deal-x", `${(stackIndex - 6) * 7}px`);
     dealCard.style.setProperty("--deal-y", `${(stackIndex % 3) * 3}px`);
@@ -197,11 +183,6 @@
   }
 
   function buildSampleDeal() {
-    const suits = ["S", "H", "D", "C"];
-    const deck = [];
-    suits.forEach((suit) => {
-      ranks.forEach((rank) => deck.push({ rank, suit }));
-    });
-    return deck;
+    return lessonHand.createDeck({ ranks });
   }
 })();

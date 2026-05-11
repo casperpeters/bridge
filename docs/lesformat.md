@@ -39,7 +39,7 @@ Deze opbouw hoort bij de losse lespagina zelf. Het algemene lessenoverzicht toon
 
 ## Lessenoverzicht
 
-Op `lessons.html` is de leskaart een rustige keuzehulp, geen inhoudsopgave. Per geselecteerde les staat daar alleen:
+Op `lessons/index.html` is de leskaart een rustige keuzehulp, geen inhoudsopgave. Per geselecteerde les staat daar alleen:
 
 - de titel;
 - `Leerdoelen`;
@@ -154,7 +154,7 @@ chapter:
       buttonLabel: Ik kies mijn bod
 ```
 
-`chapter.id` is het anker waarnaar de speler terugkeert. Een startlink naar de tafel bevat daarom minimaal `lesson`, `hand`, `chapter` en een `return`-URL naar de oorspronkelijke lesplek, bijvoorbeeld `lessons.html?lesson=...#chapter-id` of een losse `lesson-...html#stap`.
+`chapter.id` is het anker waarnaar de speler terugkeert. Een startlink naar de tafel bevat daarom minimaal `lesson`, `hand`, `chapter` en een `return`-URL naar de oorspronkelijke lesplek, bijvoorbeeld `lessons/index.html?lesson=...#chapter-id` of een losse `lessons/NN-slug.html#stap`.
 
 ### `tableTask`
 
@@ -665,7 +665,7 @@ Voorbeelden:
 
 ## 11. Samenvatting
 
-Doel: precies 5 kernzinnen die de speler mag onthouden op de losse lespagina. Dit is niet de compacte kaart op `lessons.html`.
+Doel: precies 5 kernzinnen die de speler mag onthouden op de losse lespagina. Dit is niet de compacte kaart op `lessons/index.html`.
 
 Richtlijn:
 
@@ -966,7 +966,7 @@ Een les is formatklaar wanneer dit allemaal klopt:
 - De mini-quiz heeft minimaal 6 vragen.
 - Er zijn minimaal 4 oefenhanden of handcriteria.
 - De eindchallenge start op het bestaande bridge-bord.
-- De leskaart op `lessons.html` toont alleen titel, leerdoelen en een enkele startknop.
+- De leskaart op `lessons/index.html` toont alleen titel, leerdoelen en een enkele startknop.
 - Elke bridge-bordstart vanuit een hoofdstuk heeft `chapter`, `return` en waar nodig een compacte `tableTask`.
 - Elke korte tafelsituatie heeft een duidelijke completion, klaar-kaart en expliciete `Terug naar les`.
 - `boardGuidance` blokkeert alleen kernmomenten; spotlights zonder noodzakelijke actie gebruiken `gate: none`.

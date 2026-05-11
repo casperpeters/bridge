@@ -45,7 +45,7 @@
     longSuitRuffEntryCandidates
   } = playPlan;
   const { cardPlayResult } = cardPlayCommon;
-  const { legalPlanCard } = followingCommon || {};
+  const { legalPlanCard, planFallbackOnly } = followingCommon || {};
 
   function choosePlanHoldUpPlay({ playPlan, hand, currentTrick, seat, trump, legal, winning }) {
       if (trump || !playPlan?.priorities?.length || currentTrick.length < 1 || !winning) return null;
@@ -259,7 +259,8 @@
       const suitedLegal = cardsInSuit(legal, priority.suit);
       const finesseCard = legalPlanCard(suitedLegal.find((item) => item.rank === priority.finesseRank), legal);
       if (!finesseCard) return null;
-      if (winning && teamOf(winning.seat) !== teamOf(seat) && !beats(finesseCard, winning.card, priority.suit, trump)) return null;
+      const blockedFallback = blockedInTrickFinesseFallback({ priority, currentTrick, seat, trump, winning, finesseCard });
+      if (blockedFallback) return blockedFallback;
 
       const ruleId = priority.kind === "doubleFinesse"
         ? "playPlan.doubleFinesseTowardHonor"
@@ -334,7 +335,8 @@
       const suitedLegal = cardsInSuit(legal, priority.suit);
       const finesseCard = legalPlanCard(suitedLegal.find((item) => item.rank === priority.finesseRank), legal);
       if (!finesseCard) return null;
-      if (winning && teamOf(winning.seat) !== teamOf(seat) && !beats(finesseCard, winning.card, priority.suit, trump)) return null;
+      const blockedFallback = blockedInTrickFinesseFallback({ priority, currentTrick, seat, trump, winning, finesseCard });
+      if (blockedFallback) return blockedFallback;
 
       const ruleId = priority.kind === "repeatFinesse" ? "playPlan.repeatFinesse" : "playPlan.twoWayFinesse";
       const reason = priority.kind === "repeatFinesse"
@@ -360,6 +362,27 @@
           action: "completeDirectionalFinesse"
         }
       );
+    }
+
+
+
+  function blockedInTrickFinesseFallback({ priority, currentTrick, seat, trump, winning, finesseCard }) {
+      if (!winning) return null;
+      const leadSuit = currentTrick[0]?.card?.suit || priority.suit;
+      const sameSideWinning = teamOf(winning.seat) === teamOf(seat);
+      const finesseBeatsWinner = beats(finesseCard, winning.card, leadSuit, trump);
+      if (!sameSideWinning && finesseBeatsWinner) return null;
+
+      return planFallbackOnly({
+        priority,
+        reason: sameSideWinning ? "finesseCardUnnecessary" : "finesseCardNotWinning",
+        seat,
+        leadSuit,
+        finesseCard,
+        finesseRank: priority.finesseRank,
+        winningSeat: winning.seat,
+        winningCard: winning.card
+      });
     }
 
 

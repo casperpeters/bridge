@@ -324,10 +324,6 @@
       render.applySettingsStaticText();
       els.openFeedback.textContent = helpers.t("openFeedback");
       els.openLessons.textContent = helpers.t("openLessons");
-      els.lessonsEyebrow.textContent = helpers.t("lessonsEyebrow");
-      els.lessonsTitle.textContent = helpers.t("lessonsTitle");
-      els.lessonsIntro.textContent = helpers.t("lessonsIntro");
-      els.closeLessons.setAttribute("aria-label", helpers.t("closeLessons"));
       els.openGlossary.textContent = helpers.t("openGlossary");
       els.openScoreTable.textContent = helpers.t("openScoreTable");
       els.newHand.textContent = helpers.t("newHand");

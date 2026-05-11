@@ -3,25 +3,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Les 2 - Kaarten waarderen</title>
-    <link rel="icon" type="image/png" href="assets/branding/logo.png" />
-    <link rel="stylesheet" href="styles/base.css" />
-    <link rel="stylesheet" href="styles/card.css" />
-    <link rel="stylesheet" href="styles/lesson-cards.css" />
-    <link rel="stylesheet" href="styles/lesson-hand-valuation.css" />
+    <link rel="icon" type="image/png" href="../assets/branding/logo.png" />
+    <link rel="stylesheet" href="../styles/base.css" />
+    <link rel="stylesheet" href="../styles/card.css" />
+    <link rel="stylesheet" href="../styles/lesson-cards.css" />
+    <link rel="stylesheet" href="../styles/lesson-hand-valuation.css" />
   </head>
   <body class="valuation-lesson-body">
     <main class="valuation-lesson-shell" data-lesson-card-page>
       <header class="valuation-topbar">
-        <a class="valuation-brand" href="lessons.html" aria-label="Terug naar alle lessen">
-          <img class="valuation-logo" src="assets/branding/logo.png" alt="" aria-hidden="true" />
+        <a class="valuation-brand" href="index.html" aria-label="Terug naar alle lessen">
+          <img class="valuation-logo" src="../assets/branding/logo.png" alt="" aria-hidden="true" />
           <span>
             <span class="valuation-kicker">Les 2</span>
             <strong>Kaarten waarderen</strong>
           </span>
         </a>
         <nav class="valuation-toplinks" aria-label="Lesnavigatie">
-          <a href="lessons.html">Alle lessen</a>
-          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-nt-opening-001">Aan tafel</a>
+          <a href="index.html">Alle lessen</a>
+          <a href="../index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-nt-opening-001">Aan tafel</a>
         </nav>
       </header>
 
@@ -291,9 +291,9 @@
         </div>
 
         <div class="practice-links">
-          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-nt-opening-001">Oefen 1SA-opening</a>
-          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=opening-pass-001">Oefen passen zonder openingskracht</a>
-          <a href="index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-heart-opening-001">Oefen vijfkaart hoog openen</a>
+          <a href="../index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-nt-opening-001">Oefen 1SA-opening</a>
+          <a href="../index.html?lesson=les-02-punten-en-handtypen&amp;hand=opening-pass-001">Oefen passen zonder openingskracht</a>
+          <a href="../index.html?lesson=les-02-punten-en-handtypen&amp;hand=one-heart-opening-001">Oefen vijfkaart hoog openen</a>
         </div>
       </section>
 
@@ -388,7 +388,11 @@
       </div>
     </main>
 
-    <script src="scripts/learning/lesson-cards.js"></script>
-    <script src="scripts/learning/hand-valuation-page.js"></script>
+    <script src="../scripts/learning/lesson-cards.js"></script>
+    <script src="../scripts/learning/shared/lesson-hand.js"></script>
+    <script src="../scripts/learning/shared/lesson-render.js"></script>
+    <script src="../scripts/learning/shared/lesson-page-helpers.js"></script>
+    <script src="../scripts/learning/lesson-02-valuation-data.js"></script>
+    <script src="../scripts/learning/hand-valuation-page.js"></script>
   </body>
 </html>

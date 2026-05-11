@@ -108,55 +108,12 @@
     return summary;
   }
 
-  function chapterEl(lesson, chapter, index, chapters) {
-    const section = document.createElement("section");
-    section.className = "lesson-chapter";
-    section.id = chapter.id || `hoofdstuk-${index + 1}`;
-
-    const number = document.createElement("span");
-    number.className = "lesson-chapter-number";
-    number.textContent = String(index + 1);
-    number.setAttribute("aria-label", `Stap ${index + 1} van ${chapters.length}`);
-
-    const body = document.createElement("div");
-    body.className = "lesson-chapter-body";
-
-    const title = document.createElement("h3");
-    title.textContent = chapter.title;
-
-    const summary = document.createElement("p");
-    summary.className = "lesson-chapter-paragraph";
-    summary.textContent = chapter.summary || "";
-
-    body.append(title, summary);
-    const footer = chapterFooterEl(lesson, chapter, index, chapters);
-    if (footer) body.appendChild(footer);
-
-    section.append(number, body);
-    return section;
-  }
-
-  function chapterFooterEl(lesson, chapter, index, chapters) {
-    const footer = document.createElement("div");
-    footer.className = "lesson-chapter-actions";
-
-    if (chapter.pageHref) {
-      footer.appendChild(chapterPageLink(chapter.pageHref, "Begin les"));
-    }
-
-    if (chapter.handId) {
-      footer.appendChild(practiceLink(lesson, chapter.handId, "Oefenen", chapter));
-    }
-
-    return footer.childElementCount ? footer : null;
-  }
-
   function chapterPageLink(pageHref, label) {
     const link = document.createElement("a");
     link.className = "lesson-chapter-link";
     const href = new URL(pageHref, root.location.href);
     if (params.has("testHooks")) href.searchParams.set("testHooks", "1");
-    link.href = href.pathname.split("/").pop() + href.search;
+    link.href = relativeHref(href);
     link.textContent = label;
     return link;
   }
@@ -181,109 +138,34 @@
     return [lesson.challenge];
   }
 
-  function blockEl(block) {
-    if (block.type === "list") {
-      const list = document.createElement("ul");
-      list.className = "lesson-chapter-list";
-      (block.items || []).forEach((text) => {
-        const item = document.createElement("li");
-        item.textContent = text;
-        list.appendChild(item);
-      });
-      return list;
-    }
-
-    const element = document.createElement(block.type === "callout" ? "aside" : "p");
-    element.className = block.type === "callout" ? "lesson-callout" : "lesson-chapter-paragraph";
-    element.textContent = block.text || "";
-    return element;
-  }
-
-  function quizEl(questions) {
-    const wrapper = document.createElement("div");
-    wrapper.className = "lesson-quiz";
-
-    questions.forEach((question) => {
-      const item = document.createElement("div");
-      item.className = "lesson-quiz-question";
-
-      const prompt = document.createElement("p");
-      prompt.textContent = question.question;
-
-      const options = document.createElement("div");
-      options.className = "lesson-quiz-options";
-
-      const feedback = document.createElement("p");
-      feedback.className = "lesson-quiz-feedback";
-      feedback.setAttribute("aria-live", "polite");
-
-      question.options.forEach((option) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "lesson-quiz-option";
-        button.textContent = option;
-        button.addEventListener("click", () => {
-          item.querySelectorAll(".lesson-quiz-option").forEach((optionButton) => optionButton.classList.remove("is-correct", "is-missed"));
-          const correct = option === question.answer;
-          button.classList.add(correct ? "is-correct" : "is-missed");
-          feedback.textContent = correct ? question.feedback : `Bijna. Het beste antwoord is: ${question.answer}.`;
-        });
-        options.appendChild(button);
-      });
-
-      item.append(prompt, options, feedback);
-      wrapper.appendChild(item);
-    });
-
-    return wrapper;
-  }
-
   function practiceLink(lesson, handId, label = "Start oefening", chapter = null) {
     const link = document.createElement("a");
     link.className = "lesson-practice-link";
-    const href = new URL("index.html", root.location.href);
+    const href = new URL("../index.html", root.location.href);
     href.searchParams.set("lesson", lesson.id);
     href.searchParams.set("hand", handId);
     if (chapter?.id) href.searchParams.set("chapter", chapter.id);
     href.searchParams.set("return", lessonReturnHref(lesson, chapter));
     if (params.has("testHooks")) href.searchParams.set("testHooks", "1");
-    link.href = href.pathname.split("/").pop() + href.search;
+    link.href = `../${relativeHref(href)}`;
     link.textContent = label;
     return link;
   }
 
   function lessonReturnHref(lesson, chapter = null) {
-    const href = new URL("lessons.html", root.location.href);
+    const href = new URL("index.html", root.location.href);
     href.searchParams.set("lesson", lesson.id);
     if (params.has("testHooks")) href.searchParams.set("testHooks", "1");
     if (chapter?.id) href.hash = chapter.id;
-    return `${href.pathname.split("/").pop()}${href.search}${href.hash}`;
+    return rootRelativeHref(href);
   }
 
-  function focusEl(labels) {
-    const focus = document.createElement("div");
-    focus.className = "lesson-focus";
-    labels.forEach((label) => {
-      const pill = document.createElement("span");
-      pill.className = "lesson-focus-pill";
-      pill.textContent = label;
-      focus.appendChild(pill);
-    });
-    return focus;
+  function relativeHref(href) {
+    return root.BridgeLessonPageHelpers?.relativeHref?.(href) || `${href.pathname.split("/").pop()}${href.search}${href.hash}`;
   }
 
-  function fallbackChapters(lesson) {
-    return [
-      {
-        id: `${lesson.id}-oefening`,
-        title: "Oefenen aan de tafel",
-        summary: lesson.challenge,
-        handId: lesson.handIds[0],
-        blocks: [
-          { type: "paragraph", text: "Deze les heeft nu nog een compacte oefening. De hoofdstukken worden later net zo uitgebreid als les 1." }
-        ]
-      }
-    ];
+  function rootRelativeHref(href) {
+    return root.BridgeLessonPageHelpers?.rootRelativeHref?.(href) || `${href.pathname.replace(/^\/+/, "")}${href.search}${href.hash}`;
   }
 
   function updateUrlLesson(lessonId) {

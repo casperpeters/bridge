@@ -24,7 +24,7 @@ Dit document beschrijft de actuele architectuur en gewenste groeirichting van Br
 ## Hoog-overzicht
 
 ```text
-index.html / lessons.html / lesson-01-cards.html / lesson-02-card-valuation.html
+index.html / lessons/index.html / lessons/01-cards.html / lessons/02-card-valuation.html / lessons/03-openings.html
   +-- laadt CSS en browser scripts in vaste volgorde
   +-- index bevat DOM-structuur voor tafel, bieding, dialogs en review
   +-- lessons bevat de rustige lespagina en start oefenhanden via index queryparameters
@@ -170,7 +170,7 @@ Huidige kern:
 - `scripts/state/` - pure state-transitions, afgeleide review-playback, localStorage settings, `situatieseed:` codec, herhaalcode en herstel.
 - `scripts/ui/` - kleine UI-controllers voor app-menu, instellingen en dialogs.
 - `scripts/feedback/` - feedbackdialog, rapportpayload, kopieer- en submitflow.
-- `scripts/learning/` - lessen, lesson-start vanuit URL/oefenhand, standalone lespagina, gedeelde leskaartnavigatie, woordenlijst en bieduitleg voor AI-suggesties/review.
+- `scripts/learning/` - lessen, lesson-start vanuit URL/oefenhand, standalone lespagina, gedeelde leskaartnavigatie, woordenlijst en bieduitleg voor AI-suggesties/review. `lessons.js` blijft de publieke `BridgeLessons`-facade; lesdefinities, cloning en validatie staan in `scripts/learning/catalog/`, tafeltaaklogica staat in `scripts/learning/table/`, en gedeelde standalone-leshelpers voor hand parsing/analyse, kaart-rendering en lespagina-links staan in `scripts/learning/shared/`. Rijke standalone lessen mogen eigen controllers houden, maar herbruikbare vraagsets en tafelkoppelingen horen in aparte data-modules zoals `lesson-02-valuation-data.js` en `lesson-03-openings-data.js`.
 - `scripts/copy/text-nl.js` - Nederlandse UI-copy.
 
 Runtime/factory-contract:
@@ -234,7 +234,7 @@ Doel:
 - `styles.css` blijft de compatibility/aggregator entrypoint voor bestaande laadvolgorde.
 - `styles/` bevat domeingerichte CSS: base, layout, table, auction, dialogs, review en responsive gedrag.
 - `styles/card.css` bevat de gedeelde visuele kaartbasis; gameplay voegt daar `.card`-gedrag aan toe, lessen gebruiken eigen lesson-classes bovenop `.playing-card`.
-- `styles/lesson-cards.css` bevat de gedeelde kaartnavigatie voor losse lespagina's; les-specifieke stylesheets voegen alleen inhoudelijke layout en oefenvormen toe.
+- `styles/lesson-cards.css` bevat de gedeelde kaartnavigatie voor losse lespagina's; les-specifieke stylesheets zoals `lesson-hand-valuation.css` en `lesson-openings.css` voegen alleen inhoudelijke layout en oefenvormen toe.
 - Component-specifieke responsive regels mogen naast het domeinbestand staan; `styles/auction-responsive.css` is eigenaar van biedtafel-, bidbox- en auction-log-responsiveness.
 
 Richtlijn:

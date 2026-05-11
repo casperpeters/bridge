@@ -45,15 +45,19 @@
     longSuitRuffEntryCandidates
   } = playPlan;
   const { cardPlayResult } = cardPlayCommon;
-  const { legalPlanCard } = followingCommon || {};
+  const { legalPlanCard, planFallbackOnly } = followingCommon || {};
 
   function choosePlanDrawTrumpsPlay({ priority, contract, legal, seat }) {
       const trump = contract?.strain === "NT" ? null : contract?.strain;
       if (!trump || priority.suit !== trump) return null;
-      if (priority.roundLimit && (priority.playedTrumpRounds || 0) >= priority.roundLimit) return null;
+      if (priority.roundLimit && (priority.playedTrumpRounds || 0) >= priority.roundLimit) {
+        return blockedDrawTrumpsFallback({ priority, seat, trump, reason: "roundLimitReached" });
+      }
 
       const trumpCards = cardsInSuit(legal, trump);
-      if (priority.preserveSeat === seat && trumpCards.length <= (priority.preserveTrumpCount || 0)) return null;
+      if (priority.preserveSeat === seat && trumpCards.length && trumpCards.length <= (priority.preserveTrumpCount || 0)) {
+        return blockedDrawTrumpsFallback({ priority, seat, trump, reason: "preserveTrumpForRuff" });
+      }
       const card = legalPlanCard(highestCard(trumpCards), legal);
       if (!card) return null;
 
@@ -148,17 +152,22 @@
   function choosePlanDrawTrumpsInTrickPlay({ priority, contract, currentTrick, seat, legal, winning }) {
       const trump = contract?.strain === "NT" ? null : contract?.strain;
       if (!trump || priority.suit !== trump || !currentTrick.length || currentTrick[0].card.suit !== trump) return null;
-      if (priority.roundLimit && (priority.playedTrumpRounds || 0) >= priority.roundLimit) return null;
+      if (priority.roundLimit && (priority.playedTrumpRounds || 0) >= priority.roundLimit) {
+        return blockedDrawTrumpsFallback({ priority, seat, trump, reason: "roundLimitReached", leadSuit: trump });
+      }
 
       const trumpCards = cardsInSuit(legal, trump);
       if (!trumpCards.length) return null;
-      if (priority.preserveSeat === seat && trumpCards.length <= (priority.preserveTrumpCount || 0)) return null;
-      if (winning && teamOf(winning.seat) === teamOf(seat)) return null;
+      if (priority.preserveSeat === seat && trumpCards.length <= (priority.preserveTrumpCount || 0)) {
+        return blockedDrawTrumpsFallback({ priority, seat, trump, reason: "preserveTrumpForRuff", leadSuit: trump });
+      }
 
       const winningTrumps = winning
         ? trumpCards.filter((card) => beats(card, winning.card, trump, trump)).sort(compareLowCards)
         : [];
-      const card = winningTrumps[0] || lowestCard(trumpCards);
+      const card = winning && teamOf(winning.seat) === teamOf(seat)
+        ? lowestCard(trumpCards)
+        : winningTrumps[0] || lowestCard(trumpCards);
       if (!card) return null;
 
       return cardPlayResult(
@@ -182,6 +191,25 @@
           action: "continueDrawTrumps"
         }
       );
+    }
+
+
+
+  function blockedDrawTrumpsFallback({ priority, seat, trump, reason, leadSuit = null }) {
+      return planFallbackOnly({
+        priority,
+        reason,
+        seat,
+        suit: trump,
+        trump,
+        leadSuit,
+        roundLimit: priority.roundLimit ?? null,
+        playedTrumpRounds: priority.playedTrumpRounds || 0,
+        preserveSeat: priority.preserveSeat || null,
+        preserveTrumpCount: priority.preserveTrumpCount || 0,
+        delayReason: priority.delayReason || null,
+        delaySuit: priority.delaySuit || null
+      });
     }
 
 

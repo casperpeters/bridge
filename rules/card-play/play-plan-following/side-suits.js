@@ -45,10 +45,12 @@
     longSuitRuffEntryCandidates
   } = playPlan;
   const { cardPlayResult } = cardPlayCommon;
-  const { legalPlanCard } = followingCommon || {};
+  const { legalPlanCard, planFallbackOnly } = followingCommon || {};
 
   function choosePlanEstablishSideSuitForDiscardPlay({ priority, seat, legal }) {
-      if (seat !== priority.leadSeat) return null;
+      if (seat !== priority.leadSeat) {
+        return sideSuitMissingEntryFallback({ priority, seat, legal, targetSeat: priority.leadSeat });
+      }
       const suitedLegal = cardsInSuit(legal, priority.suit);
       const card = priority.leadRank
         ? suitedLegal.find((item) => item.rank === priority.leadRank)
@@ -123,7 +125,9 @@
 
 
   function choosePlanDevelopSideSuitBeforeTrumpEntryPlay({ priority, seat, legal }) {
-      if (seat !== priority.leadSeat) return null;
+      if (seat !== priority.leadSeat) {
+        return sideSuitMissingEntryFallback({ priority, seat, legal, targetSeat: priority.leadSeat });
+      }
       const suitedLegal = cardsInSuit(legal, priority.suit);
       const card = priority.leadRank
         ? suitedLegal.find((item) => item.rank === priority.leadRank)
@@ -238,6 +242,27 @@
 
 
 
+  function sideSuitMissingEntryFallback({ priority, seat, legal, targetSeat }) {
+      if (!priority.entrySuit || !priority.entryRank || !targetSeat) return null;
+      const entrySuitCards = cardsInSuit(legal, priority.entrySuit);
+      const lowerEntryLead = entrySuitCards.some((card) => rankOrder.indexOf(card.rank) < rankOrder.indexOf(priority.entryRank));
+      if (lowerEntryLead) return null;
+      return planFallbackOnly({
+        priority,
+        reason: "missingEntry",
+        seat,
+        targetSeat,
+        suit: priority.suit,
+        entrySuit: priority.entrySuit,
+        entryRank: priority.entryRank,
+        leadSeat: priority.leadSeat || null,
+        sourceSeat: priority.sourceSeat || null,
+        discardSeat: priority.discardSeat || null
+      });
+    }
+
+
+
   function shortSideCashRankCard(priority, suitedLegal) {
       return (priority.cashRanks || [])
         .map((rank) => suitedLegal.find((card) => card.rank === rank))
@@ -345,7 +370,27 @@
         : highestCard(suitedLegal);
       const card = legalPlanCard(preferred, legal);
       if (!card) return null;
-      if (winning && teamOf(winning.seat) === teamOf(seat)) return null;
+      if (winning && teamOf(winning.seat) === teamOf(seat)) {
+        if (priority.timing === "unblockBeforeEntry") return null;
+        const harmlessCards = suitedLegal.filter((candidate) => !beats(candidate, winning.card, leadSuit, trump));
+        const preservingCard = legalPlanCard(lowestCard(harmlessCards), legal);
+        if (!preservingCard) return null;
+
+        return cardPlayResult(
+          preservingCard,
+          priority.kind === "cashWinners" ? "playPlan.cashWinners" : "playPlan.cashSureWinners",
+          priority.confidence || "basic",
+          "Follow the visible play plan by preserving the planned winner while partner is already winning the trick.",
+          {
+            planPriority: priority,
+            suit: priority.suit || preservingCard.suit,
+            cashRanks: priority.cashRanks,
+            timing: priority.timing,
+            winningSeat: winning.seat,
+            action: "preserveWinnerUnderPartnerWinner"
+          }
+        );
+      }
       if (winning && teamOf(winning.seat) !== teamOf(seat) && !beats(card, winning.card, leadSuit, trump)) return null;
 
       return cardPlayResult(
