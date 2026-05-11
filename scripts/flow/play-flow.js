@@ -394,6 +394,11 @@ function explainCardPlayResult(result) {
     const visible = result.higherPlayed?.length ? " De al gespeelde hoge kaarten maken een goedkopere winnaar veilig genoeg." : "";
     return `Derde hand speelt hoog, maar met de goedkoopste kaart die de slag voorlopig kan winnen.${visible}`;
   }
+  if (ruleName === "avoidUnsupportedHonorUnderDummy") {
+    const avoided = rankLabel[result.avoidedHonor] || result.avoidedHonor;
+    const dummyHonor = rankLabel[result.dummyHonor] || result.dummyHonor;
+    return `Speel niet de losse ${avoided} in ${suitName(result.avoidedSuit)} onder dummy's zichtbare ${dummyHonor}; begin veiliger met een lage kaart.`;
+  }
   if (ruleName === "returnPartnerLeadSuit") {
     const lead = result.leadCard ? `${rankLabel[result.leadCard.rank] || result.leadCard.rank}${suitSymbols[result.leadCard.suit] || ""}` : suitName(result.suit);
     const sequence = result.returnType === "honorSequence" && result.sequence ? ` met de hoogste kaart van je serie (${result.sequence})` : "";

@@ -1672,6 +1672,44 @@ test("Vijfkaart Hoog responder accepts or declines a major invite after a single
   assert.equal(upperSpadeRange.ruleId, "fiveCardHigh.continuation.acceptMajorInvite");
 });
 
+test("Vijfkaart Hoog responder does not raise to five after opener accepts a major invite", () => {
+  const feedbackAuction = [
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: bid(1, "H") },
+    { seat: "North", bid: pass() },
+    { seat: "East", bid: bid(3, "H") },
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: bid(4, "H") },
+    { seat: "North", bid: pass() }
+  ];
+
+  const feedbackHand = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "KS", "4S", "3S",
+      "7H", "6H", "5H", "4H", "3H",
+      "TC", "3C",
+      "QD", "3D"
+    ),
+    auction: feedbackAuction,
+    seat: "East",
+    vulnerability: "NS"
+  });
+  assert.deepEqual(feedbackHand.bid, pass());
+  assert.equal(feedbackHand.ruleId, "fiveCardHigh.pass.responderAfterAcceptedMajorRaiseGame");
+
+  const slamTry = chooseFiveCardHighResult([
+    "AS", "KS", "4S", "3S",
+    "AH", "KH", "QH", "JH", "TH",
+    "AC", "3C",
+    "QD", "3D"
+  ], feedbackAuction, "East");
+  assert.deepEqual(slamTry.bid, bid(4, "NT"));
+  assert.equal(slamTry.ruleId, "fiveCardHigh.continuation.blackwoodAsk");
+  assert.equal(slamTry.trumpSuit, "H");
+  assert.equal(slamTry.agreementSource, "acceptedMajorRaiseGame");
+});
+
 test("Vijfkaart Hoog responder keeps the second response low with minimum values", () => {
   const oneHeartOneSpadeTwoDiamonds = [
     { seat: "South", bid: bid(1, "H") },

@@ -488,18 +488,39 @@
           if (strongSecondMajor) return strongSecondMajor;
         }
         if (isOneSuitOpeningFiveCardHigh(openingBid)) {
-          const secondBid = rebidResponderAfterOneSuitOpeningFiveCardHigh(shape, openingBid, responseBid, openerRebid);
+          const secondBid = rebidResponderAfterOneSuitOpeningFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid);
           if (secondBid) return secondBid;
           return chooseFiveCardHighNaturalContinuation(hand, openerRebid, openerRebid);
         }
         return Pass();
       }
 
-  function rebidResponderAfterOneSuitOpeningFiveCardHigh(shape, openingBid, responseBid, openerRebid) {
+  function rebidResponderAfterOneSuitOpeningFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid) {
         if (!openerRebid || openerRebid.strain === "NT") return rebidResponderAfterOpenerNotrumpRebidFiveCardHigh(shape, openingBid, responseBid, openerRebid);
+        if (isAcceptedMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid)) {
+          return shouldUseBlackwoodAfterAcceptedMajorRaiseGame(shape, hand, openingBid, responseBid, openerRebid)
+            ? bid(4, "NT")
+            : Pass();
+        }
         if (openerRebid.strain === openingBid.strain) return rebidResponderAfterOpenerRepeatsSuitFiveCardHigh(shape, openingBid, responseBid, openerRebid);
         if (openerRebid.strain === responseBid.strain) return rebidResponderAfterOpenerRaisesResponderFiveCardHigh(shape, responseBid, openerRebid);
         return rebidResponderAfterOpenerNewSuitFiveCardHigh(shape, openingBid, responseBid, openerRebid);
+      }
+
+  function isAcceptedMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid) {
+        return (
+          openingBid?.level === 1 &&
+          (openingBid.strain === "H" || openingBid.strain === "S") &&
+          responseBid?.level === 3 &&
+          responseBid.strain === openingBid.strain &&
+          bidEquals(openerRebid, gameLevel(openingBid.strain), openingBid.strain)
+        );
+      }
+
+  function shouldUseBlackwoodAfterAcceptedMajorRaiseGame(shape, hand, openingBid, responseBid, openerRebid) {
+        if (!isAcceptedMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid)) return false;
+        if ((shape.counts[openingBid.strain] || 0) < supportLengthForOpening(openingBid.strain)) return false;
+        return shape.hcp >= 15 && countAces(hand) >= 2;
       }
 
   function rebidResponderAfterOpenerNotrumpRebidFiveCardHigh(shape, openingBid, responseBid, openerRebid) {
@@ -1131,6 +1152,24 @@
         if (openerRebid?.strain !== "NT" && chosenBid.strain === openerRebid?.strain && shape.counts[openerRebid.strain] >= 4) {
           return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderRaiseOpenerSecondSuit", "basic", "Raise opener's second suit with a fit.", extra);
         }
+        if (isAcceptedMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid) && isBlackwoodAsk(chosenBid)) {
+          return fiveCardHighBidChoiceResult(
+            chosenBid,
+            "continuation.blackwoodAsk",
+            "basic",
+            "Ask for aces with four notrump after opener accepted the major-suit invite.",
+            {
+              ...extra,
+              convention: "blackwood",
+              artificial: true,
+              forcing: true,
+              trumpSuit: openingBid.strain,
+              aceCount: base.aceCount,
+              partnershipMinimumHcp: shape.hcp + 18,
+              agreementSource: "acceptedMajorRaiseGame"
+            }
+          );
+        }
         if (chosenBid.strain === responseBid?.strain && shape.counts[responseBid.strain] >= 6) {
           return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderRebidOwnSixCard", "basic", "Rebid responder's own six-card suit.", extra);
         }
@@ -1470,6 +1509,8 @@
     isStrongTwoClubsTwoNotrumpRebid,
     respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh,
     rebidAfterOneSuitOpeningFiveCardHigh,
+    isAcceptedMajorRaiseGameFiveCardHigh,
+    shouldUseBlackwoodAfterAcceptedMajorRaiseGame,
     openerRebidAfterMinorNotrumpFiveCardHigh,
     openerRebidAfterRaiseFiveCardHigh,
     openerRebidAfterMinorRaiseFiveCardHigh,

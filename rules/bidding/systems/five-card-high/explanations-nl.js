@@ -365,6 +365,8 @@
         return `gevonden fit: steun voor partners kleur. ${handFactsText({ ruleName, result })}`;
       case "continuation.acceptMajorInvite":
         return `invite aangenomen: na de enkele steun heeft responder de hoge range; met 8+ HCP biedt hij de manche. ${handFactsText({ ruleName, result })}`;
+      case "pass.responderAfterAcceptedMajorRaiseGame":
+        return `pas na geaccepteerde hoge-kleurinvite: openaar heeft met 4${result.suit} de manche gekozen. Zonder duidelijke sleminteresse verhoogt antwoorder niet naar 5${result.suit}. ${handFactsText({ ruleName, result })}`;
       case "continuation.responderPreference":
         return `tweede bijbod met minimum: antwoorder houdt het laag en geeft preferentie voor openaars eerste kleur. ${handFactsText({ ruleName, result })}`;
       case "continuation.responderOneNotrumpMinimum":

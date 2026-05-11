@@ -23,6 +23,7 @@
     compareLowCards,
     lowestCard,
     highestCard,
+    longestSuitForLead,
     isLeadHonorRank,
     isLowLeadCard,
     partnerOf
@@ -157,6 +158,53 @@
         dummyShortSuit: threat.suit,
         dummyShortLength: threat.length,
         dummyTrumpLength: cardsInSuit(dummyHand, trump).length
+      }
+    );
+  }
+
+  function higherDummyHonorInSuit(card, dummyHand) {
+    if (!card || !isLeadHonorRank(card.rank) || !dummyHand?.length) return null;
+    return cardsInSuit(dummyHand, card.suit)
+      .filter((dummyCard) => isLeadHonorRank(dummyCard.rank))
+      .filter((dummyCard) => rankOrder.indexOf(dummyCard.rank) > rankOrder.indexOf(card.rank))
+      .sort(compareLowCards)[0] || null;
+  }
+
+  function isUnsupportedHonorLead(card, cards) {
+    if (!card || !isLeadHonorRank(card.rank)) return false;
+    const sequence = touchingHonorSequence(cards, 2);
+    return sequence?.card?.id !== card.id;
+  }
+
+  function chooseAvoidUnsupportedHonorUnderDummy({ legal, dummyHand, trickHistory, currentTrick = [], seat, declarer, trump }) {
+    if (!isDefensivePlaySeat(seat, declarer) || !dummyHand?.length || !trickHistory.length || currentTrick.length) return null;
+
+    const leadSuit = longestSuitForLead(legal);
+    const suitedLegal = cardsInSuit(legal, leadSuit);
+    const candidate = highestCard(suitedLegal);
+    const dummyHonor = higherDummyHonorInSuit(candidate, dummyHand);
+    if (!dummyHonor || !isUnsupportedHonorLead(candidate, suitedLegal)) return null;
+
+    const lowSameSuit = lowestCard(suitedLegal.filter(isLowLeadCard));
+    const saferSideLow = suits
+      .filter((suit) => suit !== leadSuit && suit !== trump)
+      .flatMap((suit) => cardsInSuit(legal, suit).filter(isLowLeadCard))
+      .filter((card) => !higherDummyHonorInSuit(card, dummyHand))
+      .sort(compareLowCards)[0] || null;
+    const card = lowSameSuit || saferSideLow;
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      "avoidUnsupportedHonorUnderDummy",
+      "basic",
+      "Avoid leading an unsupported honor under a visibly higher dummy honor when a low card or safer side suit is available.",
+      {
+        suit: card.suit,
+        avoidedSuit: leadSuit,
+        avoidedHonor: candidate.rank,
+        dummyHonor: dummyHonor.rank,
+        action: "avoidUnsupportedHonorUnderDummy"
       }
     );
   }
@@ -456,6 +504,9 @@
     isVisibleTopWinner,
     dummyRuffThreat,
     chooseTrumpSwitchAgainstDummyRuff,
+    higherDummyHonorInSuit,
+    isUnsupportedHonorLead,
+    chooseAvoidUnsupportedHonorUnderDummy,
     isLowPromisesHonorLead,
     isOpeningHonorSequenceLead,
     attitudeSignalSupport,
