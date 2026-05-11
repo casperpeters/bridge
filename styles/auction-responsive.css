@@ -21,7 +21,7 @@
     --mobile-bidbox-width: clamp(236px, calc(100vw - 132px), 300px);
     --mobile-bidbox-row-width: clamp(202px, calc(100vw - 185px), 300px);
     --mobile-bidbox-half-width: clamp(101px, calc(50vw - 95px), 150px);
-    --mobile-bidbox-side-gap: 0px;
+    --mobile-bidbox-side-gap: 4px;
     --mobile-bidbox-center-y: calc(50% - 59px);
     --mobile-bidbox-top: calc(var(--mobile-bidbox-center-y) - 189px);
     --mobile-bidbox-bottom: calc(var(--mobile-bidbox-center-y) + 189px);
