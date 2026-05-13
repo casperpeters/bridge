@@ -1,17 +1,18 @@
 (function initBridgeRulesPlayPlanNotrump(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
   const deps = isCommonJs
-    ? { core: require("../core.js"), common: require("./common.js") }
-    : { core: root.BridgeRulesParts?.core, common: root.BridgeRulesPlayPlanParts?.common };
-  const api = factory(deps.core, deps.common);
+    ? { core: require("../core.js"), common: require("./common.js"), endgameRunout: require("./endgame-runout.js") }
+    : { core: root.BridgeRulesParts?.core, common: root.BridgeRulesPlayPlanParts?.common, endgameRunout: root.BridgeRulesPlayPlanParts?.endgameRunout };
+  const api = factory(deps.core, deps.common, deps.endgameRunout);
   if (isCommonJs) module.exports = api;
   root.BridgeRulesPlayPlanParts = root.BridgeRulesPlayPlanParts || {};
   root.BridgeRulesPlayPlanParts.notrump = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesPlayPlanNotrump(core, common) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesPlayPlanNotrump(core, common, endgameRunout) {
   "use strict";
 
   if (!core) throw new Error("BridgeRules play-plan notrump missing core dependency");
   if (!common) throw new Error("BridgeRules play-plan notrump missing common dependency");
+  if (!endgameRunout) throw new Error("BridgeRules play-plan notrump missing endgame-runout dependency");
 
   const {
     seats,
@@ -42,12 +43,14 @@
     finesseCandidate,
     repeatFinesseCandidate
   } = common;
+  const { endgameRunoutPriority } = endgameRunout;
 
   function createNotrumpPlayPlan({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick = [] }) {
       const playedCards = playedCardsFrom(trickHistory, currentTrick);
       const neededTricks = contract.level + 6;
       const sureWinners = countSureWinners(declarerHand, dummyHand, playedCards, declarer, dummy);
       const needToDevelop = Math.max(0, neededTricks - sureWinners.total);
+      const endgameRunout = endgameRunoutPriority({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick });
       const holdUpPriorities = notrumpHoldUpPriorities({ declarerHand, dummyHand, declarer, trickHistory, currentTrick, neededTricks, sureWinners });
       const developmentPriorities = notrumpDevelopmentPriorities({ declarerHand, dummyHand, declarer, dummy, playedCards });
       const tempoWorkPriorities = notrumpTempoWorkSuitPriorities({
@@ -89,7 +92,9 @@
         ...twoWayFinessePriorities,
         ...finessePriorities
       ].sort((a, b) => b.score - a.score);
-      const selectedPriorities = uniquePlanPriorities(priorities).slice(0, 3);
+      const selectedPriorities = endgameRunout
+        ? [endgameRunout, ...uniquePlanPriorities(priorities).slice(0, 2)]
+        : uniquePlanPriorities(priorities).slice(0, 3);
       const warnings = notrumpPlanWarnings(selectedPriorities, { declarerHand, dummyHand, declarer, dummy, sureWinners });
 
       if (!selectedPriorities.length && sureWinners.total >= neededTricks) {

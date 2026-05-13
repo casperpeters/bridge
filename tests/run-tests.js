@@ -21,6 +21,7 @@ require("./unit/dutch-play-copy.test.js");
 require("./unit/rule-copy-coverage.test.js");
 require("./unit/play-mechanics.test.js");
 require("./unit/play-plan.test.js");
+require("./unit/play-plan-endgame-runout.test.js");
 require("./unit/card-play-plan-priority.test.js");
 require("./unit/card-play-defense.test.js");
 require("./unit/card-play-leads-and-finesses.test.js");

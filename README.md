@@ -22,14 +22,16 @@ Then open `http://localhost:8000`.
 
 ## Run Tests
 
-Install the dev dependencies once before running the full test suite:
+Install the dev dependencies once before running tests:
 
 ```powershell
 npm install
 npx playwright install chromium
 ```
 
-The unit test harness uses Node's built-in `assert` module. The browser smoke tests use Playwright against a local static server.
+The unit test harness uses Node's built-in `assert` module. The fast browser smoke tests use Playwright against a local static server; broader browser regression coverage is available separately.
+
+Run the fast dev/CI gate:
 
 ```powershell
 npm test
@@ -40,7 +42,12 @@ You can also run the suites separately:
 ```powershell
 npm run test:unit
 npm run test:browser
+npm run test:browser:regression
+npm run test:browser:all
+npm run test:full
 ```
+
+Use `npm run test:full` when you explicitly want unit tests plus the full browser test set, including broader UI, lesson, restore, and feedback regressions.
 
 To verify the live tester-feedback pipeline against the configured Google Apps Script endpoint:
 
@@ -86,7 +93,8 @@ See [docs/architecture.md](./docs/architecture.md) for the technical architectur
 - Dedicated lesson page with chapter-based lesson content that launches curated practice hands and shows lesson guidance or review points where available.
 - Trick history and full hand review after completion.
 - Always-available tester feedback report that can be submitted to a configured feedback endpoint or copied manually, including the tester message and repeat code.
-- Browser smoke tests for desktop and mobile Chromium covering load, bidding, dummy visibility, the play-plan panel, hand completion, review, and feedback copy/submit.
+- Fast browser smoke tests for desktop and mobile Chromium covering load, bidding, contract reveal, dummy visibility, the play-plan panel, hand completion, review, and key responsive layout checks.
+- Broader browser regression tests are available through `npm run test:browser:regression`.
 - Ordinary bridge score calculation with vulnerability and contract bonuses.
 - Settings menu with saved AI-suggestion mode, play-history mode, and developer mode.
 - Optional AI-suggestion mode with heuristic bid/card suggestions and short reasons.

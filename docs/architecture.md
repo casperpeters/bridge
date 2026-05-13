@@ -47,7 +47,7 @@ practice-hands/
 
 tests/
   +-- unit tests voor regels en flows
-  +-- Playwright smoke tests voor echte beginnerflow
+  +-- Playwright smoke tests voor snelle beginnerflow en aparte browserregressie
 ```
 
 ## Runtime model
@@ -132,6 +132,7 @@ Aanbevolen eigenaarschap:
 
 - `rules/card-play.js` - compatibele orchestrator: bepaalt de kaartkeuzevolgorde in `chooseCardPlay`, maar houdt geen tweede handmatige helperexportlijst bij. De entrypoint compose't exports uit de card-play deelmodules automatisch en voegt `chooseCardPlay` toe.
 - `rules/play-plan/common.js` - gedeelde tellingen, winners/losers en helpers.
+- `rules/play-plan/endgame-runout.js` - zichtbare eindspelreeks-search die door sans-atout en kleurcontractplannen wordt gedeeld.
 - `rules/play-plan/notrump.js` - sans-atout plannen.
 - `rules/play-plan/suit-contract.js` - composer voor kleurcontractplannen; domeinlogica staat in `rules/play-plan/suit-contract/` voor basis/verliezers, troef-timing, introevers, snits en zijkleur/afgooiplannen.
 - `rules/card-play/common.js` - gedeelde card-play context en result helpers.
@@ -302,7 +303,8 @@ Coverage-contract:
 Testlagen:
 
 - Unit tests: `tests/unit/`
-- Browser smoke tests: `tests/browser/smoke.spec.js`
+- Snelle browser smoke tests: `tests/browser/smoke.spec.js`
+- Brede browserregressie: `tests/browser/regression.spec.js`
 - Referentie/concordance tests: `tests/reference/`
 
 Commandos:
@@ -310,13 +312,19 @@ Commandos:
 ```powershell
 npm run test:unit
 npm run test:browser
+npm run test:browser:regression
+npm run test:browser:all
+npm run test:full
 npm test
 ```
 
 Richtlijn:
 
 - Bridge-regels: unit tests.
-- Browserflow of visuele beginnerflow: Playwright smoke.
+- Kritieke browserflow of visuele beginnerflow: snelle Playwright smoke.
+- Brede UI-, les-, glossary-, review- en restore-dekking: browserregressie.
+- `npm test`: snelle dev/CI-gate met unit tests plus browser smoke.
+- `npm run test:full`: unit tests plus alle browsertests.
 - Scriptvolgorde en public API: gerichte unit tests.
 - RuleId/uitleg-koppeling: `rule-copy-coverage.test.js`.
 - Nieuwe oefenhanden: catalogusvalidatie plus waar nuttig een scenario-test.

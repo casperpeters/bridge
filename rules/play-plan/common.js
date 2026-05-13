@@ -11,16 +11,12 @@
   if (!core) throw new Error("BridgeRules play-plan common missing core dependency");
 
   const {
-    seats,
-    suits,
     rankOrder,
     descendingRanks,
     hcpValue,
     compareCards,
     lowestCard,
-    highestCard,
-    teamOf,
-    partnerOf
+    highestCard
   } = core;
 
   const developmentRanks = ["A", "K", "Q", "J", "T"];

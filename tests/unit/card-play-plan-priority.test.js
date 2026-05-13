@@ -2411,6 +2411,361 @@ test("chooseCardPlay discards the planned loser while partner's side winner is c
   assert.equal(result.action, "discardLoserOnWinner");
 });
 
+function reportedDiamondEndgameState({ completedTricks = 6, currentTrickCards = 0 } = {}) {
+  const hands = {
+    North: hand("KS", "6S", "4S", "3S", "KH", "QH", "7H", "4H", "QC", "JC", "TC", "KD", "TD"),
+    East: hand("JS", "TS", "9S", "2S", "TH", "9H", "6H", "5H", "KC", "8C", "5C", "3C", "2C"),
+    South: hand("AS", "8S", "JH", "8H", "2H", "6C", "AD", "JD", "8D", "7D", "6D", "5D", "4D"),
+    West: hand("QS", "7S", "5S", "AH", "3H", "AC", "9C", "7C", "4C", "QD", "9D", "3D", "2D")
+  };
+  const trickPlays = [
+    [["West", "AH"], ["North", "4H"], ["East", "5H"], ["South", "2H"]],
+    [["West", "AC"], ["North", "TC"], ["East", "2C"], ["South", "6C"]],
+    [["West", "QD"], ["North", "KD"], ["East", "2S"], ["South", "4D"]],
+    [["North", "TD"], ["East", "3C"], ["South", "5D"], ["West", "2D"]],
+    [["North", "KH"], ["East", "6H"], ["South", "8H"], ["West", "3H"]],
+    [["North", "QH"], ["East", "9H"], ["South", "JH"], ["West", "3D"]],
+    [["West", "9C"], ["North", "JC"], ["East", "KC"], ["South", "6D"]],
+    [["South", "AD"], ["West", "9D"], ["North", "3S"], ["East", "5C"]],
+    [["South", "JD"], ["West", "4C"], ["North", "4S"], ["East", "8C"]],
+    [["South", "8D"], ["West", "5S"], ["North", "7H"], ["East", "TH"]]
+  ];
+  const trickHistory = [];
+  const trump = "D";
+
+  for (let index = 0; index < completedTricks; index++) {
+    const cards = trickPlays[index].map(([seat, id]) => ({ seat, card: removeReportedCard(hands, seat, id) }));
+    trickHistory.push({
+      number: index + 1,
+      winner: rules.currentWinningPlay(cards, trump).seat,
+      cards
+    });
+  }
+
+  const currentTrick = (trickPlays[completedTricks] || [])
+    .slice(0, currentTrickCards)
+    .map(([seat, id]) => ({ seat, card: removeReportedCard(hands, seat, id) }));
+
+  return { hands, trickHistory, currentTrick };
+}
+
+function removeReportedCard(hands, seat, id) {
+  const cards = hands[seat];
+  const index = cards.findIndex((item) => item.id === id);
+  assert.notEqual(index, -1, `${seat} should hold ${id}`);
+  return cards.splice(index, 1)[0];
+}
+
+test("chooseCardPlay starts a visible suit endgame runout by ruffing trick seven", () => {
+  const { hands, trickHistory, currentTrick } = reportedDiamondEndgameState({ completedTricks: 6, currentTrickCards: 3 });
+  const contract = { level: 3, strain: "D" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hands.South,
+    dummyHand: hands.North,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory,
+    currentTrick
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: hands.South,
+    partnerHand: hands.North,
+    currentTrick,
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "D",
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(result.card.id, "6D");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.planPriority.kind, "endgameRunout");
+  assert.equal(result.action, "ruffCurrentTrick");
+  assert.equal(result.leadSuit, "C");
+  assert.equal(result.nextStep.cardId, "AD");
+});
+
+test("chooseCardPlay starts a visible suit endgame runout by leading for partner to ruff", () => {
+  const trickHistory = [
+    {
+      number: 1,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("KD") },
+        { seat: "North", card: card("QD") },
+        { seat: "East", card: card("JD") },
+        { seat: "South", card: card("TD") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "East",
+      cards: [
+        { seat: "West", card: card("9D") },
+        { seat: "North", card: card("8D") },
+        { seat: "East", card: card("7D") },
+        { seat: "South", card: card("6D") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "South",
+      cards: [
+        { seat: "West", card: card("5D") },
+        { seat: "North", card: card("4D") },
+        { seat: "East", card: card("3D") },
+        { seat: "South", card: card("AD") }
+      ]
+    }
+  ];
+  const declarerHand = hand("AC");
+  const dummyHand = hand("2D", "AH");
+  const contract = { level: 3, strain: "D" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "D",
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(playPlan.priorities[0].sequence[0].action, "leadForPartnerRuff");
+  assert.equal(result.card.id, "AC");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.action, "leadForPartnerRuff");
+  assert.equal(result.winnerSeat, "North");
+});
+
+test("chooseCardPlay continues the visible suit endgame runout after the ruff", () => {
+  const { hands, trickHistory, currentTrick } = reportedDiamondEndgameState({ completedTricks: 7, currentTrickCards: 0 });
+  const contract = { level: 3, strain: "D" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hands.South,
+    dummyHand: hands.North,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory,
+    currentTrick
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: hands.South,
+    partnerHand: hands.North,
+    currentTrick,
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "D",
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(result.card.id, "AD");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.action, "cashWinner");
+  assert.equal(result.rank, "A");
+  assert.equal(result.nextStep.cardId, "JD");
+});
+
+test("chooseCardPlay preserves a visible endgame runout while partner is winning", () => {
+  const { hands, trickHistory, currentTrick } = reportedDiamondEndgameState({ completedTricks: 9, currentTrickCards: 2 });
+  const contract = { level: 3, strain: "D" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hands.South,
+    dummyHand: hands.North,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory,
+    currentTrick
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: hands.North,
+    partnerHand: hands.South,
+    currentTrick,
+    trickHistory,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "D",
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.action, "preserveRunoutWinner");
+  assert.notEqual(result.card.id, "6S");
+});
+
+test("chooseCardPlay keeps following the runout after a preserved discard", () => {
+  const { hands, trickHistory, currentTrick } = reportedDiamondEndgameState({ completedTricks: 10, currentTrickCards: 0 });
+  const contract = { level: 3, strain: "D" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hands.South,
+    dummyHand: hands.North,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory,
+    currentTrick
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: hands.South,
+    partnerHand: hands.North,
+    currentTrick,
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: "D",
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.card.id, "7D");
+});
+
+test("chooseCardPlay keeps partner-winning low when no full runout exists", () => {
+  const contract = { level: 3, strain: "NT" };
+  const currentTrick = [
+    { seat: "South", card: card("AH") },
+    { seat: "West", card: card("2H") }
+  ];
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hand("2S", "3S", "4C"),
+    dummyHand: hand("2C", "3D", "4S"),
+    contract,
+    declarer: "South",
+    dummy: "North",
+    currentTrick
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: hand("2C", "3D", "4S"),
+    partnerHand: hand("2S", "3S", "4C"),
+    currentTrick,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.ok(!playPlan.priorities.some((priority) => priority.kind === "endgameRunout"));
+  assert.equal(result.ruleId, "partnerWinningLow");
+});
+
+test("chooseCardPlay uses a visible notrump endgame runout before ordinary cashing", () => {
+  const contract = { level: 3, strain: "NT" };
+  const trickHistory = [{
+    number: 10,
+    winner: "South",
+    cards: [
+      { seat: "West", card: card("2C") },
+      { seat: "North", card: card("3C") },
+      { seat: "East", card: card("4C") },
+      { seat: "South", card: card("5C") }
+    ]
+  }];
+  const declarerHand = hand("AS", "AH", "AD");
+  const dummyHand = hand("6C", "7C", "8C");
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.planPriority.contractType, "notrump");
+});
+
+test("chooseCardPlay does not claim a blocked notrump suit without an entry", () => {
+  const contract = { level: 3, strain: "NT" };
+  const trickHistory = [{
+    number: 10,
+    winner: "North",
+    cards: [
+      { seat: "East", card: card("2H") },
+      { seat: "South", card: card("3H") },
+      { seat: "West", card: card("4H") },
+      { seat: "North", card: card("5H") }
+    ]
+  }];
+  const declarerHand = hand("QC", "JC", "9C");
+  const dummyHand = hand("AC", "KC", "2D");
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: dummyHand,
+    partnerHand: declarerHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.ok(!playPlan.priorities.some((priority) => priority.kind === "endgameRunout"));
+  assert.notEqual(result.ruleId, "playPlan.endgameRunout");
+});
+
 test("chooseCardPlay avoids an unnecessary ruff with the long trump hand", () => {
   const result = rules.chooseCardPlay({
     hand: hand("AH", "KH", "QH", "2D"),

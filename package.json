@@ -1,8 +1,11 @@
 {
   "scripts": {
     "test": "npm run test:unit && npm run test:browser",
+    "test:full": "npm run test:unit && npm run test:browser:all",
     "test:unit": "node tests/run-tests.js",
-    "test:browser": "playwright test",
+    "test:browser": "playwright test tests/browser/smoke.spec.js",
+    "test:browser:regression": "playwright test tests/browser/regression.spec.js",
+    "test:browser:all": "playwright test tests/browser",
     "test:feedback-live": "node tests/check-feedback-endpoint.js",
     "test:feedback-triage-live": "node tests/check-feedback-triage-endpoint.js",
     "video:studio": "remotion studio video/src/index.ts",

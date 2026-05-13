@@ -123,12 +123,40 @@
         return legal.find((item) => item.id === card.id) || null;
       }
 
+  function choosePlanEndgameRunoutPlay({ priority, seat, legal }) {
+      const step = priority?.sequence?.[0];
+      if (!step || step.seat !== seat) return null;
+      const card = legalPlanCard(legal.find((item) => item.id === step.cardId), legal);
+      if (!card) return null;
+      return cardPlayResult(
+        card,
+        "playPlan.endgameRunout",
+        priority.confidence || "basic",
+        "Follow the visible play plan by starting the endgame runout sequence.",
+        {
+          planPriority: priority,
+          contractType: priority.contractType,
+          trump: priority.trump,
+          sequence: priority.sequence,
+          remainingTricks: priority.remainingTricks,
+          suit: step.suit,
+          rank: step.rank,
+          leadSuit: step.leadSuit || null,
+          targetSeat: step.targetSeat || null,
+          winnerSeat: step.winnerSeat || null,
+          nextStep: priority.sequence?.[1] || null,
+          action: step.action
+        }
+      );
+    }
+
 
 
   return {
     describePlayPlanFallback,
     withPlayPlanFallback,
     planFallbackOnly,
-    legalPlanCard
+    legalPlanCard,
+    choosePlanEndgameRunoutPlay
   };
 });

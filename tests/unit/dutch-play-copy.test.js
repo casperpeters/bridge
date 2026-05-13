@@ -31,3 +31,12 @@ test("notrump opening-lead explanation covers refined suit-selection reasons", (
   assert.match(playFlow, /Zonder duidelijke rentree/);
   assert.match(playFlow, /Tegen slem is actief/);
 });
+
+test("endgame runout copy distinguishes self-ruff from leading for partner ruff", () => {
+  const playFlow = readRepoFile("scripts/flow/play-flow.js");
+
+  assert.match(playFlow, /ruffCurrentTrick/);
+  assert.match(playFlow, /Troef nu in met/);
+  assert.match(playFlow, /leadForPartnerRuff/);
+  assert.match(playFlow, /kan introeven/);
+});

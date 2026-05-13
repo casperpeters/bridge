@@ -225,6 +225,33 @@ function explainCardPlayResult(result) {
             : "nu";
     return `Trek ${suitName(result.suit)} ${timing} door een hoge troef voor te spelen.`;
   }
+  if (ruleName === "endgameRunout") {
+    const runoutNext = endgameRunoutNextText(result);
+    if (result.action === "preserveRunoutWinner") {
+      return `Partner wint deze slag al; gooi geen kaart weg die nodig is voor de zichtbare eindspelreeks${runoutNext}.`;
+    }
+    if (result.action === "ruffCurrentTrick") {
+      return `Troef nu in met ${cardText(result.card)} om de slag te winnen en de zichtbare eindspelreeks vast te houden${runoutNext}.`;
+    }
+    if (result.action === "leadForPartnerRuff") {
+      const ruffSeat = result.winnerSeat || result.targetSeat;
+      const ruffTarget = ruffSeat ? seatName(ruffSeat) : "partner";
+      return `Speel ${cardText(result.card)} voor zodat ${ruffTarget} kan introeven${runoutNext}.`;
+    }
+    if (result.action === "winCurrentTrick") {
+      return `Win deze slag nu met ${cardText(result.card)}; daarna liggen er genoeg zichtbare winnaars om de eindspelreeks door te spelen${runoutNext}.`;
+    }
+    if (result.action === "leadEntry") {
+      return `Speel ${cardText(result.card)} naar ${seatName(result.targetSeat)} om de zichtbare eindspelreeks voort te zetten${runoutNext}.`;
+    }
+    if (result.action === "cashWinner") {
+      return `Incasseer ${cardText(result.card)} als volgende zichtbare winnaar${runoutNext}.`;
+    }
+    if (result.contractType === "notrump") {
+      return `Incasseer de zichtbare sans-atoutwinnaars in de juiste volgorde${runoutNext}.`;
+    }
+    return `Incasseer de zichtbare winnaars in de juiste volgorde om het eindspel uit te spelen${runoutNext}.`;
+  }
   if (ruleName === "discardLoserOnWinner") {
     const ranks = result.cashRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
     return `Speel eerst de hoge ${suitName(result.suit)}${ranks ? ` (${ranks})` : ""}, zodat er een verliezer in ${suitName(result.attackedSuit)} weg kan voordat je troef trekt.`;
@@ -477,6 +504,17 @@ function showIllegalCardFeedback(seat, card) {
   }, 2200);
 }
 
+function endgameRunoutNextText(result) {
+  const step = result?.nextStep;
+  if (!step?.rank || !step?.suit) return "";
+  if (step.action === "leadForPartnerRuff") {
+    const ruffSeat = step.winnerSeat || step.targetSeat;
+    const ruffTarget = ruffSeat ? seatName(ruffSeat) : "partner";
+    return `; daarna ${rankLabel[step.rank] || step.rank}${suitSymbols[step.suit]} zodat ${ruffTarget} kan introeven`;
+  }
+  return `; daarna ${rankLabel[step.rank] || step.rank}${suitSymbols[step.suit]}`;
+}
+
 function illegalCardFeedbackText(seat, card) {
   if (state.awaitingTrickAdvance) return t("illegalCardWaitTrick");
   const turnSeat = seatAt(state.turnIndex);
@@ -529,9 +567,12 @@ function renderPlayedCard(seat, card, options = {}) {
   slotEls[seat].innerHTML = "";
   const cardEl = render.createCardEl(card, true);
   cardEl.classList.add("played");
+  cardEl.dataset.seat = seat;
+  if (card?.id) cardEl.dataset.cardId = card.id;
   if (options.reviewPlayback) cardEl.classList.add("review-playback-card");
+  if (options.settled || options.animate === false) cardEl.classList.add("played-card-settled");
   slotEls[seat].appendChild(cardEl);
-  if (options.animate !== false) {
+  if (options.animate !== false && !options.settled) {
     render.animateCardPlayToSlot({
       source: options.animationSource,
       targetEl: cardEl,

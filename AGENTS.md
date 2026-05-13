@@ -68,7 +68,7 @@ npm install
 npx playwright install chromium
 ```
 
-Volledige testset:
+Snelle dev/CI-gate:
 
 ```powershell
 npm test
@@ -86,11 +86,25 @@ Voor browser-smoke:
 npm run test:browser
 ```
 
+Voor de brede Playwright-regressiesuite:
+
+```powershell
+npm run test:browser:regression
+npm run test:browser:all
+```
+
+Voor de volledige testset met unit tests plus alle browsertests:
+
+```powershell
+npm run test:full
+```
+
 Gericht per Playwright-project:
 
 ```powershell
 npx playwright test tests/browser/smoke.spec.js --project=desktop-chromium
 npx playwright test tests/browser/smoke.spec.js --project=mobile-chromium
+npx playwright test tests/browser/regression.spec.js --project=desktop-chromium
 ```
 
 Let op: de Playwright-projectnamen zijn `desktop-chromium` en `mobile-chromium`, niet `chromium`.

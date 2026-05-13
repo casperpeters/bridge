@@ -4,6 +4,7 @@
     ? {
         core: require("../core.js"),
         common: require("./common.js"),
+        endgameRunout: require("./endgame-runout.js"),
         base: require("./suit-contract/base.js"),
         trumps: require("./suit-contract/trumps.js"),
         sideSuits: require("./suit-contract/side-suits.js"),
@@ -13,24 +14,27 @@
     : {
         core: root.BridgeRulesParts?.core,
         common: root.BridgeRulesPlayPlanParts?.common,
+        endgameRunout: root.BridgeRulesPlayPlanParts?.endgameRunout,
         base: root.BridgeRulesPlayPlanParts?.suitContractBase,
         trumps: root.BridgeRulesPlayPlanParts?.suitContractTrumps,
         sideSuits: root.BridgeRulesPlayPlanParts?.suitContractSideSuits,
         ruffs: root.BridgeRulesPlayPlanParts?.suitContractRuffs,
         finesses: root.BridgeRulesPlayPlanParts?.suitContractFinesses
       };
-  const api = factory(deps.core, deps.common, deps.base, deps.trumps, deps.sideSuits, deps.ruffs, deps.finesses);
+  const api = factory(deps.core, deps.common, deps.endgameRunout, deps.base, deps.trumps, deps.sideSuits, deps.ruffs, deps.finesses);
   if (isCommonJs) module.exports = api;
   root.BridgeRulesPlayPlanParts = root.BridgeRulesPlayPlanParts || {};
   root.BridgeRulesPlayPlanParts.suitContract = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesPlayPlanSuitContract(core, common, base, trumps, sideSuits, ruffs, finesses) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesPlayPlanSuitContract(core, common, endgameRunout, base, trumps, sideSuits, ruffs, finesses) {
   "use strict";
 
   if (!core) throw new Error("BridgeRules play-plan suit-contract missing core dependency");
   if (!common) throw new Error("BridgeRules play-plan suit-contract missing common dependency");
+  if (!endgameRunout) throw new Error("BridgeRules play-plan suit-contract missing endgame-runout dependency");
   if (!base || !trumps || !sideSuits || !ruffs || !finesses) throw new Error("BridgeRules play-plan suit-contract missing domain dependency");
 
   const { playedCardsFrom } = common;
+  const { endgameRunoutPriority } = endgameRunout;
   const suitContractParts = {
     ...base,
     ...ruffs,
@@ -83,6 +87,7 @@
       const trump = contract.strain;
       const playedCards = playedCardsFrom(trickHistory, currentTrick);
       const base = suitContractBaseHand({ declarerHand, dummyHand, trump, declarer, dummy });
+      const endgameRunout = endgameRunoutPriority({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick });
       const losers = countSuitContractLosers(base.baseHand, base.supportHand, trump, neededTricks, {
         baseSeat: base.baseSeat,
         supportSeat: base.supportSeat
@@ -270,7 +275,7 @@
         timingPlan,
         baseSeat: base.baseSeat,
         supportSeat: base.supportSeat,
-        priorities: priorities.slice(0, 3),
+        priorities: endgameRunout ? [endgameRunout, ...priorities.slice(0, 2)] : priorities.slice(0, 3),
         warnings,
         declarer,
         dummy

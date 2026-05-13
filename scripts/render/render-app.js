@@ -77,11 +77,16 @@
     }
 
     function activateReviewCursor(cursor, { scroll = true } = {}) {
+      const previousPlayback = currentReviewPlayback();
+      const previousPlayKeys = new Set((previousPlayback?.currentTrick || []).map((play) => reviewPlaybackPlayKey(previousPlayback.trickNumber, play)));
       const nextCursor = reviewPlayback.normalizeCursor(state.trickHistory, cursor);
       if (!nextCursor) return false;
       state.reviewCursor = nextCursor;
       state.reviewTrickCursor = nextCursor.trickIndex;
       state.scoreOverviewDismissed = true;
+      const nextPlayback = currentReviewPlayback();
+      const selectedKey = nextPlayback?.selectedPlay ? reviewPlaybackPlayKey(nextPlayback.trickNumber, nextPlayback.selectedPlay) : null;
+      state.reviewPlaybackAnimationKey = selectedKey && !previousPlayKeys.has(selectedKey) ? selectedKey : null;
       renderAll();
       if (scroll) window.setTimeout(scrollSelectedReviewTrickIntoView, 0);
       return true;
@@ -146,9 +151,7 @@
       renderReplayPanel();
       els.dealerBadge.textContent = `${helpers.t("board")} ${state.dealNumber} ${separatorDot} ${helpers.t("dealer")}: ${helpers.seatName(helpers.seatAt(state.dealerIndex))}`;
       els.trickCount.textContent = `${state.tricks.NS + state.tricks.EW} ${helpers.t("tricks")}`;
-      els.scoreline.textContent = state.finalScore
-        ? `${helpers.t("bridgeScore")} ${state.finalScore.scoreText} ${separatorDot} ${helpers.t("vulnerability")}: ${helpers.vulnerabilityName()}`
-        : `${helpers.t("northSouth")} ${state.tricks.NS} ${separatorDot} ${helpers.t("eastWest")} ${state.tricks.EW} ${separatorDot} ${helpers.t("vulnerability")}: ${helpers.vulnerabilityName()}`;
+      renderScoreline();
       renderHint();
       renderTrickAdvanceHint();
       render.renderSeedControls();
@@ -310,10 +313,24 @@
       if (state.phase !== "complete") return;
       render.clearTrickSlots();
       const playback = currentReviewPlayback();
-      if (!playback) return;
+      if (!playback) {
+        state.reviewPlaybackAnimationKey = null;
+        return;
+      }
+      const animationKey = state.reviewPlaybackAnimationKey;
       playback.currentTrick.forEach((play) => {
-        render.renderPlayedCard(play.seat, play.card, { animate: false, reviewPlayback: true });
+        const playKey = reviewPlaybackPlayKey(playback.trickNumber, play);
+        render.renderPlayedCard(play.seat, play.card, {
+          animate: playKey === animationKey,
+          reviewPlayback: true,
+          settled: playKey !== animationKey
+        });
       });
+      state.reviewPlaybackAnimationKey = null;
+    }
+
+    function reviewPlaybackPlayKey(trickNumber, play) {
+      return `${trickNumber}:${play?.seat || ""}:${play?.card?.id || ""}`;
     }
 
     function applyStaticText() {
@@ -451,10 +468,7 @@
         els.trickAdvanceHint.textContent = "";
         return;
       }
-      const winner = state.pendingTrickWinner;
-      const number = state.trickHistory.length + 1;
-      const winnerText = winner ? `${helpers.seatName(winner)} wint slag ${number}. ` : "";
-      els.trickAdvanceHint.textContent = `${winnerText}Klik ergens of druk op Enter voor de volgende slag.`;
+      els.trickAdvanceHint.textContent = "Klik ergens of druk op Enter voor de volgende slag.";
     }
 
     function currentHint() {
@@ -499,6 +513,8 @@
     }
 
     function renderContract() {
+      els.contract.classList.remove("has-contract-value");
+      els.contract.innerHTML = "";
       if (state.finalScore?.passOut) {
         els.contract.textContent = helpers.t("passedOut");
         return;
@@ -507,7 +523,36 @@
         els.contract.textContent = state.phase === "bidding" ? helpers.t("auctionInProgress") : helpers.t("dealToStart");
         return;
       }
-      els.contract.textContent = `${helpers.formatBid(state.contract)} ${helpers.t("by")} ${helpers.seatName(state.declarer)}`;
+      els.contract.classList.add("has-contract-value");
+
+      const primary = document.createElement("span");
+      primary.className = "contract-primary";
+
+      const bid = document.createElement("strong");
+      bid.className = `contract-bid strain-${String(state.contract.strain || "").toLowerCase()}`;
+      bid.setAttribute("aria-label", helpers.formatBid(state.contract));
+      render.appendBidContent(bid, state.contract, "contract-strain-symbol");
+
+      const declarer = document.createElement("span");
+      declarer.className = "contract-declarer";
+      declarer.textContent = `${helpers.t("by")} ${helpers.seatName(state.declarer)}`;
+
+      primary.append(bid, declarer);
+      els.contract.appendChild(primary);
+    }
+
+    function renderScoreline() {
+      els.scoreline.innerHTML = "";
+
+      const tricks = document.createElement("span");
+      tricks.className = "scoreline-tricks";
+      tricks.textContent = `Slagen: NZ ${state.tricks.NS} - OW ${state.tricks.EW}`;
+
+      const vulnerability = document.createElement("span");
+      vulnerability.className = "scoreline-vulnerability";
+      vulnerability.textContent = `${helpers.t("vulnerability")}: ${helpers.vulnerabilityName()}`;
+
+      els.scoreline.append(tricks, vulnerability);
     }
 
     function replayContractText() {
@@ -589,21 +634,6 @@
     function renderDummyNotice() {
       els.dummyNotice.hidden = true;
       els.dummyNotice.textContent = "";
-      if (
-        state.phase !== "playing" ||
-        !state.declarer ||
-        !state.dummy ||
-        !actions.openingLeadHasBeenMade() ||
-        state.trickHistory.length > 0
-      ) {
-        return;
-      }
-      const key = helpers.teamOf(state.declarer) === "NS" ? "dummyNoticeDeclaring" : "dummyNoticeDefending";
-      els.dummyNotice.textContent = helpers.t(key, {
-        declarer: helpers.seatName(state.declarer),
-        dummy: helpers.seatName(state.dummy)
-      });
-      els.dummyNotice.hidden = false;
     }
 
     Object.assign(actions, {

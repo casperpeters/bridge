@@ -168,6 +168,22 @@ function playPlanPriorityText(priority) {
       : "";
     return `Ontwikkel ${suitName(priority.suit)} (${priority.suitLength} kaarten samen); werk de ${missing} eruit.${entry}${preserve}${tempo}`;
   }
+  if (priority.kind === "endgameRunout") {
+    const count = priority.remainingTricks || priority.sequence?.length || 0;
+    const firstCard = runoutFirstCardText(priority);
+    if (priority.action === "preserveRunoutWinner" || priority.sequence?.[0]?.action === "preserveRunoutWinner") {
+      return `Eindspel: partner wint deze slag al; bewaar de kaarten die nodig zijn om de resterende ${count} slag${count === 1 ? "" : "en"} op volgorde te incasseren${firstCard}.`;
+    }
+    if (priority.action === "leadForPartnerRuff" || priority.sequence?.[0]?.action === "leadForPartnerRuff") {
+      const targetSeat = priority.sequence?.[0]?.winnerSeat || priority.sequence?.[0]?.targetSeat;
+      const target = targetSeat ? ` door ${seatName(targetSeat)}` : "";
+      return `Eindspel: speel een zijkleur voor zodat die${target} kan worden ingetroefd; daarna volgen de resterende ${count} slag${count === 1 ? "" : "en"} op volgorde${firstCard}.`;
+    }
+    if (priority.contractType === "notrump") {
+      return `Eindspel: er zijn genoeg zichtbare sans-atoutwinnaars om de resterende ${count} slag${count === 1 ? "" : "en"} op volgorde te incasseren${firstCard}.`;
+    }
+    return `Eindspel: win nu en speel daarna de zichtbare troef- en zijkleurwinnaars op volgorde uit${firstCard}.`;
+  }
   if (priority.kind === "finesse") {
     const rank = rankLabel[priority.finesseRank] || priority.finesseRank;
     return `Overweeg een snit naar de ${rank} in ${suitName(priority.suit)} als de timing klopt.`;
@@ -362,9 +378,17 @@ function cardText(card) {
   return `${rankLabel[card.rank] || card.rank} ${suitName(card.suit)}`;
 }
 
+function runoutFirstCardText(priority) {
+  const step = priority?.sequence?.find((item) => item.action !== "preserveRunoutWinner") || priority?.sequence?.[0];
+  if (!step?.rank || !step?.suit) return "";
+  const seat = step.seat ? ` vanuit ${seatName(step.seat)}` : "";
+  return `, te beginnen met ${rankLabel[step.rank] || step.rank} ${suitName(step.suit)}${seat}`;
+}
+
 function playPlanPriorityBriefText(priority) {
   if (!priority) return "de zichtbare planregel";
   if (priority.kind === "holdUpStopper") return `ophouden in ${suitName(priority.suit)}`;
+  if (priority.kind === "endgameRunout") return `zichtbare eindspelreeks`;
   if (priority.kind === "developLongSuit") return `ontwikkel ${suitName(priority.suit)}`;
   if (priority.kind === "finesse" || priority.kind === "safeHandFinesse") return `de snit in ${suitName(priority.suit)}`;
   if (priority.kind === "doubleFinesse") return `de dubbele snit in ${suitName(priority.suit)}`;

@@ -161,8 +161,7 @@
 .felt {
   position: relative;
   display: grid;
-  grid-template-rows: auto minmax(118px, auto);
-  gap: 10px;
+  grid-template-rows: minmax(0, 1fr);
   align-content: center;
   place-items: center;
   min-width: 0;
@@ -175,11 +174,20 @@
 }
 
 .table-help-stack {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
   width: min(100%, 520px);
-  min-height: 118px;
+  min-height: 0;
   display: grid;
   align-content: start;
   gap: 8px;
+  pointer-events: none;
+}
+
+.table-help-stack > * {
+  pointer-events: auto;
 }
 
 .replay-panel {

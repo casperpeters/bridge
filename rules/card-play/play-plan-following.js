@@ -48,6 +48,7 @@
     describePlayPlanFallback,
     withPlayPlanFallback,
     legalPlanCard,
+    choosePlanEndgameRunoutPlay,
     choosePlanHoldUpPlay,
     choosePlanPreserveWorkSuitEntryPlay,
     choosePlanDevelopmentPlay,
@@ -196,6 +197,9 @@
           winning
         });
       }
+      if (priority.kind === "endgameRunout") {
+        return choosePlanEndgameRunoutPlay({ priority, seat, legal });
+      }
       if (priority.kind === "developLongSuit") {
         return choosePlanDevelopmentPlay({ priority, hand, partnerHand, seat, legal });
       }
@@ -254,6 +258,9 @@
     }) {
       if (priority.kind === "holdUpStopper") {
         return choosePlanHoldUpPlay({ playPlan: { priorities: [priority] }, hand, currentTrick, seat, trump, legal, winning });
+      }
+      if (priority.kind === "endgameRunout") {
+        return choosePlanEndgameRunoutPlay({ priority, seat, legal });
       }
       if (priority.kind === "developLongSuit") {
         const preserveEntry = choosePlanPreserveWorkSuitEntryPlay({
