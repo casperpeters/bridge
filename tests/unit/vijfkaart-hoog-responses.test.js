@@ -11,37 +11,7 @@ const {
   chooseFiveCardHigh,
   chooseFiveCardHighResult
 } = require("./harness.js");
-const fs = require("node:fs");
-const path = require("node:path");
-const vm = require("node:vm");
-const auctionRules = require("../../rules/auction.js");
-const fiveCardHighConventions = require("../../rules/bidding/systems/five-card-high/conventions.js");
-
-function loadDutchBidExplanationsForTest() {
-  const context = {
-    BridgeRulesParts: {
-      biddingFiveCardHighConventions: fiveCardHighConventions
-    },
-    isPass: rules.isPass,
-    isDouble: rules.isDouble,
-    isRedouble: rules.isRedouble,
-    bidEquals: auctionRules.bidEquals,
-    cheapestLevelForStrain: auctionRules.cheapestLevelForStrain,
-    suitName: (suit) => ({
-      C: "klaveren",
-      D: "ruiten",
-      H: "harten",
-      S: "schoppen",
-      NT: "sans-atout"
-    }[suit] || suit),
-    t: (key, args = {}) => args.detail || key
-  };
-  context.globalThis = context;
-  vm.createContext(context);
-  const source = fs.readFileSync(path.join(__dirname, "../../rules/bidding/systems/five-card-high/explanations-nl.js"), "utf8");
-  vm.runInContext(source, context, { filename: "explanations-nl.js" });
-  return context.FiveCardHighBidExplanationsNl;
-}
+const { loadDutchBidExplanationsForTest } = require("./bid-explanation-test-helper.js");
 
 test("Vijfkaart Hoog bid result identifies artificial transfer choices", () => {
   const auction = [

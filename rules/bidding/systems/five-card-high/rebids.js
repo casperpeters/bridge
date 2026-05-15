@@ -8,7 +8,7 @@
         valuation: require("../../common/valuation.js"),
         result: require("../../common/result.js"),
         conventions: require("./conventions.js"),
-        strongTwoClubs: require("./rebids/strong-two-clubs.js")
+        strongTwoClubs: require("./rebids/strong-two-clubs/index.js")
       }
     : root.BridgeRulesParts || {};
   const api = factory(
@@ -58,11 +58,10 @@
     supportLengthForOpening
   } = conventionHelpers;
   const {
-    rebidAfterStrongTwoClubsFiveCardHigh,
-    rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh,
-    isStrongTwoClubsPositiveResponse,
-    isStrongTwoClubsTwoNotrumpRebid,
-    respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh,
+    chooseStrongTwoClubsOpenerRebidTarget,
+    chooseStrongTwoClubsResponderRebidTarget,
+    chooseStrongTwoClubsOpenerThirdBidTarget,
+    chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget,
     describeStrongTwoClubsOpenerRebidChoice,
     describeStrongTwoClubsResponderRebidChoice,
     describeStrongTwoClubsOpenerThirdBidChoice
@@ -76,11 +75,8 @@
         const shape = handShape(hand);
         if (bidEquals(openingBid, 1, "NT")) return rebidAfterOneNotrumpResponseFiveCardHigh(shape, responseBid);
         if (bidEquals(openingBid, 2, "NT")) return rebidAfterTwoNotrumpResponseFiveCardHigh(shape, responseBid);
-        if (bidEquals(openingBid, 2, "C")) {
-          return isStrongTwoClubsPositiveResponse(responseBid)
-            ? rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh(shape, hand, responseBid)
-            : rebidAfterStrongTwoClubsFiveCardHigh(shape, hand);
-        }
+        const strongTwoClubsTarget = chooseStrongTwoClubsOpenerRebidTarget({ shape, hand, openingBid, responseBid });
+        if (strongTwoClubsTarget) return strongTwoClubsTarget;
         if (isOneSuitOpeningFiveCardHigh(openingBid)) return rebidAfterOneSuitOpeningFiveCardHigh(shape, hand, openingBid, responseBid);
         return Pass();
       }
@@ -433,7 +429,8 @@
         const shape = handShape(hand);
         if (bidEquals(openingBid, 1, "NT")) return rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid);
         if (bidEquals(openingBid, 2, "NT")) return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid);
-        if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) return respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh(shape);
+        const strongTwoClubsTarget = chooseStrongTwoClubsResponderRebidTarget({ shape, openingBid, responseBid, openerRebid });
+        if (strongTwoClubsTarget) return strongTwoClubsTarget;
         if (isSingleMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid)) {
           return rebidResponderAfterSingleMajorRaiseGameFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid);
         }
@@ -632,9 +629,8 @@
           return rebidOpenerAfterFourthSuitFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid, responderRebid);
         }
 
-        if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) {
-          return rebidAfterTwoNotrumpResponseFiveCardHigh(shape, responderRebid);
-        }
+        const strongTwoClubsTarget = chooseStrongTwoClubsOpenerThirdBidTarget({ shape, openingBid, responseBid, openerRebid, responderRebid });
+        if (strongTwoClubsTarget) return strongTwoClubsTarget;
 
         if (!bidEquals(openingBid, 1, "NT")) return Pass();
 
@@ -706,9 +702,8 @@
             partnershipMinimumHcp: shape.hcp + notrumpOpeningMinimumHcp(openingBid)
           }) || Pass();
         }
-        if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid) && openerThirdBid) {
-          return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responderRebid, openerThirdBid);
-        }
+        const strongTwoClubsTarget = chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget({ shape, openingBid, responseBid, openerRebid, responderRebid, openerThirdBid });
+        if (strongTwoClubsTarget) return strongTwoClubsTarget;
         if (!isFourthSuitForcingBid(openingBid, responseBid, openerRebid, responderRebid) || !openerThirdBid) return Pass();
         if (openerThirdBid.strain === responseBid.strain && (responseBid.strain === "H" || responseBid.strain === "S")) return bid(gameLevel(responseBid.strain), responseBid.strain);
         if (openerThirdBid.strain === "NT") return openerThirdBid.level >= gameLevel("NT") ? Pass() : bid(gameLevel("NT"), "NT");
@@ -1319,7 +1314,7 @@
             partnershipMinimumHcp: shape.hcp + notrumpOpeningMinimumHcp(openingBid)
           });
         }
-        if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid) && openerThirdBid) {
+        if (chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget({ shape, openingBid, responseBid, openerRebid, responderRebid, openerThirdBid })) {
           return describeResponderRebidChoice(chosenBid, shape, bid(2, "NT"), responderRebid, openerThirdBid, {
             ...base,
             strongTwoClubsAuction: true
@@ -1371,12 +1366,7 @@
     chooseFiveCardHighResponderAfterFourthSuit,
     rebidAfterOneNotrumpResponseFiveCardHigh,
     rebidAfterTwoNotrumpResponseFiveCardHigh,
-    rebidAfterStrongTwoClubsFiveCardHigh,
-    rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh,
     isSingleMajorRaiseGameFiveCardHigh,
-    isStrongTwoClubsPositiveResponse,
-    isStrongTwoClubsTwoNotrumpRebid,
-    respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh,
     rebidAfterOneSuitOpeningFiveCardHigh,
     openerRebidAfterMinorNotrumpFiveCardHigh,
     openerRebidAfterRaiseFiveCardHigh,

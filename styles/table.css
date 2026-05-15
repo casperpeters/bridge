@@ -1100,6 +1100,7 @@
 
 .trick-slot.pending-trick-winner .card.played {
   animation: winnerCardGlowBreathe 1500ms ease-in-out infinite;
+  opacity: 1;
   overflow: hidden;
   transform: translateY(-8px);
   box-shadow:

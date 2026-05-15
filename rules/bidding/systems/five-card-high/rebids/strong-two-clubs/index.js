@@ -2,11 +2,11 @@
   const isCommonJs = typeof module === "object" && module.exports;
   const deps = isCommonJs
     ? {
-        core: require("../../../../core.js"),
-        auction: require("../../../../auction.js"),
-        valuation: require("../../../common/valuation.js"),
-        result: require("../../../common/result.js"),
-        conventions: require("../conventions.js")
+        core: require("../../../../../core.js"),
+        auction: require("../../../../../auction.js"),
+        valuation: require("../../../../common/valuation.js"),
+        result: require("../../../../common/result.js"),
+        conventions: require("../../conventions.js")
       }
     : root.BridgeRulesParts || {};
   const api = factory(
@@ -37,7 +37,8 @@
     notrumpTransferSuit,
     bestSuitByLength,
     chooseMajorByLength,
-    chooseSuitByLengthThenRank
+    chooseSuitByLengthThenRank,
+    shouldUseBlackwoodAfterAcceptedTransfer
   } = conventionHelpers;
 
   function fiveCardHighBidChoiceResult(bid, ruleName, confidence, reason, extra = {}) {
@@ -68,6 +69,28 @@
     return level <= 7 ? bid(level, suit) : bid(3, "NT");
   }
 
+  function chooseStrongTwoClubsOpenerRebidTarget({ shape, hand, openingBid, responseBid } = {}) {
+    if (!bidEquals(openingBid, 2, "C")) return null;
+    return isStrongTwoClubsPositiveResponse(responseBid)
+      ? rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh(shape, hand, responseBid)
+      : rebidAfterStrongTwoClubsFiveCardHigh(shape, hand);
+  }
+
+  function chooseStrongTwoClubsResponderRebidTarget({ shape, openingBid, responseBid, openerRebid } = {}) {
+    if (!isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) return null;
+    return respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh(shape);
+  }
+
+  function chooseStrongTwoClubsOpenerThirdBidTarget({ shape, openingBid, responseBid, openerRebid, responderRebid } = {}) {
+    if (!isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) return null;
+    return rebidAfterStrongTwoClubsTwoNotrumpResponseFiveCardHigh(shape, responderRebid);
+  }
+
+  function chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget({ shape, openingBid, responseBid, openerRebid, responderRebid, openerThirdBid } = {}) {
+    if (!openerThirdBid || !isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) return null;
+    return rebidResponderAfterStrongTwoClubsTwoNotrumpContinuationFiveCardHigh(shape, responderRebid, openerThirdBid);
+  }
+
   function chooseStrongTwoClubsJumpRebidMajor(shape, hand) {
     const major = chooseSuitByLengthThenRank(["S", "H"], shape, 6, true);
     if (!major) return null;
@@ -90,6 +113,29 @@
     if (transferMajor === "S") return bid(3, "H");
     if ((shape.counts.H >= 4 || shape.counts.S >= 4) && shape.hcp >= 4) return bid(3, "C");
     if (shape.hcp >= 4) return bid(3, "NT");
+    return Pass();
+  }
+
+  function rebidAfterStrongTwoClubsTwoNotrumpResponseFiveCardHigh(shape, responseBid) {
+    if (bidEquals(responseBid, 3, "C")) {
+      if (shape.counts.H >= 4) return bid(3, "H");
+      if (shape.counts.S >= 4) return bid(3, "S");
+      return bid(3, "D");
+    }
+    if (bidEquals(responseBid, 3, "D")) return bid(3, "H");
+    if (bidEquals(responseBid, 3, "H")) return bid(3, "S");
+    return Pass();
+  }
+
+  function rebidResponderAfterStrongTwoClubsTwoNotrumpContinuationFiveCardHigh(shape, responseBid, openerRebid) {
+    if (bidEquals(responseBid, 3, "C")) {
+      if ((openerRebid.strain === "H" || openerRebid.strain === "S") && shape.counts[openerRebid.strain] >= 4) return bid(4, openerRebid.strain);
+      return bid(3, "NT");
+    }
+    const transferSuit = bidEquals(responseBid, 3, "D") ? "H" : bidEquals(responseBid, 3, "H") ? "S" : null;
+    if (transferSuit && shouldUseBlackwoodAfterAcceptedTransfer(shape, bid(2, "NT"), transferSuit)) return bid(4, "NT");
+    if (transferSuit && shape.counts[transferSuit] >= 6) return bid(4, transferSuit);
+    if (transferSuit && shape.hcp >= 4) return bid(3, "NT");
     return Pass();
   }
 
@@ -256,14 +302,10 @@
   }
 
   return {
-    rebidAfterStrongTwoClubsFiveCardHigh,
-    rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh,
-    chooseStrongTwoClubsJumpRebidMajor,
-    isStrongTwoClubsPositiveResponse,
-    isStrongTwoClubsTwoNotrumpRebid,
-    respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh,
-    isStrongTwoClubsTwoNotrumpStayman,
-    strongTwoClubsTwoNotrumpTransferSuit,
+    chooseStrongTwoClubsOpenerRebidTarget,
+    chooseStrongTwoClubsResponderRebidTarget,
+    chooseStrongTwoClubsOpenerThirdBidTarget,
+    chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget,
     describeStrongTwoClubsOpenerRebidChoice,
     describeStrongTwoClubsResponderRebidChoice,
     describeStrongTwoClubsOpenerThirdBidChoice

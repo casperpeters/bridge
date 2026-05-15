@@ -22,6 +22,7 @@ async function reviewPlaybackCardSnapshot(page) {
     return {
       cards,
       firstPlayedCardVisible: cards.some((card) => card.id === firstPlayedCardId && card.visible && card.opacity !== "0"),
+      selectedCardVisible: cards.some((card) => card.id === selectedCardId && card.visible && card.opacity !== "0"),
       selectedCardIsOnlyEntryAnimation: cards.filter((card) => !card.settled).map((card) => card.id).join("|") === selectedCardId
     };
   });
@@ -3068,7 +3069,8 @@ test("can finish a hand and copy or submit a feedback report from the review", a
   await expect(page.locator("#trick-area .card.played")).toHaveCount(4);
   expect(await reviewPlaybackCardSnapshot(page)).toMatchObject({
     selectedCardIsOnlyEntryAnimation: true,
-    firstPlayedCardVisible: true
+    firstPlayedCardVisible: true,
+    selectedCardVisible: true
   });
   await expect(page.locator(".trick-slot.pending-trick-winner")).toHaveCount(1);
   await page.keyboard.press("ArrowRight");

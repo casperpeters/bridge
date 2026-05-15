@@ -2,15 +2,6 @@
 
 Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na codecheck op 2026-04-28.
 
-## Werkprincipes
-
-- Basisgame blijft rustig: zo weinig mogelijk tekstuele uitleg tijdens normaal spelen.
-- Uitgebreide uitleg hoort in developermodus, AI-suggesties, review, woordenlijst of toekomstige lesmodus.
-- Houd UI-wijzigingen binnen de passende `scripts/`-submap; `scripts/app.js` blijft alleen de bootstrap-shell en gedeelde helpers horen in runtime-modules.
-- Gebruik altijd de sterkste geimplementeerde heuristiek. Geen keuzemenu voor zwakkere AI-sterktes.
-- Maak claims in de UI niet sterker dan de engine kan waarmaken.
-- Voeg fixture- of smoketests toe bij nieuwe bied-, speel- of scorelogica.
-
 ## Voorgestelde implementatievolgorde
 
 1. Houd de eerste `practice-hands/` catalogus actief in beginnerstests en regressietests; breid gericht uit waar testers of bugs extra vaste situaties vragen.
@@ -22,7 +13,6 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 ### Product- en testgereedheid
 
-- Ruim de normale beginnersflow op: feedbackknoppen en geavanceerde biedhulpmiddelen mogen de hoofdactie niet visueel verdringen.
 - Houd actieve-handbegeleiding vooral visueel; voeg alleen minimale tekst toe wanneer een beperking anders onduidelijk is, bijvoorbeeld bij kleur bekennen.
 - Breid kaartanimatie later gericht uit met delen, slagen opruimen, dummy reveal en review-/slagoverzichtanimaties; houd `prefers-reduced-motion` leidend.
 - Gebruik de README-checklist voor de volgende beginnerstest-2-herhaling en noteer alleen concrete afhakers.
@@ -84,6 +74,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 ### Lessen en oefenmodus
 
 - Werk lessen 4-12 later net zo rijk uit als les 1, 2 en 3, met interactieve vragen, gerichte oefenstart en betrouwbare reviewfeedback per lesdoel.
+- Geef les 1 en 2 dezelfde layout
 - Voeg ongedaan maken/herhalen toe voor de leermodus, minstens voor de meest recente kaart.
 - Voeg keuze-feedback toe in lessen, niet in de rustige basisgame, en alleen wanneer de engine de uitleg betrouwbaar kan onderbouwen.
 
@@ -103,6 +94,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Voeg later een biedsysteemselector toe, bijvoorbeeld NBB Vijfkaart Hoog, Acol of 2/1.
 - Voeg persoonlijke conventie-instellingen toe, zoals Stayman, transfers, supportdoubletten, Michaels, Unusual NT en Lebensohl.
+- Maa
 - Bewaar conventieprofielen per gebruiker of oefenset.
 - Waarschuw wanneer een bieding buiten het gekozen persoonlijke systeem valt, maar alleen als de app dat betrouwbaar kan bepalen.
 
