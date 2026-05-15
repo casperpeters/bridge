@@ -319,6 +319,135 @@ test("chooseCardPlay returns a visible winning honor sequence before a low card 
   assert.equal(result.sequence, "KQ");
 });
 
+test("chooseCardPlay cashes visible defensive winners before longest-suit fallback in the feedback 3NT hand", () => {
+  const firstFourTricks = [
+    {
+      number: 1,
+      winner: "West",
+      cards: [
+        { seat: "North", card: card("2H") },
+        { seat: "East", card: card("7H") },
+        { seat: "South", card: card("JH") },
+        { seat: "West", card: card("AH") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("KS") },
+        { seat: "North", card: card("2S") },
+        { seat: "East", card: card("3S") },
+        { seat: "South", card: card("6S") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("AC") },
+        { seat: "North", card: card("6C") },
+        { seat: "East", card: card("3C") },
+        { seat: "South", card: card("2C") }
+      ]
+    },
+    {
+      number: 4,
+      winner: "North",
+      cards: [
+        { seat: "West", card: card("9H") },
+        { seat: "North", card: card("KH") },
+        { seat: "East", card: card("TH") },
+        { seat: "South", card: card("5H") }
+      ]
+    }
+  ];
+
+  const earlyResult = rules.chooseCardPlay({
+    hand: hand("QS", "7S", "4S", "QH", "4H", "JC", "KD", "6D", "5D"),
+    dummyHand: hand("AS", "5S", "5C", "4C", "AD", "TD", "8D", "3D", "2D"),
+    currentTrick: [],
+    trickHistory: firstFourTricks,
+    seat: "North",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(earlyResult.card.id, "QH");
+  assert.equal(earlyResult.ruleId, "visibleDefensiveWinner");
+  assert.equal(earlyResult.workSuit, "H");
+
+  const lateResult = rules.chooseCardPlay({
+    hand: hand("7S", "4S", "4H", "JC"),
+    dummyHand: hand("5S", "5C", "4C", "3D"),
+    currentTrick: [],
+    trickHistory: [
+      ...firstFourTricks,
+      {
+        number: 5,
+        winner: "East",
+        cards: [
+          { seat: "North", card: card("KD") },
+          { seat: "East", card: card("AD") },
+          { seat: "South", card: card("4D") },
+          { seat: "West", card: card("JD") }
+        ]
+      },
+      {
+        number: 6,
+        winner: "West",
+        cards: [
+          { seat: "East", card: card("TD") },
+          { seat: "South", card: card("7D") },
+          { seat: "West", card: card("QD") },
+          { seat: "North", card: card("5D") }
+        ]
+      },
+      {
+        number: 7,
+        winner: "East",
+        cards: [
+          { seat: "West", card: card("TS") },
+          { seat: "North", card: card("QS") },
+          { seat: "East", card: card("AS") },
+          { seat: "South", card: card("JS") }
+        ]
+      },
+      {
+        number: 8,
+        winner: "South",
+        cards: [
+          { seat: "East", card: card("8D") },
+          { seat: "South", card: card("9D") },
+          { seat: "West", card: card("3H") },
+          { seat: "North", card: card("6D") }
+        ]
+      },
+      {
+        number: 9,
+        winner: "North",
+        cards: [
+          { seat: "South", card: card("6H") },
+          { seat: "West", card: card("8H") },
+          { seat: "North", card: card("QH") },
+          { seat: "East", card: card("2D") }
+        ]
+      }
+    ],
+    seat: "North",
+    declarer: "West",
+    dummy: "East",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(lateResult.card.id, "4H");
+  assert.equal(lateResult.ruleId, "visibleDefensiveWinner");
+  assert.equal(lateResult.workSuit, "H");
+});
+
 test("chooseCardPlay avoids returning a visibly dead partner suit into declarer's ruff", () => {
   const trickHistory = [
     {

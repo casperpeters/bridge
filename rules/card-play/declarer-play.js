@@ -30,6 +30,7 @@
     finesseCandidate
   } = playPlan;
   const { cardPlayResult } = cardPlayCommon;
+  const { isVisibleTopWinner } = cardPlayCommon;
 
   function chooseDeclarerFinessePlay({
       hand,
@@ -195,6 +196,41 @@
       );
     }
 
+  function chooseDeclarerVisibleNotrumpWinner({
+      hand,
+      partnerHand,
+      currentTrick,
+      trickHistory,
+      seat,
+      declarer,
+      dummy,
+      contract
+    }) {
+      if (currentTrick.length || contract?.strain !== "NT") return null;
+      if (!partnerHand?.length || !declarer || !dummy) return null;
+      if (seat !== declarer && seat !== dummy) return null;
+      if (trickHistory.length < 8) return null;
+      if (hand.length + partnerHand.length > 6) return null;
+
+      const winners = hand
+        .filter((card) => isVisibleTopWinner(card, { hand, partnerHand, trickHistory, currentTrick }))
+        .sort(compareLowCards);
+      const card = winners[0];
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "visibleNotrumpWinner",
+        "basic",
+        "Cash a visible notrump winner in the late hand before opening a losing suit.",
+        {
+          suit: card.suit,
+          remainingCards: hand.length + partnerHand.length,
+          action: "cashVisibleNotrumpWinner"
+        }
+      );
+    }
+
   function chooseAvoidLongHandRuff({ hand, partnerHand, legal, currentTrick, seat, declarer, dummy, trump, winning }) {
       if (!trump || !currentTrick.length || !partnerHand?.length || !declarer || !dummy || !winning) return null;
       if (seat !== declarer && seat !== dummy) return null;
@@ -236,6 +272,7 @@
   return {
     chooseDeclarerFinessePlay,
     chooseDeclarerDevelopmentPlay,
+    chooseDeclarerVisibleNotrumpWinner,
     chooseAvoidLongHandRuff
   };
 });

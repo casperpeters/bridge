@@ -793,6 +793,149 @@ test("chooseCardPlay uses notrump lead rules without declarer-side partner conte
   assert.equal(result.ruleId, "notrumpSequenceLead");
 });
 
+test("chooseCardPlay cashes a late visible notrump winner before a losing longest-suit fallback", () => {
+  const contract = { level: 3, strain: "NT" };
+  const declarerHand = hand("9S", "9C");
+  const dummyHand = hand("5C", "3D");
+  const trickHistory = [
+    {
+      number: 1,
+      winner: "West",
+      cards: [
+        { seat: "North", card: card("2H") },
+        { seat: "East", card: card("7H") },
+        { seat: "South", card: card("JH") },
+        { seat: "West", card: card("AH") }
+      ]
+    },
+    {
+      number: 2,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("KS") },
+        { seat: "North", card: card("2S") },
+        { seat: "East", card: card("3S") },
+        { seat: "South", card: card("6S") }
+      ]
+    },
+    {
+      number: 3,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("AC") },
+        { seat: "North", card: card("6C") },
+        { seat: "East", card: card("3C") },
+        { seat: "South", card: card("2C") }
+      ]
+    },
+    {
+      number: 4,
+      winner: "North",
+      cards: [
+        { seat: "West", card: card("9H") },
+        { seat: "North", card: card("KH") },
+        { seat: "East", card: card("TH") },
+        { seat: "South", card: card("5H") }
+      ]
+    },
+    {
+      number: 5,
+      winner: "East",
+      cards: [
+        { seat: "North", card: card("KD") },
+        { seat: "East", card: card("AD") },
+        { seat: "South", card: card("4D") },
+        { seat: "West", card: card("JD") }
+      ]
+    },
+    {
+      number: 6,
+      winner: "West",
+      cards: [
+        { seat: "East", card: card("TD") },
+        { seat: "South", card: card("7D") },
+        { seat: "West", card: card("QD") },
+        { seat: "North", card: card("5D") }
+      ]
+    },
+    {
+      number: 7,
+      winner: "East",
+      cards: [
+        { seat: "West", card: card("TS") },
+        { seat: "North", card: card("QS") },
+        { seat: "East", card: card("AS") },
+        { seat: "South", card: card("JS") }
+      ]
+    },
+    {
+      number: 8,
+      winner: "South",
+      cards: [
+        { seat: "East", card: card("8D") },
+        { seat: "South", card: card("9D") },
+        { seat: "West", card: card("3H") },
+        { seat: "North", card: card("6D") }
+      ]
+    },
+    {
+      number: 9,
+      winner: "North",
+      cards: [
+        { seat: "South", card: card("6H") },
+        { seat: "West", card: card("8H") },
+        { seat: "North", card: card("QH") },
+        { seat: "East", card: card("2D") }
+      ]
+    },
+    {
+      number: 10,
+      winner: "West",
+      cards: [
+        { seat: "North", card: card("7S") },
+        { seat: "East", card: card("5S") },
+        { seat: "South", card: card("7C") },
+        { seat: "West", card: card("8S") }
+      ]
+    },
+    {
+      number: 11,
+      winner: "West",
+      cards: [
+        { seat: "West", card: card("KC") },
+        { seat: "North", card: card("JC") },
+        { seat: "East", card: card("4C") },
+        { seat: "South", card: card("8C") }
+      ]
+    }
+  ];
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "West",
+    dummy: "East",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    trickHistory,
+    seat: "West",
+    declarer: "West",
+    dummy: "East",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(result.card.id, "9S");
+  assert.equal(result.ruleId, "visibleNotrumpWinner");
+  assert.equal(result.suit, "S");
+});
+
 test("chooseCardPlay leads low toward an AQ notrump finesse", () => {
   const result = rules.chooseCardPlay({
     hand: hand("2H", "3H", "AD"),

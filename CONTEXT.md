@@ -16,11 +16,15 @@ _Avoid_: lesdata, willekeurige deal
 **SMB1-oefenhand**: Een oefenhand die is geordend volgens de SMB1-lesroute, ook wanneer hij nog niet aan een app-les is gekoppeld.
 _Avoid_: app-leshand
 
+**Sterke 2K-vervolg**: Het biedverloop na een sterke kunstmatige 2K-opening, inclusief afwachtend antwoord, positieve antwoorden en SA-vervolgen.
+_Avoid_: gewone SA-opening, natuurlijk 2K-bod
+
 ## Relationships
 
 - Een **SMB1-lesroute** kan meerdere **SMB1-oefenhanden** per les bevatten.
 - Een **App-les** kan tijdelijk naar bestaande oefenhanden blijven verwijzen, ook als die nog niet volledig volgens de **SMB1-lesroute** zijn geordend.
 - Een **Oefenhandencatalogus** mag eerder volgens SMB1 worden gestructureerd dan de **App-les**-route.
+- Een **Sterke 2K-vervolg** is een Vijfkaart-Hoog auction family binnen de biedengine, los van gewone 1SA/2SA-vervolgen.
 
 ## Flagged Ambiguities
 

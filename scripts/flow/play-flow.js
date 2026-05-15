@@ -439,6 +439,12 @@ function explainCardPlayResult(result) {
     const avoided = result.avoidedSuits?.map(suitName).join(", ");
     return `Speel partners kleur nu niet terug${avoided ? ` (${avoided})` : ""}: die kleur is zichtbaar leeg bij de andere handen en kan worden getroefd. Incasseer daarom eerst een veilige winnaar.`;
   }
+  if (ruleName === "visibleDefensiveWinner") {
+    return `Incasseer de zichtbare vrije kaart in ${suitName(result.suit)} voordat je een nieuwe kleur opent.`;
+  }
+  if (ruleName === "visibleNotrumpWinner") {
+    return `Incasseer de zichtbare sans-atoutwinnaar in ${suitName(result.suit)} voordat je een verliezende kleur opent.`;
+  }
   if (ruleName === "trumpSwitchAgainstDummyRuff") {
     const shortText = result.dummyShortLength === 0 ? "renonce" : "kort";
     return `Speel troef: dummy is ${shortText} in ${suitName(result.dummyShortSuit)} en heeft nog ${result.dummyTrumpLength} troeven. Zo beperk je dummy's introevers.`;

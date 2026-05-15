@@ -47,6 +47,7 @@
   const {
     chooseDeclarerFinessePlay,
     chooseDeclarerDevelopmentPlay,
+    chooseDeclarerVisibleNotrumpWinner,
     chooseAvoidLongHandRuff
   } = cardPlayDeclarer;
 
@@ -63,6 +64,7 @@
   const {
     chooseReturnPartnerLeadSuit,
     chooseSafeDefensiveWinner,
+    chooseVisibleDefensiveWinner,
     chooseTrumpSwitchAgainstDummyRuff,
     chooseOpeningLeadAttitudeSignal,
     chooseThirdHandHighOverLowLead,
@@ -129,6 +131,17 @@
           contract
         });
         if (development) return withPlayPlanFallback(development, planDecision);
+        const visibleNotrumpWinner = chooseDeclarerVisibleNotrumpWinner({
+          hand,
+          partnerHand,
+          currentTrick,
+          trickHistory,
+          seat,
+          declarer,
+          dummy,
+          contract
+        });
+        if (visibleNotrumpWinner) return withPlayPlanFallback(visibleNotrumpWinner, planDecision);
 
         const returnPartnerLeadSuit = chooseReturnPartnerLeadSuit({
           legal,
@@ -161,6 +174,16 @@
           trump
         });
         if (safeDefensiveWinner) return withPlayPlanFallback(safeDefensiveWinner, planDecision);
+        const visibleDefensiveWinner = chooseVisibleDefensiveWinner({
+          legal,
+          dummyHand,
+          trickHistory,
+          currentTrick,
+          seat,
+          declarer,
+          trump
+        });
+        if (visibleDefensiveWinner) return withPlayPlanFallback(visibleDefensiveWinner, planDecision);
 
         return withPlayPlanFallback(
           chooseLeadCardPlay(hand, legal, { contract, seat, declarer, isOpeningLead: context.isOpeningLead, auction }),

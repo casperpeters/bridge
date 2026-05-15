@@ -14,9 +14,9 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesCardPlayCommon(core, playMechanics, playPlan) {
   "use strict";
 
-  const { suits, teamOf } = core;
+  const { suits, teamOf, rankOrder } = core;
   const { legalCards, currentWinningPlay } = playMechanics;
-  const { playedCardsFrom } = playPlan;
+  const { cardsInSuit, playedCardsFrom } = playPlan;
 
   function cardPlayResult(card, ruleName, confidence, reason, extra = {}) {
     return {
@@ -81,6 +81,28 @@
     return suits.map((suit) => visibleSuitStatus({ suit, hand, dummyHand, trickHistory, currentTrick, trump }));
   }
 
+  function isVisibleTopWinner(card, {
+      hand = [],
+      partnerHand = [],
+      dummyHand = [],
+      trickHistory = [],
+      currentTrick = []
+    } = {}) {
+      if (!card) return false;
+      const visibleRanks = new Set(
+        [
+          ...cardsInSuit(hand || [], card.suit),
+          ...cardsInSuit(partnerHand || [], card.suit),
+          ...cardsInSuit(dummyHand || [], card.suit),
+          ...playedCardsFrom(trickHistory, currentTrick)
+        ]
+          .filter((visibleCard) => visibleCard.suit === card.suit)
+          .map((visibleCard) => visibleCard.rank)
+      );
+      const cardRankIndex = rankOrder.indexOf(card.rank);
+      return rankOrder.slice(cardRankIndex + 1).every((rank) => visibleRanks.has(rank));
+    }
+
   function unknownCountInSuitFor({ suit, hand = [], dummyHand = [], playedCards = [] }) {
     hand = hand || [];
     dummyHand = dummyHand || [];
@@ -97,6 +119,7 @@
   return {
     cardPlayResult,
     createCardPlayContext,
+    isVisibleTopWinner,
     visibleSuitStatus,
     visibleSuitStatuses
   };

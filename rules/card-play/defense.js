@@ -34,7 +34,7 @@
     openingLeadPlay,
     isDefensivePlaySeat
   } = cardPlayLeads;
-  const { cardPlayResult, visibleSuitStatus, visibleSuitStatuses } = cardPlayCommon;
+  const { cardPlayResult, isVisibleTopWinner, visibleSuitStatus, visibleSuitStatuses } = cardPlayCommon;
 
   function chooseReturnPartnerLeadSuit({ legal, dummyHand, trickHistory, seat, declarer, trump }) {
     if (!isDefensivePlaySeat(seat, declarer) || !trickHistory.length) return null;
@@ -120,20 +120,35 @@
     );
   }
 
-  function isVisibleTopWinner(card, { hand = [], dummyHand = [], trickHistory = [], currentTrick = [] } = {}) {
-    if (!card) return false;
-    const visibleRanks = new Set(
-      [
-        ...cardsInSuit(hand, card.suit),
-        ...cardsInSuit(dummyHand || [], card.suit),
-        ...trickHistory.flatMap((trick) => trick.cards || []).map((play) => play.card).filter(Boolean),
-        ...currentTrick.map((play) => play.card).filter(Boolean)
-      ]
-        .filter((visibleCard) => visibleCard.suit === card.suit)
-        .map((visibleCard) => visibleCard.rank)
+  function chooseVisibleDefensiveWinner({ legal, dummyHand, trickHistory, currentTrick = [], seat, declarer, trump }) {
+    if (!isDefensivePlaySeat(seat, declarer) || currentTrick.length || !trickHistory.length) return null;
+
+    const openingLead = openingLeadPlay(trickHistory);
+    const workSuit = openingLead && (openingLead.seat === seat || openingLead.seat === partnerOf(seat))
+      ? openingLead.card.suit
+      : null;
+    const winners = legal
+      .filter((card) => !trump || card.suit !== trump)
+      .filter((card) => isVisibleTopWinner(card, { hand: legal, dummyHand, trickHistory, currentTrick }))
+      .sort((a, b) => {
+        const workSuitDiff = Number(b.suit === workSuit) - Number(a.suit === workSuit);
+        if (workSuitDiff) return workSuitDiff;
+        return compareLowCards(a, b);
+      });
+    const card = winners[0];
+    if (!card) return null;
+
+    return cardPlayResult(
+      card,
+      "visibleDefensiveWinner",
+      "basic",
+      "Cash a visible defensive winner before falling back to a generic longest-suit lead.",
+      {
+        suit: card.suit,
+        workSuit,
+        action: "cashVisibleDefensiveWinner"
+      }
     );
-    const cardRankIndex = rankOrder.indexOf(card.rank);
-    return rankOrder.slice(cardRankIndex + 1).every((rank) => visibleRanks.has(rank));
   }
 
   function dummyRuffThreat(dummyHand, trump) {
@@ -464,6 +479,7 @@
     deadSuitRuffRisk,
     chooseSafeDefensiveWinner,
     isVisibleTopWinner,
+    chooseVisibleDefensiveWinner,
     dummyRuffThreat,
     chooseTrumpSwitchAgainstDummyRuff,
     isLowPromisesHonorLead,

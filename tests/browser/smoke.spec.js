@@ -472,7 +472,7 @@ test("can confirm Uitspelen for a visible notrump ending", async ({ page }) => {
   await setupVisibleNotrumpUitspelenEnding(page);
 
   await expect(page.locator("#uitspelen-button")).toBeVisible();
-  await page.locator("#uitspelen-button").evaluate((element) => element.click());
+  await page.locator("#uitspelen-button").click();
   await expect(page.locator("#uitspelen-dialog")).toBeVisible();
   await expect(page.locator("#uitspelen-summary")).toContainText("De rest ligt vast: 1 slag");
   await expect(page.locator("#uitspelen-summary")).toContainText("Noord/Zuid 1 slag");

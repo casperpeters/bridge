@@ -17,6 +17,7 @@
     "rules/bidding/systems/five-card-high/conventions.js",
     "rules/bidding/systems/five-card-high/opening.js",
     "rules/bidding/systems/five-card-high/responses.js",
+    "rules/bidding/systems/five-card-high/rebids/strong-two-clubs.js",
     "rules/bidding/systems/five-card-high/rebids.js",
     "rules/bidding/systems/five-card-high/competitive.js",
     "rules/bidding/systems/five-card-high/index.js",

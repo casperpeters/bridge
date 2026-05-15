@@ -7,7 +7,8 @@
         context: require("../../common/context.js"),
         valuation: require("../../common/valuation.js"),
         result: require("../../common/result.js"),
-        conventions: require("./conventions.js")
+        conventions: require("./conventions.js"),
+        strongTwoClubs: require("./rebids/strong-two-clubs.js")
       }
     : root.BridgeRulesParts || {};
   const api = factory(
@@ -16,12 +17,13 @@
     deps.context || deps.biddingFiveCardHighContext,
     deps.valuation || deps.biddingFiveCardHighValuation,
     deps.result || deps.biddingCommonResult,
-    deps.conventions || deps.biddingFiveCardHighConventions
+    deps.conventions || deps.biddingFiveCardHighConventions,
+    deps.strongTwoClubs || deps.biddingFiveCardHighStrongTwoClubsRebids
   );
   if (isCommonJs) module.exports = api;
   root.BridgeRulesParts = root.BridgeRulesParts || {};
   root.BridgeRulesParts.biddingFiveCardHighRebids = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighRebids(core, auction, contextHelpers, valuationHelpers, resultHelpers, conventionHelpers) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighRebids(core, auction, contextHelpers, valuationHelpers, resultHelpers, conventionHelpers, strongTwoClubsRules) {
   "use strict";
 
   const { suits, bidStrains, biddingSystems, handShape } = core;
@@ -31,22 +33,19 @@
     bidEquals,
     gameLevel,
     cheapestLevelForStrain,
-    nextAvailableBid,
-    isBidHigher
+    nextAvailableBid
   } = auction;
   const { fourthSuitForAuction, isFourthSuitForcingBid } = contextHelpers;
-  const { fitStrength, fitValuationContext, optionalFitValuationContext, hasStopper, strongTwoClubsPlayingTricksContext } = valuationHelpers;
+  const { fitStrength, fitValuationContext, optionalFitValuationContext, hasStopper } = valuationHelpers;
   const { bidChoiceResult } = resultHelpers;
   const {
     notrumpTransferSuit,
     agreedTrumpAfterAcceptedNotrumpTransfer,
-    bestSuitByLength,
     blackwoodResponseBidForAceCount,
     blackwoodShownAceCount,
     canBidAtOrBelow,
     chooseBlackwoodFollowup,
     chooseFiveCardHighNaturalContinuation,
-    chooseMajorByLength,
     chooseOpenerSecondSuit,
     chooseSuitByLengthThenRank,
     countAces,
@@ -58,6 +57,16 @@
     shouldUseBlackwoodAfterAcceptedTransfer,
     supportLengthForOpening
   } = conventionHelpers;
+  const {
+    rebidAfterStrongTwoClubsFiveCardHigh,
+    rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh,
+    isStrongTwoClubsPositiveResponse,
+    isStrongTwoClubsTwoNotrumpRebid,
+    respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh,
+    describeStrongTwoClubsOpenerRebidChoice,
+    describeStrongTwoClubsResponderRebidChoice,
+    describeStrongTwoClubsOpenerThirdBidChoice
+  } = strongTwoClubsRules;
 
   function fiveCardHighBidChoiceResult(bid, ruleName, confidence, reason, extra = {}) {
     return bidChoiceResult(biddingSystems.fiveCardHigh, bid, ruleName, confidence, reason, extra);
@@ -97,63 +106,6 @@
         if (bidEquals(responseBid, 3, "D")) return bid(3, "H");
         if (bidEquals(responseBid, 3, "H")) return bid(3, "S");
         return Pass();
-      }
-
-  function rebidAfterStrongTwoClubsFiveCardHigh(shape, hand) {
-        if (shape.balanced) {
-          if (shape.hcp >= 25) return bid(3, "NT");
-          if (shape.hcp >= 23) return bid(2, "NT");
-        }
-        const jumpMajor = chooseStrongTwoClubsJumpRebidMajor(shape, hand);
-        if (jumpMajor) return bid(3, jumpMajor);
-        const suit = chooseSuitByLengthThenRank(["S", "H", "D", "C"], shape, 5, true) || bestSuitByLength(shape);
-        return bid(suit === "C" || suit === "D" ? 3 : 2, suit);
-      }
-
-  function rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh(shape, hand, responseBid) {
-        if ((responseBid.strain === "H" || responseBid.strain === "S") && shape.counts[responseBid.strain] >= 3) {
-          return bid(gameLevel(responseBid.strain), responseBid.strain);
-        }
-        if (shape.balanced) {
-          if (shape.hcp >= 25) return bid(3, "NT");
-          if (shape.hcp >= 23) return isBidHigher(bid(2, "NT"), responseBid) ? bid(2, "NT") : bid(3, "NT");
-        }
-        const suit = chooseSuitByLengthThenRank(["S", "H", "D", "C"], shape, 5, true) || bestSuitByLength(shape);
-        const level = cheapestLevelForStrain(suit, responseBid);
-        return level <= 7 ? bid(level, suit) : bid(3, "NT");
-      }
-
-  function chooseStrongTwoClubsJumpRebidMajor(shape, hand) {
-        const major = chooseSuitByLengthThenRank(["S", "H"], shape, 6, true);
-        if (!major) return null;
-        const playingTricksContext = strongTwoClubsPlayingTricksContext(shape, hand);
-        if (shape.hcp >= 24 || playingTricksContext.playingTricks >= 9) return major;
-        return null;
-      }
-
-  function isStrongTwoClubsPositiveResponse(responseBid) {
-        return bidEquals(responseBid, 2, "H") || bidEquals(responseBid, 2, "S") || bidEquals(responseBid, 3, "C") || bidEquals(responseBid, 3, "D");
-      }
-
-  function isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid) {
-        return bidEquals(openingBid, 2, "C") && isStrongTwoClubsPositiveResponse(responseBid) && bidEquals(openerRebid, 2, "NT");
-      }
-
-  function respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh(shape) {
-        const transferMajor = chooseMajorByLength(shape, 5);
-        if (transferMajor === "H") return bid(3, "D");
-        if (transferMajor === "S") return bid(3, "H");
-        if ((shape.counts.H >= 4 || shape.counts.S >= 4) && shape.hcp >= 4) return bid(3, "C");
-        if (shape.hcp >= 4) return bid(3, "NT");
-        return Pass();
-      }
-
-  function isStrongTwoClubsTwoNotrumpStayman(responseBid) {
-        return bidEquals(responseBid, 3, "C");
-      }
-
-  function strongTwoClubsTwoNotrumpTransferSuit(responseBid) {
-        return notrumpTransferSuit(bid(2, "NT"), responseBid);
       }
 
   function rebidAfterOneSuitOpeningFiveCardHigh(shape, hand, openingBid, responseBid) {
@@ -787,69 +739,8 @@
         if (notrumpResponseContext) extra = { ...extra, ...notrumpResponseContext };
         const minorNotrumpResponseContext = minorOpeningNotrumpResponseContext(shape, openingBid, responseBid);
         if (minorNotrumpResponseContext) extra = { ...extra, ...minorNotrumpResponseContext };
-        if (bidEquals(openingBid, 2, "C") && isStrongTwoClubsPositiveResponse(responseBid)) {
-          const playingTricksContext = strongTwoClubsPlayingTricksContext(shape, hand);
-          extra = {
-            ...extra,
-            ...playingTricksContext,
-            support: responseBid?.strain && responseBid.strain !== "NT" ? shape.counts[responseBid.strain] || 0 : 0
-          };
-          if (
-            (responseBid.strain === "H" || responseBid.strain === "S") &&
-            chosenBid.strain === responseBid.strain &&
-            chosenBid.level === gameLevel(responseBid.strain) &&
-            shape.counts[responseBid.strain] >= 3
-          ) {
-            return fiveCardHighBidChoiceResult(
-              chosenBid,
-              "continuation.strongTwoClubsPositiveMajorSupport",
-              "basic",
-              "Raise partner's positive major response with three-card support after the strong 2C opening.",
-              extra
-            );
-          }
-          if (chosenBid.strain === "NT") {
-            return fiveCardHighBidChoiceResult(
-              chosenBid,
-              chosenBid.level === 2 ? "continuation.strongTwoClubsPositiveNotrumpRebid" : "continuation.strongTwoClubsPositiveNotrumpGame",
-              "basic",
-              "Rebid notrump after partner's positive response to the strong 2C opening.",
-              extra
-            );
-          }
-          return fiveCardHighBidChoiceResult(
-            chosenBid,
-            "continuation.strongTwoClubsPositiveSuitRebid",
-            "basic",
-            "Show opener's own long suit after partner's positive response to the strong 2C opening.",
-            extra
-          );
-        }
-        if (bidEquals(openingBid, 2, "C") && bidEquals(responseBid, 2, "D")) {
-          const playingTricksContext = strongTwoClubsPlayingTricksContext(shape, hand);
-          extra = { ...extra, ...playingTricksContext };
-          if (
-            chosenBid.level === 3 &&
-            (chosenBid.strain === "H" || chosenBid.strain === "S") &&
-            shape.counts[chosenBid.strain] >= 6 &&
-            (shape.hcp >= 24 || playingTricksContext.playingTricks >= 9)
-          ) {
-            return fiveCardHighBidChoiceResult(
-              chosenBid,
-              "continuation.strongTwoClubsJumpRebid",
-              "basic",
-              "Jump rebid after the 2D waiting response to show an extra-strong hand with a long major.",
-              extra
-            );
-          }
-          return fiveCardHighBidChoiceResult(
-            chosenBid,
-            chosenBid.strain === "NT" ? "continuation.strongTwoClubsNotrumpRebid" : "continuation.strongTwoClubsSuitRebid",
-            "basic",
-            "Rebid after partner's 2D waiting response to the strong 2C opening.",
-            extra
-          );
-        }
+        const strongTwoClubsResult = describeStrongTwoClubsOpenerRebidChoice(chosenBid, shape, hand, openingBid, responseBid, base);
+        if (strongTwoClubsResult) return strongTwoClubsResult;
 
         if (isMinorRaiseFiveCardHigh(openingBid, responseBid) && chosenBid.strain === "NT") {
           return fiveCardHighBidChoiceResult(
@@ -967,33 +858,8 @@
           partnerSuit: openerRebid?.strain || null,
           support: openerRebid?.strain && openerRebid.strain !== "NT" ? shape.counts[openerRebid.strain] : 0
         };
-        if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) {
-          const transferSuitAfterTwoNotrump = strongTwoClubsTwoNotrumpTransferSuit(chosenBid);
-          if (bidEquals(chosenBid, 3, "C")) {
-            return fiveCardHighBidChoiceResult(chosenBid, "continuation.strongTwoClubsTwoNotrumpStayman", "basic", "Use Stayman after opener's 2NT rebid in a strong 2C auction.", {
-              ...extra,
-              convention: "stayman",
-              openingLevel: 2,
-              range: "4+"
-            });
-          }
-          if (transferSuitAfterTwoNotrump) {
-            return fiveCardHighBidChoiceResult(chosenBid, `continuation.strongTwoClubsTwoNotrumpTransferTo${transferSuitAfterTwoNotrump}`, "basic", "Use a Jacoby transfer after opener's 2NT rebid in a strong 2C auction.", {
-              ...extra,
-              convention: "jacobyTransfer",
-              openingLevel: 2,
-              transferSuit: transferSuitAfterTwoNotrump,
-              length: shape.counts[transferSuitAfterTwoNotrump] || 0
-            });
-          }
-          if (bidEquals(chosenBid, 3, "NT")) {
-            return fiveCardHighBidChoiceResult(chosenBid, "continuation.strongTwoClubsTwoNotrumpGame", "basic", "Choose 3NT after opener's 2NT rebid with enough values and no major-suit convention.", {
-              ...extra,
-              openingLevel: 2,
-              range: "4+"
-            });
-          }
-        }
+        const strongTwoClubsResult = describeStrongTwoClubsResponderRebidChoice(chosenBid, shape, openingBid, responseBid, openerRebid, base);
+        if (strongTwoClubsResult) return strongTwoClubsResult;
         if (isSingleMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid) && isBlackwoodAsk(chosenBid)) {
           return fiveCardHighBidChoiceResult(chosenBid, "continuation.blackwoodAsk", "basic", "Ask for aces with four notrump after partner bid game over a single major raise.", {
             ...extra,
@@ -1237,24 +1103,8 @@
             aceCount: base.aceCount
           });
         }
-        if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) {
-          if (isStrongTwoClubsTwoNotrumpStayman(responderRebid)) {
-            return fiveCardHighBidChoiceResult(chosenBid, "continuation.strongTwoClubsTwoNotrumpStaymanAnswer", "basic", "Answer Stayman after the strong 2C auction continued with opener's 2NT rebid.", {
-              ...extra,
-              convention: "stayman",
-              openingLevel: 2
-            });
-          }
-          const transferSuitAfterTwoNotrump = strongTwoClubsTwoNotrumpTransferSuit(responderRebid);
-          if (transferSuitAfterTwoNotrump && chosenBid.strain === transferSuitAfterTwoNotrump) {
-            return fiveCardHighBidChoiceResult(chosenBid, "continuation.strongTwoClubsTwoNotrumpAcceptTransfer", "basic", "Accept the Jacoby transfer after the strong 2C auction continued with opener's 2NT rebid.", {
-              ...extra,
-              convention: "jacobyTransfer",
-              openingLevel: 2,
-              transferSuit: transferSuitAfterTwoNotrump
-            });
-          }
-        }
+        const strongTwoClubsResult = describeStrongTwoClubsOpenerThirdBidChoice(chosenBid, shape, openingBid, responseBid, openerRebid, responderRebid, base);
+        if (strongTwoClubsResult) return strongTwoClubsResult;
         const transferSuit = bidEquals(openingBid, 1, "NT") ? notrumpTransferSuit(openingBid, responseBid) : null;
         if (transferSuit) {
           const transferExtra = {
