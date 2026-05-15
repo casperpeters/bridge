@@ -119,6 +119,7 @@
 
 .north {
   align-content: start;
+  position: static;
 }
 
 .player-zone {
@@ -188,6 +189,70 @@
 
 .table-help-stack > * {
   pointer-events: auto;
+}
+
+.uitspelen-action {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+}
+
+.uitspelen-action[hidden] {
+  display: none;
+}
+
+.uitspelen-action button {
+  min-height: 38px;
+  padding: 0.55rem 0.9rem;
+  border-color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.92);
+  color: #17352c;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.uitspelen-unavailable {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 4;
+  max-width: min(260px, 42vw);
+  padding: 0.34rem 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  background: rgba(12, 38, 32, 0.84);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.76rem;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.uitspelen-unavailable[hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .uitspelen-action {
+    position: static;
+    justify-self: center;
+    margin-top: -2px;
+  }
+
+  .uitspelen-action button {
+    min-height: 34px;
+    padding: 0.45rem 0.78rem;
+    font-size: 0.82rem;
+  }
+
+  .uitspelen-unavailable {
+    position: static;
+    justify-self: center;
+    max-width: min(270px, 82vw);
+    margin-top: -2px;
+    text-align: center;
+  }
 }
 
 .replay-panel {

@@ -1987,6 +1987,40 @@ test("runs curated beginner practice hands through fixed UI checkpoints", async 
   await expect(page.locator(".replay-score-card")).toHaveClass(/is-negative/);
 });
 
+test("starts a selected practice hand from the practice browser without lesson mode", async ({ page }) => {
+  await openFreshApp(page);
+
+  await page.goto("/practice/index.html?testHooks=1#selected");
+  await page.locator("[data-practice-search]").fill("draw-trumps-001");
+  await page.locator("[data-practice-search]").blur();
+  const startLink = page.locator(".practice-card", { hasText: "draw-trumps-001" }).locator(".practice-start-link");
+  await expect(startLink).toHaveAttribute("href", "../index.html?hand=draw-trumps-001&return=practice%2Findex.html%3FtestHooks%3D1%23selected&testHooks=1");
+  await startLink.click();
+
+  await expect(page).toHaveURL(/index\.html\?hand=draw-trumps-001/);
+  await expect.poll(() => page.evaluate(() => Boolean(window.BridgeAppTestHooks))).toBe(true);
+  const snapshot = await page.evaluate(() => {
+    const state = window.BridgeAppTestHooks.getState();
+    return {
+      seed: state.dealSeed,
+      practiceId: state.practice?.id || null,
+      lessonId: state.practice?.lessonId || null,
+      lessonModeSettingsSnapshot: state.lessonModeSettingsSnapshot || null,
+      phase: state.phase,
+      returnParam: new URL(window.location.href).searchParams.get("return")
+    };
+  });
+
+  expect(snapshot).toMatchObject({
+    seed: "draw-trumps-001",
+    practiceId: "draw-trumps-001",
+    lessonId: null,
+    lessonModeSettingsSnapshot: null,
+    phase: "bidding",
+    returnParam: "practice/index.html?testHooks=1#selected"
+  });
+});
+
 test("stores South convention metadata without showing an AI suggestion", async ({ page }) => {
   await openFreshApp(page);
 
@@ -2037,6 +2071,54 @@ test("stores South convention metadata without showing an AI suggestion", async 
     transferSuit: "H",
     recommendedRuleId: null
   });
+});
+
+test("marks the recommended bid clearly inside the bid box", async ({ page }) => {
+  await openFreshApp(page);
+
+  const marker = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.startHand({ seed: "recommended-bid-marker", skipFlow: true });
+    app.setState({
+      phase: "bidding",
+      guidanceMode: true,
+      turnIndex: 2,
+      auction: [],
+      animateDeal: false
+    });
+    app.renderAll();
+
+    const bidBox = document.querySelector("#bid-controls");
+    const recommended = document.querySelector("#bid-controls .recommended-action");
+    const bidBoxRect = bidBox.getBoundingClientRect();
+    const recommendedRect = recommended.getBoundingClientRect();
+    const style = getComputedStyle(recommended);
+    const badgeStyle = getComputedStyle(recommended, "::before");
+    const overflow = {
+      left: Math.max(0, bidBoxRect.left - recommendedRect.left),
+      right: Math.max(0, recommendedRect.right - bidBoxRect.right),
+      top: Math.max(0, bidBoxRect.top - recommendedRect.top),
+      bottom: Math.max(0, recommendedRect.bottom - bidBoxRect.bottom)
+    };
+
+    return {
+      count: document.querySelectorAll("#bid-controls .recommended-action").length,
+      badgeContent: badgeStyle.content,
+      badgeBackground: badgeStyle.backgroundColor,
+      borderColor: style.borderTopColor,
+      outlineWidth: style.outlineWidth,
+      boxShadow: style.boxShadow,
+      overflow: Math.max(overflow.left, overflow.right, overflow.top, overflow.bottom)
+    };
+  });
+
+  expect(marker.count).toBe(1);
+  expect(marker.badgeContent).toContain("AI");
+  expect(marker.badgeBackground).not.toBe("rgba(0, 0, 0, 0)");
+  expect(marker.borderColor).not.toBe("rgba(0, 0, 0, 0)");
+  expect(parseFloat(marker.outlineWidth)).toBeGreaterThanOrEqual(1);
+  expect(marker.boxShadow).not.toBe("none");
+  expect(marker.overflow).toBeLessThanOrEqual(1);
 });
 
 test("developer bid explanations use rule references without the old source line", async ({ page }) => {

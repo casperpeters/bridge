@@ -160,6 +160,43 @@ test("createPlayPlan counts notrump winners and chooses long-suit development", 
   assert.equal(plan.needToDevelop, 5);
 });
 
+test("createPlayPlan can develop a short notrump honor trick by forcing out the ace", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "AD", "TC", "7C", "2D"),
+    dummyHand: hand("KC", "QC", "4H", "3H"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const priority = plan.priorities.find((item) => item.kind === "forceOutAce" && item.suit === "C");
+  assert.ok(priority);
+  assert.equal(priority.sourceSeat, "North");
+  assert.equal(priority.sequence, "KQ");
+  assert.equal(priority.missingStopper, "A");
+  assert.deepEqual(priority.futureWinnerRanks, ["Q"]);
+  assert.equal(priority.promotedTricks, 1);
+  assert.equal(priority.entryTiming, "sameSuitSupport");
+  assert.equal(priority.tempoSafe, true);
+});
+
+test("createPlayPlan marks short honor development unsafe when notrump tempo is missing", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AS", "AD", "TC", "7C", "2D"),
+    dummyHand: hand("KC", "QC", "4H", "3H"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North",
+    currentTrick: [{ seat: "West", card: card("QS") }]
+  });
+
+  const priority = plan.priorities.find((item) => item.kind === "forceOutAce" && item.suit === "C");
+  assert.ok(priority);
+  assert.equal(priority.lossesNeeded, 1);
+  assert.equal(priority.defenderEntriesAllowed, 0);
+  assert.equal(priority.tempoSafe, false);
+});
+
 test("createPlayPlan updates notrump development when the missing stopper is in the current trick", () => {
   const plan = rules.createPlayPlan({
     declarerHand: hand("AS", "KS", "AD", "2C", "2D"),
@@ -522,6 +559,26 @@ test("createPlayPlan chooses the notrump work suit that has enough tempo after a
   assert.equal(diamondPlan.extraTricks, 3);
 });
 
+test("createPlayPlan ranks the row 16 notrump spade force-out above the loose finesse", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("JS", "TS", "9S", "6S", "QH", "JH", "KC", "QC", "6C", "AD", "KD", "6D", "4D"),
+    dummyHand: hand("AS", "QS", "2S", "AH", "9H", "8H", "6H", "TC", "7C", "9D", "8D", "5D", "3D"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "North",
+    dummy: "South",
+    currentTrick: [{ seat: "East", card: card("4H") }]
+  });
+
+  const spadeDevelop = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "S");
+  const spadeFinesse = plan.priorities.find((item) => item.kind === "finesse" && item.suit === "S");
+  assert.ok(spadeDevelop);
+  assert.ok(spadeFinesse);
+  assert.equal(plan.priorities[0], spadeDevelop);
+  assert.equal(spadeDevelop.missingStopper, "K");
+  assert.equal(spadeFinesse.missingHonor, "K");
+  assert.ok(spadeDevelop.score > spadeFinesse.score);
+});
+
 test("createPlayPlan can choose the higher-yield notrump work suit when the lead gives enough tempo", () => {
   const plan = rules.createPlayPlan({
     declarerHand: hand("KS", "5S", "KH", "9H", "3H", "JD", "9D", "8D", "AC", "KC", "JC", "8C", "3C"),
@@ -610,6 +667,60 @@ test("createPlayPlan recognizes a notrump work suit that must be given up early 
   assert.equal(diamondPlan.sameSuitEntryCount, 2);
   assert.equal(diamondPlan.extraTricks, 2);
   assert.equal(diamondPlan.communicationRisk, "medium");
+});
+
+test("createPlayPlan includes a low-priority notrump 3-3 break chance", () => {
+  const declarerHand = hand("AD", "KD", "6D", "5D", "AS", "KH", "2C");
+  const dummyHand = hand("QD", "4D", "3D", "4S", "3S", "4H", "3H");
+  const contract = { level: 3, strain: "NT" };
+  const plan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const breakPlan = plan.priorities.find((item) => item.developmentType === "possibleBreakDevelopment");
+  assert.ok(breakPlan);
+  assert.equal(breakPlan.suit, "D");
+  assert.equal(breakPlan.breakNeeded, "3-3");
+  assert.equal(breakPlan.extraTricks, 1);
+  assert.equal(breakPlan.confidence, "uncertain");
+
+  const result = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan: plan
+  });
+
+  assert.equal(result.ruleId, "playPlan.developLongSuit");
+  assert.equal(result.action, "testSuitBreak");
+  assert.equal(result.breakNeeded, "3-3");
+  assert.equal(result.card.id, "AD");
+});
+
+test("createPlayPlan keeps stronger notrump work suits ahead of possible break chances", () => {
+  const plan = rules.createPlayPlan({
+    declarerHand: hand("AD", "KD", "6D", "5D", "AS", "2C", "2H"),
+    dummyHand: hand("QD", "4D", "3D", "KC", "QC", "JC", "4C", "3C", "AH"),
+    contract: { level: 3, strain: "NT" },
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const clubWorkSuit = plan.priorities.find((item) => item.kind === "developLongSuit" && item.suit === "C");
+  const diamondBreak = plan.priorities.find((item) => item.developmentType === "possibleBreakDevelopment");
+  assert.ok(clubWorkSuit);
+  assert.ok(diamondBreak);
+  assert.equal(plan.priorities.indexOf(clubWorkSuit) < plan.priorities.indexOf(diamondBreak), true);
+  assert.equal(clubWorkSuit.score > diamondBreak.score, true);
 });
 
 test("createPlayPlan chooses two-way finesse direction by entry, length, then declarer", () => {

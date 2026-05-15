@@ -87,6 +87,7 @@ function autoPlayCard(seat, card) {
 function continuePlay() {
   if (state.phase !== "playing") return;
   if (state.awaitingTrickAdvance) return;
+  if (actions.isUitspelenDialogOpen?.()) return;
   if (actions.maybeCompleteLessonTableTask?.()) return;
   if (state.hands.South.length === 0 && state.currentTrick.length === 0) {
     finishHand();
@@ -106,6 +107,7 @@ function continuePlay() {
   const scheduledFlowGeneration = timers.flowGeneration;
   window.setTimeout(() => {
     if (scheduledFlowGeneration !== timers.flowGeneration) return;
+    if (actions.isUitspelenDialogOpen?.()) return;
     const card = chooseCard(seat);
     if (!card) return;
     playCard(seat, card.id);
@@ -191,6 +193,10 @@ function notrumpLeadSelectionText(result) {
 }
 
 function notrumpLeadSelectionReasonText(result) {
+  if (result.staymanInferredSuits?.length) {
+    const suits = result.staymanInferredSuits.map(suitName).join(", ");
+    return ` De Stayman-reeks wijst op ${suits} bij dummy; daarom zoekt de uitkomst liever een andere kleur.`;
+  }
   if (result.leadSelection === "partnerSuitAvoidSingleton") {
     return ` Partners kleur ${suitName(result.avoidedPartnerSingleton)} is hier maar een singleton, dus ontwikkelt ${suitName(result.suit)} beter.`;
   }
@@ -237,6 +243,9 @@ function explainCardPlayResult(result) {
       const ruffSeat = result.winnerSeat || result.targetSeat;
       const ruffTarget = ruffSeat ? seatName(ruffSeat) : "partner";
       return `Speel ${cardText(result.card)} voor zodat ${ruffTarget} kan introeven${runoutNext}.`;
+    }
+    if (result.action === "giveUpForLateCrossRuff") {
+      return `Speel ${cardText(result.card)} nu uit; als deze slag naar de verdediging gaat, blijven er genoeg troeven over voor de late crossruff.`;
     }
     if (result.action === "winCurrentTrick") {
       return `Win deze slag nu met ${cardText(result.card)}; daarna liggen er genoeg zichtbare winnaars om de eindspelreeks door te spelen${runoutNext}.`;
@@ -462,15 +471,30 @@ function explainCardPlayResult(result) {
     return `Speel de tweerichtingssnit in ${suitName(result.suit)} richting ${seatName(result.targetSeat)} naar de ${finesse}; de ${missing} ontbreekt nog${finesseEntryText(result)}.`;
   }
   if (ruleName === "developLongSuit") {
+    if (result.action === "testSuitBreak") {
+      return `Test de ${suitName(result.suit)} op een ${result.breakNeeded || "gunstig"} zitsel; als de kleur rondgaat, kan een kleine kaart later een slag worden.`;
+    }
     const missing = rankLabel[result.missingStopper] || result.missingStopper;
     if (result.action === "leadTowardLongSuit") {
       return `Speel naar partners lange ${suitName(result.suit)} om de ontbrekende ${missing} eruit te werken en latere slagen te ontwikkelen.`;
     }
     return `Ontwikkel de lange ${suitName(result.suit)} door de ontbrekende ${missing} eruit te werken.`;
   }
+  if (ruleName === "forceOutAce") {
+    const force = rankLabel[result.forceRank] || result.forceRank;
+    const missing = (result.missingStoppers || [result.missingStopper])
+      .filter(Boolean)
+      .map((rank) => rankLabel[rank] || rank)
+      .join(" en ");
+    if (result.action === "leadTowardForceOutAce") {
+      return `Speel naar partners honneurserie in ${suitName(result.suit)} om ${missing || "een hogere honneur"} eruit te werken; dit kan een extra slag ontwikkelen.`;
+    }
+    return `Speel de ${force} in ${suitName(result.suit)} om ${missing || "een hogere honneur"} eruit te werken; dit kan een extra slag ontwikkelen.`;
+  }
   if (ruleName === "lowestLead") return "Speel eenvoudig voor met de laagste legale kaart.";
   if (ruleName === "partnerWinningLow") return "Partner ligt voorlopig voor in de slag, dus speel laag en spaar hogere kaarten.";
   if (ruleName === "protectPartnerWinnerFromDummy") return "Dummy komt nog en kan partners huidige winnaar overnemen; speel de goedkoopste kaart die voor dummy blijft.";
+  if (ruleName === "positionAwareWinner") return "Er komt nog een tegenstander na je; speel hoog genoeg om de slag niet alleen voorlopig te winnen.";
   if (ruleName === "cheapestWinner") return "Win de slag voorlopig met de goedkoopste winnende kaart.";
   if (ruleName === "lowestFollow") return "Bekennen is verplicht; omdat winnen niet kan, speel je de laagste kaart in de gevraagde kleur.";
   if (ruleName === "lowestDiscard") return "Bekennen kan niet en winnen lukt niet, dus gooi de laagste legale kaart af.";

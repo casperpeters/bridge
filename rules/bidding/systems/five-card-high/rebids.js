@@ -482,6 +482,9 @@
         if (bidEquals(openingBid, 1, "NT")) return rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid);
         if (bidEquals(openingBid, 2, "NT")) return rebidResponderAfterTwoNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid);
         if (isStrongTwoClubsTwoNotrumpRebid(openingBid, responseBid, openerRebid)) return respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh(shape);
+        if (isSingleMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid)) {
+          return rebidResponderAfterSingleMajorRaiseGameFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid);
+        }
         if (isSingleRaiseInviteFiveCardHigh(responseBid, openerRebid)) return rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, openerRebid);
         if (isOneMinorOpeningFiveCardHigh(openingBid) && bidEquals(openerRebid, 1, "NT")) {
           const strongSecondMajor = rebidResponderAfterMinorOpeningOneNotrumpFiveCardHigh(shape, responseBid);
@@ -507,6 +510,9 @@
         if (isOneMinorOpeningFiveCardHigh(openingBid) && bidEquals(responseBid, 1, "S") && bidEquals(openerRebid, 1, "NT") && shape.counts.S >= 5 && shape.counts.H >= 4) {
           return bid(2, "H");
         }
+        if (isNaturalStrongTwoNotrumpRebidFiveCardHigh(openingBid, responseBid, openerRebid) && shape.balanced && shape.hcp >= 8) {
+          return bid(3, "NT");
+        }
         if (shape.hcp >= 12) {
           if ((responseBid.strain === "H" || responseBid.strain === "S") && shape.counts[responseBid.strain] >= 5) return bid(gameLevel(responseBid.strain), responseBid.strain);
           return bid(3, "NT");
@@ -514,6 +520,15 @@
         if (shape.hcp >= 10) return bid(2, "NT");
         if (shape.counts[responseBid.strain] >= 6) return bid(2, responseBid.strain);
         return Pass();
+      }
+
+  function isNaturalStrongTwoNotrumpRebidFiveCardHigh(openingBid, responseBid, openerRebid) {
+        return (
+          isOneSuitOpeningFiveCardHigh(openingBid) &&
+          responseBid?.level === 1 &&
+          openerRebid?.level === 2 &&
+          openerRebid.strain === "NT"
+        );
       }
 
   function rebidResponderAfterOpenerRepeatsSuitFiveCardHigh(shape, openingBid, responseBid, openerRebid) {
@@ -576,6 +591,28 @@
 
   function rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, openerRebid) {
         return shape.hcp >= 8 ? bid(gameLevel(openerRebid.strain), openerRebid.strain) : Pass();
+      }
+
+  function isSingleMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid) {
+        return (
+          isMajorSingleRaiseFiveCardHigh(openingBid, responseBid) &&
+          openerRebid?.strain === openingBid.strain &&
+          openerRebid.level === gameLevel(openingBid.strain)
+        );
+      }
+
+  function rebidResponderAfterSingleMajorRaiseGameFiveCardHigh(shape, hand, openingBid, responseBid, openerRebid) {
+        return shouldResponderAskBlackwoodAfterSingleMajorRaiseGame(shape, hand, openingBid, responseBid, openerRebid)
+          ? bid(4, "NT")
+          : Pass();
+      }
+
+  function shouldResponderAskBlackwoodAfterSingleMajorRaiseGame(shape, hand, openingBid, responseBid, openerRebid) {
+        if (!isSingleMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid)) return false;
+        const trumpSuit = openerRebid.strain;
+        if (shape.counts[trumpSuit] < supportLengthForOpening(trumpSuit)) return false;
+        const partnershipMinimumHcp = shape.hcp + 18;
+        return partnershipMinimumHcp >= 33 && countAces(hand) >= 2;
       }
 
   function rebidResponderAfterOneNotrumpFiveCardHigh(shape, responseBid, openerRebid, openingBid = bid(1, "NT")) {
@@ -957,6 +994,19 @@
             });
           }
         }
+        if (isSingleMajorRaiseGameFiveCardHigh(openingBid, responseBid, openerRebid) && isBlackwoodAsk(chosenBid)) {
+          return fiveCardHighBidChoiceResult(chosenBid, "continuation.blackwoodAsk", "basic", "Ask for aces with four notrump after partner bid game over a single major raise.", {
+            ...extra,
+            convention: "blackwood",
+            artificial: true,
+            forcing: true,
+            trumpSuit: openerRebid.strain,
+            agreementSource: "majorRaise",
+            aceCount: base.aceCount,
+            partnershipMinimumHcp: shape.hcp + 18,
+            slamTargetHcp: 33
+          });
+        }
         const transferSuit = (bidEquals(openingBid, 1, "NT") || bidEquals(openingBid, 2, "NT")) ? notrumpTransferSuit(openingBid, responseBid) : null;
         if (transferSuit) {
           const isOneNotrumpTransfer = bidEquals(openingBid, 1, "NT");
@@ -1143,6 +1193,13 @@
         }
         if (bidEquals(responseBid, 1, "H") && bidEquals(openerRebid, 1, "NT") && bidEquals(chosenBid, 3, "S")) {
           return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderStrongSecondMajor", "basic", "Show a strong 5-4 major hand after opener's 1NT rebid.", extra);
+        }
+        if (isNaturalStrongTwoNotrumpRebidFiveCardHigh(openingBid, responseBid, openerRebid) && bidEquals(chosenBid, 3, "NT")) {
+          return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderAfterTwoNotrumpRebidGame", "basic", "Bid 3NT because opener's natural 2NT rebid shows a strong balanced hand.", {
+            ...extra,
+            openerRange: "18-19",
+            range: "8+"
+          });
         }
         if (openerRebid?.strain !== "NT" && chosenBid.strain === openerRebid?.strain) {
           return fiveCardHighBidChoiceResult(chosenBid, "continuation.raisePartner", "basic", "Raise opener's shown suit with a fit.", extra);
@@ -1466,6 +1523,7 @@
     rebidAfterTwoNotrumpResponseFiveCardHigh,
     rebidAfterStrongTwoClubsFiveCardHigh,
     rebidAfterStrongTwoClubsPositiveResponseFiveCardHigh,
+    isSingleMajorRaiseGameFiveCardHigh,
     isStrongTwoClubsPositiveResponse,
     isStrongTwoClubsTwoNotrumpRebid,
     respondAfterStrongTwoClubsTwoNotrumpRebidFiveCardHigh,

@@ -144,6 +144,9 @@
           leadSuit: step.leadSuit || null,
           targetSeat: step.targetSeat || null,
           winnerSeat: step.winnerSeat || null,
+          shortSeat: step.shortSeat || priority.shortSeat || null,
+          crossSuits: step.crossSuits || priority.crossSuits || null,
+          securedTricks: priority.securedTricks || null,
           nextStep: priority.sequence?.[1] || null,
           action: step.action
         }

@@ -25,6 +25,95 @@ test("Vijfkaart Hoog overcalls naturally at the one-level with a good five-card 
   ], auction), bid(1, "S"));
 });
 
+test("Vijfkaart Hoog overcalls one spade with row 26 strong-major seed after one diamond", () => {
+  const hands = rules.dealHands(rules.randomFromSeed("1xe2dl31tb9p7m"));
+  const auction = [
+    { seat: "North", bid: bid(1, "D") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hands.East,
+    auction,
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(1, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.strongOneMajorOvercall");
+  assert.equal(result.hcp, 18);
+  assert.equal(result.length, 5);
+  assert.equal(result.minimumHcp, 17);
+  assert.equal(result.maximumHcp, 19);
+});
+
+test("Vijfkaart Hoog still prefers a takeout double with strong major values and takeout shape", () => {
+  const auction = [
+    { seat: "North", bid: bid(1, "D") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "KS", "QS", "JS", "2S",
+      "AH", "QH", "5H", "4H",
+      "2D",
+      "KC", "3C", "2C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, double());
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.takeoutDouble");
+});
+
+test("Vijfkaart Hoog protects after a one-minor opening with a good five-card major", () => {
+  const hands = rules.dealHands(rules.randomFromSeed("13uez8r1c1loyr"));
+  const auction = [
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(1, "C") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hands.East,
+    auction,
+    seat: "East",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, bid(1, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.protectiveOneMajor");
+  assert.equal(result.hcp, 8);
+  assert.equal(result.length, 5);
+  assert.equal(result.minimumHcp, 8);
+  assert.equal(result.protective, true);
+});
+
+test("Vijfkaart Hoog does not protect without a good five-card major", () => {
+  const auction = [
+    { seat: "South", bid: bid(1, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: pass() }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "KS", "9S", "8S", "7S", "2S",
+      "QH", "6H", "5H",
+      "JD", "4D",
+      "QC", "3C", "2C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, pass());
+  assert.equal(result.ruleId, "fiveCardHigh.pass.competitiveNoAction");
+});
+
 test("Vijfkaart Hoog requires 10+ HCP for a simple two-level overcall", () => {
   const auction = [
     { seat: "East", bid: bid(1, "S") }
@@ -319,6 +408,53 @@ test("Vijfkaart Hoog raises simple overcall requirements when vulnerable", () =>
   assert.deepEqual(vulnerableTwoLevel.bid, bid(2, "H"));
   assert.equal(vulnerableTwoLevel.minimumHcp, 12);
   assert.equal(vulnerableTwoLevel.vulnerable, true);
+});
+
+test("Vijfkaart Hoog allows a vulnerable one-level overcall on 9 HCP with exceptional top honors", () => {
+  const hands = rules.dealHands(rules.randomFromSeed("1apbjd31dv2shq"));
+  const auction = [
+    { seat: "East", bid: bid(1, "C") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hands.South,
+    auction,
+    seat: "South",
+    vulnerability: "NS"
+  });
+
+  assert.deepEqual(result.bid, bid(1, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.simpleOvercall");
+  assert.equal(result.hcp, 9);
+  assert.equal(result.length, 5);
+  assert.equal(result.minimumHcp, 9);
+  assert.equal(result.normalMinimumHcp, 10);
+  assert.equal(result.exceptionalSuitQuality, true);
+  assert.equal(result.topHonorQuality, 3);
+  assert.equal(result.vulnerable, true);
+});
+
+test("Vijfkaart Hoog still passes a vulnerable 9-count without exceptional one-level suit quality", () => {
+  const auction = [
+    { seat: "East", bid: bid(1, "C") }
+  ];
+
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "QS", "JS", "5S", "3S",
+      "QH", "7H",
+      "8D", "6D", "2D",
+      "TC", "6C", "3C"
+    ),
+    auction,
+    seat: "South",
+    vulnerability: "NS"
+  });
+
+  assert.deepEqual(result.bid, pass());
+  assert.equal(result.ruleId, "fiveCardHigh.pass.competitiveNoAction");
+  assert.equal(result.hcp, 9);
+  assert.equal(result.vulnerable, true);
 });
 
 test("Vijfkaart Hoog raises partner's overcall with fit using vulnerability-aware HCP", () => {

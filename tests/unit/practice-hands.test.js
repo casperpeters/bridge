@@ -9,8 +9,8 @@ function callText(call) {
 }
 
 test("practice hand catalog contains beginner deals plus regression deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 56);
-  assert.equal(practiceHands.validatePracticeHands(), 57);
+  assert.equal(practiceHands.beginnerHands.length, 79);
+  assert.equal(practiceHands.validatePracticeHands(), 80);
   assert.ok(practiceHands.findPracticeHand("situation-2s-west-trick-8-001"));
 
   const ids = new Set();
@@ -26,7 +26,81 @@ test("practice hand catalog contains beginner deals plus regression deals", () =
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 56);
+  assert.equal(ids.size, 79);
+});
+
+test("practice hand catalog metadata exposes all existing technical collections as flat lists", () => {
+  const catalogs = practiceHands.getPracticeCatalogs();
+  const expectedCatalogs = [
+    ["fiveCardHighOpenings", "fiveCardHighOpenings"],
+    ["notrumpResponses", "notrumpResponses"],
+    ["basicBidding", "basicBidding"],
+    ["basicPlayPlan", "basicPlayPlan"],
+    ["basicDefense", "basicDefense"],
+    ["basicScoring", "basicScoring"],
+    ["startMetBridge1", "start-met-bridge-1"]
+  ];
+
+  assert.deepEqual(catalogs.map((catalog) => [catalog.key, catalog.id]), expectedCatalogs);
+  assert.equal(practiceHands.allCollections().length, catalogs.length);
+  assert.equal(practiceHands.findCollection("basicPlayPlan").key, "basicPlayPlan");
+  assert.equal(practiceHands.getPracticeCatalog("basicPlayPlan").key, "basicPlayPlan");
+  assert.equal(practiceHands.findCollection("start-met-bridge-1").key, "startMetBridge1");
+
+  const listedIds = new Set();
+  for (const catalog of catalogs) {
+    assert.equal(typeof catalog.title, "string", catalog.key);
+    assert.ok(catalog.title.length > 0, catalog.key);
+    assert.equal(typeof catalog.description, "string", catalog.key);
+    assert.ok(catalog.description.length > 0, catalog.key);
+    assert.ok(Array.isArray(catalog.hands), catalog.key);
+    assert.strictEqual(catalog.hands, practiceHands.collections[catalog.key], catalog.key);
+    assert.equal(Object.prototype.hasOwnProperty.call(catalog, "chapters"), false, catalog.key);
+
+    for (const scenario of catalog.hands) listedIds.add(scenario.id);
+  }
+
+  assert.equal(listedIds.size, practiceHands.allPracticeHands.length);
+  assert.equal(practiceHands.getPracticeCatalog("missing-catalog"), null);
+});
+
+test("Start met Bridge 1 catalog has stable course metadata and complete app-focus coverage", () => {
+  const catalog = practiceHands.getPracticeCatalog("start-met-bridge-1");
+  const smb1Hands = catalog.hands;
+  const lessonNumbers = new Set();
+  const coveredAppFocus = new Set();
+
+  assert.equal(catalog.key, "startMetBridge1");
+  assert.equal(smb1Hands.length, 23);
+
+  for (const scenario of smb1Hands) {
+    assert.match(scenario.id, /^smb1-les\d{2}-[a-z0-9-]+$/, scenario.id);
+    assert.equal(scenario.course, "start-met-bridge-1", scenario.id);
+    assert.equal(scenario.systemId, "fiveCardHigh", scenario.id);
+    assert.equal(scenario.level, "beginner", scenario.id);
+    assert.ok(Number.isInteger(scenario.lesson?.number), scenario.id);
+    assert.ok(scenario.lesson.number >= 1 && scenario.lesson.number <= 12, scenario.id);
+    assert.equal(scenario.lesson.id, `smb1-les${String(scenario.lesson.number).padStart(2, "0")}`, scenario.id);
+    assert.ok(scenario.lesson.title, scenario.id);
+    assert.ok(scenario.topic, scenario.id);
+    assert.ok(scenario.goal, scenario.id);
+    assert.ok(Array.isArray(scenario.expectedFocus) && scenario.expectedFocus.length, scenario.id);
+    assert.ok(Array.isArray(scenario.expectedActions) && scenario.expectedActions.length, scenario.id);
+    assert.ok(Array.isArray(scenario.reviewFocus) && scenario.reviewFocus.length, scenario.id);
+    assert.ok(Array.isArray(scenario.appFocus) && scenario.appFocus.length, scenario.id);
+    assert.ok(hasEngineObservableExpectation(scenario), scenario.id);
+    lessonNumbers.add(scenario.lesson.number);
+    scenario.appFocus.forEach((focus) => coveredAppFocus.add(focus));
+
+    if (scenario.sourceHandId) {
+      const source = practiceHands.findPracticeHand(scenario.sourceHandId);
+      assert.ok(source, `${scenario.id} source ${scenario.sourceHandId}`);
+      assert.notEqual(source.id, scenario.id);
+    }
+  }
+
+  assert.deepEqual([...lessonNumbers].sort((a, b) => a - b), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  assert.deepEqual([...SMB1_APP_FOCUS_GOALS].sort(), [...coveredAppFocus].sort());
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {
@@ -113,6 +187,8 @@ test("practice hand defensive card-play targets expose their expected rule", () 
       "leadSuit",
       "unblockRank",
       "partnerSeat",
+      "coveredRank",
+      "coverReason",
       "dummyShortSuit",
       "dummyShortLength",
       "dummyTrumpLength",
@@ -187,3 +263,39 @@ function assertPlanPriority(plan, expected, scenarioId) {
 function priorityMatches(priority, expected) {
   return priority.kind === expected.priorityKind && (!expected.suit || priority.suit === expected.suit);
 }
+
+function hasEngineObservableExpectation(scenario) {
+  if (scenario.expectedPlayPlan || scenario.expectedCardPlay || scenario.expectedScore) return true;
+  return Array.isArray(scenario.expectedAuction) && scenario.expectedAuction.some((expected) => expected.ruleId);
+}
+
+const SMB1_APP_FOCUS_GOALS = new Set([
+  "cards-seats-suits",
+  "contract-trump-dummy",
+  "trick-winner",
+  "direct-tricks",
+  "develop-tricks",
+  "simple-finesse",
+  "length-tricks",
+  "trump-extra-tricks",
+  "suit-contract-plan",
+  "notrump-plan",
+  "opening-lead-notrump",
+  "opening-lead-sequence",
+  "opening-lead-suit",
+  "second-hand-low",
+  "honor-on-honor",
+  "third-hand-high",
+  "defensive-unblock",
+  "defense-against-suit",
+  "opening-one-notrump",
+  "opening-one-major",
+  "opening-one-minor",
+  "opening-pass",
+  "major-response-fit",
+  "major-response-no-fit",
+  "one-notrump-response",
+  "new-suit-after-major",
+  "minor-response-major-search",
+  "simple-overcall"
+]);

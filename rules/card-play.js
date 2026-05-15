@@ -36,7 +36,10 @@
 
   const {
     compareLowCards,
-    lowestCard
+    highestCard,
+    lowestCard,
+    seats,
+    teamOf
   } = core;
   const { beats } = playMechanics;
   const { cardPlayResult, createCardPlayContext } = cardPlayCommon;
@@ -302,6 +305,29 @@
         .sort(compareLowCards);
 
       if (canBeat.length) {
+        const positionAwareWinner = choosePositionAwareWinner({
+          canBeat,
+          currentTrick,
+          seat,
+          winning
+        });
+        if (positionAwareWinner) {
+          return withPlayPlanFallback(
+            cardPlayResult(
+              positionAwareWinner.card,
+              "positionAwareWinner",
+              "basic",
+              "A later opponent can still overtake a cheap provisional winner, so play high enough to try to secure the trick.",
+              {
+                winningSeat: winning.seat,
+                nextSeat: positionAwareWinner.nextSeat,
+                action: "secureBeforeFourthHand"
+              }
+            ),
+            planDecision
+          );
+        }
+
         return withPlayPlanFallback(
           cardPlayResult(
             canBeat[0],
@@ -337,6 +363,17 @@
         ),
         planDecision
       );
+    }
+
+  function choosePositionAwareWinner({ canBeat = [], currentTrick = [], seat, winning }) {
+      if (currentTrick.length !== 2 || !canBeat.length || !seat || !winning) return null;
+      const seatIndex = seats.indexOf(seat);
+      if (seatIndex < 0) return null;
+      const nextSeat = seats[(seatIndex + 1) % seats.length];
+      if (teamOf(nextSeat) === teamOf(seat)) return null;
+      const strongestWinner = highestCard(canBeat);
+      if (!strongestWinner || strongestWinner.id === canBeat[0].id) return null;
+      return { card: strongestWinner, nextSeat };
     }
 
 

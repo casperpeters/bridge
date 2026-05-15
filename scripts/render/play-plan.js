@@ -150,6 +150,13 @@ function playPlanPriorityText(priority) {
     return `Houd de ${stopper} in ${suitName(priority.suit)} nog vast; speel laag zolang dat kan, omdat er nog ${priority.needToDevelop} slag${priority.needToDevelop === 1 ? "" : "en"} ontwikkeld moet${priority.needToDevelop === 1 ? "" : "en"} worden.`;
   }
   if (priority.kind === "developLongSuit") {
+    if (priority.timing === "possibleBreakDevelopment") {
+      const winners = priority.winnerRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
+      const entry = priority.entrySuit
+        ? ` Bewaar zo nodig de entree via ${rankLabel[priority.entryRank] || priority.entryRank} ${suitName(priority.entrySuit)}.`
+        : "";
+      return `Test de ${suitName(priority.suit)} op een ${priority.breakNeeded}-zitsel; als iedereen drie rondes bekent, kan de vierde kaart een extra slag worden${winners ? ` na ${winners}` : ""}.${entry}`;
+    }
     if (priority.timing === "giveUpEarly") {
       const entries = priority.sameSuitEntryCount
         ? ` Er blijven ${priority.sameSuitEntryCount} entree${priority.sameSuitEntryCount === 1 ? "" : "s"} in de kleur zelf.`
@@ -168,6 +175,23 @@ function playPlanPriorityText(priority) {
       : "";
     return `Ontwikkel ${suitName(priority.suit)} (${priority.suitLength} kaarten samen); werk de ${missing} eruit.${entry}${preserve}${tempo}`;
   }
+  if (priority.kind === "forceOutAce") {
+    const force = rankLabel[priority.forceRank] || priority.forceRank;
+    const missing = (priority.missingStoppers || [priority.missingStopper])
+      .filter(Boolean)
+      .map((rank) => rankLabel[rank] || rank)
+      .join(" en ");
+    const winners = priority.futureWinnerRanks?.map((rank) => rankLabel[rank] || rank).join(", ");
+    const entry = priority.entryTiming === "outsideEntry"
+      ? ` Latere entree via ${rankLabel[priority.entryRank] || priority.entryRank} ${suitName(priority.entrySuit)}.`
+      : priority.entryTiming === "sameSuitSupport"
+        ? " De andere hand heeft nog een kaart in de kleur om de vrijgespeelde honneur te bereiken."
+        : " De latere entree is onzeker.";
+    const tempo = typeof priority.lossesNeeded === "number"
+      ? ` Tempo: ${priority.lossesNeeded} keer van slag voor ongeveer ${priority.promotedTricks} extra slag${priority.promotedTricks === 1 ? "" : "en"}; ${priority.tempoSafe ? "dat lijkt speelbaar" : "dat kan te traag zijn bij de huidige uitkomst"}.`
+      : "";
+    return `Ontwikkel voorzichtig ${suitName(priority.suit)}: speel de ${force} om ${missing || "een hogere honneur"} eruit te werken${winners ? `; daarna kan ${winners} een slag worden` : ""}.${entry}${tempo}`;
+  }
   if (priority.kind === "endgameRunout") {
     const count = priority.remainingTricks || priority.sequence?.length || 0;
     const firstCard = runoutFirstCardText(priority);
@@ -178,6 +202,9 @@ function playPlanPriorityText(priority) {
       const targetSeat = priority.sequence?.[0]?.winnerSeat || priority.sequence?.[0]?.targetSeat;
       const target = targetSeat ? ` door ${seatName(targetSeat)}` : "";
       return `Eindspel: speel een zijkleur voor zodat die${target} kan worden ingetroefd; daarna volgen de resterende ${count} slag${count === 1 ? "" : "en"} op volgorde${firstCard}.`;
+    }
+    if (priority.action === "giveUpForLateCrossRuff" || priority.sequence?.[0]?.action === "giveUpForLateCrossRuff") {
+      return `Eindspel: speel eerst de zijkleur uit die een renonce vrijmaakt; na die ene verliezer blijven er genoeg troeven over voor de late crossruff${firstCard}.`;
     }
     if (priority.contractType === "notrump") {
       return `Eindspel: er zijn genoeg zichtbare sans-atoutwinnaars om de resterende ${count} slag${count === 1 ? "" : "en"} op volgorde te incasseren${firstCard}.`;
@@ -390,6 +417,7 @@ function playPlanPriorityBriefText(priority) {
   if (priority.kind === "holdUpStopper") return `ophouden in ${suitName(priority.suit)}`;
   if (priority.kind === "endgameRunout") return `zichtbare eindspelreeks`;
   if (priority.kind === "developLongSuit") return `ontwikkel ${suitName(priority.suit)}`;
+  if (priority.kind === "forceOutAce") return `${suitName(priority.suit)} ontwikkelen door de aas/hogere honneur eruit te werken`;
   if (priority.kind === "finesse" || priority.kind === "safeHandFinesse") return `de snit in ${suitName(priority.suit)}`;
   if (priority.kind === "doubleFinesse") return `de dubbele snit in ${suitName(priority.suit)}`;
   if (priority.kind === "repeatFinesse") return `de herhaalde snit in ${suitName(priority.suit)}`;

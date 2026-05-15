@@ -372,6 +372,23 @@
         }
         if (
           openingCall?.seat === partnerOf(seat) &&
+          isMajorSingleRaiseFiveCardHigh(openingCall?.bid, responseCall?.bid) &&
+          openerRebidCall?.bid?.strain === openingCall.bid.strain &&
+          openerRebidCall.bid.level === gameLevel(openingCall.bid.strain)
+        ) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.responderAfterMajorRaiseGame", "basic", "Pass after partner bid game over the single major raise unless responder has a clear Blackwood hand.", {
+            ...base,
+            category: "continuation",
+            partnerSuit: openerRebidCall.bid.strain,
+            trumpSuit: openerRebidCall.bid.strain,
+            support: shape.counts[openerRebidCall.bid.strain] || 0,
+            aceCount: base.aceCount,
+            partnershipMinimumHcp: shape.hcp + 18,
+            slamTargetHcp: 33
+          });
+        }
+        if (
+          openingCall?.seat === partnerOf(seat) &&
           isSingleRaiseInviteFiveCardHigh(responseCall?.bid, openerRebidCall?.bid)
         ) {
           return fiveCardHighBidChoiceResult(Pass(), "pass.declineMajorInvite", "basic", "Pass after partner's invitational raise with the lower range for the single raise.", {

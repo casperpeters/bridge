@@ -48,7 +48,7 @@
     const status = visibleSuitStatus({ suit: leadSuit, hand: legal, dummyHand, trickHistory, trump });
     if (deadSuitRuffRisk(status)) return null;
 
-    const returnChoice = choosePartnerLeadSuitReturnCard(suitedLegal);
+    const returnChoice = choosePartnerLeadSuitReturnCard(suitedLegal, { dummyHand, trickHistory, trump });
     return cardPlayResult(
       returnChoice.card,
       "returnPartnerLeadSuit",
@@ -66,11 +66,21 @@
     );
   }
 
-  function choosePartnerLeadSuitReturnCard(suitedLegal) {
+  function choosePartnerLeadSuitReturnCard(suitedLegal, { dummyHand = [], trickHistory = [], trump = null } = {}) {
+    const context = { hand: suitedLegal, dummyHand, trickHistory, currentTrick: [], trump };
+    const sequence = touchingHonorSequence(suitedLegal, 2);
+    if (sequence?.card && isVisibleTopWinner(sequence.card, context)) {
+      return { card: sequence.card, type: "honorSequence", sequence: sequence.ranks.join("") };
+    }
+
+    const visibleTopWinner = highestCard(
+      suitedLegal.filter((card) => isLeadHonorRank(card.rank) && isVisibleTopWinner(card, context))
+    );
+    if (visibleTopWinner) return { card: visibleTopWinner, type: "topWinner" };
+
     const lowCards = suitedLegal.filter(isLowLeadCard);
     if (lowCards.length) return { card: lowestCard(lowCards), type: "lowCard" };
 
-    const sequence = touchingHonorSequence(suitedLegal, 2);
     if (sequence?.card) {
       return { card: sequence.card, type: "honorSequence", sequence: sequence.ranks.join("") };
     }

@@ -74,6 +74,7 @@
       if (!step.title || !step.body || !step.badge) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} is incomplete`);
       if (!validTargets.has(step.target)) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} has unknown target ${step.target}`);
       if (!validGates.has(step.gate)) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} has unknown gate ${step.gate}`);
+      if ("suppressUitspelen" in step && typeof step.suppressUitspelen !== "boolean") throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} has invalid suppressUitspelen`);
       if (step.gate !== "none" && !step.buttonLabel) throw new Error(`Lesson ${lesson.id} boardGuidance step ${step.id} needs a button label`);
     });
   }

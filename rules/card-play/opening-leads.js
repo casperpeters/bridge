@@ -358,6 +358,20 @@
         return result?.ruleId ? result.ruleId.split(".").slice(1).join(".") : "";
       }
 
+  function callRuleIdSuffix(call) {
+        return ruleIdSuffix(call?.bidResult || null);
+      }
+
+  function isContractBidCall(call) {
+        const bid = call?.bid;
+        return Boolean(bid && Number.isInteger(bid.level) && bid.strain);
+      }
+
+  function bidEquals(call, level, strain) {
+        const bid = call?.bid;
+        return Boolean(bid && bid.level === level && bid.strain === strain);
+      }
+
   function artificialSuitBidForLead(call, result) {
         const suffix = ruleIdSuffix(result);
         const strain = call?.bid?.strain;
@@ -400,6 +414,63 @@
         return auction
           .map((call) => ({ seat: call.seat, suit: shownSuitForLead(call) }))
           .filter((call) => call.suit);
+      }
+
+  function isStaymanResponseForLead(openingCall, responseCall, allowStructuralStayman = false) {
+        const openingBid = openingCall?.bid;
+        if (!openingBid || openingBid.strain !== "NT") return false;
+        if (responseCall?.seat !== partnerOf(openingCall.seat)) return false;
+        if (!bidEquals(responseCall, openingBid.level + 1, "C")) return false;
+
+        const suffix = callRuleIdSuffix(responseCall);
+        return suffix === "response.stayman" ||
+          suffix === "competitive.notrumpOvercallStayman" ||
+          (!suffix && allowStructuralStayman);
+      }
+
+  function isStaymanAnswerForLead(openingCall, answerCall) {
+        const openingBid = openingCall?.bid;
+        const answerBid = answerCall?.bid;
+        if (!openingBid || openingBid.strain !== "NT") return false;
+        if (answerCall?.seat !== openingCall.seat) return false;
+        if (!answerBid || answerBid.level !== openingBid.level + 1) return false;
+        if (!["D", "H", "S"].includes(answerBid.strain)) return false;
+
+        const suffix = callRuleIdSuffix(answerCall);
+        return !suffix || suffix === "continuation.staymanAnswer";
+      }
+
+  function staymanInferredSuitCallsForLead(auction = []) {
+        const contractCalls = auction.filter(isContractBidCall);
+        const inferred = [];
+
+        for (let i = 0; i < contractCalls.length - 2; i++) {
+          const openingCall = contractCalls[i];
+          const responseCall = contractCalls[i + 1];
+          const answerCall = contractCalls[i + 2];
+          if (!isStaymanResponseForLead(openingCall, responseCall, i === 0)) continue;
+          if (!isStaymanAnswerForLead(openingCall, answerCall)) continue;
+
+          const responderRebid = contractCalls.slice(i + 3).find((call) => call.seat === responseCall.seat) || null;
+          if (!responderRebid || responderRebid.bid?.strain !== "NT") continue;
+          if (answerCall.bid.strain === "S") {
+            inferred.push({
+              seat: responseCall.seat,
+              suit: "H",
+              inference: "staymanResponderOtherMajorAfterNoFit",
+              deniedFitSuit: "S"
+            });
+          } else if (answerCall.bid.strain === "H") {
+            inferred.push({
+              seat: responseCall.seat,
+              suit: "S",
+              inference: "staymanResponderOtherMajorAfterNoFit",
+              deniedFitSuit: "H"
+            });
+          }
+        }
+
+        return inferred;
       }
 
   function uniqueSuits(items) {
@@ -505,13 +576,16 @@
       }
 
   function notrumpLeadSuitForAuction(hand, auction = [], seat = null, declarer = null, contract = null) {
-        const shownSuitCalls = shownSuitCallsForLead(auction);
+        const naturalShownSuitCalls = shownSuitCallsForLead(auction);
+        const staymanInferredSuitCalls = staymanInferredSuitCallsForLead(auction);
+        const shownSuitCalls = [...naturalShownSuitCalls, ...staymanInferredSuitCalls];
         const bidSuits = uniqueSuits(shownSuitCalls.map((call) => call.suit));
         const unbidSuits = suits.filter((suit) => !bidSuits.includes(suit));
         const partnerSuits = seat
           ? uniqueSuits(shownSuitCalls.filter((call) => call.seat === partnerOf(seat)).map((call) => call.suit))
           : [];
         const dummySecondSuits = dummySecondSuitsForLead(shownSuitCalls, declarer);
+        const staymanInferredSuits = uniqueSuits(staymanInferredSuitCalls.map((call) => call.suit));
         const context = { bidSuits, unbidSuits, partnerSuits, dummySecondSuits };
         const playablePartnerSuits = partnerSuits.filter((suit) => cardsInSuit(hand, suit).length);
         if (playablePartnerSuits.length) {
@@ -530,6 +604,7 @@
               unbidSuits,
               partnerSuits,
               dummySecondSuits,
+              staymanInferredSuits,
               leadSelection: "partnerSuitAvoidSingleton",
               avoidedPartnerSingleton: partnerCandidate.suit,
               hasEntry: alternativeCandidate.hasEntry,
@@ -542,6 +617,7 @@
             unbidSuits,
             partnerSuits,
             dummySecondSuits,
+            staymanInferredSuits,
             hasEntry: partnerCandidate?.hasEntry || false,
             entryCount: partnerCandidate?.entryCount || 0,
             leadSelection: "partnerSuit"
@@ -557,6 +633,7 @@
             unbidSuits,
             partnerSuits,
             dummySecondSuits,
+            staymanInferredSuits,
             hasEntry: dummyCandidate?.hasEntry || false,
             entryCount: dummyCandidate?.entryCount || 0,
             leadSelection: "throughDummySecondSuit"
@@ -618,6 +695,7 @@
           unbidSuits,
           partnerSuits,
           dummySecondSuits,
+          staymanInferredSuits,
           hasEntry: selectedCandidate?.hasEntry || false,
           entryCount: selectedCandidate?.entryCount || 0,
           tieBreak: leadSelection === "majorTieBreak" ? "majorSuit" : null,
@@ -646,6 +724,7 @@
             unbidSuits: leadSuit.unbidSuits,
             partnerSuits: leadSuit.partnerSuits,
             dummySecondSuits: leadSuit.dummySecondSuits,
+            staymanInferredSuits: leadSuit.staymanInferredSuits,
             leadSelection: leadSuit.leadSelection,
             hasEntry: leadSuit.hasEntry,
             entryCount: leadSuit.entryCount,

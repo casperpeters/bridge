@@ -34,6 +34,7 @@
                 <section class="menu-section" aria-labelledby="help-menu-title">
                   <p id="help-menu-title" class="menu-section-title">Hulp</p>
                   <a id="open-lessons" class="button-link" href="lessons/index.html">Lessen</a>
+                  <a id="open-practice-hands" class="button-link" href="practice/index.html">Oefenhanden</a>
                   <button id="open-glossary" type="button">Woordenlijst</button>
                   <button id="open-score-table" type="button">Scoretabel</button>
                 </section>
@@ -126,6 +127,10 @@
         <div class="opponent north">
           <div id="north-hand" class="hand horizontal" aria-label="Noord hand"></div>
           <div id="north-label" class="seat-label"><span class="seat-label-name">Noord</span> &bull; Partner</div>
+          <div id="uitspelen-action" class="uitspelen-action" hidden>
+            <button id="uitspelen-button" type="button">Uitspelen</button>
+          </div>
+          <div id="uitspelen-unavailable" class="uitspelen-unavailable" data-developer-only hidden></div>
           <div id="north-auction-calls" class="seat-auction-calls seat-auction-north" aria-label="Biedingen Noord"></div>
         </div>
 
@@ -281,6 +286,20 @@
       </section>
     </dialog>
 
+    <dialog id="uitspelen-dialog" class="uitspelen-dialog" aria-labelledby="uitspelen-title">
+      <section class="uitspelen-panel" aria-label="Uitspelen bevestigen">
+        <div class="feedback-head">
+          <h2 id="uitspelen-title" class="review-section-title">Uitspelen?</h2>
+          <button id="uitspelen-close" class="feedback-close" type="button" aria-label="Sluiten">x</button>
+        </div>
+        <p id="uitspelen-summary" class="uitspelen-summary"></p>
+        <div class="feedback-actions">
+          <button id="uitspelen-cancel" type="button">Annuleren</button>
+          <button id="uitspelen-confirm" type="button">Uitspelen</button>
+        </div>
+      </section>
+    </dialog>
+
     <dialog id="glossary-dialog" class="glossary-dialog" aria-labelledby="glossary-title">
       <section class="glossary-panel" aria-label="Verklarende woordenlijst">
         <div class="feedback-head">
@@ -348,6 +367,7 @@
     <script src="rules/bidding/systems/five-card-high/competitive.js"></script>
     <script src="rules/bidding/systems/five-card-high/index.js"></script>
     <script src="rules/bidding/index.js"></script>
+    <script src="rules/deterministic-playout.js"></script>
     <script src="rules/play-mechanics.js"></script>
     <script src="rules/play-plan/common.js"></script>
     <script src="rules/play-plan/endgame-runout.js"></script>
@@ -377,6 +397,8 @@
     <script src="practice-hands/catalog/play-plan-basic.js"></script>
     <script src="practice-hands/catalog/defense-basic.js"></script>
     <script src="practice-hands/catalog/scoring-basic.js"></script>
+    <script src="practice-hands/catalog/start-met-bridge-1.js"></script>
+    <script src="practice-hands/catalog-model.js"></script>
     <script src="practice-hands/index.js"></script>
     <script src="scripts/copy/text-nl.js"></script>
     <script src="scripts/feedback-config.js"></script>
@@ -412,6 +434,7 @@
     <script src="scripts/flow/auction-flow.js"></script>
     <script src="scripts/flow/hand-finish-flow.js"></script>
     <script src="scripts/flow/play-flow.js"></script>
+    <script src="scripts/flow/deterministic-playout-flow.js"></script>
     <script src="scripts/app/hand-start.js"></script>
     <script src="scripts/app/bootstrap.js"></script>
     <script src="scripts/app/public-api.js"></script>

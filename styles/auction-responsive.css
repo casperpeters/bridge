@@ -289,6 +289,16 @@
     font-size: 0.92rem;
   }
 
+  .app-shell.is-mobile-bidding .bid-controls .recommended-action::before {
+    top: 1px;
+    right: 1px;
+    min-width: 14px;
+    height: 11px;
+    padding: 0 2px;
+    font-size: 0.5rem;
+    line-height: 11px;
+  }
+
   .app-shell.is-mobile-bidding .bid-primary-actions,
   .app-shell.is-mobile-bidding .bid-advanced-actions {
     gap: 4px;

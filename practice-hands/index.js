@@ -1,6 +1,7 @@
 (function initPracticeHands(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
   const bridgeRules = isCommonJs ? require("../bridge-rules.js") : root.BridgeRules;
+  const catalogModel = isCommonJs ? require("./catalog-model.js") : root.PracticeCatalogModel;
   const collections = isCommonJs
     ? {
         fiveCardHighOpenings: require("./catalog/five-card-high-openings.js"),
@@ -8,14 +9,17 @@
         basicBidding: require("./catalog/bidding-basic.js"),
         basicPlayPlan: require("./catalog/play-plan-basic.js"),
         basicDefense: require("./catalog/defense-basic.js"),
-        basicScoring: require("./catalog/scoring-basic.js")
+        basicScoring: require("./catalog/scoring-basic.js"),
+        startMetBridge1: require("./catalog/start-met-bridge-1.js")
       }
     : root.PracticeHandCollections || {};
-  const api = factory(bridgeRules, collections);
+  const api = factory(bridgeRules, collections, catalogModel);
   if (isCommonJs) module.exports = api;
   root.PracticeHands = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createPracticeHands(bridgeRules, collections) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createPracticeHands(bridgeRules, collections, catalogModel) {
   "use strict";
+
+  if (!catalogModel) throw new Error("practice-hands/catalog-model.js must load before practice-hands/index.js");
 
   const seats = ["North", "East", "South", "West"];
   const seatAliases = {
@@ -42,8 +46,46 @@
     "basicBidding",
     "basicPlayPlan",
     "basicDefense",
-    "basicScoring"
+    "basicScoring",
+    "startMetBridge1"
   ];
+  const collectionMeta = {
+    fiveCardHighOpenings: {
+      id: "fiveCardHighOpenings",
+      title: "Vijfkaart Hoog openingen",
+      description: "Openingskeuzes zoals 1SA, vijfkaart hoog, lage kleur en pas."
+    },
+    notrumpResponses: {
+      id: "notrumpResponses",
+      title: "SA-vervolgen",
+      description: "Stayman, Jacoby-transfers en sterke SA-vervolgen."
+    },
+    basicBidding: {
+      id: "basicBidding",
+      title: "Bieden basis",
+      description: "Eerste bijboden, fit zoeken en kleine competitieve situaties."
+    },
+    basicPlayPlan: {
+      id: "basicPlayPlan",
+      title: "Speelplan basis",
+      description: "Troef trekken, lengteslagen, introevers, afgooien en SA-plannen."
+    },
+    basicDefense: {
+      id: "basicDefense",
+      title: "Tegenspel basis",
+      description: "Uitkomsten, tweede/derde hand en eenvoudige verdedigingskeuzes."
+    },
+    basicScoring: {
+      id: "basicScoring",
+      title: "Score basis",
+      description: "Contractpunten, kwetsbaarheid en manchebonus."
+    },
+    startMetBridge1: {
+      id: "start-met-bridge-1",
+      title: "Start met Bridge 1",
+      description: "Cursusgerichte oefenhanden per SMB1-les, met hergebruikte bronhanden waar mogelijk."
+    }
+  };
   const allPracticeHands = collectionOrder.flatMap((name) => collections[name] || []);
   const beginnerHands = allPracticeHands.filter((scenario) => scenario.level === "beginner");
   const handsById = new Map();
@@ -153,6 +195,37 @@
     return JSON.parse(JSON.stringify(scenario));
   }
 
+  function allCollections() {
+    return collectionOrder
+      .filter((name) => (collections[name] || []).length)
+      .map((name) => ({
+        ...(collectionMeta[name] || { id: name, title: name, description: "" }),
+        key: name,
+        hands: collections[name] || []
+      }));
+  }
+
+  function findCollection(key) {
+    const normalized = String(key || "").trim();
+    return allCollections().find((collection) => collection.key === normalized || collection.id === normalized) || null;
+  }
+
+  function getPracticeCatalogs() {
+    return allCollections();
+  }
+
+  function getPracticeCatalog(key) {
+    return findCollection(key);
+  }
+
+  function createPracticeBrowserModel(catalogs = getPracticeCatalogs()) {
+    return catalogModel.createPracticeBrowserModel(catalogs);
+  }
+
+  function filterPracticeHands(hands, filters) {
+    return catalogModel.filterPracticeHands(hands, filters);
+  }
+
   function compareCards(a, b) {
     return bridgeRules?.compareCards ? bridgeRules.compareCards(a, b) : 0;
   }
@@ -160,7 +233,19 @@
   return {
     allPracticeHands,
     beginnerHands,
+    collectionOrder,
+    collectionMeta,
     collections,
+    allCollections,
+    findCollection,
+    getPracticeCatalogs,
+    getPracticeCatalog,
+    createPracticeBrowserModel,
+    filterPracticeHands,
+    labelFromToken: catalogModel.labelFromToken,
+    normalizeSearch: catalogModel.normalizeSearch,
+    smb1CatalogId: catalogModel.smb1CatalogId,
+    smb1CatalogKey: catalogModel.smb1CatalogKey,
     findPracticeHand,
     preparePracticeHand,
     validatePracticeHands,

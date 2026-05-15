@@ -263,6 +263,7 @@
       suit,
       source,
       sourceCards,
+      sourceHand,
       currentSuitCards,
       partnerSuitCards,
       playedSuitCards,
@@ -295,6 +296,66 @@
         missingStopper: missingHigher[0],
         action: sourceIsCurrentHand ? "forceMissingHighCard" : "leadTowardLongSuit",
         score: combinedCards.length * 4 + sourceCards.length * 3 + run.ranks.length * 8 + (sourceIsCurrentHand ? 3 : 0)
+      };
+    }
+
+  function forceOutAceCandidate({
+      suit,
+      source,
+      sourceCards,
+      sourceHand,
+      currentSuitCards,
+      partnerSuitCards,
+      playedSuitCards,
+      seat,
+      partnerSeat
+    }) {
+      if (sourceCards.length < 2) return null;
+      const combinedCards = [...currentSuitCards, ...partnerSuitCards];
+      if (combinedCards.length < 3) return null;
+
+      const run = topTouchingHonorRun(sourceCards);
+      if (!run) return null;
+
+      const missingHigher = missingHigherRanks(run, combinedCards, playedSuitCards);
+      if (missingHigher.length < 1 || missingHigher.length > 2) return null;
+      if (sourceCards.length >= 4 && combinedCards.length >= 6 && missingHigher.length === 1) return null;
+
+      const promotedTricks = Math.max(0, run.ranks.length - missingHigher.length);
+      if (promotedTricks < 1) return null;
+
+      const sourceIsCurrentHand = source === "current";
+      const sourceSeat = sourceIsCurrentHand ? seat : partnerSeat;
+      const partnerHasSameSuitLink = (sourceIsCurrentHand ? partnerSuitCards : currentSuitCards).length > 0;
+      const outsideEntryPlan = sourceHand ? entryPlanForHand(sourceHand, suit) : null;
+      const hasOutsideEntry = Boolean(outsideEntryPlan?.entryCount);
+      if (!hasOutsideEntry && !partnerHasSameSuitLink) return null;
+
+      const card = sourceIsCurrentHand
+        ? sourceCards.find((item) => item.rank === run.ranks[0])
+        : lowestCard(currentSuitCards);
+      if (!card) return null;
+
+      return {
+        card,
+        suit,
+        sourceSeat,
+        sourceLength: sourceCards.length,
+        suitLength: combinedCards.length,
+        sequence: run.ranks.join(""),
+        forceRank: run.ranks[0],
+        missingStopper: missingHigher[0],
+        missingStoppers: missingHigher,
+        futureWinnerRanks: run.ranks.slice(missingHigher.length),
+        promotedTricks,
+        lossesNeeded: missingHigher.length,
+        entryType: hasOutsideEntry ? outsideEntryPlan.entryType : "sameSuitSupport",
+        entrySuit: hasOutsideEntry ? outsideEntryPlan.entrySuit : suit,
+        entryRank: hasOutsideEntry ? outsideEntryPlan.entryRank : run.ranks[run.ranks.length - 1],
+        entryTiming: hasOutsideEntry ? outsideEntryPlan.entryTiming : "sameSuitSupport",
+        entryCount: (outsideEntryPlan?.entryCount || 0) + (partnerHasSameSuitLink ? 1 : 0),
+        action: sourceIsCurrentHand ? "forceMissingHighCard" : "leadTowardForceOutAce",
+        score: promotedTricks * 28 + run.ranks.length * 6 + combinedCards.length * 2 + (hasOutsideEntry || partnerHasSameSuitLink ? 6 : -20) - missingHigher.length * 10
       };
     }
 
@@ -431,6 +492,7 @@
     topTouchingHonorRun,
     missingHigherRanks,
     longSuitDevelopmentCandidate,
+    forceOutAceCandidate,
     finesseCandidate,
     repeatFinesseCandidate,
     previousSuccessfulFinesse

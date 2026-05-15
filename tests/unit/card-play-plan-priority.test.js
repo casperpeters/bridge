@@ -150,6 +150,55 @@ test("chooseCardPlay follows the play-plan long-suit priority", () => {
   assert.equal(result.planPriority.kind, "developLongSuit");
 });
 
+test("chooseCardPlay follows the play-plan short honor force-out priority", () => {
+  const declarerHand = hand("AS", "AD", "TC", "7C", "2D");
+  const dummyHand = hand("KC", "QC", "4H", "3H");
+  const contract = { level: 3, strain: "NT" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand,
+    dummyHand,
+    contract,
+    declarer: "South",
+    dummy: "North"
+  });
+
+  const leadToward = rules.chooseCardPlay({
+    hand: declarerHand,
+    partnerHand: dummyHand,
+    currentTrick: [],
+    seat: "South",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(leadToward.card.id, "7C");
+  assert.equal(leadToward.ruleId, "playPlan.forceOutAce");
+  assert.equal(leadToward.planPriority.kind, "forceOutAce");
+  assert.equal(leadToward.action, "leadTowardForceOutAce");
+
+  const forceHonor = rules.chooseCardPlay({
+    hand: dummyHand,
+    partnerHand: declarerHand,
+    currentTrick: [
+      { seat: "South", card: card("7C") },
+      { seat: "West", card: card("2C") }
+    ],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract,
+    trump: null,
+    playPlan
+  });
+
+  assert.equal(forceHonor.card.id, "KC");
+  assert.equal(forceHonor.ruleId, "playPlan.forceOutAce");
+  assert.equal(forceHonor.action, "forceMissingHighCard");
+});
+
 test("chooseCardPlay follows the play-plan finesse priority", () => {
   const declarerHand = hand("2H", "3H", "AD");
   const dummyHand = hand("AH", "QH", "7H", "AC");
@@ -2455,6 +2504,63 @@ function removeReportedCard(hands, seat, id) {
   assert.notEqual(index, -1, `${seat} should hold ${id}`);
   return cards.splice(index, 1)[0];
 }
+
+function reportedClubEndgameState() {
+  const hands = rules.dealHands(rules.randomFromSeed("9nksgl1rs5isz"));
+  const trickPlays = [
+    [["East", "KS"], ["South", "AS"], ["West", "2S"], ["North", "7S"]],
+    [["South", "QD"], ["West", "3D"], ["North", "2D"], ["East", "4D"]],
+    [["South", "6D"], ["West", "8D"], ["North", "AD"], ["East", "5D"]],
+    [["North", "KD"], ["East", "7D"], ["South", "JS"], ["West", "9D"]],
+    [["North", "AC"], ["East", "3C"], ["South", "4C"], ["West", "KC"]],
+    [["North", "QC"], ["East", "9C"], ["South", "5C"], ["West", "4S"]],
+    [["North", "JD"], ["East", "2H"], ["South", "4H"], ["West", "TD"]],
+    [["North", "JC"], ["East", "3H"], ["South", "7C"], ["West", "6H"]]
+  ];
+  const trickHistory = trickPlays.map((plays, index) => {
+    const cards = plays.map(([seat, id]) => ({ seat, card: removeReportedCard(hands, seat, id) }));
+    return {
+      number: index + 1,
+      winner: rules.currentWinningPlay(cards, "C").seat,
+      cards
+    };
+  });
+  return { hands, trickHistory };
+}
+
+test("chooseCardPlay starts row 27 late crossruff by leading H7 before cashing trump", () => {
+  const { hands, trickHistory } = reportedClubEndgameState();
+  const contract = { level: 3, strain: "C" };
+  const playPlan = rules.createPlayPlan({
+    declarerHand: hands.North,
+    dummyHand: hands.South,
+    contract,
+    declarer: "North",
+    dummy: "South",
+    trickHistory
+  });
+
+  const result = rules.chooseCardPlay({
+    hand: hands.North,
+    partnerHand: hands.South,
+    currentTrick: [],
+    trickHistory,
+    seat: "North",
+    declarer: "North",
+    dummy: "South",
+    contract,
+    trump: "C",
+    playPlan
+  });
+
+  assert.equal(playPlan.priorities[0].kind, "endgameRunout");
+  assert.equal(playPlan.priorities[0].action, "giveUpForLateCrossRuff");
+  assert.deepEqual(playPlan.priorities[0].crossSuits, ["H", "S"]);
+  assert.equal(result.card.id, "7H");
+  assert.equal(result.ruleId, "playPlan.endgameRunout");
+  assert.equal(result.action, "giveUpForLateCrossRuff");
+  assert.notEqual(result.ruleId, "longestSuitLead");
+});
 
 test("chooseCardPlay starts a visible suit endgame runout by ruffing trick seven", () => {
   const { hands, trickHistory, currentTrick } = reportedDiamondEndgameState({ completedTricks: 6, currentTrickCards: 3 });

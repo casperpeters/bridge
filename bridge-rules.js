@@ -8,6 +8,7 @@
         scoreTable: require("./rules/score-table.js"),
         biddingFiveCardHigh: require("./rules/bidding/systems/five-card-high/index.js"),
         bidding: require("./rules/bidding/index.js"),
+        deterministicPlayout: require("./rules/deterministic-playout.js"),
         playMechanics: require("./rules/play-mechanics.js"),
         playPlan: require("./rules/play-plan.js"),
         cardPlay: require("./rules/card-play.js")
@@ -26,6 +27,7 @@
     "scoreTable",
     "biddingFiveCardHigh",
     "bidding",
+    "deterministicPlayout",
     "playMechanics",
     "playPlan",
     "cardPlay"
@@ -88,6 +90,8 @@
     "calculatePassOutScore",
     "calculateBridgeScore",
     "getScoreTableData",
+    "analyzeVisibleUitspelen",
+    "analyzeVisibleNotrumpUitspelen",
     "legalCards",
     "createPlayPlan",
     "chooseCardPlay",

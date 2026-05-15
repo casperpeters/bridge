@@ -402,6 +402,7 @@ Huidige basis:
 - Kwetsbaarheid kan de eisen verhogen.
 - `1SA` als volgbod toont 15-17 HCP, evenwichtige verdeling en dekking in de kleur van de tegenpartij.
 - Een informatiedoublet toont openingskracht, kortheid in de kleur van de tegenpartij en aansluiting in de ongeboden kleuren.
+- Als `1SA` en een informatiedoublet de hand niet goed beschrijven, mag de app met 17-19 HCP en een goede vijfkaart hoog natuurlijk op eenniveau volgen.
 - Na partners informatiedoublet moet je bieden als de rechtertegenstander past; `1SA` na zo'n doublet belooft 6-9 HCP, SA-verdeling, dekking en geen betere ongeboden vierkaart.
 - Tegen zwakke twee- en preemptieve openingen gebruikt de app eenvoudige volgboden, SA met dekking en informatiedoubletten.
 
@@ -445,4 +446,3 @@ Gebruik deze checklist bij nieuwe biedlessen of oefenhanden:
 - Toon voorbeelden met `1SA`, `1♥`, `1♠`, `1♣` en `1♦` voordat competitief bieden wordt geintroduceerd.
 - Voeg bij nieuwe biedregels ook uitleg en testfixtures toe.
 - Maak claims niet sterker dan de engine kan waarmaken.
-

@@ -35,6 +35,30 @@ test("Vijfkaart Hoog responder shows a strong 5-4 major hand after opener rebids
   assert.equal(result.ruleId, "fiveCardHigh.continuation.responderStrongSecondMajor");
 });
 
+test("Vijfkaart Hoog responder bids 3NT with 8 HCP after opener's natural 2NT rebid", () => {
+  const auction = [
+    { seat: "West", bid: bid(1, "C") },
+    { seat: "North", bid: pass() },
+    { seat: "East", bid: bid(1, "H") },
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: bid(2, "NT") },
+    { seat: "North", bid: pass() }
+  ];
+
+  const result = chooseFiveCardHighResult([
+    "AS", "7S", "6S",
+    "QH", "7H", "6H", "5H",
+    "QD", "6D", "5D",
+    "7C", "6C", "5C"
+  ], auction, "East");
+
+  assert.deepEqual(result.bid, bid(3, "NT"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.responderAfterTwoNotrumpRebidGame");
+  assert.equal(result.hcp, 8);
+  assert.equal(result.openerRange, "18-19");
+  assert.equal(result.range, "8+");
+});
+
 test("Vijfkaart Hoog opener rebids after a strong 2C opening and 2D waiting response", () => {
   const strongTwoClubsWaiting = [
     { seat: "South", bid: bid(2, "C") },
@@ -345,6 +369,79 @@ test("Vijfkaart Hoog opener rebids after a single major raise by total points", 
   assert.deepEqual(gameSpade.bid, bid(4, "S"));
   assert.equal(gameSpade.points, 18);
   assert.equal(gameSpade.ruleId, "fiveCardHigh.continuation.openerMajorRaiseGame");
+});
+
+test("Vijfkaart Hoog responder stops after partner bids game over a single major raise", () => {
+  const heartGameAuction = [
+    { seat: "North", bid: bid(1, "H") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "H") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "H") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const ordinaryHeartSupport = chooseFiveCardHighResult([
+    "2S", "3S", "4S",
+    "AH", "2H", "3H",
+    "QD", "2D", "3D",
+    "JC", "2C", "3C", "4C"
+  ], heartGameAuction);
+  assert.deepEqual(ordinaryHeartSupport.bid, pass());
+  assert.equal(ordinaryHeartSupport.ruleId, "fiveCardHigh.pass.responderAfterMajorRaiseGame");
+  assert.equal(ordinaryHeartSupport.support, 3);
+
+  const spadeGameAuction = [
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const exactSpadeRegression = chooseFiveCardHighResult([
+    "AS", "2S", "3S",
+    "2H", "3H", "4H",
+    "KD", "3D", "4D",
+    "2C", "3C", "4C", "5C"
+  ], spadeGameAuction, "South");
+  assert.deepEqual(exactSpadeRegression.bid, pass());
+  assert.equal(exactSpadeRegression.ruleId, "fiveCardHigh.pass.responderAfterMajorRaiseGame");
+  assert.equal(exactSpadeRegression.support, 3);
+});
+
+test("Vijfkaart Hoog responder only uses Blackwood after 1M-2M-4M with slam values and aces", () => {
+  const spadeGameAuction = [
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: pass() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(4, "S") },
+    { seat: "East", bid: pass() }
+  ];
+
+  const enoughForBlackwood = chooseFiveCardHighResult([
+    "AS", "QS", "2S",
+    "AH", "KH", "2H",
+    "QD", "2D", "3D",
+    "JC", "2C", "3C", "4C"
+  ], spadeGameAuction, "South");
+  assert.deepEqual(enoughForBlackwood.bid, bid(4, "NT"));
+  assert.equal(enoughForBlackwood.ruleId, "fiveCardHigh.continuation.blackwoodAsk");
+  assert.equal(enoughForBlackwood.trumpSuit, "S");
+  assert.equal(enoughForBlackwood.aceCount, 2);
+  assert.equal(enoughForBlackwood.partnershipMinimumHcp, 34);
+
+  const slamValuesWithoutAces = chooseFiveCardHighResult([
+    "KS", "QS", "JS",
+    "KH", "QH", "JH",
+    "KD", "QD", "JD",
+    "QC", "JC", "2C", "3C"
+  ], spadeGameAuction, "South");
+  assert.deepEqual(slamValuesWithoutAces.bid, pass());
+  assert.equal(slamValuesWithoutAces.ruleId, "fiveCardHigh.pass.responderAfterMajorRaiseGame");
+  assert.equal(slamValuesWithoutAces.aceCount, 0);
 });
 
 test("Vijfkaart Hoog opener uses fit points after a single major raise", () => {

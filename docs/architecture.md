@@ -24,11 +24,12 @@ Dit document beschrijft de actuele architectuur en gewenste groeirichting van Br
 ## Hoog-overzicht
 
 ```text
-index.html / lessons/index.html / lessons/01-cards.html / lessons/02-card-valuation.html / lessons/03-openings.html
+index.html / lessons/index.html / lessons/01-cards.html / lessons/02-card-valuation.html / lessons/03-openings.html / practice/index.html
   +-- laadt CSS en browser scripts in vaste volgorde
   +-- index bevat DOM-structuur voor tafel, bieding, dialogs en review
   +-- lessons bevat de rustige lespagina en start oefenhanden via index queryparameters
   +-- losse hoofdstukpagina's kunnen interactieve lesstappen tonen zonder de speeltafel te laden
+  +-- practice is de aparte browserpagina voor de Oefenhandencatalogus en start handen via gewone hand-URL's
 
 bridge-rules.js
   +-- public facade voor testbare bridge-regels
@@ -58,6 +59,7 @@ De app heeft geen build step. `index.html` laadt scripts direct in dependency or
 - In de browser registreren ze zichzelf op `globalThis`, meestal onder `BridgeRulesParts`, `BridgeRules`, of een specifieke app-global.
 
 Dit houdt de app simpel, maar betekent dat scriptvolgorde een architectuurcontract is. Wijzigingen aan exports of scriptvolgorde moeten altijd met tests worden gecontroleerd.
+`scripts/script-manifest.js` is het onderhoudsmanifest voor deze scriptgroepen; `tests/unit/script-order.test.js` valideert dat de HTML-pagina's dat manifest blijven volgen.
 
 ## Laagindeling
 
@@ -172,6 +174,7 @@ Huidige kern:
 - `scripts/ui/` - kleine UI-controllers voor app-menu, instellingen en dialogs.
 - `scripts/feedback/` - feedbackdialog, rapportpayload, kopieer- en submitflow.
 - `scripts/learning/` - lessen, lesson-start vanuit URL/oefenhand, standalone lespagina, gedeelde leskaartnavigatie, woordenlijst en bieduitleg voor AI-suggesties/review. `lessons.js` blijft de publieke `BridgeLessons`-facade; lesdefinities, cloning en validatie staan in `scripts/learning/catalog/`, tafeltaaklogica staat in `scripts/learning/table/`, en gedeelde standalone-leshelpers voor hand parsing/analyse, kaart-rendering en lespagina-links staan in `scripts/learning/shared/`. Rijke standalone lessen mogen eigen controllers houden, maar herbruikbare vraagsets en tafelkoppelingen horen in aparte data-modules zoals `lesson-02-valuation-data.js` en `lesson-03-openings-data.js`.
+- `scripts/practice/` - UI-controller voor de aparte oefenhandenpagina. `browser-page.js` is alleen verantwoordelijk voor `practice/index.html`: controls vullen, routequery's lezen/schrijven, resultaten renderen en Start-hand-links naar de speeltafel maken.
 - `scripts/copy/text-nl.js` - Nederlandse UI-copy.
 
 Runtime/factory-contract:
@@ -208,20 +211,30 @@ Compacte payloadvelden:
 
 ### 5. Practice-hands layer
 
-Locatie: `practice-hands/`
+Locaties:
+
+- `practice-hands/`
+- `practice/index.html`
+- `scripts/practice/`
 
 Doel:
 
 - `practice-hands/index.js` blijft de publieke aggregator.
-- `practice-hands/catalog/` bevat reproduceerbare beginner-, test- en regressiesituaties.
+- `practice-hands/catalog/` bevat de Oefenhandencatalogus: reproduceerbare beginner-, test-, regressie- en cursusgerichte situaties.
+- `practice-hands/catalog-model.js` is eigenaar van het DOM-onafhankelijke browse/filtermodel: catalogus-, focus-, niveau- en SMB1-lesfilters, zoektekst en facets.
 - Elk oefenspel heeft een kort doel en een stabiele id.
 - Oefenhanden verbinden productleren met testdekking.
+- `practice/index.html` is de aparte practice browser page voor het browsen van oefenhanden. Deze pagina start niet zelf de speeltafel, maar toont catalogi, globale zoekresultaten, filters en Start-hand-links naar `index.html`.
+- De SMB1-lesroute is gemodelleerd als cursusgerichte Oefenhandencatalogus `start-met-bridge-1`. Deze catalogus leeft naast de bestaande technische catalogi en naast bestaande App-lessen.
+- Een App-les blijft een bestaande interactieve Bridgetafel-les met eigen huidige nummering en tafelkoppeling. Deze oefenhandencatalogus-feature hernummert of herstructureert bestaande App-lessen expliciet niet; een latere lesmigratie moet als apart project gebeuren.
+- Een SMB1-oefenhand mag een bestaande bronhand hergebruiken via metadata zoals `sourceHandId`, zolang de SMB1-id, het SMB1-lesdoel en de engine-observeerbare verwachting stabiel blijven.
 
 Aanbevolen patroon:
 
 - Voeg oefenhanden toe wanneer een beginnerstest, bug of regelgat daarom vraagt.
 - Houd ids stabiel; bestaande links en herhaalcodes mogen niet breken.
 - Gebruik oefenhanden in unit tests en/of browser smoke tests wanneer ze regressierisico afdekken.
+- Houd SMB1-lesroute, App-les en Oefenhandencatalogus in docs, metadata en UI-copy gescheiden: SMB1 ordent oefenhanden per cursusles, App-lessen blijven de bestaande interactieve lessen, en de Oefenhandencatalogus is de browsebare verzameling reproduceerbare handen.
 
 ### 6. Styling layer
 

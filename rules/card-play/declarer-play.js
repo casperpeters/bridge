@@ -26,6 +26,7 @@
     cardsInSuit,
     playedCardsFrom,
     longSuitDevelopmentCandidate,
+    forceOutAceCandidate,
     finesseCandidate
   } = playPlan;
   const { cardPlayResult } = cardPlayCommon;
@@ -115,6 +116,7 @@
           suit,
           source: "current",
           sourceCards: currentSuitCards,
+          sourceHand: hand,
           currentSuitCards,
           partnerSuitCards,
           playedSuitCards,
@@ -125,6 +127,7 @@
           suit,
           source: "partner",
           sourceCards: partnerSuitCards,
+          sourceHand: partnerHand,
           currentSuitCards,
           partnerSuitCards,
           playedSuitCards,
@@ -132,8 +135,33 @@
           partnerSeat
         });
 
-        if (currentCandidate) candidates.push(currentCandidate);
-        if (partnerCandidate) candidates.push(partnerCandidate);
+        const currentForceOutAce = forceOutAceCandidate({
+          suit,
+          source: "current",
+          sourceCards: currentSuitCards,
+          sourceHand: hand,
+          currentSuitCards,
+          partnerSuitCards,
+          playedSuitCards,
+          seat,
+          partnerSeat
+        });
+        const partnerForceOutAce = forceOutAceCandidate({
+          suit,
+          source: "partner",
+          sourceCards: partnerSuitCards,
+          sourceHand: partnerHand,
+          currentSuitCards,
+          partnerSuitCards,
+          playedSuitCards,
+          seat,
+          partnerSeat
+        });
+
+        if (currentCandidate) candidates.push({ ...currentCandidate, ruleId: "developLongSuit" });
+        if (partnerCandidate) candidates.push({ ...partnerCandidate, ruleId: "developLongSuit" });
+        if (currentForceOutAce) candidates.push({ ...currentForceOutAce, ruleId: "forceOutAce" });
+        if (partnerForceOutAce) candidates.push({ ...partnerForceOutAce, ruleId: "forceOutAce" });
       }
 
       const best = candidates.sort((a, b) => b.score - a.score)[0];
@@ -141,9 +169,11 @@
 
       return cardPlayResult(
         best.card,
-        "developLongSuit",
+        best.ruleId,
         "uncertain",
-        "Develop a long notrump suit by forcing out a missing high card.",
+        best.ruleId === "forceOutAce"
+          ? "Develop a notrump honor trick by forcing out a missing high card."
+          : "Develop a long notrump suit by forcing out a missing high card.",
         {
           suit: best.suit,
           suitLength: best.suitLength,
@@ -151,6 +181,15 @@
           sourceLength: best.sourceLength,
           sequence: best.sequence,
           missingStopper: best.missingStopper,
+          missingStoppers: best.missingStoppers,
+          forceRank: best.forceRank,
+          futureWinnerRanks: best.futureWinnerRanks,
+          promotedTricks: best.promotedTricks,
+          lossesNeeded: best.lossesNeeded,
+          entryType: best.entryType,
+          entrySuit: best.entrySuit,
+          entryRank: best.entryRank,
+          entryCount: best.entryCount,
           action: best.action
         }
       );

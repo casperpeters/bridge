@@ -29,6 +29,7 @@
     ["registerAuctionFlow", modules.registerAuctionFlow],
     ["registerHandFinishFlow", modules.registerHandFinishFlow],
     ["registerPlayFlow", modules.registerPlayFlow],
+    ["registerDeterministicPlayoutFlow", modules.registerDeterministicPlayoutFlow],
     ["registerSeed", modules.registerSeed],
     ["registerHandStart", modules.registerHandStart],
     ["registerLessonBoardCoach", modules.registerLessonBoardCoach],
@@ -48,5 +49,5 @@
   }
   modules.registerPublicApi(runtime);
 
-  if (!runtime.actions.startLessonFromUrl()) runtime.actions.startHand();
+  if (!runtime.actions.startLessonFromUrl() && !runtime.actions.startPracticeHandFromUrl()) runtime.actions.startHand();
 })(typeof globalThis !== "undefined" ? globalThis : this);

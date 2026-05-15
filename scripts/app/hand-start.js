@@ -42,6 +42,15 @@
       return scenario;
     }
 
+    function startPracticeHandFromUrl() {
+      const params = new URLSearchParams(globalThis.location?.search || "");
+      const handId = params.get("hand");
+      if (!handId || params.get("lesson")) return false;
+      if (!globalThis.PracticeHands?.findPracticeHand?.(handId)) return false;
+      startPracticeHand(handId);
+      return true;
+    }
+
     function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null, clearSeedMessage = false, skipFlow = false }) {
       resetScheduledFlow();
       clearDealAnimationTimer();
@@ -160,6 +169,7 @@
       scheduleDealAnimationEnd,
       startHand,
       startPracticeHand,
+      startPracticeHandFromUrl,
       startPreparedHand
     });
   };

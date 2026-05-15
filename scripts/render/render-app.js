@@ -144,6 +144,7 @@
       render.renderReview();
       renderContract();
       renderGuidance();
+      render.renderDeterministicPlayout?.();
       render.renderLessonBanner();
       render.renderContractReveal();
       render.renderFeedbackStatus();

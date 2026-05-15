@@ -39,6 +39,7 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 - Breid daarna speelplan-randgevallen verder uit met keuzes waar meerdere even sterke planregels tegelijk speelbaar zijn.
 - Verfijn kleurcontractplannen later verder met specifieke kleurcontractsnits en complexere communicatie tussen beide leiderhanden.
 - Houd kaartadvies aan leiderskant gekoppeld aan het zichtbare speelplan; AI-suggesties en developermodus-uitleg moeten dezelfde planregel noemen.
+- Ontwerp later een reviewfunctie voor AI-lijnsimulatie of beperkte gemiste-suggesties-review: toon alleen alternatieve score/contractlijnen wanneer de simulatie betrouwbaar is, anders alleen lokale momenten waar de speler afweek van een concrete AI-suggestie.
 - Voeg alleen feedback na kaartkeuzes toe waar de planregel betrouwbaar genoeg is. Anders hoogstens: legaal, onzeker, of "de app zou X suggereren".
 
 ### Basisverdediging
@@ -108,6 +109,6 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 ### Sterkere bridge-engine
 
 - Bouw het resterende competitieve bieden stapsgewijs uit: negative doubles, supportdoubletten, responsive doubles, balancing, cue-bids, Michaels, Unusual NT en Lebensohl.
-- Voeg verborgen-hand-inferentie toe bovenop de gespeelde kaarten: renonces, resterende lengtes en waarschijnlijke hoge-kaartlocaties.
+- Voeg hidden-count/signaalinferentie toe bovenop de gespeelde kaarten: renonces, resterende lengtes, waarschijnlijke hoge-kaartlocaties en betrouwbare hoog-laag/count-signalen voordat kaartadvies daarop wordt aangepast.
 - Laat leider en verdedigers contractbewuster spelen: eerst contract maken/verslaan, daarna overslagen/extra downslagen.
 - Voeg pas simulatie of double-dummy-ondersteuning toe wanneer die snel, betrouwbaar en uitlegbaar genoeg is om de standaardheuristieken te verbeteren.

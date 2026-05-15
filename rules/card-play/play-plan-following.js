@@ -53,6 +53,8 @@
     choosePlanPreserveWorkSuitEntryPlay,
     choosePlanDevelopmentPlay,
     choosePlanDevelopmentInTrickPlay,
+    choosePlanForceOutAcePlay,
+    choosePlanForceOutAceInTrickPlay,
     choosePlanFinessePlay,
     choosePlanFinesseInTrickPlay,
     choosePlanDirectionalFinessePlay,
@@ -203,6 +205,9 @@
       if (priority.kind === "developLongSuit") {
         return choosePlanDevelopmentPlay({ priority, hand, partnerHand, seat, legal });
       }
+      if (priority.kind === "forceOutAce") {
+        return choosePlanForceOutAcePlay({ priority, hand, partnerHand, seat, legal });
+      }
       if (priority.kind === "finesse" || priority.kind === "doubleFinesse" || priority.kind === "safeHandFinesse") {
         return choosePlanFinessePlay({ priority, hand, partnerHand, trickHistory, seat, legal });
       }
@@ -275,6 +280,9 @@
         });
         if (preserveEntry) return preserveEntry;
         return choosePlanDevelopmentInTrickPlay({ priority, hand, partnerHand, currentTrick, seat, legal });
+      }
+      if (priority.kind === "forceOutAce") {
+        return choosePlanForceOutAceInTrickPlay({ priority, hand, partnerHand, currentTrick, seat, legal });
       }
       if (priority.kind === "finesse" || priority.kind === "doubleFinesse" || priority.kind === "safeHandFinesse") {
         return choosePlanFinesseInTrickPlay({ priority, currentTrick, seat, trump, legal, winning });

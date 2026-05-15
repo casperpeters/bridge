@@ -40,6 +40,7 @@
     playedCardsFrom,
     topTouchingHonorRun,
     missingHigherRanks,
+    forceOutAceCandidate,
     finesseCandidate,
     repeatFinesseCandidate
   } = common;
@@ -53,6 +54,15 @@
       const endgameRunout = endgameRunoutPriority({ declarerHand, dummyHand, contract, declarer, dummy, trickHistory, currentTrick });
       const holdUpPriorities = notrumpHoldUpPriorities({ declarerHand, dummyHand, declarer, trickHistory, currentTrick, neededTricks, sureWinners });
       const developmentPriorities = notrumpDevelopmentPriorities({ declarerHand, dummyHand, declarer, dummy, playedCards });
+      const forceOutAcePriorities = notrumpForceOutAcePriorities({
+        declarerHand,
+        dummyHand,
+        declarer,
+        dummy,
+        playedCards,
+        currentTrick,
+        sureWinners
+      });
       const tempoWorkPriorities = notrumpTempoWorkSuitPriorities({
         declarerHand,
         dummyHand,
@@ -60,6 +70,15 @@
         dummy,
         playedCards,
         currentTrick,
+        sureWinners,
+        needToDevelop
+      });
+      const possibleBreakPriorities = notrumpPossibleBreakDevelopmentPriorities({
+        declarerHand,
+        dummyHand,
+        declarer,
+        dummy,
+        playedCards,
         sureWinners,
         needToDevelop
       });
@@ -87,7 +106,9 @@
         ...cashPriorities,
         ...holdUpPriorities,
         ...developmentPriorities,
+        ...forceOutAcePriorities,
         ...tempoWorkPriorities,
+        ...possibleBreakPriorities,
         ...repeatFinessePriorities,
         ...twoWayFinessePriorities,
         ...finessePriorities
@@ -241,6 +262,63 @@
       return candidates;
     }
 
+  function notrumpForceOutAcePriorities({
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      playedCards,
+      currentTrick = [],
+      sureWinners
+    }) {
+      const tempo = notrumpTempoContext({ declarer, currentTrick, sureWinners });
+      const candidates = [];
+      for (const suit of suits) {
+        const declarerSuitCards = cardsInSuit(declarerHand, suit);
+        const dummySuitCards = cardsInSuit(dummyHand, suit);
+        const playedSuitCards = cardsInSuit(playedCards, suit);
+
+        [
+          {
+            source: "current",
+            sourceCards: declarerSuitCards,
+            sourceHand: declarerHand,
+            currentSuitCards: declarerSuitCards,
+            partnerSuitCards: dummySuitCards,
+            seat: declarer,
+            partnerSeat: dummy
+          },
+          {
+            source: "partner",
+            sourceCards: dummySuitCards,
+            sourceHand: dummyHand,
+            currentSuitCards: declarerSuitCards,
+            partnerSuitCards: dummySuitCards,
+            seat: declarer,
+            partnerSeat: dummy
+          }
+        ].forEach((direction) => {
+          const candidate = forceOutAceCandidate({
+            suit,
+            playedSuitCards,
+            ...direction
+          });
+          if (!candidate) return;
+          const tempoSafe = candidate.lossesNeeded <= tempo.defenderEntriesAllowed;
+          candidates.push({
+            kind: "forceOutAce",
+            confidence: "uncertain",
+            ...candidate,
+            tempoSafe,
+            attackedSuit: tempo.attackedSuit,
+            defenderEntriesAllowed: tempo.defenderEntriesAllowed,
+            score: candidate.score + (tempoSafe ? 12 : -50)
+          });
+        });
+      }
+      return candidates;
+    }
+
   function notrumpTempoWorkSuitPriorities({
       declarerHand,
       dummyHand,
@@ -280,6 +358,69 @@
           needToDevelop
         });
         if (communicationCandidate) candidates.push(communicationCandidate);
+      }
+      return candidates;
+    }
+
+  function notrumpPossibleBreakDevelopmentPriorities({
+      declarerHand,
+      dummyHand,
+      declarer,
+      dummy,
+      playedCards,
+      sureWinners,
+      needToDevelop
+    }) {
+      if (!needToDevelop) return [];
+      const candidates = [];
+      for (const suit of suits) {
+        const declarerSuitCards = cardsInSuit(declarerHand, suit);
+        const dummySuitCards = cardsInSuit(dummyHand, suit);
+        const playedSuitCards = cardsInSuit(playedCards, suit);
+        const combinedCards = [...declarerSuitCards, ...dummySuitCards];
+        if (combinedCards.length < 7 || combinedCards.length > 8) continue;
+
+        const sides = [
+          { seat: declarer, hand: declarerHand, suitCards: declarerSuitCards },
+          { seat: dummy, hand: dummyHand, suitCards: dummySuitCards }
+        ].sort((a, b) => b.suitCards.length - a.suitCards.length);
+        const longSide = sides[0];
+        if (longSide.suitCards.length !== 4) continue;
+
+        const winnerRanks = visibleTopWinnerRanks(combinedCards, playedSuitCards);
+        if (winnerRanks.length < 3) continue;
+        const currentWinners = sureWinners?.bySuit?.[suit] || 0;
+        if (currentWinners < 3) continue;
+        if (winnerRanks.length >= longSide.suitCards.length) continue;
+
+        const missingCards = Math.max(0, 13 - combinedCards.length - playedSuitCards.length);
+        const breakNeeded = combinedCards.length === 7 ? "3-3" : "3-2";
+        const entryPlan = entryPlanForHand(longSide.hand, suit);
+        candidates.push({
+          kind: "developLongSuit",
+          developmentType: "possibleBreakDevelopment",
+          timing: "possibleBreakDevelopment",
+          confidence: "uncertain",
+          suit,
+          suitLength: combinedCards.length,
+          sourceSeat: longSide.seat,
+          sourceLength: longSide.suitCards.length,
+          sequence: winnerRanks.join(""),
+          winnerRanks,
+          missingStopper: null,
+          missingStoppers: [],
+          breakNeeded,
+          missingCards,
+          lossesNeeded: 0,
+          extraTricks: 1,
+          tempoSafe: true,
+          entryType: entryPlan.entryType,
+          entrySuit: entryPlan.entrySuit,
+          entryRank: entryPlan.entryRank,
+          entryTiming: entryPlan.entryTiming,
+          entryCount: entryPlan.entryCount,
+          score: 24 + winnerRanks.length * 2 + (breakNeeded === "3-2" ? 6 : 0) + (entryPlan.entryCount ? 2 : -4)
+        });
       }
       return candidates;
     }
@@ -783,7 +924,9 @@
     notrumpSuitWinnerDetail,
     notrumpCashPriorities,
     notrumpDevelopmentPriorities,
+    notrumpForceOutAcePriorities,
     notrumpTempoWorkSuitPriorities,
+    notrumpPossibleBreakDevelopmentPriorities,
     notrumpTempoWorkSuitCandidate,
     notrumpEarlyGiveUpWorkSuitCandidate,
     tempoDevelopmentRun,

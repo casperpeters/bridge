@@ -4,6 +4,292 @@ const {
   prepareNorthSouthDeclarerHand
 } = require("./helpers/app-test-utils");
 
+async function setupVisibleNotrumpUitspelenEnding(page, { lessonStep = null, practiceHand = false } = {}) {
+  await page.evaluate(({ lessonStep, practiceHand }) => {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const seats = ["North", "East", "South", "West"];
+    const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
+    const suits = ["C", "D", "H", "S"];
+    const reserved = new Set(["AS", "2S", "3S", "4S"]);
+    const playedIds = suits.flatMap((suit) => ranks.map((rank) => `${rank}${suit}`)).filter((id) => !reserved.has(id));
+    const trickHistory = Array.from({ length: 12 }, (_, trickIndex) => ({
+      number: trickIndex + 1,
+      winner: trickIndex < 8 ? "South" : "West",
+      cards: seats.map((seat, offset) => ({
+        seat,
+        card: makeCard(playedIds[trickIndex * 4 + offset])
+      }))
+    }));
+
+    if (practiceHand || lessonStep) app.startPracticeHand("draw-trumps-001", { skipFlow: true });
+    else app.startHand({ seed: "uitspelen-smoke", skipFlow: true });
+    const practice = app.getState().practice;
+    const lessonPractice = lessonStep
+      ? {
+        ...practice,
+        lessonId: "test-les-uitspelen-suppressie",
+        lessonTitle: "Testles",
+        challenge: "Speel het gevraagde lesmoment.",
+        lessonBoardGuidance: [lessonStep]
+      }
+      : practice;
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(3, "NT"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 2,
+      hands: {
+        North: [makeCard("2S")],
+        East: [makeCard("3S")],
+        South: [makeCard("AS")],
+        West: [makeCard("4S")]
+      },
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickHistory,
+      tricks: { NS: 8, EW: 4 },
+      playExplanations: [],
+      playPlan: null,
+      playPlanKey: null,
+      finalScore: null,
+      scoreOverviewDismissed: false,
+      practice: practiceHand || lessonStep ? lessonPractice : practice,
+      lessonBoardAcknowledged: []
+    });
+    app.renderAll();
+  }, { lessonStep, practiceHand });
+}
+
+async function setupTwoTrickVisibleNotrumpUitspelenEnding(page) {
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const seats = ["North", "East", "South", "West"];
+    const ranks = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
+    const suits = ["C", "D", "H", "S"];
+    const reserved = new Set(["2C", "3C", "2D", "3D", "4H", "5H", "KS", "AS"]);
+    const playedIds = suits.flatMap((suit) => ranks.map((rank) => `${rank}${suit}`)).filter((id) => !reserved.has(id));
+    const trickHistory = Array.from({ length: 11 }, (_, trickIndex) => ({
+      number: trickIndex + 1,
+      winner: trickIndex < 5 ? "North" : "East",
+      cards: seats.map((seat, offset) => ({
+        seat,
+        card: makeCard(playedIds[trickIndex * 4 + offset])
+      }))
+    }));
+
+    app.startHand({ seed: "uitspelen-prefix-smoke", skipFlow: true });
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(3, "NT"),
+      declarer: "East",
+      dummy: "West",
+      leader: "South",
+      turnIndex: 3,
+      hands: {
+        North: [makeCard("2C"), makeCard("3C")],
+        East: [makeCard("2D"), makeCard("3D")],
+        South: [makeCard("4H"), makeCard("5H")],
+        West: [makeCard("KS"), makeCard("AS")]
+      },
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickHistory,
+      tricks: { NS: 5, EW: 6 },
+      playExplanations: [],
+      playPlan: null,
+      playPlanKey: null,
+      deterministicPlayoutProof: null,
+      finalScore: null,
+      scoreOverviewDismissed: false
+    });
+    app.renderAll();
+  });
+}
+
+async function setupHiddenHigherUnavailableUitspelenEnding(page) {
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+
+    app.startHand({ seed: "uitspelen-unavailable-smoke", skipFlow: true });
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(3, "NT"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 2,
+      hands: {
+        North: [makeCard("2C")],
+        East: [makeCard("3D")],
+        South: [makeCard("KS")],
+        West: [makeCard("4H")]
+      },
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickHistory: [],
+      tricks: { NS: 0, EW: 0 },
+      playExplanations: [],
+      playPlan: null,
+      playPlanKey: null,
+      deterministicPlayoutProof: null,
+      deterministicPlayoutSearchNodeBudget: null,
+      finalScore: null,
+      scoreOverviewDismissed: false
+    });
+    app.renderAll();
+  });
+}
+
+async function setupVisibleSuitUitspelenEnding(page) {
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+
+    app.startHand({ seed: "uitspelen-suit-smoke", skipFlow: true });
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(4, "S"),
+      declarer: "South",
+      dummy: "North",
+      leader: "West",
+      turnIndex: 2,
+      hands: {
+        North: [makeCard("2C")],
+        East: [makeCard("3D")],
+        South: [makeCard("AH")],
+        West: [makeCard("4D")]
+      },
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickHistory: [
+        {
+          number: 1,
+          winner: "South",
+          cards: [
+            { seat: "South", card: makeCard("2H") },
+            { seat: "West", card: makeCard("3C") },
+            { seat: "North", card: makeCard("3H") },
+            { seat: "East", card: makeCard("4H") }
+          ]
+        },
+        {
+          number: 2,
+          winner: "South",
+          cards: app.rules.rankOrder.map((rank, index) => ({
+            seat: app.rules.seats[index % app.rules.seats.length],
+            card: makeCard(`${rank}S`)
+          }))
+        }
+      ],
+      tricks: { NS: 2, EW: 0 },
+      playExplanations: [],
+      playPlan: null,
+      playPlanKey: null,
+      deterministicPlayoutProof: null,
+      deterministicPlayoutSearchNodeBudget: null,
+      finalScore: null,
+      scoreOverviewDismissed: false
+    });
+    app.renderAll();
+  });
+}
+
+async function autoPlayFirstStoredUitspelenStep(page) {
+  return page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const seats = ["North", "East", "South", "West"];
+    const analysis = app.currentUitspelenAnalysis();
+    const step = analysis.sequence[0];
+    const order = seats.map((_, index) => seats[(seats.indexOf(step.leader) + index) % seats.length]);
+    const cardById = (seat, cardId) => app.getState().hands[seat].find((card) => card.id === cardId);
+    for (const seat of order) {
+      const card = seat === step.leader
+        ? cardById(seat, step.leadCardId)
+        : seat === step.winnerSeat
+          ? cardById(seat, step.winningCardId)
+          : app.legalCards(seat)[0];
+      if (!app.autoPlayCard(seat, card)) throw new Error(`Could not auto-play ${seat}`);
+    }
+    app.renderAll();
+    const nextAnalysis = app.currentUitspelenAnalysis();
+    return {
+      historyLength: app.getState().trickHistory.length,
+      proofSource: nextAnalysis.proofSource,
+      remainingTricks: nextAnalysis.remainingTricks,
+      available: nextAnalysis.available
+    };
+  });
+}
+
+async function openLayoutCheckApp(page) {
+  await page.goto("/?testHooks=1");
+  await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+}
+
+async function measureUitspelenPlacement(page) {
+  return page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return {
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        centerX: rect.left + rect.width / 2
+      };
+    };
+    const rectForAll = (selector) => {
+      const rects = [...document.querySelectorAll(selector)].map((element) => element.getBoundingClientRect());
+      const bounds = rects.reduce((acc, rect) => ({
+        top: Math.min(acc.top, rect.top),
+        right: Math.max(acc.right, rect.right),
+        bottom: Math.max(acc.bottom, rect.bottom),
+        left: Math.min(acc.left, rect.left)
+      }), {
+        top: Infinity,
+        right: -Infinity,
+        bottom: -Infinity,
+        left: Infinity
+      });
+      return {
+        ...bounds,
+        width: bounds.right - bounds.left,
+        height: bounds.bottom - bounds.top,
+        centerX: bounds.left + (bounds.right - bounds.left) / 2
+      };
+    };
+    const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    const table = rectFor(".table-area");
+    const button = rectFor("#uitspelen-button");
+    const northLabel = rectFor("#north-label");
+    const northCards = rectForAll("#north-hand .card");
+    const southCards = rectForAll("#south-hand .card");
+    const trickArea = rectFor("#trick-area");
+
+    return {
+      table,
+      button,
+      northLabel,
+      northCards,
+      southCards,
+      trickArea,
+      overlaps: {
+        northLabel: overlaps(button, northLabel),
+        northCards: overlaps(button, northCards),
+        southCards: overlaps(button, southCards),
+        trickArea: overlaps(button, trickArea)
+      }
+    };
+  });
+}
+
 test("loads the table and lets South make an auction call", async ({ page }) => {
   const pageErrors = await openFreshApp(page);
 
@@ -21,6 +307,62 @@ test("loads the table and lets South make an auction call", async ({ page }) => 
 
   await page.locator("#bid-controls button.pass").click();
   await expect(page.locator("#auction-log")).toContainText("Pas");
+  expect(pageErrors).toEqual([]);
+});
+
+test("opens oefenhanden from the menu and starts a filtered practice hand", async ({ page }) => {
+  const pageErrors = await openFreshApp(page);
+
+  await page.locator("#settings-summary").click();
+  await expect(page.locator("#settings-summary")).toHaveAttribute("aria-expanded", "true");
+  const practiceMenuLink = page.locator("#open-practice-hands");
+  await expect(practiceMenuLink).toHaveText("Oefenhanden");
+  await expect(practiceMenuLink).toHaveAttribute("href", "practice/index.html");
+  await practiceMenuLink.click();
+
+  await expect(page).toHaveURL(/\/practice\/index\.html$/);
+  await expect(page.locator("#practice-title")).toContainText("Zoek een vaste oefensituatie");
+  await expect(page.locator("[data-practice-count]")).toContainText("oefenhanden");
+
+  await page.goto("/practice/index.html?testHooks=1");
+  await page.locator("[data-practice-search]").fill("troef trekken");
+  await expect(page.locator("[data-practice-list]")).toContainText("Troef trekken");
+  await expect(page.locator("[data-practice-empty]")).toBeHidden();
+
+  await page.locator("[data-practice-catalog]").selectOption("start-met-bridge-1");
+  await expect(page.locator("[data-practice-lessons]")).toBeVisible();
+  await expect(page.locator("[data-practice-lessons]")).toContainText("Start met Bridge 1");
+
+  await page.locator("[data-practice-lesson='smb1-les04']").evaluate((link) => link.click());
+  await expect(page).toHaveURL(/catalog=start-met-bridge-1/);
+  await expect(page.locator("[data-practice-lesson='smb1-les04']")).toHaveClass(/is-active/);
+  const lessonCard = page.locator(".practice-card", { hasText: "smb1-les04-kleurcontract-plan" });
+  await expect(lessonCard).toContainText("SMB1 les 04");
+  await expect(lessonCard).toContainText("Troef trekken");
+
+  const startLink = lessonCard.locator(".practice-start-link");
+  await expect(startLink).toHaveAttribute("href", /hand=smb1-les04-kleurcontract-plan/);
+  await startLink.evaluate((link) => link.click());
+
+  await expect(page).toHaveURL(/index\.html\?hand=smb1-les04-kleurcontract-plan/);
+  await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const state = window.BridgeAppTestHooks?.getState?.();
+        return {
+          practiceId: state?.practice?.id || null,
+          lessonId: state?.practice?.lessonId || null,
+          phase: state?.phase || null
+        };
+      })
+    )
+    .toEqual({
+      practiceId: "smb1-les04-kleurcontract-plan",
+      lessonId: null,
+      phase: "bidding"
+    });
+  expect(new URL(page.url()).searchParams.get("return")).toContain("practice/index.html?testHooks=1");
   expect(pageErrors).toEqual([]);
 });
 
@@ -123,6 +465,289 @@ test("can finish a hand and shows review", async ({ page }) => {
   await expect(page.locator("#review-panel")).toBeVisible();
   await expect(page.locator("#review-tricks tbody tr")).toHaveCount(13);
   await expect(page.locator("#replay-panel")).toContainText("Scoreoverzicht");
+});
+
+test("can confirm Uitspelen for a visible notrump ending", async ({ page }) => {
+  await openFreshApp(page);
+  await setupVisibleNotrumpUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+  await page.locator("#uitspelen-button").evaluate((element) => element.click());
+  await expect(page.locator("#uitspelen-dialog")).toBeVisible();
+  await expect(page.locator("#uitspelen-summary")).toContainText("De rest ligt vast: 1 slag");
+  await expect(page.locator("#uitspelen-summary")).toContainText("Noord/Zuid 1 slag");
+  await expect(page.locator("#uitspelen-summary")).toContainText("Oost/West 0 slagen");
+  await expect(page.locator("#uitspelen-dialog")).not.toContainText(/Claimen|Geven/);
+
+  await page.locator("#uitspelen-confirm").click();
+
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().phase)).toBe("complete");
+  await expect(page.locator("#replay-panel")).toContainText("Scoreoverzicht");
+  await expect(page.locator("#review-panel")).toBeVisible();
+  await expect(page.locator("#review-tricks tbody tr")).toHaveCount(13);
+});
+
+test("shows unavailable Uitspelen reasons only in developer mode", async ({ page }) => {
+  await openFreshApp(page);
+  await setupHiddenHigherUnavailableUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeHidden();
+  await expect(page.locator("#uitspelen-unavailable")).toBeHidden();
+  await expect
+    .poll(() => page.evaluate(() => window.BridgeAppTestHooks.currentUitspelenAnalysis().reason))
+    .toBe("hiddenHigherCard");
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({ developerMode: true });
+    app.renderAll();
+  });
+
+  await expect(page.locator("#uitspelen-unavailable")).toBeVisible();
+  await expect(page.locator("#uitspelen-unavailable")).toContainText("verborgen hogere kaart mogelijk");
+
+  const budgetReason = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    app.setState({
+      deterministicPlayoutProof: null,
+      deterministicPlayoutSearchNodeBudget: 1
+    });
+    app.renderAll();
+    return app.currentUitspelenAnalysis();
+  });
+
+  expect(budgetReason.available).toBe(false);
+  expect(budgetReason.reason).toBe("searchNodeBudgetExhausted");
+  await expect(page.locator("#uitspelen-unavailable")).toContainText("zoekbudget op");
+  await expect(page.locator("#uitspelen-unavailable")).toContainText("1/1 nodes");
+});
+
+test("shows Uitspelen for a visible suit ending when no hidden trump ruff is possible", async ({ page }) => {
+  await openFreshApp(page);
+  await setupVisibleSuitUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => {
+      const analysis = window.BridgeAppTestHooks.currentUitspelenAnalysis();
+      return {
+        available: analysis.available,
+        reason: analysis.reason,
+        trump: analysis.trump,
+        winningSeats: analysis.winningSeats
+      };
+    }))
+    .toEqual({
+      available: true,
+      reason: "visibleSuitTopWinnersNoRuff",
+      trump: "S",
+      winningSeats: ["South"]
+    });
+});
+
+test("shows Uitspelen for an ordinary practice hand when proof succeeds", async ({ page }) => {
+  await openFreshApp(page);
+  await setupVisibleNotrumpUitspelenEnding(page, { practiceHand: true });
+
+  await expect
+    .poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().practice?.id || null))
+    .toBe("draw-trumps-001");
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+});
+
+test("keeps Uitspelen available across a matching stored proof prefix", async ({ page }) => {
+  await openFreshApp(page);
+  await setupTwoTrickVisibleNotrumpUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.BridgeAppTestHooks.currentUitspelenAnalysis().proofSource))
+    .toBe("stored");
+
+  const prefix = await autoPlayFirstStoredUitspelenStep(page);
+
+  expect(prefix).toEqual({
+    historyLength: 12,
+    proofSource: "stored",
+    remainingTricks: 1,
+    available: true
+  });
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+});
+
+test("hides Uitspelen and clears stored proof when the state is no longer a proven prefix", async ({ page }) => {
+  await openFreshApp(page);
+  await setupTwoTrickVisibleNotrumpUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+  const stale = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const analysis = app.currentUitspelenAnalysis();
+    const state = app.getState();
+    const step = analysis.sequence[0];
+    const makeCard = (id) => ({ id, rank: id.slice(0, -1), suit: id.slice(-1) });
+    const staleTrick = {
+      number: state.trickHistory.length + 1,
+      winner: "North",
+      cards: [
+        { seat: step.leader, card: makeCard(step.leadCardId) },
+        { seat: "North", card: makeCard("2C") },
+        { seat: "East", card: makeCard("2D") },
+        { seat: "South", card: makeCard("4H") }
+      ]
+    };
+    app.setState({
+      trickHistory: [...state.trickHistory, staleTrick],
+      turnIndex: 0,
+      tricks: { ...state.tricks, NS: state.tricks.NS + 1 }
+    });
+    app.renderAll();
+    const next = app.currentUitspelenAnalysis();
+    return {
+      available: next.available,
+      reason: next.reason,
+      proof: app.getState().deterministicPlayoutProof
+    };
+  });
+
+  expect(stale).toEqual({
+    available: false,
+    reason: "currentTurnHidden",
+    proof: null
+  });
+  await expect(page.locator("#uitspelen-button")).toBeHidden();
+});
+
+test("hard-fails confirmed Uitspelen when the completed trick winner disagrees with proof", async ({ page }) => {
+  await openFreshApp(page);
+  await setupTwoTrickVisibleNotrumpUitspelenEnding(page);
+
+  const mismatch = await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const analysis = app.currentUitspelenAnalysis();
+    const badAnalysis = {
+      ...analysis,
+      sequence: analysis.sequence.map((step, index) => index === 0 ? { ...step, winnerSeat: "South" } : step)
+    };
+    try {
+      app.playOutDeterministicEnding(badAnalysis);
+      return { message: null };
+    } catch (error) {
+      return {
+        message: error.message,
+        historyLength: app.getState().trickHistory.length
+      };
+    }
+  });
+
+  expect(mismatch.message).toContain("Uitspelen proof mismatch");
+  expect(mismatch.message).toContain("expected South");
+  expect(mismatch.historyLength).toBe(12);
+});
+
+test("places Uitspelen bottom-right on desktop without covering play areas", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "desktop-chromium", "Desktop-only Uitspelen placement");
+  await openLayoutCheckApp(page);
+  await setupVisibleNotrumpUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+  const layout = await measureUitspelenPlacement(page);
+
+  expect(layout.button.right).toBeLessThanOrEqual(layout.table.right - 12);
+  expect(layout.button.bottom).toBeLessThanOrEqual(layout.table.bottom - 12);
+  expect(layout.button.right).toBeGreaterThan(layout.table.right - 150);
+  expect(layout.button.bottom).toBeGreaterThan(layout.table.bottom - 70);
+  expect(layout.overlaps).toEqual({
+    northLabel: false,
+    northCards: false,
+    southCards: false,
+    trickArea: false
+  });
+});
+
+test("places Uitspelen below the North label on mobile without covering play areas", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only Uitspelen placement");
+  await openLayoutCheckApp(page);
+  await setupVisibleNotrumpUitspelenEnding(page);
+
+  await expect(page.locator("#uitspelen-button")).toBeVisible();
+  const layout = await measureUitspelenPlacement(page);
+
+  expect(layout.button.top).toBeGreaterThanOrEqual(layout.northLabel.bottom - 1);
+  expect(Math.abs(layout.button.centerX - layout.northLabel.centerX)).toBeLessThanOrEqual(8);
+  expect(layout.button.bottom).toBeLessThanOrEqual(layout.trickArea.top - 1);
+  expect(layout.overlaps).toEqual({
+    northLabel: false,
+    northCards: false,
+    southCards: false,
+    trickArea: false
+  });
+});
+
+test("hides Uitspelen while an active lesson-board step suppresses it", async ({ page }) => {
+  await openFreshApp(page);
+  await setupVisibleNotrumpUitspelenEnding(page, {
+    lessonStep: {
+      id: "playExpectedLessonCard",
+      title: "Kies de leskaart",
+      body: "Deze stap verwacht dat je zelf de bedoelde kaart speelt.",
+      badge: "Lesstap",
+      target: "legalCards",
+      buttonLabel: "Ik kies zelf",
+      gate: "allowHumanPlay",
+      suppressUitspelen: true
+    }
+  });
+
+  await expect(page.locator("#lesson-banner")).toContainText("Kies de leskaart");
+  await expect(page.locator("#uitspelen-button")).toBeHidden();
+});
+
+test("closes Uitspelen with Escape, cancel, or close without changing hand state", async ({ page }, testInfo) => {
+  await openFreshApp(page);
+  await setupVisibleNotrumpUitspelenEnding(page);
+
+  const stableState = () => page.evaluate(() => window.BridgeAppTestHooks.getState());
+  const dialog = page.locator("#uitspelen-dialog");
+  const button = page.locator("#uitspelen-button");
+  const openDialog = async () => {
+    await expect(button).toBeVisible();
+    await button.evaluate((element) => element.click());
+    await expect(dialog).toBeVisible();
+  };
+
+  await expect(button).toBeVisible();
+
+  await openDialog();
+  const beforeEscape = await stableState();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  expect(await stableState()).toEqual(beforeEscape);
+  await expect(button).toBeVisible();
+
+  await openDialog();
+  const beforeCancel = await stableState();
+  await page.locator("#uitspelen-cancel").click();
+  await expect(dialog).toBeHidden();
+  expect(await stableState()).toEqual(beforeCancel);
+  await expect(button).toBeVisible();
+
+  await openDialog();
+  const beforeClose = await stableState();
+  await page.locator("#uitspelen-close").click();
+  await expect(dialog).toBeHidden();
+  expect(await stableState()).toEqual(beforeClose);
+  await expect(button).toBeVisible();
+
+  await page.locator("#south-hand .card.legal").first().focus();
+  await page.keyboard.press("Enter");
+  if (testInfo.project.name === "mobile-chromium") {
+    await page.locator("#south-hand .card.legal").first().focus();
+    await page.keyboard.press("Enter");
+  }
+  await expect.poll(() =>
+    page.evaluate(() => window.BridgeAppTestHooks.getState().currentTrick.length)
+  ).toBeGreaterThan(0);
 });
 
 test("keeps the desktop bidding layout stable", async ({ page }, testInfo) => {

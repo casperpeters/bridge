@@ -69,6 +69,8 @@
     "notrumpCashPriorities",
     "notrumpHoldUpPriorities",
     "notrumpDevelopmentPriorities",
+    "notrumpForceOutAcePriorities",
+    "notrumpPossibleBreakDevelopmentPriorities",
     "notrumpRepeatFinessePriorities",
     "repeatFinesseCandidate",
     "previousSuccessfulFinesse",
@@ -121,6 +123,7 @@
     "topTouchingHonorRun",
     "missingHigherRanks",
     "longSuitDevelopmentCandidate",
+    "forceOutAceCandidate",
     "finesseCandidate"
   ];
   return Object.fromEntries(publicNames.map((name) => [name, exportsByName[name]]));

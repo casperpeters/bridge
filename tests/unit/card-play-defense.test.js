@@ -57,8 +57,41 @@ test("chooseCardPlay keeps low-promises-honor as a defensive notrump agreement",
     trump: null
   });
 
-  assert.equal(thirdHand.card.id, "8H");
-  assert.equal(thirdHand.ruleId, "cheapestWinner");
+  assert.equal(thirdHand.card.id, "QH");
+  assert.equal(thirdHand.ruleId, "positionAwareWinner");
+});
+
+test("chooseCardPlay does not finesse cheaply when fourth hand can still overtake row 20", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KH", "8H", "2H", "8C", "7C", "3C"),
+    partnerHand: hand("TH", "7H", "5H", "5C", "7D"),
+    dummyHand: hand("KH", "8H", "2H", "8C", "7C", "3C"),
+    currentTrick: [
+      { seat: "North", card: card("3H") },
+      { seat: "East", card: card("6H") }
+    ],
+    trickHistory: [
+      {
+        number: 1,
+        winner: "West",
+        cards: [
+          { seat: "East", card: card("7S") },
+          { seat: "South", card: card("TS") },
+          { seat: "West", card: card("AS") },
+          { seat: "North", card: card("8S") }
+        ]
+      }
+    ],
+    seat: "South",
+    declarer: "North",
+    dummy: "South",
+    contract: { level: 2, strain: "C" },
+    trump: "C"
+  });
+
+  assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "positionAwareWinner");
+  assert.equal(result.nextSeat, "West");
 });
 
 test("chooseCardPlay preserves the ace when third hand has a cheaper winner over partner's low lead", () => {
@@ -235,6 +268,52 @@ test("chooseCardPlay returns the top of an honor sequence in partner's lead suit
   });
 
   assert.equal(result.card.id, "KH");
+  assert.equal(result.ruleId, "returnPartnerLeadSuit");
+  assert.equal(result.returnType, "honorSequence");
+  assert.equal(result.sequence, "KQ");
+});
+
+test("chooseCardPlay returns a visible winning honor sequence before a low card in partner's lead suit", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("QS", "9S", "9H", "5H", "9C", "8C", "KD", "QD", "5D", "3D"),
+    currentTrick: [],
+    trickHistory: [{
+      number: 1,
+      winner: "East",
+      cards: [
+        { seat: "North", card: card("JD") },
+        { seat: "East", card: card("AD") },
+        { seat: "South", card: card("2D") },
+        { seat: "West", card: card("7D") }
+      ]
+    }, {
+      number: 2,
+      winner: "East",
+      cards: [
+        { seat: "East", card: card("AS") },
+        { seat: "South", card: card("2S") },
+        { seat: "West", card: card("4S") },
+        { seat: "North", card: card("6S") }
+      ]
+    }, {
+      number: 3,
+      winner: "South",
+      cards: [
+        { seat: "East", card: card("JC") },
+        { seat: "South", card: card("AC") },
+        { seat: "West", card: card("4C") },
+        { seat: "North", card: card("3C") }
+      ]
+    }],
+    seat: "South",
+    declarer: "West",
+    dummy: "East",
+    dummyHand: hand("JS", "TS", "5S", "3S", "4H", "3H", "TC", "6C", "2C", "6D"),
+    contract: { level: 3, strain: "H" },
+    trump: "H"
+  });
+
+  assert.equal(result.card.id, "KD");
   assert.equal(result.ruleId, "returnPartnerLeadSuit");
   assert.equal(result.returnType, "honorSequence");
   assert.equal(result.sequence, "KQ");

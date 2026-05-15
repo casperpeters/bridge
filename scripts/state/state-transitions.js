@@ -32,6 +32,7 @@
       playExplanations: [],
       playPlan: null,
       playPlanKey: null,
+      deterministicPlayoutProof: null,
       animateDeal: true,
       finalScore: null,
       scoreOverviewDismissed: false,
@@ -66,7 +67,8 @@
       awaitingTrickAdvance: false,
       trickAdvanceArmed: false,
       trickClearAnimating: false,
-      pendingTrickWinner: null
+      pendingTrickWinner: null,
+      deterministicPlayoutProof: null
     };
   }
 
@@ -80,6 +82,7 @@
       declarer: null,
       dummy: null,
       leader: null,
+      deterministicPlayoutProof: null,
       finalScore
     };
   }
@@ -164,6 +167,7 @@
       scoreOverviewDismissed: false,
       reviewTrickCursor: null,
       reviewCursor: null,
+      deterministicPlayoutProof: null,
       finalScore
     };
   }

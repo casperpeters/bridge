@@ -8,6 +8,7 @@ async function openFreshApp(page) {
   await page.evaluate(() => localStorage.clear());
   await page.reload();
   await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+  await expect.poll(() => page.evaluate(() => Boolean(window.BridgeAppTestHooks))).toBe(true);
 
   return pageErrors;
 }

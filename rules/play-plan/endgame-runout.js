@@ -108,7 +108,18 @@
         tricksToPlan,
         defenderTrumps
       });
-      if (!runout) return null;
+      if (!runout) {
+        const sacrificeRunout = sacrificeForLateCrossRuffPriority({
+          sideHands,
+          playedCards,
+          trump,
+          leader,
+          remainingTricks,
+          defenderTrumps
+        });
+        if (sacrificeRunout) return sacrificeRunout;
+        return null;
+      }
       sequence.push(...runout.sequence);
       if (sequence.length < remainingTricks) return null;
 
@@ -128,6 +139,82 @@
         cashRanks: sequence.filter((step) => step.action === "cashWinner").map((step) => step.rank),
         action: sequence[0].action,
         score: 500 + remainingTricks * 10
+      };
+    }
+
+  function sacrificeForLateCrossRuffPriority({ sideHands, playedCards, trump, leader, remainingTricks, defenderTrumps }) {
+      if (!trump || defenderTrumps !== 0 || remainingTricks < 3 || remainingTricks > 5) return null;
+      const partner = partnerOf(leader);
+      const leaderHand = sideHands[leader] || [];
+      const partnerHand = sideHands[partner] || [];
+      const leaderTrumps = cardsInSuit(leaderHand, trump);
+      const partnerTrumps = cardsInSuit(partnerHand, trump);
+      const securedTricks = remainingTricks - 1;
+      if (leaderTrumps.length + partnerTrumps.length < securedTricks) return null;
+
+      const candidates = [];
+      for (const sacrificeSuit of suits) {
+        if (sacrificeSuit === trump) continue;
+        const leaderCards = cardsInSuit(leaderHand, sacrificeSuit);
+        const partnerCards = cardsInSuit(partnerHand, sacrificeSuit);
+        if (leaderCards.length !== 1 || partnerCards.length < 2) continue;
+        if (defendersRemainingInSuit(sideHands, playedCards, sacrificeSuit) <= 0) continue;
+
+        const winnerRanks = visibleTopWinnerRanks(combinedSuitCards(sideHands, sacrificeSuit), cardsInSuit(playedCards, sacrificeSuit));
+        const sacrificeCard = leaderCards[0];
+        if (winnerRanks.includes(sacrificeCard.rank)) continue;
+
+        for (const crossSuit of suits) {
+          if (crossSuit === trump || crossSuit === sacrificeSuit) continue;
+          const crossCards = cardsInSuit(leaderHand, crossSuit);
+          if (!crossCards.length || cardsInSuit(partnerHand, crossSuit).length) continue;
+          if (crossCards.length < partnerTrumps.length) continue;
+          if (partnerCards.length - 1 < leaderTrumps.length) continue;
+          candidates.push({
+            sacrificeCard,
+            sacrificeSuit,
+            crossSuit,
+            partner,
+            leaderTrumps: leaderTrumps.length,
+            partnerTrumps: partnerTrumps.length,
+            score: (leaderTrumps.length + partnerTrumps.length) * 20 + crossCards.length * 5 + partnerCards.length * 5
+          });
+        }
+      }
+
+      const best = candidates
+        .sort((a, b) => b.score - a.score || compareLowCards(a.sacrificeCard, b.sacrificeCard))[0];
+      if (!best) return null;
+
+      const step = {
+        action: "giveUpForLateCrossRuff",
+        seat: leader,
+        cardId: best.sacrificeCard.id,
+        suit: best.sacrificeSuit,
+        rank: best.sacrificeCard.rank,
+        leadSuit: best.sacrificeSuit,
+        winnerSeat: null,
+        targetSeat: best.partner,
+        shortSeat: leader,
+        crossSuits: [best.sacrificeSuit, best.crossSuit]
+      };
+
+      return {
+        kind: "endgameRunout",
+        confidence: "uncertain",
+        contractType: "suit",
+        trump,
+        sequence: [step],
+        remainingTricks: securedTricks,
+        firstSeat: leader,
+        suit: best.sacrificeSuit,
+        cashRanks: [],
+        action: step.action,
+        targetSeat: best.partner,
+        shortSeat: leader,
+        crossSuits: [best.sacrificeSuit, best.crossSuit],
+        securedTricks,
+        score: 450 + securedTricks * 10
       };
     }
 

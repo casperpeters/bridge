@@ -154,11 +154,59 @@
           sourceLength: priority.sourceLength,
           sequence: priority.sequence,
           missingStopper: priority.missingStopper,
-          action: giveUpEarly ? "giveUpWorkSuitEarly" : sourceIsCurrentHand ? "forceMissingHighCard" : "leadTowardLongSuit",
+          breakNeeded: priority.breakNeeded || null,
+          action: priority.timing === "possibleBreakDevelopment"
+            ? "testSuitBreak"
+            : giveUpEarly
+              ? "giveUpWorkSuitEarly"
+              : sourceIsCurrentHand
+                ? "forceMissingHighCard"
+                : "leadTowardLongSuit",
           targetSeat: sourceIsCurrentHand ? seat : partnerOf(seat),
           targetLength: sourceIsCurrentHand ? suitCards.length : cardsInSuit(partnerHand, priority.suit).length,
           timing: priority.timing || null,
           sameSuitEntryCount: priority.sameSuitEntryCount || 0
+        }
+      );
+    }
+
+
+
+  function choosePlanForceOutAcePlay({ priority, hand, partnerHand, seat, legal }) {
+      const suitCards = cardsInSuit(hand, priority.suit);
+      if (!suitCards.length) return null;
+
+      const sourceIsCurrentHand = priority.sourceSeat === seat;
+      const card = sourceIsCurrentHand
+        ? legalPlanCard(suitCards.find((item) => item.rank === priority.forceRank) || highestCard(suitCards), legal)
+        : legalPlanCard(lowestCard(suitCards), legal);
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "playPlan.forceOutAce",
+        priority.confidence || "uncertain",
+        "Follow the visible play plan by forcing out the missing high card to promote an honor trick.",
+        {
+          planPriority: priority,
+          suit: priority.suit,
+          suitLength: priority.suitLength,
+          sourceSeat: priority.sourceSeat,
+          sourceLength: priority.sourceLength,
+          sequence: priority.sequence,
+          forceRank: priority.forceRank,
+          missingStopper: priority.missingStopper,
+          missingStoppers: priority.missingStoppers,
+          futureWinnerRanks: priority.futureWinnerRanks,
+          promotedTricks: priority.promotedTricks,
+          lossesNeeded: priority.lossesNeeded,
+          tempoSafe: priority.tempoSafe,
+          entryType: priority.entryType,
+          entrySuit: priority.entrySuit,
+          entryRank: priority.entryRank,
+          action: sourceIsCurrentHand ? "forceMissingHighCard" : "leadTowardForceOutAce",
+          targetSeat: sourceIsCurrentHand ? seat : partnerOf(seat),
+          targetLength: sourceIsCurrentHand ? suitCards.length : cardsInSuit(partnerHand, priority.suit).length
         }
       );
     }
@@ -189,11 +237,54 @@
           sourceLength: priority.sourceLength,
           sequence: priority.sequence,
           missingStopper: priority.missingStopper,
-          action: "continueWorkSuit",
+          breakNeeded: priority.breakNeeded || null,
+          action: priority.timing === "possibleBreakDevelopment" ? "testSuitBreak" : "continueWorkSuit",
           targetSeat: seat,
           targetLength: suitCards.length,
           timing: priority.timing || null,
           sameSuitEntryCount: priority.sameSuitEntryCount || 0
+        }
+      );
+    }
+
+
+
+  function choosePlanForceOutAceInTrickPlay({ priority, hand, partnerHand, currentTrick, seat, legal }) {
+      if (!currentTrick.length || currentTrick[0].card.suit !== priority.suit) return null;
+      if (priority.sourceSeat !== seat) return null;
+
+      const suitCards = cardsInSuit(hand, priority.suit);
+      const preferred = priority.forceRank
+        ? suitCards.find((item) => item.rank === priority.forceRank)
+        : null;
+      const card = legalPlanCard(preferred || highestCard(suitCards), legal);
+      if (!card) return null;
+
+      return cardPlayResult(
+        card,
+        "playPlan.forceOutAce",
+        priority.confidence || "uncertain",
+        "Follow the visible play plan by playing the honor that can force out the missing high card.",
+        {
+          planPriority: priority,
+          suit: priority.suit,
+          suitLength: priority.suitLength,
+          sourceSeat: priority.sourceSeat,
+          sourceLength: priority.sourceLength,
+          sequence: priority.sequence,
+          forceRank: priority.forceRank,
+          missingStopper: priority.missingStopper,
+          missingStoppers: priority.missingStoppers,
+          futureWinnerRanks: priority.futureWinnerRanks,
+          promotedTricks: priority.promotedTricks,
+          lossesNeeded: priority.lossesNeeded,
+          tempoSafe: priority.tempoSafe,
+          entryType: priority.entryType,
+          entrySuit: priority.entrySuit,
+          entryRank: priority.entryRank,
+          action: "forceMissingHighCard",
+          targetSeat: seat,
+          targetLength: suitCards.length
         }
       );
     }
@@ -392,6 +483,8 @@
     choosePlanPreserveWorkSuitEntryPlay,
     choosePlanDevelopmentPlay,
     choosePlanDevelopmentInTrickPlay,
+    choosePlanForceOutAcePlay,
+    choosePlanForceOutAceInTrickPlay,
     choosePlanFinessePlay,
     choosePlanFinesseInTrickPlay,
     choosePlanDirectionalFinessePlay,

@@ -137,6 +137,39 @@ test("chooseCardPlay does not treat Stayman as a natural clubs lead warning", ()
   assert.deepEqual(result.bidSuits, []);
 });
 
+test("chooseCardPlay avoids responder's implied heart suit after Stayman and 3NT", () => {
+  const stayman = { bid: bid(2, "C"), ruleId: "fiveCardHigh.response.stayman" };
+  const staymanAnswer = { bid: bid(2, "S"), ruleId: "fiveCardHigh.continuation.staymanAnswer" };
+  const result = rules.chooseCardPlay({
+    hand: hand("5S", "KH", "QH", "JH", "7H", "2H", "TD", "9D", "8D", "4D", "AC", "6C", "3C"),
+    currentTrick: [],
+    seat: "East",
+    declarer: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null,
+    auction: [
+      { seat: "North", bid: bid(1, "NT") },
+      { seat: "East", bid: pass() },
+      { seat: "South", bid: bid(2, "C"), bidResult: stayman },
+      { seat: "West", bid: pass() },
+      { seat: "North", bid: bid(2, "S"), bidResult: staymanAnswer },
+      { seat: "East", bid: pass() },
+      { seat: "South", bid: bid(3, "NT") },
+      { seat: "West", bid: pass() },
+      { seat: "North", bid: pass() },
+      { seat: "East", bid: pass() }
+    ]
+  });
+
+  assert.equal(result.card.id, "TD");
+  assert.equal(result.suit, "D");
+  assert.equal(result.ruleId, "notrumpTopOfNothingLead");
+  assert.deepEqual(result.bidSuits, ["S", "H"]);
+  assert.deepEqual(result.unbidSuits, ["C", "D"]);
+  assert.deepEqual(result.staymanInferredSuits, ["H"]);
+  assert.equal(result.leadSelection, "longestUnbidSuit");
+});
+
 test("chooseCardPlay treats a transfer by shown suit, not by bid strain", () => {
   const transfer = { bid: bid(2, "D"), ruleId: "fiveCardHigh.response.transferToH", transferSuit: "H" };
   const acceptTransfer = { bid: bid(2, "H"), ruleId: "fiveCardHigh.continuation.acceptTransfer", transferSuit: "H" };
@@ -692,6 +725,26 @@ test("chooseCardPlay develops a long notrump suit from declarer hand", () => {
   assert.equal(result.confidence, "uncertain");
   assert.equal(result.suit, "C");
   assert.equal(result.missingStopper, "A");
+});
+
+test("chooseCardPlay can force out the ace from short notrump honor strength", () => {
+  const result = rules.chooseCardPlay({
+    hand: hand("KC", "QC", "AS"),
+    partnerHand: hand("TC", "7C", "AD"),
+    currentTrick: [],
+    seat: "North",
+    declarer: "South",
+    dummy: "North",
+    contract: { level: 3, strain: "NT" },
+    trump: null
+  });
+
+  assert.equal(result.card.id, "KC");
+  assert.equal(result.ruleId, "forceOutAce");
+  assert.equal(result.confidence, "uncertain");
+  assert.equal(result.suit, "C");
+  assert.equal(result.missingStopper, "A");
+  assert.deepEqual(result.futureWinnerRanks, ["Q"]);
 });
 
 test("chooseCardPlay leads toward partner's long notrump suit development candidate", () => {

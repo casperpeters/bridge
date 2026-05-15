@@ -42,6 +42,7 @@ Beginners moeten zonder veel uitleg kunnen zien:
 3. Inspecteer gericht met `rg` en relevante bestanden. Lees niet breder dan nodig.
 4. Bij bugs: probeer eerst het probleem te reproduceren of maak een kleine falende test/fixture.
 5. Bij niet-triviale taken: maak een kort plan met inspectie, wijziging, tests, acceptatiecriterium en eventuele `TODO.md`-update.
+   - Bij gebruik van de `improve-codebase-architecture` skill: na kandidaatkeuze eerst de grilling loop voeren en geen bestanden wijzigen totdat de gekozen modulevorm, seam, testoppervlak en implementatiestap expliciet zijn afgestemd.
 6. Pas kleine, gerichte wijzigingen toe.
 7. Bij bied- of speelgedrag: update regels, uitlegpad en tests/fixtures samen.
 8. Bij UI-wijzigingen: controleer desktop en mobiel waar relevant, houd normale gameplay compact en plaats uitgebreide uitleg alleen in developer mode, AI-suggesties, review of lesmodus.

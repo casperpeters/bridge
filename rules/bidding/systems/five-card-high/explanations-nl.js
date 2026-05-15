@@ -71,6 +71,7 @@
       "pass.responsePreemptNoAction": `pas na partners preempt: onvoldoende eigen speelslagen voor de manche, geen bruikbare aansluiting/communicatie, of niet in alle kleuren dekking${weakTwoFactsText(result)}${factSuffix}`,
       "pass.openerMajorRaiseMinimum": `geen manchepoging na partners enkele hoge-kleursteun: met 12-15 totaalpunten past openaar${factSuffix}`,
       "pass.openerMinorRaiseMinimum": `geen manchepoging na partners lage-kleursteun: openaar heeft een minimum en past${factSuffix}`,
+      "pass.responderAfterMajorRaiseGame": `pas na 1 hoog - 2 hoog - 4 hoog: partner heeft de manche geboden na jouw gewone steun. Zonder duidelijke slemzone en genoeg azen blijft 4 hoog het eindcontract${factSuffix}`,
       "pass.openerMinorAfterOneNtMinimum": `pas na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en openaar heeft een minimum zonder lange lage kleur${factSuffix}`,
       "pass.openerMinorAfterTwoNtMinimum": `pas na partners 2SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; openaar heeft onvoldoende overwaarde om de manche te bieden${factSuffix}`,
       "pass.openerMinorAfterThreeNtPass": `pas na partners 3SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en 3SA is meestal het eindcontract${factSuffix}`,
@@ -371,6 +372,8 @@
         return `tweede bijbod met 6-9 HCP: zolang het nog op eenniveau kan, houdt antwoorder het laag met 1SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.responderTwoNotrumpInvite":
         return `tweede bijbod met 10-11 HCP: 2SA is inviterend en belooft geen minimum. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "continuation.responderAfterTwoNotrumpRebidGame":
+        return `na openaars natuurlijke 2SA-herbieding: openaar toont ongeveer 18-19 HCP met een SA-verdeling. Met 8+ HCP en geen hoge-kleurfit kiest antwoorder 3SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.responderStrongSecondMajor":
         return `sterk tweede bijbod in de andere hoge kleur: antwoorder toont een 5-4 hoog spel en genoeg kracht om verder naar de beste manche te zoeken. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.responderRaiseOpenerSecondSuit":
@@ -428,7 +431,14 @@
         return `3SA-volgbod na een preemptieve opening: 19+ HCP, evenwichtige verdeling, dekking in ${suitName(result.stopperSuit || result.opponentSuit)} en redelijke dekking in alle kleuren. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.jumpOvercall":
         return `sprongvolgbod met beperkte kracht en een goede zeskaart. ${handFactsText({ ruleName, result })}`;
+      case "competitive.protectiveOneMajor":
+        return `beschermend bod in de uitpas: na twee passen op hun lage-kleuropening komt de app nog in de bieding met een goede vijfkaart ${suitName(result.suit)} en 8+ HCP. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+      case "competitive.strongOneMajorOvercall":
+        return `sterk natuurlijk volgbod in een hoge kleur: 17-19 HCP met een goede vijfkaart ${suitName(result.suit)}. De app gebruikt dit alleen als 1SA en een informatiedoublet de hand niet goed beschrijven. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "competitive.simpleOvercall":
+        if (result.exceptionalSuitQuality) {
+          return `kwetsbaar volgbod op eenhoogte met 9 HCP: alleen toegestaan door de uitzonderlijk sterke vijfkaart ${suitName(result.suit)} met drie tophonneurs. Normaal blijft de grens ${result.normalMinimumHcp || 10}+ HCP kwetsbaar. ${handFactsText({ ruleName, result })}`;
+        }
         return `natuurlijk volgbod met een goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || (result.bid?.level >= 2 ? 10 : 8)}+ HCP. ${handFactsText({ ruleName, result })}`;
       case "competitive.takeoutDouble":
         return `informatiedoublet: 12+ HCP, kort in ${suitName(result.opponentSuit)}, en steun voor de ongeboden kleuren; met 16+ HCP mag een ongeboden kleur soms een driekaart zijn. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;

@@ -346,6 +346,11 @@ function blockingLessonBoardStep() {
   return Boolean(step && step.gate !== "none");
 }
 
+function lessonBoardSuppressesUitspelen() {
+  const step = activeLessonBoardStep();
+  return Boolean(step?.suppressUitspelen);
+}
+
 function renderLessonBoardHighlights(step = activeLessonBoardStep()) {
   clearLessonBoardHighlights();
   if (!step) return;
@@ -423,6 +428,7 @@ function lessonBoardHighlightCards(step) {
       blockingLessonBoardStep,
       lessonBoardBlocksHumanBid,
       lessonBoardBlocksHumanPlay,
+      lessonBoardSuppressesUitspelen,
       lessonBoardHighlightCards,
       lessonBoardHighlightTargets,
       lessonBoardStepAcknowledged,
