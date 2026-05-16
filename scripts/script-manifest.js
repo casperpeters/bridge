@@ -23,6 +23,7 @@
     "rules/bidding/systems/five-card-high/rebids/fourth-suit-forcing/index.js",
     "rules/bidding/systems/five-card-high/rebids/natural-opener/index.js",
     "rules/bidding/systems/five-card-high/rebids.js",
+    "rules/bidding/systems/five-card-high/continuation.js",
     "rules/bidding/systems/five-card-high/competitive/takeout-double/index.js",
     "rules/bidding/systems/five-card-high/competitive/preempt-defense/index.js",
     "rules/bidding/systems/five-card-high/competitive/overcalls/index.js",

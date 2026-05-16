@@ -4,9 +4,12 @@
     ? {
         core: require("../../../core.js"),
         auction: require("../../../auction.js"),
+        context: require("../../common/context.js"),
         valuation: require("../../common/valuation.js"),
         result: require("../../common/result.js"),
         conventions: require("./conventions.js"),
+        rebids: require("./rebids.js"),
+        continuation: require("./continuation.js"),
         takeoutDouble: require("./competitive/takeout-double/index.js"),
         preemptDefense: require("./competitive/preempt-defense/index.js"),
         overcalls: require("./competitive/overcalls/index.js"),
@@ -16,9 +19,12 @@
   const api = factory(
     deps.core,
     deps.auction,
+    deps.context || deps.biddingFiveCardHighContext,
     deps.valuation || deps.biddingFiveCardHighValuation,
     deps.result || deps.biddingCommonResult,
     deps.conventions || deps.biddingFiveCardHighConventions,
+    deps.rebids || deps.biddingFiveCardHighRebids,
+    deps.continuation || deps.biddingFiveCardHighContinuation,
     deps.takeoutDouble || deps.biddingFiveCardHighCompetitiveTakeoutDouble,
     deps.preemptDefense || deps.biddingFiveCardHighCompetitivePreemptDefense,
     deps.overcalls || deps.biddingFiveCardHighCompetitiveOvercalls,
@@ -27,7 +33,7 @@
   if (isCommonJs) module.exports = api;
   root.BridgeRulesParts = root.BridgeRulesParts || {};
   root.BridgeRulesParts.biddingFiveCardHighCompetitive = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighCompetitive(core, auction, valuationHelpers, resultHelpers, conventionHelpers, takeoutDoubleRules, preemptDefenseRules, overcallRules, advancerRules) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHighCompetitive(core, auction, contextHelpers, valuationHelpers, resultHelpers, conventionHelpers, rebidRules, continuationRules, takeoutDoubleRules, preemptDefenseRules, overcallRules, advancerRules) {
   "use strict";
 
   const {
@@ -40,6 +46,8 @@
   const {
     Pass,
     Redouble,
+    bidEquals,
+    gameLevel,
     isPass,
     isDouble,
     isRedouble,
@@ -53,6 +61,12 @@
   const { ruleOf20OpeningContext } = valuationHelpers;
   const { bidChoiceResult } = resultHelpers;
   const { countAces, supportLengthForOpening } = conventionHelpers;
+  const { isSingleRaiseInviteFiveCardHigh } = rebidRules;
+  const {
+    fiveCardHighAuctionPhases,
+    auctionContextForFiveCardHigh
+  } = contextHelpers;
+  const { chooseConstructiveContinuationResult } = continuationRules;
   const {
     chooseTakeoutDoubleInitialAction,
     chooseTakeoutDoubleAction,
@@ -94,11 +108,15 @@
 
   function chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability = "none") {
     const state = competitiveBiddingState(hand, auction, seat, vulnerability);
+    const continuationResult = chooseInterferenceAwareContinuationResult(state);
+    if (continuationResult) return continuationResult.bid;
     return chooseCompetitiveBidTargetFromState(state);
   }
 
-  function chooseCompetitiveBidResult({ hand = [], auction = [], seat, vulnerability = "none" } = {}) {
-    const state = competitiveBiddingState(hand, auction, seat, vulnerability);
+  function chooseCompetitiveBidResult({ hand = [], auction = [], seat, vulnerability = "none", context } = {}) {
+    const state = competitiveBiddingState(hand, auction, seat, vulnerability, context);
+    const continuationResult = chooseInterferenceAwareContinuationResult(state);
+    if (continuationResult) return continuationResult;
     const chosenBid = chooseCompetitiveBidTargetFromState(state);
     const base = competitiveBidResultBase(state);
 
@@ -150,12 +168,13 @@
     };
   }
 
-  function competitiveBiddingState(hand, auction, seat, vulnerability) {
+  function competitiveBiddingState(hand, auction, seat, vulnerability, context) {
     return {
       hand,
       auction,
       seat,
       vulnerability,
+      context: context || auctionContextForFiveCardHigh(auction, seat),
       shape: handShape(hand),
       partnershipCalls: partnershipContractCalls(auction, seat),
       partnershipNonPassCalls: partnershipNonPassCalls(auction, seat),
@@ -181,6 +200,66 @@
   function chooseRedoubleAfterPartnerOpeningDouble({ shape, partnershipCalls, auction, seat }) {
     const context = partnerOpeningDoubleContext(auction, seat, partnershipCalls);
     return context && shape.hcp >= 10 && !hasOpeningFit(shape, context.partnerBid) ? Redouble() : null;
+  }
+
+  function chooseInterferenceAwareContinuationResult(state) {
+    const continuation = interferenceAwareContinuationContext(state.context);
+    if (!continuation) return null;
+    return chooseConstructiveContinuationResult({
+      hand: state.hand,
+      auction: state.auction,
+      seat: state.seat,
+      vulnerability: state.vulnerability,
+      context: constructiveContinuationContextForInterference(state.context, continuation),
+      baseExtras: interferenceContinuationBase(state.context)
+    });
+  }
+
+  function interferenceAwareContinuationContext(context) {
+    if (!context?.interfered || !context.ourSideOwnsCurrentContract || context.partnershipCalls.length < 2) return null;
+    const openingCall = context.openingCall;
+    const responseCall = context.responseCall;
+    const openerRebidCall = context.openerRebidCall;
+    if (!openingCall?.bid || !responseCall?.bid) return null;
+
+    if (openingCall.seat === context.seat && isDirectRaiseOfOpening(openingCall.bid, responseCall.bid)) {
+      return { kind: "openerAfterRaise", phase: fiveCardHighAuctionPhases.openerRebid };
+    }
+    if (
+      openingCall.seat === partnerOf(context.seat) &&
+      openerRebidCall?.bid &&
+      isSingleRaiseInviteFiveCardHigh(responseCall.bid, openerRebidCall.bid)
+    ) {
+      return { kind: "responderAfterSingleRaiseInvite", phase: fiveCardHighAuctionPhases.responderRebid };
+    }
+    return null;
+  }
+
+  function constructiveContinuationContextForInterference(context, continuation) {
+    return {
+      ...context,
+      phase: continuation.phase,
+      uncontested: true
+    };
+  }
+
+  function isDirectRaiseOfOpening(openingBid, responseBid) {
+    return (
+      openingBid?.level === 1 &&
+      openingBid.strain &&
+      openingBid.strain !== "NT" &&
+      responseBid?.strain === openingBid.strain &&
+      responseBid.level > openingBid.level &&
+      responseBid.level < gameLevel(openingBid.strain)
+    );
+  }
+
+  function interferenceContinuationBase(context) {
+    return {
+      interfered: true,
+      interferenceKind: context.interferenceKind,
+      interferenceCallCount: context.opponentNonPassCalls?.length || 0
+    };
   }
 
   function partnerOpeningDoubleContext(auction, seat, partnershipCalls = partnershipContractCalls(auction, seat)) {
@@ -290,6 +369,7 @@
   return {
     chooseCompetitiveBidResult,
     chooseCompetitiveFiveCardHighBid,
+    chooseInterferenceAwareContinuationResult,
     describeRedoubleBidChoice,
     describeDoubleBidChoice,
     describeCompetitiveFiveCardHighBidChoice,

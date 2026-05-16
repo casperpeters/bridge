@@ -106,6 +106,33 @@ test("Vijfkaart Hoog profile dispatches direct competitive auctions to the Compe
   assert.equal(result.ruleId, "fiveCardHigh.competitive.simpleOvercall");
 });
 
+test("Competitive biedfamilie owns interfered constructive continuation results", () => {
+  const auction = [
+    { seat: "South", bid: pass() },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: bid(1, "S") },
+    { seat: "East", bid: double() },
+    { seat: "South", bid: bid(2, "S") },
+    { seat: "West", bid: pass() }
+  ];
+
+  const result = competitiveRules.chooseCompetitiveBidResult({
+    hand: hand(
+      "AS", "KS", "7S", "5S", "2S",
+      "KD", "QD", "9D", "6D", "3D",
+      "QC", "6C", "2C"
+    ),
+    auction,
+    seat: "North",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, bid(3, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.continuation.openerMajorRaiseInvite");
+  assert.equal(result.interfered, true);
+  assert.equal(result.interferenceKind, "double");
+});
+
 test("Competitive biedfamilie overcalls one spade with row 26 strong-major seed after one diamond", () => {
   const hands = rules.dealHands(rules.randomFromSeed("1xe2dl31tb9p7m"));
   const auction = [

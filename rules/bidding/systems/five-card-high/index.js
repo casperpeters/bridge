@@ -12,6 +12,7 @@
         opening: require("./opening.js"),
         responses: require("./responses.js"),
         rebids: require("./rebids.js"),
+        continuation: require("./continuation.js"),
         competitive: require("./competitive.js")
       }
     : root.BridgeRulesParts || {};
@@ -26,17 +27,16 @@
     deps.opening || deps.biddingFiveCardHighOpening,
     deps.responses || deps.biddingFiveCardHighResponses,
     deps.rebids || deps.biddingFiveCardHighRebids,
+    deps.continuation || deps.biddingFiveCardHighContinuation,
     deps.competitive || deps.biddingFiveCardHighCompetitive
   );
   if (isCommonJs) module.exports = api;
   root.BridgeRulesParts = root.BridgeRulesParts || {};
   root.BridgeRulesParts.biddingFiveCardHigh = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHigh(core, auction, contextHelpers, valuationHelpers, legalityHelpers, resultHelpers, conventionHelpers, openingRules, responseRules, rebidRules, competitiveRules) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeRulesBiddingFiveCardHigh(core, auction, contextHelpers, valuationHelpers, legalityHelpers, resultHelpers, conventionHelpers, openingRules, responseRules, rebidRules, continuationRules, competitiveRules) {
   "use strict";
 
   const {
-    suits,
-    bidStrains,
     biddingSystems,
     handShape,
     teamOf,
@@ -45,127 +45,47 @@
   } = core;
   const {
     Pass,
-    Double,
-    Redouble,
     normalizeBid,
     sameCall,
     isPass,
     isDouble,
     isRedouble,
     isContractBid,
-    highestBidCall,
     highestBid,
-    isBidHigher,
-    bid,
-    bidEquals,
-    gameLevel,
-    cheapestLevelForStrain,
-    nextAvailableBid,
-    canDoubleFromAuction,
-    canRedoubleFromAuction,
-    partnershipContractCalls,
     lastPartnerContractCall
   } = auction;
   const {
     fiveCardHighAuctionPhases,
-    auctionContextForFiveCardHigh,
-    fourthSuitForAuction,
-    isFourthSuitForcingBid
+    auctionContextForFiveCardHigh
   } = contextHelpers;
   const {
-    fitValuationContext,
-    fitStrength,
-    optionalFitValuationContext,
-    suitQuality,
-    ruleOf20OpeningContext,
-    twoLongestSuitsForRuleOf20,
-    hcpInSuit,
-    hasStopper
+    ruleOf20OpeningContext
   } = valuationHelpers;
   const { legalizeBidTarget } = legalityHelpers;
   const { bidChoiceResult } = resultHelpers;
   const {
-    notrumpTransferSuit,
     chooseFiveCardHighNaturalContinuation,
-    chooseResponseSuit,
-    chooseSuitByLengthThenRank,
-    chooseMajorByLength,
-    hasFourCardMajor,
     countAces,
     isBlackwoodAsk,
     blackwoodResponseBidForAceCount,
-    blackwoodShownAceCount,
-    agreedTrumpAfterAcceptedNotrumpTransfer,
     auctionAgreementFromAuction,
     agreedTrumpFromAuction,
-    shouldUseBlackwoodAfterAcceptedTransfer,
-    chooseBlackwoodFollowup,
-    isOneSuitOpeningFiveCardHigh,
-    isOneMinorOpeningFiveCardHigh,
-    isWeakTwoOpeningFiveCardHigh,
-    supportLengthForOpening,
-    minimumOpeningLength,
-    chooseOpenerSecondSuit,
-    bestSuitByLength
+    isWeakTwoOpeningFiveCardHigh
   } = conventionHelpers;
   const auctionAgreementFromAuctionForFiveCardHigh = auctionAgreementFromAuction || agreedTrumpFromAuction;
   const {
     chooseFiveCardHighOpening,
-    chooseFiveCardHighOpeningMajor,
-    chooseFiveCardHighOpeningMinor,
-    chooseFiveCardHighWeakTwo,
-    chooseFiveCardHighPreempt,
     describeOpeningBidChoice
   } = openingRules;
   const {
     chooseFiveCardHighResponse,
-    respondToOneNotrumpFiveCardHigh,
-    respondToTwoNotrumpFiveCardHigh,
-    respondToStrongTwoClubsFiveCardHigh,
-    respondToWeakTwoFiveCardHigh,
     weakTwoResponseContext,
-    respondToPreemptFiveCardHigh,
     preemptResponseContext,
-    respondToOneClubFiveCardHigh,
-    respondToOneDiamondFiveCardHigh,
-    respondToOneMajorFiveCardHigh,
     describeResponseBidChoice
   } = responseRules;
   const {
     chooseFiveCardHighOpenerRebid,
     chooseFiveCardHighResponderRebid,
-    chooseFiveCardHighOpenerThirdBid,
-    chooseFiveCardHighResponderAfterFourthSuit,
-    rebidAfterOneNotrumpResponseFiveCardHigh,
-    rebidAfterTwoNotrumpResponseFiveCardHigh,
-    rebidAfterOneSuitOpeningFiveCardHigh,
-    openerRebidAfterMinorNotrumpFiveCardHigh,
-    openerRebidAfterRaiseFiveCardHigh,
-    openerRebidAfterMinorRaiseFiveCardHigh,
-    isMajorSingleRaiseFiveCardHigh,
-    isMinorRaiseFiveCardHigh,
-    openerRebidAfterNotrumpFiveCardHigh,
-    openerRebidAfterNotrumpFallbackFiveCardHigh,
-    majorOpeningNotrumpResponseContext,
-    isMajorOpeningNotrumpResponseFiveCardHigh,
-    minorOpeningNotrumpResponseContext,
-    isMinorOpeningNotrumpResponseFiveCardHigh,
-    isMinorOpeningOneLevelNewSuitFiveCardHigh,
-    isOneDiamondTwoClubsResponseFiveCardHigh,
-    openerAfterMinorOneLevelNewSuitRuleName,
-    openerAfterOneDiamondTwoClubsRuleName,
-    openerAfterMinorNotrumpResponseRuleName,
-    chooseLowerSecondSuitFiveCardHigh,
-    openerAfterNotrumpResponseRuleName,
-    openerRebidAfterNewSuitFiveCardHigh,
-    isSingleRaiseInviteFiveCardHigh,
-    rebidResponderAfterSingleRaiseInviteFiveCardHigh,
-    rebidResponderAfterOneNotrumpFiveCardHigh,
-    rebidResponderAfterTwoNotrumpFiveCardHigh,
-    describeOpenerRebidChoice,
-    describeResponderRebidChoice,
-    describeOpenerThirdBidChoice,
-    describeResponderAfterFourthSuitChoice,
     describeNaturalContinuationChoice
   } = rebidRules;
   const {
@@ -176,6 +96,12 @@
     describeCompetitiveFiveCardHighBidChoice,
     describeTakeoutDoubleAction
   } = competitiveRules;
+  const {
+    chooseConstructiveContinuationResult,
+    chooseConstructiveContinuationBidTarget,
+    describeConstructiveContinuationBidChoice,
+    describeConstructiveContinuationPassChoice
+  } = continuationRules;
 
   function chooseFiveCardHighBid(options = {}) {
       return chooseFiveCardHighBidResult(options).bid;
@@ -187,6 +113,10 @@
       const context = options.context || auctionContextForFiveCardHigh(auction, seat);
       const competitiveResult = chooseCompetitiveBidResultForContext({ ...options, auction, seat, context });
       if (competitiveResult) return legalizeBidResult({ ...options, auction, seat, context }, competitiveResult);
+      const continuationResult = context.uncontested
+        ? chooseConstructiveContinuationResult({ ...options, auction, seat, context })
+        : null;
+      if (continuationResult) return legalizeBidResult({ ...options, auction, seat, context }, continuationResult);
       const target = chooseFiveCardHighBidTarget({ ...options, auction, seat, context });
       const chosenBid = legalizeBidTarget(target, highestBid(auction), seat, auction);
       return describeFiveCardHighBidChoice({ ...options, auction, seat, context, target, bid: chosenBid });
@@ -195,8 +125,7 @@
   function chooseCompetitiveBidResultForContext({ hand = [], auction = [], seat, vulnerability = "none", context } = {}) {
       if (!seat || context?.uncontested) return null;
       if (agreementForPartnerBlackwoodAsk(auction, seat)) return null;
-      if (interferenceAwareContinuationContext(context)) return null;
-      return chooseCompetitiveBidResult({ hand, auction, seat, vulnerability });
+      return chooseCompetitiveBidResult({ hand, auction, seat, vulnerability, context });
     }
 
   function legalizeBidResult(options, bidResult) {
@@ -261,8 +190,6 @@
       }
       const takeoutDoubleResult = describeTakeoutDoubleAction?.({ chosenBid, shape, hand, auction, seat, vulnerability, base });
       if (takeoutDoubleResult) return takeoutDoubleResult;
-      const interferenceContinuationResult = describeInterferenceAwareContinuationChoice(chosenBid, shape, hand, auction, seat, base, bidContext);
-      if (interferenceContinuationResult) return interferenceContinuationResult;
       if (isPass(chosenBid)) {
         return describePassBidChoice(shape, hand, auction, seat, base, bidContext);
       }
@@ -318,172 +245,7 @@
           });
         }
 
-        const openingCall = partnershipCalls[0];
-        const responseCall = partnershipCalls[1];
-        const minorNotrumpResponseContext = minorOpeningNotrumpResponseContext(shape, openingCall?.bid, responseCall?.bid);
-        if (openingCall?.seat === seat && minorNotrumpResponseContext) {
-          const suffix = responseCall.bid.level === 1 ? "OneNtMinimum" : responseCall.bid.level === 2 ? "TwoNtMinimum" : "ThreeNtPass";
-          return fiveCardHighBidChoiceResult(Pass(), `pass.openerMinorAfter${suffix}`, "basic", "Pass after partner's notrump response to a minor opening because opener has no reason to move on.", {
-            ...base,
-            ...minorNotrumpResponseContext,
-            category: "continuation",
-            suit: openingCall.bid.strain,
-            length: shape.counts[openingCall.bid.strain] || 0
-          });
-        }
-        const notrumpResponseContext = majorOpeningNotrumpResponseContext(shape, openingCall?.bid, responseCall?.bid);
-        if (openingCall?.seat === seat && notrumpResponseContext) {
-          const prefix = responseCall.bid.level === 1 ? "OneNt" : "TwoNt";
-          const suffix = notrumpResponseContext.handType === "balanced" ? "BalancedMinimum" : "NoAction";
-          return fiveCardHighBidChoiceResult(Pass(), `pass.openerAfter${prefix}${suffix}`, "basic", "Pass after partner's notrump response according to opener's hand type and range.", {
-            ...base,
-            ...notrumpResponseContext,
-            category: "continuation",
-            suit: openingCall.bid.strain,
-            length: shape.counts[openingCall.bid.strain] || 0
-          });
-        }
-
-        if (
-          openingCall?.seat === seat &&
-          isMajorSingleRaiseFiveCardHigh(openingCall.bid, responseCall?.bid)
-        ) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.openerMajorRaiseMinimum", "basic", "Pass after partner's single major raise with 12-15 fit points.", {
-            ...base,
-            category: "continuation",
-            suit: openingCall.bid.strain,
-            length: shape.counts[openingCall.bid.strain] || 0,
-            ...optionalFitValuationContext(hand, shape, openingCall.bid.strain, supportLengthForOpening(openingCall.bid.strain))
-          });
-        }
-        if (
-          openingCall?.seat === seat &&
-          isMinorRaiseFiveCardHigh(openingCall.bid, responseCall?.bid)
-        ) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.openerMinorRaiseMinimum", "basic", "Pass after partner's minor raise with a minimum opening hand.", {
-            ...base,
-            category: "continuation",
-            suit: openingCall.bid.strain,
-            length: shape.counts[openingCall.bid.strain] || 0,
-            ...optionalFitValuationContext(hand, shape, openingCall.bid.strain, supportLengthForOpening(openingCall.bid.strain))
-          });
-        }
-
-        const openerRebidCall = partnershipCalls[2];
-        const responderRebidCall = partnershipCalls[3];
-        const openerThirdCall = partnershipCalls[4];
-        if (
-          openingCall?.seat === partnerOf(seat) &&
-          isFourthSuitForcingBid(openingCall?.bid, responseCall?.bid, openerRebidCall?.bid, responderRebidCall?.bid) &&
-          bidEquals(openerThirdCall?.bid, 3, "NT")
-        ) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.responderAfterFourthSuitAcceptNotrumpGame", "basic", "Pass because opener has answered fourth-suit forcing with the notrump game.", {
-            ...base,
-            category: "continuation",
-            convention: "fourthSuitForcing",
-            gameForcing: true,
-            artificial: false,
-            fourthSuit: responderRebidCall.bid.strain
-          });
-        }
-        if (
-          openingCall?.seat === partnerOf(seat) &&
-          isMajorSingleRaiseFiveCardHigh(openingCall?.bid, responseCall?.bid) &&
-          openerRebidCall?.bid?.strain === openingCall.bid.strain &&
-          openerRebidCall.bid.level === gameLevel(openingCall.bid.strain)
-        ) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.responderAfterMajorRaiseGame", "basic", "Pass after partner bid game over the single major raise unless responder has a clear Blackwood hand.", {
-            ...base,
-            category: "continuation",
-            partnerSuit: openerRebidCall.bid.strain,
-            trumpSuit: openerRebidCall.bid.strain,
-            support: shape.counts[openerRebidCall.bid.strain] || 0,
-            aceCount: base.aceCount,
-            partnershipMinimumHcp: shape.hcp + 18,
-            slamTargetHcp: 33
-          });
-        }
-        if (
-          openingCall?.seat === partnerOf(seat) &&
-          isSingleRaiseInviteFiveCardHigh(responseCall?.bid, openerRebidCall?.bid)
-        ) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.declineMajorInvite", "basic", "Pass after partner's invitational raise with the lower range for the single raise.", {
-            ...base,
-            category: "continuation",
-            partnerSuit: openerRebidCall.bid.strain,
-            support: shape.counts[openerRebidCall.bid.strain] || 0
-          });
-        }
-        const openerTransferSuit = openingCall?.seat === seat && bidEquals(openingCall?.bid, 1, "NT")
-          ? notrumpTransferSuit(openingCall.bid, responseCall?.bid)
-          : null;
-        if (openerTransferSuit && bidEquals(responderRebidCall?.bid, 2, "S") && openerTransferSuit === "H" && shape.counts.S >= 4) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterTransferFiveHeartsFourSpadesMinimum", "basic", "Pass with a minimum after responder showed five hearts and four spades.", {
-            ...base,
-            category: "continuation",
-            convention: "jacobyTransfer",
-            transferSuit: openerTransferSuit,
-            responderSecondSuit: "S",
-            support: shape.counts.S || 0,
-            range: "15"
-          });
-        }
-        if (openerTransferSuit && bidEquals(responderRebidCall?.bid, 4, "H") && openerTransferSuit === "S" && shape.counts.H >= 3) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterTransferTwoFiveMajorsChooseHearts", "basic", "Pass because responder showed two five-card majors and opener prefers hearts.", {
-            ...base,
-            category: "continuation",
-            convention: "jacobyTransfer",
-            transferSuit: openerTransferSuit,
-            responderSecondSuit: "H",
-            support: shape.counts.H || 0
-          });
-        }
-        if (openerTransferSuit && bidEquals(responderRebidCall?.bid, 2, "NT")) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterTransferInviteMinimumNoSupport", "basic", "Pass because responder invited after the transfer and opener has a minimum without three-card support.", {
-            ...base,
-            category: "continuation",
-            convention: "jacobyTransfer",
-            transferSuit: openerTransferSuit,
-            support: shape.counts[openerTransferSuit] || 0,
-            range: "15"
-          });
-        }
-        if (openingCall?.seat === seat && bidEquals(openingCall?.bid, 1, "NT") && bidEquals(responseCall?.bid, 2, "C")) {
-          const openerRebidBid = openerRebidCall?.bid;
-          if (openerRebidBid?.strain === "H" && (bidEquals(responderRebidCall?.bid, 2, "NT") || bidEquals(responderRebidCall?.bid, 3, "NT"))) {
-            return fiveCardHighBidChoiceResult(Pass(), "pass.openerAfterStaymanNoHeartFitMinimumNotrump", "basic", "Pass with a minimum after responder denied a heart fit and opener has no spade fit.", {
-              ...base,
-              category: "continuation",
-              convention: "stayman",
-              responderDeniedSuit: "H",
-              possibleFitSuit: "S",
-              support: shape.counts.S || 0,
-              range: "15"
-            });
-          }
-        }
-        const transferSuit = openingCall?.seat === partnerOf(seat) && (bidEquals(openingCall?.bid, 1, "NT") || bidEquals(openingCall?.bid, 2, "NT"))
-          ? notrumpTransferSuit(openingCall.bid, responseCall?.bid)
-          : null;
-        if (transferSuit) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.responderAfterTransferMinimum", "basic", "Pass after partner accepted the transfer because responder has a minimum hand.", {
-            ...base,
-            category: "continuation",
-            convention: "jacobyTransfer",
-            openingLevel: openingCall.bid.level,
-            transferSuit,
-            suit: transferSuit,
-            length: shape.counts[transferSuit] || 0,
-            range: openingCall.bid.level === 2 ? "0-3" : "0-7"
-          });
-        }
-
-        return fiveCardHighBidChoiceResult(Pass(), "pass.continuationNoAction", "basic", "Pass because there is no useful continuation in the current Five-card Major heuristic.", {
-          ...base,
-          category: "continuation",
-          partnerSuit: lastPartnerCall?.bid?.strain || null,
-          support: lastPartnerCall?.bid?.strain && lastPartnerCall.bid.strain !== "NT" ? shape.counts[lastPartnerCall.bid.strain] : 0
-        });
+        return describeConstructiveContinuationPassChoice(shape, hand, auction, seat, base, context);
       }
 
   function describeUncontestedFiveCardHighBidChoice(chosenBid, shape, hand, auction, seat, base, context = auctionContextForFiveCardHigh(auction, seat)) {
@@ -499,13 +261,11 @@
           case fiveCardHighAuctionPhases.response:
             return describeResponseBidChoice(chosenBid, shape, hand, openingCall.bid, base);
           case fiveCardHighAuctionPhases.openerRebid:
-            return describeOpenerRebidChoice(chosenBid, shape, hand, openingCall.bid, lastPartnerCall.bid, base);
           case fiveCardHighAuctionPhases.responderRebid:
-            return describeResponderRebidChoice(chosenBid, shape, openingCall.bid, context.responseCall.bid, lastPartnerCall.bid, base);
           case fiveCardHighAuctionPhases.openerThird:
-            return describeOpenerThirdBidChoice(chosenBid, shape, hand, partnershipCalls, base);
           case fiveCardHighAuctionPhases.responderAfterFourthSuit:
-            return describeResponderAfterFourthSuitChoice(chosenBid, shape, partnershipCalls, base);
+          case fiveCardHighAuctionPhases.naturalContinuation:
+            return describeConstructiveContinuationBidChoice({ hand, auction, seat, target: chosenBid, bid: chosenBid, context, baseExtras: base });
           default:
             return describeNaturalContinuationChoice(chosenBid, shape, hand, lastPartnerCall?.bid, base);
         }
@@ -520,12 +280,9 @@
       const blackwoodAgreement = agreementForPartnerBlackwoodAsk(auction, seat);
       if (blackwoodAgreement) return blackwoodResponseBidForAceCount(countAces(hand));
       const bidContext = context || auctionContextForFiveCardHigh(auction, seat);
-      const interferenceAwareTarget = bidContext.uncontested
-        ? null
-        : chooseInterferenceAwareContinuationFiveCardHigh(hand, auction, seat, bidContext);
       const target = bidContext.uncontested
         ? chooseUncontestedFiveCardHighBid(hand, auction, seat, bidContext, vulnerability)
-        : interferenceAwareTarget || chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
+        : chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
       return normalizeBid(target) || Pass();
     }
 
@@ -550,203 +307,17 @@
           case fiveCardHighAuctionPhases.response:
             return chooseFiveCardHighResponse(hand, openingCall.bid);
           case fiveCardHighAuctionPhases.openerRebid:
-            return chooseFiveCardHighOpenerRebid(hand, openingCall.bid, lastPartnerCall.bid);
           case fiveCardHighAuctionPhases.responderRebid:
-            return chooseFiveCardHighResponderRebid(hand, openingCall.bid, context.responseCall.bid, lastPartnerCall.bid);
           case fiveCardHighAuctionPhases.openerThird:
-            return chooseFiveCardHighOpenerThirdBid(hand, partnershipCalls);
           case fiveCardHighAuctionPhases.responderAfterFourthSuit:
-            return chooseFiveCardHighResponderAfterFourthSuit(hand, partnershipCalls);
+          case fiveCardHighAuctionPhases.naturalContinuation:
+            return chooseConstructiveContinuationBidTarget({ hand, auction, seat, context });
           case fiveCardHighAuctionPhases.noPartnerBid:
             return Pass();
           default:
             return chooseFiveCardHighNaturalContinuation(hand, lastPartnerCall?.bid, context.lastBid);
         }
       }
-
-  function chooseInterferenceAwareContinuationFiveCardHigh(hand, auction, seat, context = auctionContextForFiveCardHigh(auction, seat)) {
-        const continuation = interferenceAwareContinuationContext(context);
-        if (!continuation) return null;
-        const shape = handShape(hand);
-        if (continuation.kind === "openerAfterRaise") {
-          return openerRebidAfterRaiseFiveCardHigh(shape, hand, continuation.openingCall.bid, continuation.responseCall.bid);
-        }
-        if (continuation.kind === "responderAfterSingleRaiseInvite") {
-          return rebidResponderAfterSingleRaiseInviteFiveCardHigh(shape, continuation.openerRebidCall.bid);
-        }
-        return null;
-      }
-
-  function describeInterferenceAwareContinuationChoice(chosenBid, shape, hand, auction, seat, base, context = auctionContextForFiveCardHigh(auction, seat)) {
-        const continuation = interferenceAwareContinuationContext(context);
-        if (!continuation) return null;
-        const expectedBid = chooseInterferenceAwareContinuationFiveCardHigh(hand, auction, seat, context);
-        if (!sameCall(chosenBid, expectedBid)) return null;
-
-        const continuationBase = interferenceContinuationBase(base, context);
-        if (isPass(chosenBid)) {
-          return describePassBidChoice(shape, hand, auction, seat, continuationBase, {
-            ...context,
-            uncontested: true
-          });
-        }
-        if (continuation.kind === "openerAfterRaise") {
-          return describeOpenerRebidChoice(
-            chosenBid,
-            shape,
-            hand,
-            continuation.openingCall.bid,
-            continuation.responseCall.bid,
-            continuationBase
-          );
-        }
-        if (continuation.kind === "responderAfterSingleRaiseInvite") {
-          return describeResponderRebidChoice(
-            chosenBid,
-            shape,
-            continuation.openingCall.bid,
-            continuation.responseCall.bid,
-            continuation.openerRebidCall.bid,
-            continuationBase
-          );
-        }
-        return null;
-      }
-
-  function interferenceAwareContinuationContext(context) {
-        if (!context?.interfered || !context.ourSideOwnsCurrentContract || context.partnershipCalls.length < 2) return null;
-        const openingCall = context.openingCall;
-        const responseCall = context.responseCall;
-        const openerRebidCall = context.openerRebidCall;
-        if (!openingCall?.bid || !responseCall?.bid) return null;
-
-        if (openingCall.seat === context.seat && isDirectRaiseOfOpening(openingCall.bid, responseCall.bid)) {
-          return { kind: "openerAfterRaise", openingCall, responseCall };
-        }
-        if (
-          openingCall.seat === partnerOf(context.seat) &&
-          openerRebidCall?.bid &&
-          isSingleRaiseInviteFiveCardHigh(responseCall.bid, openerRebidCall.bid)
-        ) {
-          return { kind: "responderAfterSingleRaiseInvite", openingCall, responseCall, openerRebidCall };
-        }
-        return null;
-      }
-
-  function isDirectRaiseOfOpening(openingBid, responseBid) {
-        return (
-          openingBid?.level === 1 &&
-          openingBid.strain &&
-          openingBid.strain !== "NT" &&
-          responseBid?.strain === openingBid.strain &&
-          responseBid.level > openingBid.level &&
-          responseBid.level < gameLevel(openingBid.strain)
-        );
-      }
-
-  function interferenceContinuationBase(base, context) {
-        return {
-          ...base,
-          interfered: true,
-          interferenceKind: context.interferenceKind,
-          interferenceCallCount: context.opponentNonPassCalls?.length || 0
-        };
-      }
-
-
-
-
-
-
-  const internal = {
-    bidChoiceResult,
-    fiveCardHighBidChoiceResult,
-    describeFiveCardHighBidChoice,
-    describeDoubleBidChoice,
-    describePassBidChoice,
-    describeUncontestedFiveCardHighBidChoice,
-    describeOpeningBidChoice,
-    describeResponseBidChoice,
-    notrumpTransferSuit,
-    describeOpenerRebidChoice,
-    describeResponderRebidChoice,
-    describeNaturalContinuationChoice,
-    describeCompetitiveFiveCardHighBidChoice,
-    describeTakeoutDoubleAction,
-    chooseCompetitiveBidResult,
-    chooseCompetitiveBidResultForContext,
-    chooseInterferenceAwareContinuationFiveCardHigh,
-    describeInterferenceAwareContinuationChoice,
-    chooseUncontestedFiveCardHighBid,
-    chooseFiveCardHighOpeningMajor,
-    chooseFiveCardHighOpeningMinor,
-    chooseFiveCardHighWeakTwo,
-    chooseFiveCardHighPreempt,
-    respondToOneNotrumpFiveCardHigh,
-    respondToTwoNotrumpFiveCardHigh,
-    respondToStrongTwoClubsFiveCardHigh,
-    respondToWeakTwoFiveCardHigh,
-    preemptResponseContext,
-    respondToPreemptFiveCardHigh,
-    respondToOneClubFiveCardHigh,
-    respondToOneDiamondFiveCardHigh,
-    respondToOneMajorFiveCardHigh,
-    rebidAfterOneNotrumpResponseFiveCardHigh,
-    rebidAfterTwoNotrumpResponseFiveCardHigh,
-    rebidAfterOneSuitOpeningFiveCardHigh,
-    openerRebidAfterMinorNotrumpFiveCardHigh,
-    openerRebidAfterRaiseFiveCardHigh,
-    openerRebidAfterMinorRaiseFiveCardHigh,
-    isMajorSingleRaiseFiveCardHigh,
-    isMinorRaiseFiveCardHigh,
-    openerRebidAfterNotrumpFiveCardHigh,
-    openerRebidAfterNotrumpFallbackFiveCardHigh,
-    majorOpeningNotrumpResponseContext,
-    isMajorOpeningNotrumpResponseFiveCardHigh,
-    minorOpeningNotrumpResponseContext,
-    isMinorOpeningNotrumpResponseFiveCardHigh,
-    openerAfterMinorNotrumpResponseRuleName,
-    chooseLowerSecondSuitFiveCardHigh,
-    openerAfterNotrumpResponseRuleName,
-    openerRebidAfterNewSuitFiveCardHigh,
-    isSingleRaiseInviteFiveCardHigh,
-    rebidResponderAfterSingleRaiseInviteFiveCardHigh,
-    rebidResponderAfterOneNotrumpFiveCardHigh,
-    rebidResponderAfterTwoNotrumpFiveCardHigh,
-    chooseFiveCardHighOpenerThirdBid,
-    chooseFiveCardHighResponderAfterFourthSuit,
-    chooseCompetitiveFiveCardHighBid,
-    chooseFiveCardHighNaturalContinuation,
-    chooseResponseSuit,
-    chooseSuitByLengthThenRank,
-    chooseMajorByLength,
-    hasFourCardMajor,
-    countAces,
-    isBlackwoodAsk,
-    blackwoodResponseBidForAceCount,
-    blackwoodShownAceCount,
-    agreedTrumpAfterAcceptedNotrumpTransfer,
-    auctionAgreementFromAuction,
-    agreedTrumpFromAuction,
-    shouldUseBlackwoodAfterAcceptedTransfer,
-    chooseBlackwoodFollowup,
-    isOneSuitOpeningFiveCardHigh,
-    isOneMinorOpeningFiveCardHigh,
-    isWeakTwoOpeningFiveCardHigh,
-    supportLengthForOpening,
-    minimumOpeningLength,
-    chooseOpenerSecondSuit,
-    bestSuitByLength,
-    auctionContextForFiveCardHigh,
-    fiveCardHighAuctionPhases,
-    fourthSuitForAuction,
-    isFourthSuitForcingBid,
-    suitQuality,
-    ruleOf20OpeningContext,
-    twoLongestSuitsForRuleOf20,
-    hcpInSuit,
-    hasStopper
-  };
 
   return {
     chooseFiveCardHighBid,
@@ -755,7 +326,6 @@
     chooseFiveCardHighOpening,
     chooseFiveCardHighResponse,
     chooseFiveCardHighOpenerRebid,
-    chooseFiveCardHighResponderRebid,
-    _internal: internal
+    chooseFiveCardHighResponderRebid
   };
 });

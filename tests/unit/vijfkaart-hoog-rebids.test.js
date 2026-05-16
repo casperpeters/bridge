@@ -11,7 +11,7 @@ const {
   chooseFiveCardHigh,
   chooseFiveCardHighResult
 } = require("./harness.js");
-const fiveCardHighInternal = require("../../rules/bidding/systems/five-card-high/index.js")._internal;
+const fiveCardHighConventions = require("../../rules/bidding/systems/five-card-high/conventions.js");
 const strongTwoClubsRebids = require("../../rules/bidding/systems/five-card-high/rebids/strong-two-clubs/index.js");
 const fourthSuitForcingRebids = require("../../rules/bidding/systems/five-card-high/rebids/fourth-suit-forcing/index.js");
 const naturalOpenerRebids = require("../../rules/bidding/systems/five-card-high/rebids/natural-opener/index.js");
@@ -1301,18 +1301,18 @@ test("Vijfkaart Hoog matches lesson examples for Jacoby transfers over 2NT", () 
 });
 
 test("Vijfkaart Hoog Blackwood helpers count aces and map classic responses", () => {
-  assert.equal(fiveCardHighInternal.countAces(hand("AS", "AH", "2D", "3D")), 2);
-  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(0), bid(5, "C"));
-  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(4), bid(5, "C"));
-  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(1), bid(5, "D"));
-  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(2), bid(5, "H"));
-  assert.deepEqual(fiveCardHighInternal.blackwoodResponseBidForAceCount(3), bid(5, "S"));
-  assert.equal(fiveCardHighInternal.agreedTrumpAfterAcceptedNotrumpTransfer(bid(2, "NT"), bid(3, "H"), bid(3, "S")), "S");
-  assert.equal(fiveCardHighInternal.agreedTrumpAfterAcceptedNotrumpTransfer(bid(1, "NT"), bid(2, "D"), bid(2, "H")), "H");
+  assert.equal(fiveCardHighConventions.countAces(hand("AS", "AH", "2D", "3D")), 2);
+  assert.deepEqual(fiveCardHighConventions.blackwoodResponseBidForAceCount(0), bid(5, "C"));
+  assert.deepEqual(fiveCardHighConventions.blackwoodResponseBidForAceCount(4), bid(5, "C"));
+  assert.deepEqual(fiveCardHighConventions.blackwoodResponseBidForAceCount(1), bid(5, "D"));
+  assert.deepEqual(fiveCardHighConventions.blackwoodResponseBidForAceCount(2), bid(5, "H"));
+  assert.deepEqual(fiveCardHighConventions.blackwoodResponseBidForAceCount(3), bid(5, "S"));
+  assert.equal(fiveCardHighConventions.agreedTrumpAfterAcceptedNotrumpTransfer(bid(2, "NT"), bid(3, "H"), bid(3, "S")), "S");
+  assert.equal(fiveCardHighConventions.agreedTrumpAfterAcceptedNotrumpTransfer(bid(1, "NT"), bid(2, "D"), bid(2, "H")), "H");
 });
 
 test("Vijfkaart Hoog detects agreed trump conservatively from the auction", () => {
-  const competitiveRaise = fiveCardHighInternal.agreedTrumpFromAuction([
+  const competitiveRaise = fiveCardHighConventions.agreedTrumpFromAuction([
     { seat: "South", bid: bid(1, "S") },
     { seat: "West", bid: bid(3, "D") },
     { seat: "North", bid: bid(4, "S") },
@@ -1323,7 +1323,7 @@ test("Vijfkaart Hoog detects agreed trump conservatively from the auction", () =
   assert.equal(competitiveRaise.confidence, "explicit");
   assert.equal(competitiveRaise.bySeat, "North");
 
-  const acceptedTransfer = fiveCardHighInternal.agreedTrumpFromAuction([
+  const acceptedTransfer = fiveCardHighConventions.agreedTrumpFromAuction([
     { seat: "North", bid: bid(1, "NT") },
     { seat: "East", bid: pass() },
     { seat: "South", bid: bid(2, "D") },
@@ -1334,7 +1334,7 @@ test("Vijfkaart Hoog detects agreed trump conservatively from the auction", () =
   assert.equal(acceptedTransfer.source, "acceptedTransfer");
   assert.equal(acceptedTransfer.bySeat, "North");
 
-  assert.equal(fiveCardHighInternal.agreedTrumpFromAuction([
+  assert.equal(fiveCardHighConventions.agreedTrumpFromAuction([
     { seat: "South", bid: bid(1, "NT") },
     { seat: "West", bid: pass() },
     { seat: "North", bid: bid(4, "NT") }
@@ -1342,7 +1342,7 @@ test("Vijfkaart Hoog detects agreed trump conservatively from the auction", () =
 });
 
 test("Vijfkaart Hoog auction agreement helper distinguishes conservative fit sources", () => {
-  const staymanFit = fiveCardHighInternal.auctionAgreementFromAuction([
+  const staymanFit = fiveCardHighConventions.auctionAgreementFromAuction([
     { seat: "South", bid: bid(1, "NT") },
     { seat: "West", bid: pass() },
     { seat: "North", bid: bid(2, "C") },
@@ -1354,7 +1354,7 @@ test("Vijfkaart Hoog auction agreement helper distinguishes conservative fit sou
   assert.equal(staymanFit.trumpSuit, "S");
   assert.equal(staymanFit.source, "staymanFit");
 
-  const openerRaise = fiveCardHighInternal.auctionAgreementFromAuction([
+  const openerRaise = fiveCardHighConventions.auctionAgreementFromAuction([
     { seat: "South", bid: bid(1, "D") },
     { seat: "West", bid: pass() },
     { seat: "North", bid: bid(1, "S") },
@@ -1364,7 +1364,7 @@ test("Vijfkaart Hoog auction agreement helper distinguishes conservative fit sou
   assert.equal(openerRaise.trumpSuit, "S");
   assert.equal(openerRaise.source, "openerRaisesResponderMajor");
 
-  const preemptRaise = fiveCardHighInternal.auctionAgreementFromAuction([
+  const preemptRaise = fiveCardHighConventions.auctionAgreementFromAuction([
     { seat: "South", bid: bid(2, "H") },
     { seat: "West", bid: pass() },
     { seat: "North", bid: bid(4, "H") }
@@ -1372,7 +1372,7 @@ test("Vijfkaart Hoog auction agreement helper distinguishes conservative fit sou
   assert.equal(preemptRaise.trumpSuit, "H");
   assert.equal(preemptRaise.source, "preemptRaise");
 
-  const minorRaise = fiveCardHighInternal.auctionAgreementFromAuction([
+  const minorRaise = fiveCardHighConventions.auctionAgreementFromAuction([
     { seat: "South", bid: bid(1, "D") },
     { seat: "West", bid: pass() },
     { seat: "North", bid: bid(3, "D") }
@@ -1380,7 +1380,7 @@ test("Vijfkaart Hoog auction agreement helper distinguishes conservative fit sou
   assert.equal(minorRaise.trumpSuit, "D");
   assert.equal(minorRaise.source, "minorRaise");
 
-  const ambiguousMinorPreference = fiveCardHighInternal.auctionAgreementFromAuction([
+  const ambiguousMinorPreference = fiveCardHighConventions.auctionAgreementFromAuction([
     { seat: "South", bid: bid(1, "C") },
     { seat: "West", bid: pass() },
     { seat: "North", bid: bid(1, "D") },
