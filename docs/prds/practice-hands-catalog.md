@@ -72,4 +72,4 @@ SMB1-oefenhanden mogen bestaande geteste oefenhanden hergebruiken via een eigen 
 
 ## Further Notes
 
-The key domain distinction is now: **SMB1-lesroute** is the course structure from `docs/smb1.md`; **App-les** is the current Bridgetafel lesson structure; **Oefenhandencatalogus** is the reusable hand layer. These should remain separate until a later deliberate lesson-route migration.
+The key domain distinction is now: **SMB1-lesroute** is the course structure from `practice-hands/smb1-course.js`; **App-les** is the current Bridgetafel lesson structure; **Oefenhandencatalogus** is the reusable hand layer. These should remain separate until a later deliberate lesson-route migration.

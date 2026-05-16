@@ -1,9 +1,13 @@
 (function initBridgeLessonTableTask(root, factory) {
-  const api = factory();
+  const isCommonJs = typeof module === "object" && module.exports;
+  const actionValidation = isCommonJs ? require("./action-validation.js") : root.BridgeLearningActionValidation;
+  const api = factory(actionValidation);
   if (typeof module === "object" && module.exports) module.exports = api;
   root.BridgeLessonTableTask = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeLessonTableTask() {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createBridgeLessonTableTask(actionValidation) {
   "use strict";
+
+  if (!actionValidation) throw new Error("action-validation.js must load before lesson-table-task.js");
 
   function tableTaskCompleted(task, context = {}) {
     if (!task) return false;
@@ -32,61 +36,32 @@
   function tableTaskActionFeedback(task, action = {}) {
     const expected = task?.expectedAction;
     if (!expected) return null;
-    if (expected.type && action.type && expected.type !== action.type) return null;
-    if (expected.seat && action.seat && expected.seat !== action.seat) return null;
-
-    const ok = expected.type === "bid"
-      ? expectedBidMatches(expected, action.bid)
-      : expected.type === "card"
-        ? expectedCardMatches(expected, action.card)
-        : true;
-    if (ok) return null;
-
-    return {
-      title: expected.retryTitle || "Probeer nog eens",
-      body: expected.retryBody || "Deze keuze is legaal, maar niet de bedoelde actie voor dit lesmoment. Probeer opnieuw.",
-      hint: expected.hint || ""
-    };
+    const result = actionValidation.validateExpectedAction(expected, action, {
+      wrongTitle: expected.retryTitle,
+      wrong: expected.retryBody,
+      hint: expected.hint
+    });
+    return result.applies && !result.ok ? result.feedback : null;
   }
 
   function expectedBidMatches(expected, bid) {
-    const codes = normalizeList(expected.calls || expected.call || expected.bid);
-    if (!codes.length) return true;
-    const bidCode = callCode(bid);
-    return codes.some((code) => normalizeCallCode(code) === bidCode);
+    return actionValidation.expectedBidMatches(expected, bid);
   }
 
   function expectedCardMatches(expected, card) {
-    if (!card) return false;
-    const cardIds = normalizeList(expected.cardIds || expected.cards || expected.cardId);
-    if (cardIds.length && !cardIds.includes(card.id)) return false;
-    const suits = normalizeList(expected.suits || expected.suit);
-    if (suits.length && !suits.includes(card.suit)) return false;
-    return Boolean(cardIds.length || suits.length);
+    return actionValidation.expectedCardMatches(expected, card);
   }
 
   function normalizeList(value) {
-    if (!value) return [];
-    return (Array.isArray(value) ? value : [value]).map(String);
+    return actionValidation.normalizeList(value);
   }
 
   function callCode(bid) {
-    if (!bid) return "";
-    if (bid.type === "Pass") return "PASS";
-    if (bid.type === "Double") return "X";
-    if (bid.type === "Redouble") return "XX";
-    if (bid.type === "Bid") return normalizeCallCode(`${bid.level}${bid.strain}`);
-    return normalizeCallCode(bid.call || bid.code || "");
+    return actionValidation.callCode(bid);
   }
 
   function normalizeCallCode(value) {
-    return String(value || "")
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "")
-      .replace(/SA$/, "NT")
-      .replace(/^P$/, "PASS")
-      .replace(/^PAS$/, "PASS");
+    return actionValidation.normalizeCallCode(value);
   }
 
   function allPlayedCards(context) {

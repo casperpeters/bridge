@@ -13,6 +13,7 @@
       actions: {
         startHand: actions.startHand,
         startPracticeHand: actions.startPracticeHand,
+        startInteractiveExercise: actions.startInteractiveExercise,
         startLesson: actions.startLesson,
         autoCompleteAuction: actions.autoCompleteAuction,
         enterContractReveal: actions.enterContractReveal,
@@ -87,6 +88,7 @@
         rules,
         startHand: actions.startHand,
         startPracticeHand: actions.startPracticeHand,
+        startInteractiveExercise: actions.startInteractiveExercise,
         startLesson: actions.startLesson,
         autoCompleteAuction: actions.autoCompleteAuction,
         enterContractReveal: actions.enterContractReveal,

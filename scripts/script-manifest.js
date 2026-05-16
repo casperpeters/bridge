@@ -17,7 +17,11 @@
     "rules/bidding/systems/five-card-high/conventions.js",
     "rules/bidding/systems/five-card-high/opening.js",
     "rules/bidding/systems/five-card-high/responses.js",
+    "rules/bidding/systems/five-card-high/rebids/notrump-systems/index.js",
+    "rules/bidding/systems/five-card-high/rebids/blackwood/index.js",
     "rules/bidding/systems/five-card-high/rebids/strong-two-clubs/index.js",
+    "rules/bidding/systems/five-card-high/rebids/fourth-suit-forcing/index.js",
+    "rules/bidding/systems/five-card-high/rebids/natural-opener/index.js",
     "rules/bidding/systems/five-card-high/rebids.js",
     "rules/bidding/systems/five-card-high/competitive.js",
     "rules/bidding/systems/five-card-high/index.js",
@@ -49,6 +53,8 @@
   ];
 
   const practiceHands = [
+    "practice-hands/smb1-course.js",
+    "practice-hands/interactive-smb1-exercises.js",
     "practice-hands/catalog/five-card-high-openings.js",
     "practice-hands/catalog/notrump-responses.js",
     "practice-hands/catalog/bidding-basic.js",
@@ -85,6 +91,7 @@
     "scripts/learning/glossary.js",
     "scripts/learning/catalog/lesson-data.js",
     "scripts/learning/catalog/lesson-cloning.js",
+    "scripts/learning/table/action-validation.js",
     "scripts/learning/table/lesson-table-task.js",
     "scripts/learning/catalog/lesson-validation.js",
     "scripts/learning/lessons.js",
@@ -99,6 +106,7 @@
     "scripts/state/review-playback.js",
     "scripts/learning/lesson-board-coach.js",
     "scripts/learning/lesson-start.js",
+    "scripts/learning/interactive/exercise-table.js",
     "scripts/feedback/controller.js",
     "scripts/render/score-table.js",
     "scripts/render/play-plan.js",
@@ -122,6 +130,7 @@
   const lessonIndex = [
     "scripts/learning/catalog/lesson-data.js",
     "scripts/learning/catalog/lesson-cloning.js",
+    "scripts/learning/table/action-validation.js",
     "scripts/learning/table/lesson-table-task.js",
     "scripts/learning/catalog/lesson-validation.js",
     "scripts/learning/lessons.js",

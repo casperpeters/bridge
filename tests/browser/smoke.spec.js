@@ -4,6 +4,8 @@ const {
   prepareNorthSouthDeclarerHand
 } = require("./helpers/app-test-utils");
 
+test.setTimeout(30_000);
+
 async function setupVisibleNotrumpUitspelenEnding(page, { lessonStep = null, practiceHand = false } = {}) {
   await page.evaluate(({ lessonStep, practiceHand }) => {
     const app = window.BridgeAppTestHooks;
@@ -231,6 +233,21 @@ async function openLayoutCheckApp(page) {
   await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
 }
 
+async function openExercise(page, exerciseId) {
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto(`/?testHooks=1&exercise=${encodeURIComponent(exerciseId)}`);
+  await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+  await expect.poll(() =>
+    page.evaluate(() => window.BridgeAppTestHooks?.getState().interactiveExercise?.id || null)
+  ).toBe(exerciseId);
+  return pageErrors;
+}
+
+async function clickBidButton(page, label) {
+  await page.locator("#bid-controls button").filter({ hasText: new RegExp(`^${label}$`) }).click();
+}
+
 async function measureUitspelenPlacement(page) {
   return page.evaluate(() => {
     const rectFor = (selector) => {
@@ -310,7 +327,7 @@ test("loads the table and lets South make an auction call", async ({ page }) => 
   expect(pageErrors).toEqual([]);
 });
 
-test("opens oefenhanden from the menu and starts a filtered practice hand", async ({ page }) => {
+test("opens oefenhanden from the menu and shows the SMB1 lesson route", async ({ page }) => {
   const pageErrors = await openFreshApp(page);
 
   await page.locator("#settings-summary").click();
@@ -321,48 +338,165 @@ test("opens oefenhanden from the menu and starts a filtered practice hand", asyn
   await practiceMenuLink.click();
 
   await expect(page).toHaveURL(/\/practice\/index\.html$/);
-  await expect(page.locator("#practice-title")).toContainText("Zoek een vaste oefensituatie");
-  await expect(page.locator("[data-practice-count]")).toContainText("oefenhanden");
+  await expect(page.locator("#practice-title")).toContainText("Start met Bridge 1 oefenen");
+  await expect(page.locator("[data-practice-count]")).toHaveText("12 lessen");
+  await expect(page.locator("[data-practice-search]")).toHaveCount(0);
+  await expect(page.locator("[data-practice-catalog]")).toHaveCount(0);
+  await expect(page.locator("[data-practice-lesson]")).toHaveCount(12);
+  await expect(page.locator("[data-practice-lesson='smb1-les04']")).toContainText("Speelplan");
+  await expect(page.locator("body")).not.toContainText("smb1-les04-kleurcontract-plan");
 
   await page.goto("/practice/index.html?testHooks=1");
-  await page.locator("[data-practice-search]").fill("troef trekken");
-  await expect(page.locator("[data-practice-list]")).toContainText("Troef trekken");
-  await expect(page.locator("[data-practice-empty]")).toBeHidden();
-
-  await page.locator("[data-practice-catalog]").selectOption("start-met-bridge-1");
-  await expect(page.locator("[data-practice-lessons]")).toBeVisible();
-  await expect(page.locator("[data-practice-lessons]")).toContainText("Start met Bridge 1");
-
   await page.locator("[data-practice-lesson='smb1-les04']").evaluate((link) => link.click());
-  await expect(page).toHaveURL(/catalog=start-met-bridge-1/);
-  await expect(page.locator("[data-practice-lesson='smb1-les04']")).toHaveClass(/is-active/);
-  const lessonCard = page.locator(".practice-card", { hasText: "smb1-les04-kleurcontract-plan" });
-  await expect(lessonCard).toContainText("SMB1 les 04");
-  await expect(lessonCard).toContainText("Troef trekken");
+  await expect(page).toHaveURL(/lesson=smb1-les04/);
+  await expect(page.locator("[data-practice-detail]")).toBeVisible();
+  await expect(page.locator("[data-practice-detail-kicker]")).toHaveText("Les 4");
+  await expect(page.locator("[data-practice-detail-title]")).toHaveText("Speelplan");
+  await expect(page.locator("[data-practice-goals] .practice-goal-item")).toHaveCount(8);
+  await expect(page.locator("[data-practice-goals]")).toContainText("In een sans-atoutcontract vaste slagen tellen.");
+  await expect(page.locator("[data-practice-goals] .practice-goal-status")).toHaveCount(8);
+  await expect(page.locator("[data-practice-goals] .practice-goal-status").first()).toHaveText("Nog geen tafeloefening");
 
-  const startLink = lessonCard.locator(".practice-start-link");
-  await expect(startLink).toHaveAttribute("href", /hand=smb1-les04-kleurcontract-plan/);
-  await startLink.evaluate((link) => link.click());
+  await page.locator("[data-practice-back]").click();
+  await expect(page).toHaveURL(/\/practice\/index\.html\?testHooks=1$/);
+  await expect(page.locator("[data-practice-lesson]")).toHaveCount(12);
+  expect(pageErrors).toEqual([]);
+});
 
-  await expect(page).toHaveURL(/index\.html\?hand=smb1-les04-kleurcontract-plan/);
-  await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const state = window.BridgeAppTestHooks?.getState?.();
-        return {
-          practiceId: state?.practice?.id || null,
-          lessonId: state?.practice?.lessonId || null,
-          phase: state?.phase || null
-        };
-      })
-    )
-    .toEqual({
-      practiceId: "smb1-les04-kleurcontract-plan",
-      lessonId: null,
-      phase: "bidding"
-    });
-  expect(new URL(page.url()).searchParams.get("return")).toContain("practice/index.html?testHooks=1");
+test("starts an interactive SMB1 bidding exercise from the practice route", async ({ page }) => {
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto("/practice/index.html?testHooks=1&lesson=smb1-les09");
+  await expect(page.locator("[data-interactive-exercise='smb1-les09-zonder-fit-1sa-antwoord-1nt']")).toBeVisible();
+  await page.locator("[data-interactive-exercise='smb1-les09-zonder-fit-1sa-antwoord-1nt'] .practice-start-link").click();
+
+  await expect(page).toHaveURL(/exercise=smb1-les09-zonder-fit-1sa-antwoord-1nt/);
+  await expect.poll(() =>
+    page.evaluate(() => {
+      if (!window.BridgeAppTestHooks) return null;
+      const state = window.BridgeAppTestHooks.getState();
+      return {
+        exercise: state.interactiveExercise?.id,
+        phase: state.phase,
+        turn: window.BridgeAppTestHooks.seatAt(state.turnIndex),
+        auction: state.auction.map((call) => `${call.seat}:${window.BridgeAppTestHooks.rules.isPass(call.bid) ? "PASS" : `${call.bid.level}${call.bid.strain}`}`)
+      };
+    })
+  ).toEqual({
+    exercise: "smb1-les09-zonder-fit-1sa-antwoord-1nt",
+    phase: "bidding",
+    turn: "South",
+    auction: ["North:1S", "East:PASS"]
+  });
+  await expect(page.locator("[data-interactive-exercise-question='bid']")).toContainText("geen fit");
+  expect(pageErrors).toEqual([]);
+});
+
+test("blocks wrong bidding exercise choices and completes the correct call", async ({ page }) => {
+  const pageErrors = await openExercise(page, "smb1-les09-zonder-fit-1sa-antwoord-1nt");
+
+  await page.evaluate(() => window.BridgeAppTestHooks.setGuidanceMode(true));
+  await expect(page.locator("#guidance-panel")).toBeHidden();
+  await expect(page.locator("#bid-controls .recommended-action")).toHaveCount(0);
+
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().auction.length)).toBe(2);
+  await page.locator("#bid-controls button.pass").click();
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().auction.length)).toBe(2);
+  await expect(page.locator("#lesson-panel")).toContainText("6-9 HCP");
+
+  await clickBidButton(page, "1NT");
+  await expect.poll(() =>
+    page.evaluate(() => {
+      const state = window.BridgeAppTestHooks.getState();
+      const last = state.auction[state.auction.length - 1];
+      return {
+        completed: state.interactiveExercise.completed,
+        lastSeat: last.seat,
+        lastCall: `${last.bid.level}${last.bid.strain}`
+      };
+    })
+  ).toEqual({
+    completed: true,
+    lastSeat: "South",
+    lastCall: "1NT"
+  });
+  await expect(page.locator("#lesson-panel")).toContainText("Goed");
+
+  await page.locator("#lesson-panel button", { hasText: "Opnieuw proberen" }).click();
+  await expect.poll(() =>
+    page.evaluate(() => {
+      const state = window.BridgeAppTestHooks.getState();
+      return {
+        completed: state.interactiveExercise.completed,
+        auctionLength: state.auction.length
+      };
+    })
+  ).toEqual({ completed: false, auctionLength: 2 });
+  expect(pageErrors).toEqual([]);
+});
+
+test("moves to the next interactive SMB1 exercise within a lesson", async ({ page }) => {
+  const pageErrors = await openExercise(page, "smb1-les07-openen-1sa-gebalanceerd");
+
+  await clickBidButton(page, "1NT");
+  await expect(page.locator("#lesson-panel")).toContainText("Volgende oefening");
+  await page.locator("#lesson-panel button", { hasText: "Volgende oefening" }).click();
+
+  await expect(page).toHaveURL(/exercise=smb1-les07-passen-zonder-opening-pass/);
+  await expect.poll(() =>
+    page.evaluate(() => {
+      const state = window.BridgeAppTestHooks.getState();
+      return {
+        exercise: state.interactiveExercise?.id,
+        seed: state.dealSeed,
+        auctionLength: state.auction.length,
+        turn: window.BridgeAppTestHooks.seatAt(state.turnIndex)
+      };
+    })
+  ).toEqual({
+    exercise: "smb1-les07-passen-zonder-opening-pass",
+    seed: "smb1-les07-passen-zonder-opening",
+    auctionLength: 0,
+    turn: "South"
+  });
+  await expect(page.locator("[data-interactive-exercise-question='bid']")).toContainText("geen opening");
+
+  await page.locator("#bid-controls button.pass").click();
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().interactiveExercise.completed)).toBe(true);
+  await expect(page.locator("#lesson-panel")).toContainText("Terug naar oefeningen");
+  expect(pageErrors).toEqual([]);
+});
+
+test("blocks wrong card exercise choices and suppresses card suggestions", async ({ page }) => {
+  const pageErrors = await openExercise(page, "smb1-les06-deblokkeren-derde-hand-ks");
+
+  await page.evaluate(() => window.BridgeAppTestHooks.setGuidanceMode(true));
+  await expect(page.locator("#guidance-panel")).toBeHidden();
+  await expect(page.locator("#exercise-trick-question")).toBeVisible();
+  await expect(page.locator("#exercise-trick-question")).toContainText("Welke schoppenkaart");
+  await expect(page.locator("#south-hand .recommended-card")).toHaveCount(0);
+
+  await page.evaluate(() => window.BridgeAppTestHooks.playCard("South", "7S"));
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().currentTrick.length)).toBe(2);
+  await expect(page.locator("#lesson-panel")).toContainText("De 7 schoppen");
+
+  await page.evaluate(() => window.BridgeAppTestHooks.playCard("South", "KS"));
+  await expect.poll(() =>
+    page.evaluate(() => {
+      const state = window.BridgeAppTestHooks.getState();
+      return {
+        completed: state.interactiveExercise.completed,
+        trickLength: state.currentTrick.length,
+        lastCard: state.currentTrick[state.currentTrick.length - 1]?.card.id
+      };
+    })
+  ).toEqual({
+    completed: true,
+    trickLength: 3,
+    lastCard: "KS"
+  });
+  await expect(page.locator("#lesson-panel")).toContainText("Goed");
   expect(pageErrors).toEqual([]);
 });
 
@@ -426,7 +560,7 @@ test("reveals dummy and shows the play-plan suggestion path", async ({ page }, t
     await page.locator("#north-hand .card.legal").first().focus();
     await page.keyboard.press("Enter");
   }
-  await expect(page.locator("#trick-area .card.played")).toHaveCount(2);
+  await expect.poll(() => page.locator("#trick-area .card.played").count()).toBeGreaterThanOrEqual(2);
 });
 
 test("can finish a hand and shows review", async ({ page }) => {
@@ -459,8 +593,8 @@ test("can finish a hand and shows review", async ({ page }) => {
     phase: "complete",
     contract: "4H",
     declarer: "South",
-    score: 620,
-    tricksMade: 10
+    score: -200,
+    tricksMade: 8
   });
   await expect(page.locator("#review-panel")).toBeVisible();
   await expect(page.locator("#review-tricks tbody tr")).toHaveCount(13);

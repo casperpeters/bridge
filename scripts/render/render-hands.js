@@ -9,7 +9,9 @@
     const { seatEls } = dom;
 
 function renderHands() {
-  const recommended = state.guidanceMode ? actions.currentRecommendedCard() : null;
+  const recommended = state.guidanceMode && !actions.interactiveExerciseSuppressesGuidance?.("card")
+    ? actions.currentRecommendedCard()
+    : null;
   const playback = actions.currentReviewPlayback();
   for (const seat of seats) {
     seatEls[seat].innerHTML = "";

@@ -25,6 +25,7 @@
     const ensurePlayPlan = (...args) => actions.ensurePlayPlan(...args);
     const finishHand = (...args) => actions.finishHand(...args);
     const lessonBoardBlocksHumanPlay = (...args) => actions.lessonBoardBlocksHumanPlay(...args);
+    const maybeCompleteInteractiveExerciseAction = (...args) => actions.maybeCompleteInteractiveExerciseAction?.(...args);
     const maybeCompleteLessonTableTask = (...args) => actions.maybeCompleteLessonTableTask?.(...args);
     const playPlanReferenceText = (...args) => actions.playPlanReferenceText(...args);
     const renderGuidance = (...args) => render.renderGuidance(...args);
@@ -569,6 +570,7 @@ function playCard(seat, cardId) {
     showIllegalCardFeedback(seat, card);
     return;
   }
+  if (!actions.validateInteractiveExerciseAction?.("card", { seat, card })) return;
   if (!actions.validateLessonTableAction?.("card", { seat, card })) return;
   state.illegalActionFeedback = null;
   state.lessonActionFeedback = null;
@@ -584,6 +586,7 @@ function playCard(seat, cardId) {
   renderHands();
   renderPlayedCard(seat, card, { animationSource });
   setStatus("played", { seat, card: cardText(card) });
+  if (maybeCompleteInteractiveExerciseAction("card")) return;
   if (maybeCompleteLessonTableTask("card")) return;
   if (state.currentTrick.length === 4) {
     pauseCompletedTrick();

@@ -23,36 +23,26 @@
       </header>
 
       <section class="practice-page-head" aria-labelledby="practice-title">
-        <h1 id="practice-title">Zoek een vaste oefensituatie</h1>
-        <p>Filter op onderwerp, catalogus of niveau en gebruik de zichtbare id bij feedback of testen.</p>
+        <h1 id="practice-title">Start met Bridge 1 oefenen</h1>
+        <p>Kies een les en bekijk per leerdoel of er al een tafeloefening klaarstaat.</p>
       </section>
 
-      <section class="practice-browser" aria-label="Oefenhanden zoeken">
-        <form class="practice-filters">
-          <div class="practice-filter-grid">
-            <label class="practice-filter-field practice-search-field">
-              <span>Zoeken</span>
-              <input data-practice-search type="search" placeholder="Bijvoorbeeld troef trekken, Stayman of kwetsbaar">
-            </label>
-            <label class="practice-filter-field">
-              <span>Catalogus</span>
-              <select data-practice-catalog></select>
-            </label>
-            <label class="practice-filter-field">
-              <span>Type</span>
-              <select data-practice-focus></select>
-            </label>
-            <label class="practice-filter-field">
-              <span>Niveau</span>
-              <select data-practice-level></select>
-            </label>
-          </div>
-          <div class="practice-lesson-overview" data-practice-lessons hidden></div>
+      <section class="practice-browser" aria-label="Start met Bridge 1 oefenroute">
+        <section class="practice-route-panel" data-practice-route>
           <p class="practice-result-count" data-practice-count aria-live="polite"></p>
-        </form>
+          <div class="practice-list practice-lesson-grid" data-practice-lessons></div>
+        </section>
 
-        <p class="practice-empty" data-practice-empty hidden>Geen oefenhanden gevonden.</p>
-        <div class="practice-list" data-practice-list></div>
+        <section class="practice-detail" data-practice-detail hidden aria-labelledby="practice-detail-title">
+          <div class="practice-detail-header">
+            <button class="practice-back-button" type="button" data-practice-back>Alle lessen</button>
+            <div>
+              <p class="practice-detail-kicker" data-practice-detail-kicker></p>
+              <h2 id="practice-detail-title" data-practice-detail-title></h2>
+            </div>
+          </div>
+          <ol class="practice-goal-list" data-practice-goals></ol>
+        </section>
       </section>
     </main>
 
@@ -67,7 +57,11 @@
     <script src="../rules/bidding/systems/five-card-high/conventions.js"></script>
     <script src="../rules/bidding/systems/five-card-high/opening.js"></script>
     <script src="../rules/bidding/systems/five-card-high/responses.js"></script>
+    <script src="../rules/bidding/systems/five-card-high/rebids/notrump-systems/index.js"></script>
+    <script src="../rules/bidding/systems/five-card-high/rebids/blackwood/index.js"></script>
     <script src="../rules/bidding/systems/five-card-high/rebids/strong-two-clubs/index.js"></script>
+    <script src="../rules/bidding/systems/five-card-high/rebids/fourth-suit-forcing/index.js"></script>
+    <script src="../rules/bidding/systems/five-card-high/rebids/natural-opener/index.js"></script>
     <script src="../rules/bidding/systems/five-card-high/rebids.js"></script>
     <script src="../rules/bidding/systems/five-card-high/competitive.js"></script>
     <script src="../rules/bidding/systems/five-card-high/index.js"></script>
@@ -96,6 +90,8 @@
     <script src="../rules/card-play/declarer-play.js"></script>
     <script src="../rules/card-play.js"></script>
     <script src="../bridge-rules.js"></script>
+    <script src="../practice-hands/smb1-course.js"></script>
+    <script src="../practice-hands/interactive-smb1-exercises.js"></script>
     <script src="../practice-hands/catalog/five-card-high-openings.js"></script>
     <script src="../practice-hands/catalog/notrump-responses.js"></script>
     <script src="../practice-hands/catalog/bidding-basic.js"></script>

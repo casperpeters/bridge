@@ -220,7 +220,9 @@ function renderBidControls() {
   els.bidControls.removeAttribute("aria-hidden");
   els.bidControls.setAttribute("aria-disabled", String(!isSouthTurn));
   const southBidResult = isSouthTurn ? chooseRecommendedBidResult("South") : null;
-  const recommendedBid = state.guidanceMode && isSouthTurn ? southBidResult?.bid || null : null;
+  const recommendedBid = state.guidanceMode && isSouthTurn && !actions.interactiveExerciseSuppressesGuidance?.("bid")
+    ? southBidResult?.bid || null
+    : null;
 
   for (let level = 1; level <= 7; level++) {
     for (const strain of biddingBoxStrains) {
@@ -292,6 +294,7 @@ function renderBidControls() {
   });
 
   els.bidControls.append(primaryActions, advancedActions, advancedToggle);
+  render.renderInteractiveExerciseBidQuestion?.();
 }
 
 function biddingButton(label, className) {

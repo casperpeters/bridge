@@ -26,7 +26,9 @@
 
 function renderHistory() {
   syncHistoryPanelState();
-  if (els.lessonPanel) els.lessonPanel.hidden = !actions.isLessonModeActive?.() || state.phase === "complete";
+  if (els.lessonPanel) {
+    els.lessonPanel.hidden = !(actions.isLessonModeActive?.() || actions.activeInteractiveExercise?.()) || state.phase === "complete";
+  }
   els.history.innerHTML = "";
   if (actions.isLessonModeActive?.() && state.phase !== "complete") return;
   if (!state.showPlayHistory) return;
@@ -108,7 +110,7 @@ function renderReview() {
 
 function syncHistoryPanelState(complete = state.phase === "complete") {
   const hasVisiblePlayPlan = !els.playPlan.hidden;
-  const hasLessonPanel = actions.isLessonModeActive?.() && !complete;
+  const hasLessonPanel = Boolean((actions.isLessonModeActive?.() || actions.activeInteractiveExercise?.()) && !complete);
   const visible = !complete && (hasLessonPanel || shouldShowLiveHistory() || shouldReserveHistorySlot() || hasVisiblePlayPlan);
   els.historyPanel.hidden = !visible;
   els.historyPanel.classList.toggle("is-lesson-mode", Boolean(hasLessonPanel));

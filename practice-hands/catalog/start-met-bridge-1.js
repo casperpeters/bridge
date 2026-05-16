@@ -1,5 +1,6 @@
 (function initStartMetBridge1PracticeHands(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
+  const smb1Course = isCommonJs ? require("../smb1-course.js") : root.BridgeSmb1Course;
   const collections = isCommonJs
     ? {
         fiveCardHighOpenings: require("./five-card-high-openings.js"),
@@ -10,28 +11,15 @@
         basicScoring: require("./scoring-basic.js")
       }
     : root.PracticeHandCollections || {};
-  const hands = factory(collections);
+  const hands = factory(collections, smb1Course);
   if (isCommonJs) module.exports = hands;
   root.PracticeHandCollections = root.PracticeHandCollections || {};
   root.PracticeHandCollections.startMetBridge1 = hands;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createStartMetBridge1PracticeHands(collections) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createStartMetBridge1PracticeHands(collections, smb1Course) {
   "use strict";
 
   const course = "start-met-bridge-1";
-  const lessons = {
-    1: "Het bridgespel",
-    2: "Slagen ontwikkelen en snijden",
-    3: "Lengteslagen",
-    4: "Speelplan",
-    5: "Uitkomen",
-    6: "Tegenspelen",
-    7: "Het openingsbod",
-    8: "Hoge-kleuropening met fit",
-    9: "Hoge-kleuropening zonder fit",
-    10: "Nieuwe kleur na hoge-kleuropening",
-    11: "Lage-kleuropening en verder bieden",
-    12: "Het volgbod"
-  };
+  if (!smb1Course?.findLesson) throw new Error("practice-hands/smb1-course.js must load before start-met-bridge-1.js");
 
   const reusedHands = [
     reuse("smb1-les01-troefcontract-herkennen", 1, "draw-trumps-001", {
@@ -326,10 +314,12 @@
   }
 
   function lessonMeta(number) {
+    const courseLesson = smb1Course.findLesson(number);
+    if (!courseLesson) throw new Error(`Unknown SMB1 lesson number: ${number}`);
     return {
-      number,
-      id: `smb1-les${String(number).padStart(2, "0")}`,
-      title: lessons[number]
+      number: courseLesson.number,
+      id: courseLesson.id,
+      title: courseLesson.title
     };
   }
 

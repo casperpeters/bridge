@@ -34,6 +34,7 @@
     ["registerHandStart", modules.registerHandStart],
     ["registerLessonBoardCoach", modules.registerLessonBoardCoach],
     ["registerLessonStart", modules.registerLessonStart],
+    ["registerInteractiveExerciseTable", modules.registerInteractiveExerciseTable],
     ["registerFeedback", modules.registerFeedback],
     ["registerAppRenderer", modules.registerAppRenderer],
     ["registerBootstrap", modules.registerBootstrap]
@@ -49,5 +50,11 @@
   }
   modules.registerPublicApi(runtime);
 
-  if (!runtime.actions.startLessonFromUrl() && !runtime.actions.startPracticeHandFromUrl()) runtime.actions.startHand();
+  if (
+    !runtime.actions.startInteractiveExerciseFromUrl() &&
+    !runtime.actions.startLessonFromUrl() &&
+    !runtime.actions.startPracticeHandFromUrl()
+  ) {
+    runtime.actions.startHand();
+  }
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -16,6 +16,8 @@ require("./unit/vijfkaart-hoog-responses.test.js");
 require("./unit/vijfkaart-hoog-rebids.test.js");
 require("./unit/vijfkaart-hoog-competitive.test.js");
 require("./unit/bid-explanations-family-copy.test.js");
+require("./unit/smb1-course.test.js");
+require("./unit/interactive-smb1-exercises.test.js");
 require("./unit/practice-hands.test.js");
 require("./unit/practice-catalog-model.test.js");
 require("./unit/lessons.test.js");

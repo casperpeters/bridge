@@ -135,11 +135,13 @@
       if (!shouldSkipHandRenderForDealAnimation()) render.renderHands();
       renderReviewPlaybackTrickSlots();
       renderTrickSlotFocus();
+      render.renderInteractiveExerciseTrickQuestion?.();
       render.renderAuction();
       render.renderBidControls();
       render.renderPlayPlan();
       render.renderHistory();
       render.renderLessonPanel?.();
+      render.renderInteractiveExercisePanel?.();
       render.renderPlayExplanations();
       render.renderReview();
       renderContract();
@@ -375,6 +377,7 @@
       els.guidancePanel.innerHTML = "";
       if (!state.guidanceMode || state.awaitingTrickAdvance) return;
       if (actions.blockingLessonBoardStep()) return;
+      if (actions.interactiveExerciseSuppressesGuidance?.()) return;
 
       const guidance = currentGuidance();
       if (!guidance) return;

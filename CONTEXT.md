@@ -4,7 +4,7 @@ Dit document bewaakt domeintaal voor Bridgetafel zodat lesroutes, oefenhanden en
 
 ## Language
 
-**SMB1-lesroute**: De cursusstructuur uit `Start met Bridge 1`, met lesnummers en hoofdstuktitels zoals vastgelegd in `docs/smb1.md`.
+**SMB1-lesroute**: De cursusstructuur uit `Start met Bridge 1`, met lesnummers, hoofdstuktitels en leerdoelen zoals vastgelegd in `practice-hands/smb1-course.js`.
 _Avoid_: huidige app-lesroute, losse lespagina
 
 **App-les**: Een bestaande interactieve les in Bridgetafel, met eigen huidige nummering en tafelkoppeling.

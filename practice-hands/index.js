@@ -1,6 +1,8 @@
 (function initPracticeHands(root, factory) {
   const isCommonJs = typeof module === "object" && module.exports;
   const bridgeRules = isCommonJs ? require("../bridge-rules.js") : root.BridgeRules;
+  const smb1Course = isCommonJs ? require("./smb1-course.js") : root.BridgeSmb1Course;
+  const interactiveSmb1Exercises = isCommonJs ? require("./interactive-smb1-exercises.js") : root.BridgeInteractiveSmb1Exercises;
   const catalogModel = isCommonJs ? require("./catalog-model.js") : root.PracticeCatalogModel;
   const collections = isCommonJs
     ? {
@@ -13,13 +15,15 @@
         startMetBridge1: require("./catalog/start-met-bridge-1.js")
       }
     : root.PracticeHandCollections || {};
-  const api = factory(bridgeRules, collections, catalogModel);
+  const api = factory(bridgeRules, collections, catalogModel, smb1Course, interactiveSmb1Exercises);
   if (isCommonJs) module.exports = api;
   root.PracticeHands = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createPracticeHands(bridgeRules, collections, catalogModel) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createPracticeHands(bridgeRules, collections, catalogModel, smb1Course, interactiveSmb1Exercises) {
   "use strict";
 
   if (!catalogModel) throw new Error("practice-hands/catalog-model.js must load before practice-hands/index.js");
+  if (!smb1Course) throw new Error("practice-hands/smb1-course.js must load before practice-hands/index.js");
+  if (!interactiveSmb1Exercises) throw new Error("practice-hands/interactive-smb1-exercises.js must load before practice-hands/index.js");
 
   const seats = ["North", "East", "South", "West"];
   const seatAliases = {
@@ -97,6 +101,7 @@
   }
 
   validatePracticeHands();
+  validateInteractiveSmb1Exercises();
 
   function findPracticeHand(id) {
     return handsById.get(String(id || "").trim()) || null;
@@ -226,6 +231,70 @@
     return catalogModel.filterPracticeHands(hands, filters);
   }
 
+  function getSmb1Course() {
+    return smb1Course.cloneCourse ? smb1Course.cloneCourse() : cloneScenario(smb1Course.course);
+  }
+
+  function getSmb1Lessons() {
+    return getSmb1Course().lessons;
+  }
+
+  function findSmb1Lesson(ref) {
+    const found = smb1Course.findLesson ? smb1Course.findLesson(ref) : null;
+    return found ? cloneScenario(found) : null;
+  }
+
+  function getInteractiveSmb1Exercises() {
+    return interactiveSmb1Exercises.cloneExercises();
+  }
+
+  function getVisibleInteractiveSmb1Exercises() {
+    return interactiveSmb1Exercises.visibleExercises();
+  }
+
+  function findInteractiveSmb1Exercise(id) {
+    return interactiveSmb1Exercises.findExercise(id);
+  }
+
+  function findVisibleInteractiveSmb1Exercise(id) {
+    return interactiveSmb1Exercises.findVisibleExercise(id);
+  }
+
+  function getInteractiveSmb1ExercisesForLearningGoal(learningGoalId) {
+    return interactiveSmb1Exercises.exercisesForLearningGoal(learningGoalId);
+  }
+
+  function validateInteractiveSmb1Exercises() {
+    const lessonById = new Map(getSmb1Course().lessons.map((lesson) => [lesson.id, lesson]));
+    const ids = new Set();
+
+    for (const exercise of interactiveSmb1Exercises.cloneExercises()) {
+      const id = textValue(exercise.id);
+      if (!id) throw new Error("Interactive SMB1 exercise is missing an id");
+      if (ids.has(id)) throw new Error(`Duplicate interactive SMB1 exercise id: ${id}`);
+      ids.add(id);
+
+      const lesson = lessonById.get(textValue(exercise.lessonId));
+      if (!lesson) throw new Error(`Interactive SMB1 exercise ${id} references unknown lesson ${exercise.lessonId}`);
+      if (!lesson.learningGoals.some((learningGoal) => learningGoal.id === textValue(exercise.learningGoalId))) {
+        throw new Error(`Interactive SMB1 exercise ${id} references unknown learning goal ${exercise.learningGoalId}`);
+      }
+      if (!findPracticeHand(exercise.sourceHandId)) {
+        throw new Error(`Interactive SMB1 exercise ${id} references unknown practice hand ${exercise.sourceHandId}`);
+      }
+      if (!interactiveSmb1Exercises.isVisibleExercise(exercise)) {
+        throw new Error(`Interactive SMB1 exercise ${id} is missing visible exercise data`);
+      }
+    }
+
+    return ids.size;
+  }
+
+  function textValue(value) {
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  }
+
   function compareCards(a, b) {
     return bridgeRules?.compareCards ? bridgeRules.compareCards(a, b) : 0;
   }
@@ -242,6 +311,15 @@
     getPracticeCatalog,
     createPracticeBrowserModel,
     filterPracticeHands,
+    getSmb1Course,
+    getSmb1Lessons,
+    findSmb1Lesson,
+    getInteractiveSmb1Exercises,
+    getVisibleInteractiveSmb1Exercises,
+    findInteractiveSmb1Exercise,
+    findVisibleInteractiveSmb1Exercise,
+    getInteractiveSmb1ExercisesForLearningGoal,
+    validateInteractiveSmb1Exercises,
     labelFromToken: catalogModel.labelFromToken,
     normalizeSearch: catalogModel.normalizeSearch,
     smb1CatalogId: catalogModel.smb1CatalogId,

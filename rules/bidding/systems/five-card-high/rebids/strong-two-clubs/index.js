@@ -301,13 +301,26 @@
     return null;
   }
 
+  const strongTwoClubsRebidFamily = {
+    id: "rebids.strongTwoClubs",
+    order: 29,
+    chooseOpenerRebidTarget: chooseStrongTwoClubsOpenerRebidTarget,
+    chooseResponderRebidTarget: chooseStrongTwoClubsResponderRebidTarget,
+    chooseOpenerThirdBidTarget: chooseStrongTwoClubsOpenerThirdBidTarget,
+    chooseResponderAfterOpenerThirdBidTarget: chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget,
+    describeOpenerRebidChoice: describeStrongTwoClubsOpenerRebidChoice,
+    describeResponderRebidChoice: describeStrongTwoClubsResponderRebidChoice,
+    describeOpenerThirdBidChoice: describeStrongTwoClubsOpenerThirdBidChoice
+  };
+
   return {
-    chooseStrongTwoClubsOpenerRebidTarget,
-    chooseStrongTwoClubsResponderRebidTarget,
-    chooseStrongTwoClubsOpenerThirdBidTarget,
-    chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget,
-    describeStrongTwoClubsOpenerRebidChoice,
-    describeStrongTwoClubsResponderRebidChoice,
-    describeStrongTwoClubsOpenerThirdBidChoice
+    strongTwoClubsRebidFamily,
+    chooseStrongTwoClubsOpenerRebidTarget: strongTwoClubsRebidFamily.chooseOpenerRebidTarget,
+    chooseStrongTwoClubsResponderRebidTarget: strongTwoClubsRebidFamily.chooseResponderRebidTarget,
+    chooseStrongTwoClubsOpenerThirdBidTarget: strongTwoClubsRebidFamily.chooseOpenerThirdBidTarget,
+    chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget: strongTwoClubsRebidFamily.chooseResponderAfterOpenerThirdBidTarget,
+    describeStrongTwoClubsOpenerRebidChoice: strongTwoClubsRebidFamily.describeOpenerRebidChoice,
+    describeStrongTwoClubsResponderRebidChoice: strongTwoClubsRebidFamily.describeResponderRebidChoice,
+    describeStrongTwoClubsOpenerThirdBidChoice: strongTwoClubsRebidFamily.describeOpenerThirdBidChoice
   };
 });

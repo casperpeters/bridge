@@ -36,7 +36,7 @@ De oude brede oefenhandencatalogus verdwijnt uit de UI. Niet-interactieve oefenh
 20. Als cursusmaker wil ik een leerdoel zonder goede tafeloefening compact kunnen tonen als `Nog geen tafeloefening`, zodat de dekking eerlijk zichtbaar blijft.
 21. Als cursusmaker wil ik interactieve oefeningen aan SMB1-lesdoelen koppelen, zodat ik systematisch dekking kan opbouwen.
 22. Als cursusmaker wil ik de SMB1-lessen en leerdoelen in JS-data beheren, zodat de UI en tests dezelfde bron van waarheid gebruiken.
-23. Als cursusmaker wil ik `docs/smb1.md` verwijderen zodra de JS-data bestaat, zodat er geen dubbele SMB1-bron veroudert.
+23. Als cursusmaker wil ik de oude markdown-bron vervangen door JS-data, zodat er geen dubbele SMB1-bron veroudert.
 24. Als ontwikkelaar wil ik oefenstartposities via `situatieseed` definiëren, zodat biedverloop, beurt, dummy, lopende slag en gespeelde kaarten exact herstelbaar zijn.
 25. Als ontwikkelaar wil ik oefeningdata los houden van cursusstructuurdata, zodat leerdoelen overzichtelijk blijven en oefeningen kunnen groeien.
 26. Als ontwikkelaar wil ik oefenacties valideren tegen expliciete oefendata, zodat de algemene AI-engine geen harde lesclaims hoeft te doen.
@@ -48,7 +48,7 @@ De oude brede oefenhandencatalogus verdwijnt uit de UI. Niet-interactieve oefenh
 
 - Start met Bridge 1 krijgt een JS-source-of-truth voor de 12 lessen en hun leerdoelen. Deze bron bevat les-id, lesnummer, lestitel en stabiele leerdoel-id's met tekst.
 - Interactieve oefeningen komen in een aparte JS-catalogus die verwijst naar `lessonId` en `learningGoalId`. De cursusstructuur en oefeninginhoud blijven gescheiden.
-- `docs/smb1.md` wordt verwijderd zodra de JS-data dezelfde inhoud als bron bevat.
+- De vroegere `docs/smb1.md`-bron wordt vervangen zodra de JS-data dezelfde cursusstructuur en leerdoelen bevat.
 - De oefenpagina toont geen brede catalogus, zoekveld, focusfilter of levelfilter meer. De eerste pagina toont alleen de 12 SMB1-lessen. De lesdetailweergave toont per leerdoel de interactieve oefeningen of `Nog geen tafeloefening`.
 - De UI gebruikt alleen interactieve oefeningen: een oefening moet een `startSeed` en `question` hebben om zichtbaar te zijn.
 - Een interactieve oefening start via `situatieseed`. Deze seed is de bron voor fase, beurt, veiling, contractcontext, dummyzichtbaarheid, afgeronde slagen en lopende slag.

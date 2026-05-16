@@ -65,7 +65,8 @@ Enige bron van waarheid voor open product-, bied- en speelwerk. Opgeschoond na c
 
 - Houd de nieuwe `BridgeAppRuntime`-modulegrenzen scherp: nieuwe UI-flow registreert via `BridgeAppModules.register...(runtime)` en gebruikt geen impliciete app-globals.
 - Introduceer pure state-transitions voor kernacties zoals hand starten, bod toepassen, veiling afronden, kaart spelen en slag doorschuiven. UI-code roept transitions aan en rendert daarna opnieuw.
-- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` heeft nu losse modules voor uitkomsten, speelplan volgen, leiderspel en basisverdediging. Splits Vijfkaart-Hoog rebids/competitive later naar auction families.
+- Splits grote regelbestanden per bridge-domein wanneer je eraan werkt: `card-play` heeft nu losse modules voor uitkomsten, speelplan volgen, leiderspel en basisverdediging. Vijfkaart-Hoog `rebids/notrump-systems` is de eerste auction-family module; trek dit patroon daarna door naar `strong-two-clubs`, `fourth-suit-forcing`, `blackwood`, natuurlijke opener-/responder-herbiedingen en later `competitive`.
+- Houd bij Vijfkaart-Hoog auction-family modules het patroon gelijk: de family-module bezit target-keuze plus beschrijvende `ruleId`-metadata; de oude facade bewaart dispatchvolgorde en compatibele exports.
 - Houd de gesplitste `rules/play-plan/` modules per domein klein: gedeelde helpers in `common`, sans-atout in `notrump`, kleurcontract in `suit-contract`.
 - Houd bestaande public API's via `bridge-rules.js` en index/aggregator-bestanden stabiel tijdens refactors.
 

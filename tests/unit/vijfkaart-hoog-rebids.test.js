@@ -12,6 +12,49 @@ const {
   chooseFiveCardHighResult
 } = require("./harness.js");
 const fiveCardHighInternal = require("../../rules/bidding/systems/five-card-high/index.js")._internal;
+const strongTwoClubsRebids = require("../../rules/bidding/systems/five-card-high/rebids/strong-two-clubs/index.js");
+const fourthSuitForcingRebids = require("../../rules/bidding/systems/five-card-high/rebids/fourth-suit-forcing/index.js");
+const naturalOpenerRebids = require("../../rules/bidding/systems/five-card-high/rebids/natural-opener/index.js");
+
+test("strong two clubs rebid family exposes generic methods and keeps compatibility aliases", () => {
+  const family = strongTwoClubsRebids.strongTwoClubsRebidFamily;
+
+  assert.equal(family.id, "rebids.strongTwoClubs");
+  assert.equal(family.order, 29);
+  assert.equal(family.chooseOpenerRebidTarget, strongTwoClubsRebids.chooseStrongTwoClubsOpenerRebidTarget);
+  assert.equal(family.chooseResponderRebidTarget, strongTwoClubsRebids.chooseStrongTwoClubsResponderRebidTarget);
+  assert.equal(family.chooseOpenerThirdBidTarget, strongTwoClubsRebids.chooseStrongTwoClubsOpenerThirdBidTarget);
+  assert.equal(family.chooseResponderAfterOpenerThirdBidTarget, strongTwoClubsRebids.chooseStrongTwoClubsResponderAfterOpenerThirdBidTarget);
+  assert.equal(family.describeOpenerRebidChoice, strongTwoClubsRebids.describeStrongTwoClubsOpenerRebidChoice);
+  assert.equal(family.describeResponderRebidChoice, strongTwoClubsRebids.describeStrongTwoClubsResponderRebidChoice);
+  assert.equal(family.describeOpenerThirdBidChoice, strongTwoClubsRebids.describeStrongTwoClubsOpenerThirdBidChoice);
+});
+
+test("fourth-suit forcing rebid family exposes generic methods and keeps compatibility aliases", () => {
+  const family = fourthSuitForcingRebids.fourthSuitForcingRebidFamily;
+
+  assert.equal(family.id, "rebids.fourthSuitForcing");
+  assert.equal(family.order, 31);
+  assert.equal(family.chooseResponderRebidTarget, fourthSuitForcingRebids.chooseFourthSuitForcingResponderRebidTarget);
+  assert.equal(family.chooseOpenerThirdBidTarget, fourthSuitForcingRebids.chooseFourthSuitForcingOpenerThirdBidTarget);
+  assert.equal(family.chooseResponderAfterOpenerThirdBidTarget, fourthSuitForcingRebids.chooseFourthSuitForcingResponderAfterOpenerThirdBidTarget);
+  assert.equal(family.describeResponderRebidChoice, fourthSuitForcingRebids.describeFourthSuitForcingResponderRebidChoice);
+  assert.equal(family.describeOpenerThirdBidChoice, fourthSuitForcingRebids.describeFourthSuitForcingOpenerThirdBidChoice);
+  assert.equal(family.describeResponderAfterOpenerThirdBidChoice, fourthSuitForcingRebids.describeFourthSuitForcingResponderAfterOpenerThirdBidChoice);
+});
+
+test("natural opener rebid family exposes generic methods and keeps compatibility aliases", () => {
+  const family = naturalOpenerRebids.naturalOpenerRebidFamily;
+
+  assert.equal(family.id, "rebids.naturalOpener");
+  assert.equal(family.order, 33);
+  assert.equal(family.chooseOpenerRebidTarget, naturalOpenerRebids.chooseNaturalOpenerRebidTarget);
+  assert.equal(family.describeOpenerRebidChoice, naturalOpenerRebids.describeNaturalOpenerRebidChoice);
+  assert.equal(typeof naturalOpenerRebids.rebidAfterOneSuitOpeningFiveCardHigh, "function");
+  assert.equal(typeof naturalOpenerRebids.openerRebidAfterRaiseFiveCardHigh, "function");
+  assert.equal(typeof naturalOpenerRebids.openerRebidAfterNotrumpFiveCardHigh, "function");
+  assert.equal(typeof naturalOpenerRebids.openerRebidAfterNewSuitFiveCardHigh, "function");
+});
 
 test("Vijfkaart Hoog responder shows a strong 5-4 major hand after opener rebids 1NT", () => {
   const auction = [

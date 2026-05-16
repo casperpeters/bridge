@@ -26,6 +26,7 @@
     } = helpers;
     const enterContractReveal = (...args) => actions.enterContractReveal(...args);
     const lessonBoardBlocksHumanBid = (...args) => actions.lessonBoardBlocksHumanBid?.(...args);
+    const maybeCompleteInteractiveExerciseAction = (...args) => actions.maybeCompleteInteractiveExerciseAction?.(...args);
     const maybeCompleteLessonTableTask = (...args) => actions.maybeCompleteLessonTableTask?.(...args);
     const prepareContractFromAuction = (...args) => actions.prepareContractFromAuction(...args);
     const renderAll = (...args) => render.renderAll(...args);
@@ -62,6 +63,7 @@ function makeBid(seat, bid, bidResult = null) {
   if (isContractBid(typedBid) && !isBidHigher(typedBid, highestBid())) return;
   if (isDouble(typedBid) && !canDouble(seat)) return;
   if (isRedouble(typedBid) && !canRedouble(seat)) return;
+  if (!actions.validateInteractiveExerciseAction?.("bid", { seat, bid: typedBid })) return;
   if (!actions.validateLessonTableAction?.("bid", { seat, bid: typedBid })) return;
   const call = {
     seat,
@@ -73,6 +75,7 @@ function makeBid(seat, bid, bidResult = null) {
   if (bidResult && !sameCall(bidResult.bid, typedBid)) call.recommendedBidResult = bidResult;
   Object.assign(state, BridgeStateTransitions.applyBidTransition(state, { ...call, seatCount: seats.length }));
   renderAll();
+  if (maybeCompleteInteractiveExerciseAction("bid")) return;
   if (maybeCompleteLessonTableTask("bid")) return;
   continueAuction();
 }

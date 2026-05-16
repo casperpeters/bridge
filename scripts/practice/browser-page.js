@@ -2,233 +2,217 @@
   "use strict";
 
   const practiceHands = root.PracticeHands;
-  if (!practiceHands?.createPracticeBrowserModel) throw new Error("PracticeHands catalog browser model must load before browser-page.js");
+  if (!practiceHands?.getSmb1Course) throw new Error("PracticeHands SMB1 course data must load before browser-page.js");
 
-  const model = practiceHands.createPracticeBrowserModel();
+  const course = practiceHands.getSmb1Course();
+  const exercisesByLearningGoal = groupExercisesByLearningGoal(practiceHands.getVisibleInteractiveSmb1Exercises?.() || []);
   const els = {
-    search: document.querySelector("[data-practice-search]"),
-    catalog: document.querySelector("[data-practice-catalog]"),
-    focus: document.querySelector("[data-practice-focus]"),
-    level: document.querySelector("[data-practice-level]"),
-    lessons: document.querySelector("[data-practice-lessons]"),
+    route: document.querySelector("[data-practice-route]"),
     count: document.querySelector("[data-practice-count]"),
-    list: document.querySelector("[data-practice-list]"),
-    empty: document.querySelector("[data-practice-empty]")
+    lessons: document.querySelector("[data-practice-lessons]"),
+    detail: document.querySelector("[data-practice-detail]"),
+    detailKicker: document.querySelector("[data-practice-detail-kicker]"),
+    detailTitle: document.querySelector("[data-practice-detail-title]"),
+    goals: document.querySelector("[data-practice-goals]"),
+    back: document.querySelector("[data-practice-back]")
   };
-  let selectedLesson = "";
+  let selectedLessonId = "";
 
-  fillSelect(els.catalog, model.facets.catalogs, "Alle catalogi");
-  fillSelect(els.focus, model.facets.focus, "Alle types");
-  fillSelect(els.level, model.facets.levels, "Alle niveaus");
   applyRouteParams();
-
-  [els.search, els.catalog, els.focus, els.level].forEach((el) => {
-    el?.addEventListener("input", render);
-    el?.addEventListener("change", render);
+  els.back?.addEventListener("click", () => {
+    selectedLessonId = "";
+    render();
   });
-  els.catalog?.addEventListener("change", () => {
-    if (!isSmb1Selected()) selectedLesson = "";
+  root.addEventListener?.("popstate", () => {
+    applyRouteParams();
+    render({ updateRoute: false });
   });
 
   render();
 
-  function render() {
-    const results = practiceHands.filterPracticeHands(model.hands, currentFilters());
-    els.count.textContent = `${results.length} van ${model.hands.length} oefenhanden`;
-    els.empty.hidden = results.length > 0;
-    renderLessonOverview();
-    els.list.replaceChildren(...results.map(renderCard));
-    updateRoute();
+  function render(options = {}) {
+    const lesson = findLesson(selectedLessonId);
+    renderLessonList(Boolean(lesson));
+    renderLessonDetail(lesson);
+    if (els.count) {
+      els.count.textContent = lesson
+        ? `Les ${lesson.number} van ${course.lessons.length} - ${lesson.learningGoals.length} leerdoelen`
+        : `${course.lessons.length} lessen`;
+    }
+    if (options.updateRoute !== false) updateRoute();
   }
 
-  function currentFilters() {
-    return {
-      query: els.search?.value || "",
-      catalog: els.catalog?.value || "",
-      focus: els.focus?.value || "",
-      level: els.level?.value || "",
-      lesson: isSmb1Selected() ? selectedLesson : ""
-    };
+  function renderLessonList(isDetailOpen) {
+    if (!els.lessons) return;
+    els.lessons.hidden = isDetailOpen;
+    els.lessons.replaceChildren(...course.lessons.map(renderLessonCard));
   }
 
-  function renderCard(hand) {
-    const card = document.createElement("article");
-    card.className = "practice-card";
+  function renderLessonCard(lesson) {
+    const link = document.createElement("a");
+    link.className = "practice-lesson-card";
+    link.href = routeHref(lesson.id);
+    link.dataset.practiceLesson = lesson.id;
 
-    const meta = document.createElement("div");
-    meta.className = "practice-card-meta";
-    meta.append(
-      pill(hand.catalog.title),
-      ...(hand.lesson ? [pill(`Les ${hand.lesson.number}`)] : []),
-      pill(practiceHands.labelFromToken(hand.level || "zonder niveau"), "practice-pill-muted")
-    );
+    const number = document.createElement("span");
+    number.className = "practice-lesson-number";
+    number.textContent = `Les ${lesson.number}`;
 
     const title = document.createElement("h2");
-    title.textContent = hand.title || hand.id;
+    title.className = "practice-lesson-title";
+    title.textContent = lesson.title;
 
-    const goal = document.createElement("p");
-    goal.className = "practice-card-goal";
-    goal.textContent = hand.goal || "Oefen deze vaste bridgesituatie.";
+    const meta = document.createElement("p");
+    meta.className = "practice-lesson-meta";
+    meta.textContent = `${lesson.learningGoals.length} leerdoelen`;
 
-    const tags = document.createElement("div");
-    tags.className = "practice-tags";
-    hand.tags.slice(0, 5).forEach((tag) => tags.appendChild(pill(practiceHands.labelFromToken(tag), "practice-tag")));
-
-    const footer = document.createElement("div");
-    footer.className = "practice-card-footer";
-
-    const id = document.createElement("code");
-    id.textContent = hand.sourceHandId ? `${hand.id} | bron: ${hand.sourceHandId}` : hand.id;
-
-    const action = document.createElement("a");
-    action.className = "practice-start-link";
-    action.href = practiceHandTableHref(hand.id, {
-      currentHref: root.location?.href || "",
-      tableHref: "../index.html"
-    });
-    action.textContent = "Start hand";
-
-    footer.append(id, action);
-    card.append(meta, title, goal, tags, footer);
-    return card;
-  }
-
-  function renderLessonOverview() {
-    if (!els.lessons) return;
-    const lessons = isSmb1Selected() ? model.facets.lessonsByCatalog[practiceHands.smb1CatalogId] || [] : [];
-    els.lessons.hidden = lessons.length === 0;
-    if (!lessons.length) {
-      els.lessons.replaceChildren();
-      return;
-    }
-
-    const all = lessonLink({
-      value: "",
-      label: "Alle lessen",
-      title: "Start met Bridge 1",
-      count: model.hands.filter((hand) => hand.catalog.id === practiceHands.smb1CatalogId).length
-    });
-    els.lessons.replaceChildren(all, ...lessons.map(lessonLink));
-  }
-
-  function lessonLink(lesson) {
-    const link = document.createElement("a");
-    link.className = lesson.value === selectedLesson ? "practice-lesson-link is-active" : "practice-lesson-link";
-    link.href = routeHref({ catalog: practiceHands.smb1CatalogId, lesson: lesson.value });
-    link.dataset.practiceLesson = lesson.value;
-    link.setAttribute("aria-current", lesson.value === selectedLesson ? "true" : "false");
-    link.textContent = lesson.title
-      ? `${lesson.label}: ${lesson.title} (${lesson.count})`
-      : `${lesson.label} (${lesson.count})`;
+    link.append(number, title, meta);
     link.addEventListener("click", (event) => {
       event.preventDefault();
-      if (els.catalog) els.catalog.value = practiceHands.smb1CatalogId;
-      selectedLesson = lesson.value;
+      selectedLessonId = lesson.id;
       render();
     });
     return link;
   }
 
+  function renderLessonDetail(lesson) {
+    if (!els.detail) return;
+    els.detail.hidden = !lesson;
+    if (!lesson) {
+      els.goals?.replaceChildren();
+      return;
+    }
+
+    if (els.detailKicker) els.detailKicker.textContent = `Les ${lesson.number}`;
+    if (els.detailTitle) els.detailTitle.textContent = lesson.title;
+    els.goals?.replaceChildren(...lesson.learningGoals.map(renderLearningGoal));
+  }
+
+  function renderLearningGoal(learningGoal, index) {
+    const item = document.createElement("li");
+    item.className = "practice-goal-item";
+    item.dataset.learningGoalId = learningGoal.id;
+
+    const number = document.createElement("span");
+    number.className = "practice-goal-number";
+    number.textContent = String(index + 1);
+
+    const body = document.createElement("div");
+    body.className = "practice-goal-body";
+
+    const text = document.createElement("p");
+    text.className = "practice-goal-text";
+    text.textContent = learningGoal.text;
+
+    const status = document.createElement("span");
+    status.className = "practice-goal-status";
+    const exercises = exercisesByLearningGoal.get(learningGoal.id) || [];
+    status.textContent = exercises.length ? `${exercises.length} tafeloefening${exercises.length === 1 ? "" : "en"}` : "Nog geen tafeloefening";
+    status.classList.toggle("is-available", exercises.length > 0);
+
+    body.append(text, status);
+    if (exercises.length) body.appendChild(renderExerciseList(exercises));
+    item.append(number, body);
+    return item;
+  }
+
+  function renderExerciseList(exercises) {
+    const list = document.createElement("div");
+    list.className = "practice-exercise-list";
+    exercises.forEach((exercise) => list.appendChild(renderExercise(exercise)));
+    return list;
+  }
+
+  function renderExercise(exercise) {
+    const item = document.createElement("div");
+    item.className = "practice-exercise-item";
+    item.dataset.interactiveExercise = exercise.id;
+
+    const meta = document.createElement("span");
+    meta.className = "practice-exercise-meta";
+    meta.textContent = actionTypeLabel(exercise.actionType);
+
+    const question = document.createElement("p");
+    question.className = "practice-exercise-question";
+    question.textContent = exercise.question;
+
+    const start = document.createElement("a");
+    start.className = "practice-start-link";
+    start.href = tableHrefForExercise(exercise);
+    start.textContent = "Start oefening";
+
+    item.append(meta, question, start);
+    return item;
+  }
+
   function applyRouteParams() {
     try {
       const params = new URL(root.location?.href || "").searchParams;
-      setControlValue(els.search, params.get("q") || params.get("query") || "");
-      setControlValue(els.catalog, params.get("catalog") || "");
-      setControlValue(els.focus, params.get("focus") || "");
-      setControlValue(els.level, params.get("level") || "");
-      selectedLesson = params.get("lesson") || "";
-      if (selectedLesson && els.catalog && !els.catalog.value) els.catalog.value = practiceHands.smb1CatalogId;
-      if (!isSmb1Selected()) selectedLesson = "";
+      const lesson = findLesson(params.get("lesson") || "");
+      selectedLessonId = lesson?.id || "";
     } catch {
-      selectedLesson = "";
+      selectedLessonId = "";
     }
   }
 
   function updateRoute() {
     if (!root.history?.replaceState || !root.location?.href) return;
-    const href = routeHref({
-      catalog: isSmb1Selected() ? practiceHands.smb1CatalogId : "",
-      lesson: isSmb1Selected() ? selectedLesson : "",
-      query: "",
-      focus: "",
-      level: ""
-    });
-    root.history.replaceState(null, "", href);
+    root.history.replaceState(null, "", routeHref(selectedLessonId));
   }
 
-  function routeHref(filters) {
+  function routeHref(lessonId) {
     const url = new URL(root.location?.href || "http://localhost/practice/index.html");
     const params = url.searchParams;
-    setParam(params, "q", filters.query ?? els.search?.value);
-    setParam(params, "catalog", filters.catalog ?? els.catalog?.value);
-    setParam(params, "focus", filters.focus ?? els.focus?.value);
-    setParam(params, "level", filters.level ?? els.level?.value);
-    setParam(params, "lesson", filters.lesson ?? selectedLesson);
+    ["catalog", "exercise", "focus", "level", "q", "query"].forEach((key) => params.delete(key));
+    if (lessonId) params.set("lesson", lessonId);
+    else params.delete("lesson");
     return `${url.pathname.split("/").pop() || "index.html"}${params.toString() ? `?${params.toString()}` : ""}${url.hash}`;
   }
 
-  function setParam(params, key, value) {
-    const normalized = String(value || "").trim();
-    if (normalized) params.set(key, normalized);
-    else params.delete(key);
+  function tableHrefForExercise(exercise) {
+    const params = new URLSearchParams();
+    params.set("exercise", exercise.id);
+    const currentParams = new URLSearchParams(root.location?.search || "");
+    if (currentParams.has("testHooks")) params.set("testHooks", "1");
+    params.set("return", exerciseReturnHref());
+    return `../index.html?${params.toString()}`;
   }
 
-  function setControlValue(control, value) {
-    if (control) control.value = value;
+  function exerciseReturnHref() {
+    const url = new URL(root.location?.href || "http://localhost/practice/index.html");
+    url.searchParams.delete("exercise");
+    ["catalog", "focus", "level", "q", "query"].forEach((key) => url.searchParams.delete(key));
+    if (selectedLessonId) url.searchParams.set("lesson", selectedLessonId);
+    return `practice/${url.pathname.split("/").pop() || "index.html"}${url.search}${url.hash}`;
   }
 
-  function isSmb1Selected() {
-    return els.catalog?.value === practiceHands.smb1CatalogId || els.catalog?.value === practiceHands.smb1CatalogKey;
+  function actionTypeLabel(actionType) {
+    if (actionType === "bid") return "Bieden";
+    if (actionType === "card") return "Kaart kiezen";
+    return "Oefening";
   }
 
-  function practiceHandTableHref(handId, options = {}) {
-    const id = textValue(handId);
-    const tableHref = textValue(options.tableHref) || "../index.html";
-    const currentHref = textValue(options.currentHref);
-    if (!id) return tableHref;
-
-    if (!currentHref) return `${tableHref}?hand=${encodeURIComponent(id)}`;
-
-    try {
-      const current = new URL(currentHref);
-      const searchParams = new URLSearchParams();
-      searchParams.set("hand", id);
-      const returnHref = returnHrefFromPracticeUrl(current);
-      if (returnHref) searchParams.set("return", returnHref);
-      if (current.searchParams.has("testHooks")) searchParams.set("testHooks", current.searchParams.get("testHooks") || "1");
-      return `${tableHref}?${searchParams.toString()}`;
-    } catch {
-      return `${tableHref}?hand=${encodeURIComponent(id)}`;
-    }
+  function groupExercisesByLearningGoal(exercises) {
+    const grouped = new Map();
+    exercises.forEach((exercise) => {
+      const learningGoalId = textValue(exercise.learningGoalId);
+      if (!learningGoalId) return;
+      const list = grouped.get(learningGoalId) || [];
+      list.push(exercise);
+      grouped.set(learningGoalId, list);
+    });
+    return grouped;
   }
 
-  function returnHrefFromPracticeUrl(url) {
-    const path = url.pathname.replace(/^\/+/, "");
-    if (path !== "practice/index.html") return "";
-    return `${path}${url.search}${url.hash}`;
+  function findLesson(ref) {
+    const text = textValue(ref);
+    if (!text) return null;
+    const number = Number(text);
+    return course.lessons.find((lesson) => lesson.id === text || lesson.number === number) || null;
   }
 
   function textValue(value) {
     if (value === null || value === undefined) return "";
     return String(value).trim();
-  }
-
-  function fillSelect(select, options, allLabel) {
-    if (!select) return;
-    select.replaceChildren(option("", allLabel), ...options.map((item) => option(item.value, `${item.label} (${item.count})`)));
-  }
-
-  function option(value, label) {
-    const el = document.createElement("option");
-    el.value = value;
-    el.textContent = label;
-    return el;
-  }
-
-  function pill(text, className = "practice-pill") {
-    const span = document.createElement("span");
-    span.className = className;
-    span.textContent = text;
-    return span;
   }
 })(typeof globalThis !== "undefined" ? globalThis : this);

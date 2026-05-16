@@ -44,7 +44,7 @@ scripts/
   +-- roept rules/ aan en rendert resultaten
 
 practice-hands/
-  +-- index/aggregator en catalogus met reproduceerbare oefensituaties
+  +-- index/aggregator, SMB1-cursusdata en catalogus met reproduceerbare oefensituaties
 
 tests/
   +-- unit tests voor regels en flows
@@ -220,11 +220,12 @@ Locaties:
 Doel:
 
 - `practice-hands/index.js` blijft de publieke aggregator.
+- `practice-hands/smb1-course.js` bevat de JS-source-of-truth voor de 12 Start met Bridge 1-lessen en hun stabiele leerdoelen.
 - `practice-hands/catalog/` bevat de Oefenhandencatalogus: reproduceerbare beginner-, test-, regressie- en cursusgerichte situaties.
 - `practice-hands/catalog-model.js` is eigenaar van het DOM-onafhankelijke browse/filtermodel: catalogus-, focus-, niveau- en SMB1-lesfilters, zoektekst en facets.
 - Elk oefenspel heeft een kort doel en een stabiele id.
 - Oefenhanden verbinden productleren met testdekking.
-- `practice/index.html` is de aparte practice browser page voor het browsen van oefenhanden. Deze pagina start niet zelf de speeltafel, maar toont catalogi, globale zoekresultaten, filters en Start-hand-links naar `index.html`.
+- `practice/index.html` is de aparte practice browser page voor de SMB1-lesroute. Deze pagina toont eerst de 12 lessen en daarna per leerdoel of er al een interactieve tafeloefening beschikbaar is; de technische oefenhandencatalogus blijft beschikbaar via de bestaande JS-API.
 - De SMB1-lesroute is gemodelleerd als cursusgerichte Oefenhandencatalogus `start-met-bridge-1`. Deze catalogus leeft naast de bestaande technische catalogi en naast bestaande App-lessen.
 - Een App-les blijft een bestaande interactieve Bridgetafel-les met eigen huidige nummering en tafelkoppeling. Deze oefenhandencatalogus-feature hernummert of herstructureert bestaande App-lessen expliciet niet; een latere lesmigratie moet als apart project gebeuren.
 - Een SMB1-oefenhand mag een bestaande bronhand hergebruiken via metadata zoals `sourceHandId`, zolang de SMB1-id, het SMB1-lesdoel en de engine-observeerbare verwachting stabiel blijven.

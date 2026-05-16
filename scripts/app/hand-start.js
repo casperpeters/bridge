@@ -51,6 +51,51 @@
       return true;
     }
 
+    function startInteractiveExercise(exerciseOrId, { returnHref = "" } = {}) {
+      if (!globalThis.PracticeHands?.findVisibleInteractiveSmb1Exercise) {
+        throw new Error("practice-hands/index.js must load before interactive exercises can be used");
+      }
+      const exercise = typeof exerciseOrId === "string"
+        ? globalThis.PracticeHands.findVisibleInteractiveSmb1Exercise(exerciseOrId)
+        : exerciseOrId;
+      if (!exercise?.startSeed) throw new Error(`Unknown interactive SMB1 exercise: ${exerciseOrId}`);
+
+      actions.startSituationSeed(exercise.startSeed);
+      state.interactiveExercise = interactiveExerciseState(exercise, { returnHref });
+      render.renderAll();
+      return exercise;
+    }
+
+    function startInteractiveExerciseFromUrl() {
+      const params = new URLSearchParams(globalThis.location?.search || "");
+      const exerciseId = params.get("exercise");
+      if (!exerciseId) return false;
+      if (!globalThis.PracticeHands?.findVisibleInteractiveSmb1Exercise?.(exerciseId)) return false;
+      startInteractiveExercise(exerciseId, { returnHref: params.get("return") || "" });
+      return true;
+    }
+
+    function interactiveExerciseState(exercise, { returnHref = "" } = {}) {
+      return {
+        id: exercise.id,
+        title: exercise.title,
+        lessonId: exercise.lessonId,
+        learningGoalId: exercise.learningGoalId,
+        sourceHandId: exercise.sourceHandId,
+        startSeed: exercise.startSeed,
+        question: exercise.question,
+        actionType: exercise.actionType,
+        expectedAction: exercise.expectedAction ? { ...exercise.expectedAction } : null,
+        correctAnswers: [...(exercise.correctAnswers || [])],
+        expectedActionLabel: exercise.expectedActionLabel || "",
+        feedbackCopy: exercise.feedback ? JSON.parse(JSON.stringify(exercise.feedback)) : {},
+        actionFeedback: null,
+        status: "active",
+        completed: false,
+        returnHref: returnHref || ""
+      };
+    }
+
     function startPreparedHand({ dealerIndex, vulnerability, hands, practice = null, clearSeedMessage = false, skipFlow = false }) {
       resetScheduledFlow();
       clearDealAnimationTimer();
@@ -65,6 +110,7 @@
       state.lessonBoardAcknowledged = [];
       state.lessonTableTaskDone = false;
       state.lessonActionFeedback = null;
+      state.interactiveExercise = null;
       if (timers.illegalActionFeedbackTimer) {
         window.clearTimeout(timers.illegalActionFeedbackTimer);
         timers.illegalActionFeedbackTimer = null;
@@ -167,6 +213,8 @@
       replayHand,
       resetScheduledFlow,
       scheduleDealAnimationEnd,
+      startInteractiveExercise,
+      startInteractiveExerciseFromUrl,
       startHand,
       startPracticeHand,
       startPracticeHandFromUrl,
