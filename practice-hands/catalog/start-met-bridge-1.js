@@ -123,7 +123,7 @@
       goal: "Open een gebalanceerde 15-17-punter met 1SA.",
       expectedFocus: ["bidding", "opening", "notrump"],
       expectedActions: ["Open 1SA"],
-      reviewFocus: ["HCP", "verdeling", "1SA-range"],
+      reviewFocus: ["punten", "verdeling", "1SA-range"],
       appFocus: ["opening-one-notrump"]
     }),
     reuse("smb1-les07-openen-vijfkaart-hoog", 7, "one-heart-opening-001", {
@@ -266,10 +266,10 @@
       course,
       lesson: lessonMeta(9),
       topic: "Hoge-kleuropening zonder fit",
-      goal: "Antwoord 1SA met 6-9 HCP, geen driekaart steun en geen beter bod.",
+      goal: "Antwoord 1SA met 6-9 punten, geen driekaart steun en geen beter bod.",
       expectedFocus: ["bidding", "response", "notrump", "no-fit"],
       expectedActions: ["Antwoord 1NT"],
-      reviewFocus: ["geen fit", "6-9 HCP", "vuilnisbakkenbod"],
+      reviewFocus: ["geen fit", "6-9 punten", "vuilnisbakkenbod"],
       appFocus: ["major-response-no-fit", "one-notrump-response"],
       focus: ["smb1", "lesson-09", "bidding", "response", "notrump", "no-fit"],
       systemId: "fiveCardHigh",
@@ -290,7 +290,7 @@
       explanationKeys: ["fiveCardHigh.opening.oneMajor", "fiveCardHigh.response.notrump"],
       teachingPoints: [
         "Zuid heeft te weinig schoppensteun voor een verhoging.",
-        "Met 6-9 HCP en geen betere nieuwe kleur kiest de engine het 1SA-bijbod."
+        "Met 6-9 punten en geen betere nieuwe kleur kiest de engine het 1SA-bijbod."
       ]
     }
   ];

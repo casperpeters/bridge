@@ -14,7 +14,7 @@
       case "response.strongTwoClubsWaiting":
         return `afwachtend antwoord op sterke 2K. ${handFactsText({ ruleName, result })}`;
       case "response.strongTwoClubsPositive":
-        return `positief antwoord op sterke 2K: toont minstens 8 HCP en een vijfkaart met minstens twee tophonneurs uit Aas, Heer en Vrouw${Number.isInteger(result.topHonors) ? `; hier ${result.topHonors}` : ""}. ${handFactsText({ ruleName, result })}`;
+        return `positief antwoord op sterke 2K: toont minstens 8 punten en een vijfkaart met minstens twee tophonneurs uit Aas, Heer en Vrouw${Number.isInteger(result.topHonors) ? `; hier ${result.topHonors}` : ""}. ${handFactsText({ ruleName, result })}`;
       default:
         return null;
     }

@@ -288,7 +288,8 @@
 
     function renderUnavailableReason(analysis) {
       if (!els.uitspelenUnavailable) return;
-      const text = !analysis.available && state.developerMode
+      const showDeveloperReason = state.developerMode && state.phase === "playing";
+      const text = !analysis.available && showDeveloperReason
         ? unavailableReasonText(analysis)
         : "";
       els.uitspelenUnavailable.textContent = text;

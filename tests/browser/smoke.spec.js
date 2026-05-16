@@ -403,7 +403,7 @@ test("blocks wrong bidding exercise choices and completes the correct call", asy
   await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().auction.length)).toBe(2);
   await page.locator("#bid-controls button.pass").click();
   await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().auction.length)).toBe(2);
-  await expect(page.locator("#lesson-panel")).toContainText("6-9 HCP");
+  await expect(page.locator("#lesson-panel")).toContainText("6-9 punten");
 
   await clickBidButton(page, "1NT");
   await expect.poll(() =>
@@ -923,6 +923,7 @@ test("keeps the mobile bidding box usable", async ({ page }, testInfo) => {
     app.setState({
       phase: "bidding",
       animateDeal: false,
+      developerMode: true,
       turnIndex: 2,
       auction: [
         { seat: "North", bid: app.rules.Pass() },
@@ -936,4 +937,21 @@ test("keeps the mobile bidding box usable", async ({ page }, testInfo) => {
   await expect(page.locator("#mobile-bidding-slot > #bid-controls")).toBeVisible();
   await expect(page.locator("#bid-controls")).toHaveClass(/active-bid-box/);
   await expect(page.locator("#bid-controls button.pass")).toBeVisible();
+  await expect(page.locator("#uitspelen-unavailable")).toBeHidden();
+
+  const layout = await page.evaluate(() => {
+    const rectFor = (selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left };
+    };
+    const overlapArea = (a, b) => {
+      const width = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+      const height = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+      return width * height;
+    };
+    return {
+      bidSouthOverlap: overlapArea(rectFor("#bid-controls"), rectFor("#south-hand"))
+    };
+  });
+  expect(layout.bidSouthOverlap).toBe(0);
 });

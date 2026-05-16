@@ -48,7 +48,7 @@
       ],
       explanationKeys: ["fiveCardHigh.opening.oneNotrump"],
       teachingPoints: [
-        "Een 1SA-opening toont in dit profiel een gebalanceerde hand met ongeveer 15-17 HCP.",
+        "Een 1SA-opening toont in dit profiel een gebalanceerde hand met ongeveer 15-17 punten.",
         "Ook met een vijfkaart hoog kan de engine 1SA kiezen als de hand verder gebalanceerd is."
       ]
     },
@@ -126,39 +126,39 @@
     },
     {
       id: "lesson-03-one-nt-balanced-001",
-      title: "Les 3 - 1SA met 16 HCP",
+      title: "Les 3 - 1SA met 16 punten",
       level: "beginner",
       focus: ["bidding", "opening", "lesson-03", "notrump"],
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 16 HCP en een evenwichtige verdeling: open 1SA.",
+      testGoal: "Zuid heeft 16 punten en een evenwichtige verdeling: open 1SA.",
       hands: dealFromSouth("AS QS 8S 3S KH JH 4H AD TD 6D QC 9C 2C"),
       expectedAuction: [
         { seat: "South", bid: "1NT", ruleId: "fiveCardHigh.opening.oneNotrump" }
       ],
       explanationKeys: ["fiveCardHigh.opening.oneNotrump"],
       teachingPoints: [
-        "Wel 1SA, want Zuid heeft 15-17 HCP en een evenwichtige verdeling.",
+        "Wel 1SA, want Zuid heeft 15-17 punten en een evenwichtige verdeling.",
         "Niet eerst een kleur zoeken: de 1SA-opening is hier preciezer."
       ]
     },
     {
       id: "lesson-03-one-nt-balanced-002",
-      title: "Les 3 - 1SA met 17 HCP",
+      title: "Les 3 - 1SA met 17 punten",
       level: "beginner",
       focus: ["bidding", "opening", "lesson-03", "notrump"],
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 17 HCP en een evenwichtige verdeling: open 1SA.",
+      testGoal: "Zuid heeft 17 punten en een evenwichtige verdeling: open 1SA.",
       hands: dealFromSouth("KS JS 5S AH QH 6H KD 8D 3D AC 7C 4C 2C"),
       expectedAuction: [
         { seat: "South", bid: "1NT", ruleId: "fiveCardHigh.opening.oneNotrump" }
       ],
       explanationKeys: ["fiveCardHigh.opening.oneNotrump"],
       teachingPoints: [
-        "Wel 1SA, want 17 HCP zit nog in de 15-17 range.",
+        "Wel 1SA, want 17 punten zit nog in de 15-17 range.",
         "De verdeling is evenwichtig, dus sans-atout past bij de hand."
       ]
     },
@@ -170,15 +170,15 @@
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 17 HCP, 5-3-3-2 en een vijfkaart harten: de app opent 1SA.",
+      testGoal: "Zuid heeft 17 punten, 5-3-3-2 en een vijfkaart harten: de app opent 1SA.",
       hands: dealFromSouth("AS 8S 4S AH KH JH 7H 3H KD 6D 2D QC 5C"),
       expectedAuction: [
         { seat: "South", bid: "1NT", ruleId: "fiveCardHigh.opening.oneNotrump" }
       ],
       explanationKeys: ["fiveCardHigh.opening.oneNotrump"],
       teachingPoints: [
-        "Niet 1 harten, want deze 15-17 HCP hand is evenwichtig.",
-        "In dit profiel gaat 1SA voor bij 15-17 HCP en een 5-3-3-2 verdeling."
+        "Niet 1 harten, want deze hand heeft 15-17 punten en is evenwichtig.",
+        "In dit profiel gaat 1SA voor bij 15-17 punten en een 5-3-3-2 verdeling."
       ]
     },
     {
@@ -197,7 +197,7 @@
       explanationKeys: ["fiveCardHigh.opening.oneMajor"],
       teachingPoints: [
         "Wel 1 harten, want je hebt openingskracht en minimaal vijf harten.",
-        "Niet 1SA, want de hand heeft geen 15-17 HCP in de 1SA-range."
+        "Niet 1SA, want de hand heeft geen 15-17 punten in de 1SA-range."
       ]
     },
     {
@@ -253,7 +253,7 @@
       ],
       explanationKeys: ["fiveCardHigh.opening.oneMajor"],
       teachingPoints: [
-        "Wel 1 schoppen, want deze zeskaart en 12 HCP geven openingskracht.",
+        "Wel 1 schoppen, want deze zeskaart en 12 punten geven openingskracht.",
         "Niet zwakke twee, want met normale openingskracht open je op eenniveau."
       ]
     },
@@ -354,39 +354,39 @@
     },
     {
       id: "lesson-03-pass-low-balanced-001",
-      title: "Les 3 - passen met 6 HCP",
+      title: "Les 3 - passen met 6 punten",
       level: "beginner",
       focus: ["bidding", "opening", "lesson-03", "pass"],
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 6 HCP en geen sterke verdeling: pas.",
+      testGoal: "Zuid heeft 6 punten en geen sterke verdeling: pas.",
       hands: dealFromSouth("KS 8S 5S QH 7H 4H JD 9D 6D 8C 5C 3C 2C"),
       expectedAuction: [
         { seat: "South", bid: "PASS", ruleId: "fiveCardHigh.pass.openingNoAction" }
       ],
       explanationKeys: ["fiveCardHigh.pass.openingNoAction"],
       teachingPoints: [
-        "Pas, want 6 HCP zonder sterke verdeling is te weinig.",
+        "Pas, want 6 punten zonder sterke verdeling is te weinig.",
         "Een opening belooft dat je hand sterk genoeg is om het bieden te beginnen."
       ]
     },
     {
       id: "lesson-03-pass-nine-flat-001",
-      title: "Les 3 - passen met 9 HCP",
+      title: "Les 3 - passen met 9 punten",
       level: "beginner",
       focus: ["bidding", "opening", "lesson-03", "pass"],
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 9 HCP zonder sterke verdeling: pas.",
+      testGoal: "Zuid heeft 9 punten zonder sterke verdeling: pas.",
       hands: dealFromSouth("AS 7S 5S 3S KH 8H 6H 4H QD 7D 2D 9C 5C"),
       expectedAuction: [
         { seat: "South", bid: "PASS", ruleId: "fiveCardHigh.pass.openingNoAction" }
       ],
       explanationKeys: ["fiveCardHigh.pass.openingNoAction"],
       teachingPoints: [
-        "Pas, want 9 HCP is nog geen openingskracht.",
+        "Pas, want 9 punten is nog geen openingskracht.",
         "Niet 1 harten of 1 schoppen, want er is geen vijfkaart hoog."
       ]
     },
@@ -436,14 +436,14 @@
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 11 HCP en voldoet aan de Regel van 20: open 1 schoppen.",
+      testGoal: "Zuid heeft 11 punten en voldoet aan de Regel van 20: open 1 schoppen.",
       hands: dealFromSouth("AS KS QS 2S 3S QH 2H 3H 4H 2D 3D 2C 3C"),
       expectedAuction: [
         { seat: "South", bid: "1S", ruleId: "fiveCardHigh.opening.ruleOf20OneMajor" }
       ],
       explanationKeys: ["fiveCardHigh.opening.ruleOf20OneMajor"],
       teachingPoints: [
-        "Wel 1 schoppen, want 11 HCP plus de twee langste kleuren komt op 20.",
+        "Wel 1 schoppen, want 11 punten plus de twee langste kleuren komt op 20.",
         "Dit is een lichte opening; controleer dat de punten in de lange kleuren zitten."
       ]
     },
@@ -455,7 +455,7 @@
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 11 HCP en een lange hartenkleur: open 1 harten via de Regel van 20.",
+      testGoal: "Zuid heeft 11 punten en een lange hartenkleur: open 1 harten via de Regel van 20.",
       hands: dealFromSouth("QS 2S 3S AH KH QH 9H 7H 4H 3D 2D 7C 6C"),
       expectedAuction: [
         { seat: "South", bid: "1H", ruleId: "fiveCardHigh.opening.ruleOf20OneMajor" }
@@ -474,7 +474,7 @@
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 11 HCP, klaveren en ruiten lengte, en opent 1 klaveren via de Regel van 20.",
+      testGoal: "Zuid heeft 11 punten, klaveren en ruiten lengte, en opent 1 klaveren via de Regel van 20.",
       hands: dealFromSouth("2S 3S 2H 3H QD 2D 3D 4D AC KC QC 2C 3C"),
       expectedAuction: [
         { seat: "South", bid: "1C", ruleId: "fiveCardHigh.opening.ruleOf20OneMinor" }
@@ -493,14 +493,14 @@
       systemId: "fiveCardHigh",
       dealer: "South",
       vulnerability: "none",
-      testGoal: "Zuid heeft 11 HCP en een lange ruitenkleur: open 1 ruiten via de Regel van 20.",
+      testGoal: "Zuid heeft 11 punten en een lange ruitenkleur: open 1 ruiten via de Regel van 20.",
       hands: dealFromSouth("QS 7S 2S 2H 3H AD KD QD 9D 7D 5D 4C 2C"),
       expectedAuction: [
         { seat: "South", bid: "1D", ruleId: "fiveCardHigh.opening.ruleOf20OneMinor" }
       ],
       explanationKeys: ["fiveCardHigh.opening.ruleOf20OneMinor"],
       teachingPoints: [
-        "Wel 1 ruiten, want deze 11 HCP hand haalt de Regel van 20.",
+        "Wel 1 ruiten, want deze hand heeft 11 punten en haalt de Regel van 20.",
         "De ruitenkleur is lang genoeg om natuurlijk te openen."
       ]
     },
@@ -576,7 +576,7 @@
       ],
       explanationKeys: ["fiveCardHigh.opening.weakTwo"],
       teachingPoints: [
-        "Bonus: deze 11 HCP hand opent niet rustig 1 schoppen.",
+        "Bonus: deze hand heeft 11 punten en opent niet rustig 1 schoppen.",
         "De Regel van 20 wordt afgewezen; de goede zeskaart maakt zwakke twee herkenbaar."
       ]
     }

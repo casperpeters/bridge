@@ -134,23 +134,23 @@
             : false
         };
         if (bidEquals(chosenBid, 1, "NT")) {
-          return fiveCardHighBidChoiceResult(chosenBid, "opening.oneNotrump", "basic", "Open 1NT with 15-17 HCP and a balanced hand.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "opening.oneNotrump", "basic", "Open 1NT with 15-17 points and a balanced hand.", extra);
         }
         if (bidEquals(chosenBid, 2, "NT")) {
-          return fiveCardHighBidChoiceResult(chosenBid, "opening.twoNotrump", "basic", "Open 2NT with 20-22 HCP and a balanced hand.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "opening.twoNotrump", "basic", "Open 2NT with 20-22 points and a balanced hand.", extra);
         }
         if (bidEquals(chosenBid, 2, "C")) {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.strongTwoClubs", "basic", "Open a strong artificial 2C with a very strong hand or a long suit with at least eight playing tricks.", extra);
         }
         if (chosenBid.level === 2 && ["D", "H", "S"].includes(chosenBid.strain)) {
-          return fiveCardHighBidChoiceResult(chosenBid, "opening.weakTwo", "basic", "Open a weak two with 6-10 HCP, or an ugly 11 HCP hand, and a good six-card suit.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, "opening.weakTwo", "basic", "Open a weak two with 6-10 points, or an ugly 11-point hand, and a good six-card suit.", extra);
         }
         if (chosenBid.level >= 3 && chosenBid.strain !== "NT") {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.preempt", "basic", "Preempt with a long suit and limited strength.", extra);
         }
         if (shape.hcp < 12 && ruleOf20.ruleOf20Eligible) {
           const suffix = chosenBid.strain === "H" || chosenBid.strain === "S" ? "OneMajor" : "OneMinor";
-          return fiveCardHighBidChoiceResult(chosenBid, `opening.ruleOf20${suffix}`, "basic", "Open with fewer than 12 HCP because the Rule of 20 is met and most values are in the two long suits.", extra);
+          return fiveCardHighBidChoiceResult(chosenBid, `opening.ruleOf20${suffix}`, "basic", "Open with fewer than 12 points because the Rule of 20 is met and most values are in the two long suits.", extra);
         }
         if (chosenBid.level === 1 && (chosenBid.strain === "H" || chosenBid.strain === "S")) {
           return fiveCardHighBidChoiceResult(chosenBid, "opening.oneMajor", "basic", "Open the longest available five-card major with opening strength.", extra);

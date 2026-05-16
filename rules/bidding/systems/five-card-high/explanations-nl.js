@@ -35,7 +35,7 @@
     const ruleName = bidRuleName(result);
     if (isPass(result.bid)) return explainPassChoiceResult(ruleName, result);
     if (isDouble(result.bid)) {
-      const detail = "informatiedoublet: 12+ HCP, hoogstens een doubleton in hun kleur en steun voor alle ongeboden kleuren; met 16+ HCP mag een ongeboden kleur slechts een driekaart zijn";
+      const detail = "informatiedoublet: 12+ punten, hoogstens een doubleton in hun kleur en steun voor alle ongeboden kleuren; met 16+ punten mag een ongeboden kleur slechts een driekaart zijn";
       return t("bidExplanationCompetitive", { detail: `${detail}. ${ruleReferenceText(ruleName)}` });
     }
     if (isRedouble(result.bid)) {
@@ -59,7 +59,7 @@
     const facts = handFactsText({ ruleName, result, valueMode: isOpenerAfterNotrumpRule(ruleName) ? "hcp" : "full" });
     const factSuffix = facts ? `. ${facts}` : "";
     const responderAfterTransferMinimum = result?.openingLevel === 2
-      ? `na de Jacoby-transfer na 2SA heeft partner de gevraagde hoge kleur geboden. Met 0-3 HCP en meestal precies een vijfkaart laat antwoorder 3${result.transferSuit || result.suit || " hoog"} spelen; met 4+ HCP zou hij 3SA bieden, en met een zeskaart of langer 4${result.transferSuit || result.suit || " hoog"}${factSuffix}`
+      ? `na de Jacoby-transfer na 2SA heeft partner de gevraagde hoge kleur geboden. Met 0-3 punten en meestal precies een vijfkaart laat antwoorder 3${result.transferSuit || result.suit || " hoog"} spelen; met 4+ punten zou hij 3SA bieden, en met een zeskaart of langer 4${result.transferSuit || result.suit || " hoog"}${factSuffix}`
       : `na de Jacoby-transfer heeft partner de gevraagde hoge kleur geboden; met een minimum laat antwoorder het contract daar spelen${factSuffix}`;
     const familyDetail = familyPassChoiceDetail(ruleName, result, { facts, factSuffix, responderAfterTransferMinimum });
     if (familyDetail) {
@@ -185,9 +185,9 @@
   }
 
   function strongTwoClubsReason(result) {
-    if (result.balanced && result.hcp >= 23) return "23+ HCP met een gebalanceerde hand";
+    if (result.balanced && result.hcp >= 23) return "23+ punten met een gebalanceerde hand";
     if (result.playingTricksEligible) return `${result.playingTricks} speelslagen met een lange ${suitName(result.longSuit)}kleur`;
-    return "20+ HCP met een sterke hand";
+    return "20+ punten met een sterke hand";
   }
 
   function notrumpOpeningText(result) {
@@ -197,10 +197,10 @@
   function notrumpSlamOpeningText(result) {
     const openingText = result?.openingLevel === 2 ? "Partner opent 2SA" : "Partner opent 1SA";
     const rangeText = Number.isInteger(result?.openerMinimumHcp) && Number.isInteger(result?.openerMaximumHcp)
-      ? ` en toont ${result.openerMinimumHcp}-${result.openerMaximumHcp} HCP`
+      ? ` en toont ${result.openerMinimumHcp}-${result.openerMaximumHcp} punten`
       : "";
     const minimumText = Number.isInteger(result?.partnershipMinimumHcp)
-      ? `; de gezamenlijke ondergrens is ${result.partnershipMinimumHcp} HCP`
+      ? `; de gezamenlijke ondergrens is ${result.partnershipMinimumHcp} punten`
       : "";
     return `${openingText}${rangeText}${minimumText}`;
   }
@@ -247,7 +247,7 @@
   function ruleOf20FactsText(result) {
     const longSuits = (result.ruleOf20LongSuits || []).map(suitName).join(" en ");
     if (!longSuits || !Number.isInteger(result.ruleOf20Score)) return "";
-    return `Telling: ${result.hcp} HCP + lengte ${longSuits} = ${result.ruleOf20Score}; daarin zitten ${result.ruleOf20LongSuitHcp} HCP.`;
+    return `Telling: ${result.hcp} punten + lengte ${longSuits} = ${result.ruleOf20Score}; daarin zitten ${result.ruleOf20LongSuitHcp} punten.`;
   }
 
   function weakTwoFactsText(result) {
@@ -269,7 +269,7 @@
   function responseNewSuitDetail(ruleName, result) {
     if (result?.partnerSuit && result.partnerSuit !== "NT") {
       const level = result.bid?.level || 0;
-      const range = level === 1 ? "6+ HCP" : "10+ HCP";
+      const range = level === 1 ? "6+ punten" : "10+ punten";
       const levelText = level === 1 ? "eenhoogte" : "tweehoogte";
       return `nieuwe kleur op ${levelText}: natuurlijk antwoord in ${suitName(result.suit)} met ${range} en een 4+-kaart. ${handFactsText({ ruleName, result })}`;
     }
@@ -317,8 +317,8 @@
 
   function valueSummaryText(result) {
     if (result?.valuation === "fitPoints" && Number.isInteger(result.fitPoints)) return `${result.fitPoints} fitpunten`;
-    if (Number.isInteger(result?.points) && result.points !== result.hcp) return `${result.points} totaalpunten`;
-    if (Number.isInteger(result?.hcp)) return `${result.hcp} HCP`;
+    if (Number.isInteger(result?.points) && result.points !== result.hcp) return `${result.points} fitpunten`;
+    if (Number.isInteger(result?.hcp)) return `${result.hcp} punten`;
     return "genoeg waarden";
   }
   
@@ -342,10 +342,10 @@
   
   function valueText(result, mode = "full") {
     if (!Number.isInteger(result?.hcp)) return "";
-    if (mode === "hcp") return `${result.hcp} HCP`;
-    if (result.valuation === "fitPoints" && Number.isInteger(result.fitPoints)) return `${result.hcp} HCP / ${result.fitPoints} fitpunten`;
-    if (Number.isInteger(result.points) && result.points !== result.hcp) return `${result.hcp} HCP / ${result.points} totaalpunten`;
-    return `${result.hcp} HCP`;
+    if (mode === "hcp") return `${result.hcp} punten`;
+    if (result.valuation === "fitPoints" && Number.isInteger(result.fitPoints)) return `${result.hcp} punten / ${result.fitPoints} fitpunten`;
+    if (Number.isInteger(result.points) && result.points !== result.hcp) return `${result.hcp} punten / ${result.points} fitpunten`;
+    return `${result.hcp} punten`;
   }
   
   function shapeText(result) {
@@ -391,7 +391,7 @@
     if (bid.level === 1 && bid.strain === "NT") return "Vijfkaart Hoog: 15-17 punten, SA-verdeling.";
     if (bid.level === 2 && bid.strain === "NT") return "Vijfkaart Hoog: 20-22 punten, SA-verdeling.";
     if (bid.level === 2 && bid.strain === "C") return "Vijfkaart Hoog: sterke kunstmatige opening, 20+ met een kleur of 23+ met SA-verdeling.";
-    if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, meestal 6-10 HCP of een lelijke 11-punter, en een goede zeskaart.`;
+    if (bid.level === 2 && ["D", "H", "S"].includes(bid.strain)) return `zwakke twee in ${suitName(bid.strain)}, meestal 6-10 punten of een lelijke 11-punter, en een goede zeskaart.`;
     if ((bid.level === 3 || bid.level === 4) && bid.strain !== "NT") return `preemptieve opening in ${suitName(bid.strain)}, meestal een lange kleur en beperkte kracht.`;
     if (bid.level === 1 && (bid.strain === "H" || bid.strain === "S")) return `Vijfkaart Hoog: 12-19 punten met minstens een vijfkaart ${suitName(bid.strain)}; open de langste kleur en met twee vijfkaarten de hoogste.`;
     if (bid.level === 1 && bid.strain === "D") return "Vijfkaart Hoog: 12-19 punten met minstens een vierkaart ruiten; open de langste kleur en met meerdere vierkaarten de laagste.";

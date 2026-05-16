@@ -93,7 +93,7 @@
       systemId: "fiveCardHigh",
       dealer: "East",
       vulnerability: "none",
-      testGoal: "Na een 1 ruiten-opening van Oost moet Zuid met 8-16 HCP en een goede vijfkaart schoppen 1 schoppen volgen.",
+      testGoal: "Na een 1 ruiten-opening van Oost moet Zuid met 8-16 punten en een goede vijfkaart schoppen 1 schoppen volgen.",
       hands: {
         North: ["8S", "7S", "6S", "QH", "JH", "TH", "9H", "QC", "JC", "TC", "9C", "8C", "7C"],
         East: ["5S", "4S", "4H", "3H", "AD", "KD", "QD", "JD", "4D", "AC", "KC", "6C", "5C"],
@@ -145,7 +145,7 @@
       systemId: "fiveCardHigh",
       dealer: "West",
       vulnerability: "none",
-      testGoal: "Na 1 ruiten, informatiedoublet van partner en pas van Oost moet Zuid met 6-9 HCP, SA-verdeling, dekking en geen ongeboden vierkaart 1SA bieden.",
+      testGoal: "Na 1 ruiten, informatiedoublet van partner en pas van Oost moet Zuid met 6-9 punten, SA-verdeling, dekking en geen ongeboden vierkaart 1SA bieden.",
       hands: {
         North: ["AS", "KS", "3S", "5S", "AH", "KH", "4H", "5H", "AC", "QC", "3C", "2D", "6D"],
         East: ["5C", "6C", "7C", "9C", "4D", "8D", "6H", "7H", "8H", "9H", "6S", "7S", "8S"],
@@ -160,7 +160,7 @@
       ],
       explanationKeys: ["fiveCardHigh.competitive.takeoutDoubleOneNotrump"],
       teachingPoints: [
-        "1SA na partners informatiedoublet belooft hier 6-9 HCP, een SA-verdeling en dekking in de kleur van de tegenpartij.",
+        "1SA na partners informatiedoublet belooft hier 6-9 punten, een SA-verdeling en dekking in de kleur van de tegenpartij.",
         "De app kiest 1SA pas als Zuid geen betere ongeboden vierkaart kan tonen."
       ]
     },
@@ -172,7 +172,7 @@
       systemId: "fiveCardHigh",
       dealer: "West",
       vulnerability: "none",
-      testGoal: "Na 1 ruiten, informatiedoublet van partner en pas van Oost moet Zuid met 12+ HCP en een vierkaart schoppen direct de manche bieden.",
+      testGoal: "Na 1 ruiten, informatiedoublet van partner en pas van Oost moet Zuid met 12+ punten en een vierkaart schoppen direct de manche bieden.",
       hands: {
         North: ["QS", "JS", "4S", "5S", "AH", "JH", "4H", "5H", "AC", "KC", "5C", "4D", "5D"],
         East: ["6C", "7C", "8C", "9C", "6D", "7D", "8D", "9D", "6H", "7H", "8H", "6S", "7S"],
@@ -199,7 +199,7 @@
       systemId: "fiveCardHigh",
       dealer: "West",
       vulnerability: "none",
-      testGoal: "Na 1 klaveren, informatiedoublet van partner en 1 harten van Oost moet Zuid vrijwillig 1 schoppen kunnen bieden met 6+ HCP en een vierkaart of langer.",
+      testGoal: "Na 1 klaveren, informatiedoublet van partner en 1 harten van Oost moet Zuid vrijwillig 1 schoppen kunnen bieden met 6+ punten en een vierkaart of langer.",
       hands: {
         North: ["AS", "3S", "5S", "6S", "AH", "KH", "2H", "3H", "AD", "QD", "8D", "5D", "5C"],
         East: ["7S", "8S", "9S", "QH", "JH", "TH", "9H", "6H", "6D", "7D", "KC", "6C", "7C"],

@@ -12,33 +12,33 @@
     const { suitName, handFactsText, weakTwoFactsText, notrumpOpeningText, notrumpSlamOpeningText, transferRebidIntro, formatBlackwoodResponse, bidLabelNl, blackwoodMissingAcesText, openingMinorReason, ruleOf20FactsText, openerAfterNotrumpDetail, responseNewSuitDetail, responseRaiseDetail, valueSummaryText, ruleReferenceText, strongTwoClubsReason, t } = helpers;
     switch (ruleName) {
       case "continuation.openerAfterOneNtBalancedGame":
-        return openerAfterNotrumpDetail(ruleName, result, "1SA", "SA-verdeling", "18-19 HCP", "3SA");
+        return openerAfterNotrumpDetail(ruleName, result, "1SA", "SA-verdeling", "18-19 punten", "3SA");
       case "continuation.openerAfterOneNtLongMajorMinimum":
-        return openerAfterNotrumpDetail(ruleName, result, "1SA", "een lange hoge kleur", "12-15 HCP", `2${result.openingSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "1SA", "een lange hoge kleur", "12-15 punten", `2${result.openingSuit}`);
       case "continuation.openerAfterOneNtLongMajorInvite":
-        return openerAfterNotrumpDetail(ruleName, result, "1SA", "een lange hoge kleur", "16-17 HCP", `3${result.openingSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "1SA", "een lange hoge kleur", "16-17 punten", `3${result.openingSuit}`);
       case "continuation.openerAfterOneNtLongMajorGame":
-        return openerAfterNotrumpDetail(ruleName, result, "1SA", "een lange hoge kleur", "18-19 HCP", `4${result.openingSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "1SA", "een lange hoge kleur", "18-19 punten", `4${result.openingSuit}`);
       case "continuation.openerAfterOneNtTwoSuiterLow":
-        return openerAfterNotrumpDetail(ruleName, result, "1SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "12-17 HCP", `2${result.secondSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "1SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "12-17 punten", `2${result.secondSuit}`);
       case "continuation.openerAfterOneNtTwoSuiterHigh":
-        return openerAfterNotrumpDetail(ruleName, result, "1SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "18-19 HCP", `3${result.secondSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "1SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "18-19 punten", `3${result.secondSuit}`);
       case "continuation.openerAfterTwoNtBalancedGame":
-        return openerAfterNotrumpDetail(ruleName, result, "2SA", "SA-verdeling", "14+ HCP", "3SA");
+        return openerAfterNotrumpDetail(ruleName, result, "2SA", "SA-verdeling", "14+ punten", "3SA");
       case "continuation.openerAfterTwoNtLongMajorMinimum":
-        return openerAfterNotrumpDetail(ruleName, result, "2SA", "een lange hoge kleur", "12-13 HCP", `3${result.openingSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "2SA", "een lange hoge kleur", "12-13 punten", `3${result.openingSuit}`);
       case "continuation.openerAfterTwoNtLongMajorGame":
-        return openerAfterNotrumpDetail(ruleName, result, "2SA", "een lange hoge kleur", "14+ HCP", `4${result.openingSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "2SA", "een lange hoge kleur", "14+ punten", `4${result.openingSuit}`);
       case "continuation.openerAfterTwoNtTwoSuiterLow":
-        return openerAfterNotrumpDetail(ruleName, result, "2SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "12-13 HCP", `3${result.secondSuit}`);
+        return openerAfterNotrumpDetail(ruleName, result, "2SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "12-13 punten", `3${result.secondSuit}`);
       case "continuation.openerAfterTwoNtTwoMajorsGame":
-        return openerAfterNotrumpDetail(ruleName, result, "2SA", "tweekleurenspel schoppen en harten", "14+ HCP", "4H");
+        return openerAfterNotrumpDetail(ruleName, result, "2SA", "tweekleurenspel schoppen en harten", "14+ punten", "4H");
       case "continuation.openerAfterTwoNtTwoSuiterGameNotrump":
-        return openerAfterNotrumpDetail(ruleName, result, "2SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "14+ HCP", "3SA");
+        return openerAfterNotrumpDetail(ruleName, result, "2SA", `tweekleurenspel met tweede lagere kleur ${suitName(result.secondSuit)}`, "14+ punten", "3SA");
       case "continuation.openerMinorAfterOneNtInvite":
-        return `invite na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; met 15-17 HCP en een SA-verdeling biedt openaar 2SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `invite na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; met 15-17 punten en een SA-verdeling biedt openaar 2SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorAfterOneNtGame":
-        return `3SA na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; met 18-19 HCP en een SA-verdeling biedt openaar de manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `3SA na partners 1SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden; met 18-19 punten en een SA-verdeling biedt openaar de manche. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorAfterOneNtLongMinorMinimum":
         return `lange lage kleur na partners 1SA: partner heeft geen hoge-kleurfit gevonden; met een ongebalanceerde zeskaart herbiedt openaar 2${result.openingSuit}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorAfterOneNtLongMinorInvite":
@@ -86,9 +86,9 @@
       case "continuation.openerOneDiamondTwoClubsClubFit":
         return `met klaverenfit na 1R-2K verhoog je partner een niveau naar 3K; partner mag passen of, indien hij sterker is, een manche bieden. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMajorRaiseInvite":
-        return `invite na partners enkele hoge-kleursteun: met 16-17 totaalpunten biedt openaar 3${result.suit}. ${handFactsText({ ruleName, result })}`;
+        return `invite na partners enkele hoge-kleursteun: met 16-17 fitpunten biedt openaar 3${result.suit}. ${handFactsText({ ruleName, result })}`;
       case "continuation.openerMajorRaiseGame":
-        return `manche na partners enkele hoge-kleursteun: met 18-19 totaalpunten biedt openaar 4${result.suit}. ${handFactsText({ ruleName, result })}`;
+        return `manche na partners enkele hoge-kleursteun: met 18-19 fitpunten biedt openaar 4${result.suit}. ${handFactsText({ ruleName, result })}`;
       case "continuation.openerMinorRaiseInvite":
         return `invite na partners lage-kleursteun: met extra waarden, maar nog geen zekere manche, biedt openaar 3${result.suit}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.openerMinorRaiseNotrumpGame":
@@ -106,7 +106,7 @@
     const { suitName, handFactsText, weakTwoFactsText, notrumpOpeningText, notrumpSlamOpeningText, transferRebidIntro, formatBlackwoodResponse, bidLabelNl, blackwoodMissingAcesText, openingMinorReason, ruleOf20FactsText, openerAfterNotrumpDetail, responseNewSuitDetail, responseRaiseDetail, valueSummaryText, ruleReferenceText, strongTwoClubsReason, t, facts, factSuffix, responderAfterTransferMinimum } = helpers;
     switch (ruleName) {
       case "pass.openerMajorRaiseMinimum":
-        return `geen manchepoging na partners enkele hoge-kleursteun: met 12-15 totaalpunten past openaar${factSuffix}`;
+        return `geen manchepoging na partners enkele hoge-kleursteun: met 12-15 fitpunten past openaar${factSuffix}`;
       case "pass.openerMinorRaiseMinimum":
         return `geen manchepoging na partners lage-kleursteun: openaar heeft een minimum en past${factSuffix}`;
       case "pass.openerMinorAfterOneNtMinimum":
@@ -116,13 +116,13 @@
       case "pass.openerMinorAfterThreeNtPass":
         return `pas na partners 3SA op 1K/1R: partner heeft geen hoge-kleurfit gevonden en 3SA is meestal het eindcontract${factSuffix}`;
       case "pass.openerAfterOneNtBalancedMinimum":
-        return `herbieding na partners 1SA: SA-verdeling met 12-14 HCP, dus pas${factSuffix}`;
+        return `herbieding na partners 1SA: SA-verdeling met 12-14 punten, dus pas${factSuffix}`;
       case "pass.openerAfterOneNtNoAction":
-        return `herbieding na partners 1SA: geen passende foto-regel voor dit handtype of deze HCP-range${factSuffix}`;
+        return `herbieding na partners 1SA: geen passende foto-regel voor dit handtype of deze puntenrange${factSuffix}`;
       case "pass.openerAfterTwoNtBalancedMinimum":
-        return `herbieding na partners 2SA: SA-verdeling met 12-13 HCP, dus pas${factSuffix}`;
+        return `herbieding na partners 2SA: SA-verdeling met 12-13 punten, dus pas${factSuffix}`;
       case "pass.openerAfterTwoNtNoAction":
-        return `herbieding na partners 2SA: geen passende foto-regel voor dit handtype of deze HCP-range${factSuffix}`;
+        return `herbieding na partners 2SA: geen passende foto-regel voor dit handtype of deze puntenrange${factSuffix}`;
       default:
         return null;
     }

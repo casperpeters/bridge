@@ -17,9 +17,9 @@
         }
         return `steun voor partners volgbod met fit in ${suitName(result.partnerSuit)} en ${result.minimumHcp || (result.vulnerable ? 8 : 7)}+ fitpunten${result.vulnerable ? " kwetsbaar" : " niet-kwetsbaar"}. ${handFactsText({ ruleName, result })}`;
       case "competitive.notrumpAfterPartnerOvercall":
-        return `${result.bid?.level || ""}SA na partners volgbod: ${result.minimumHcp || 10}+ HCP, gebalanceerde hand en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
+        return `${result.bid?.level || ""}SA na partners volgbod: ${result.minimumHcp || 10}+ punten, gebalanceerde hand en stop in ${suitName(result.stopperSuit || result.opponentSuit)}. ${handFactsText({ ruleName, result })}`;
       case "competitive.newSuitAfterPartnerOvercall":
-        return `nieuwe kleur na partners volgbod: eigen goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || 10}+ HCP. ${handFactsText({ ruleName, result })}`;
+        return `nieuwe kleur na partners volgbod: eigen goede vijfkaart of langer in ${suitName(result.suit)} en ${result.minimumHcp || 10}+ punten. ${handFactsText({ ruleName, result })}`;
       case "competitive.minorFitNotrumpGameAfterOvercall":
         return `3SA boven lage-kleurmanche: met gebalanceerde manchewaarden, fit in partners ${suitName(result.partnerSuit)} en stop in ${suitName(result.stopperSuit || result.opponentSuit)} is 3SA meestal praktischer dan 5 ${suitName(result.partnerSuit)}. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       default:

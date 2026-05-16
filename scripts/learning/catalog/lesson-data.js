@@ -245,27 +245,27 @@
       id: "les-02-punten-en-handtypen",
       number: 2,
       title: "Kaarten waarderen",
-      challenge: "Tel HCP, herken verdeling en ontdek wanneer een fit je hand later meer waard maakt.",
-      summary: "Je leert HCP tellen, basisverdelingen herkennen, evenwichtige en onevenwichtige handen onderscheiden en begrijpen waarom een fit waardevol is.",
+      challenge: "Tel punten, herken verdeling en ontdek wanneer een fit je hand later meer waard maakt.",
+      summary: "Je leert punten tellen, basisverdelingen herkennen, evenwichtige en onevenwichtige handen onderscheiden en begrijpen waarom een fit waardevol is.",
       learningGoals: [
-        "Je telt HCP met Aas 4, Heer 3, Vrouw 2 en Boer 1.",
+        "Je telt punten met Aas 4, Heer 3, Vrouw 2 en Boer 1.",
         "Je herkent een evenwichtige verdeling.",
         "Je ziet waarom lengte in een kleur belangrijk is.",
         "Je begrijpt fit als samen minstens acht kaarten in een kleur.",
         "Je maakt een eerste simpele keuze: pas, 1SA of een kleur openen."
       ],
-      focus: ["Bieden", "HCP", "Fit"],
+      focus: ["Bieden", "punten", "Fit"],
       handIds: ["one-nt-opening-001", "opening-pass-001", "one-heart-opening-001"],
       pageHref: "02-card-valuation.html",
-      intro: "Deze les is een handpaspoort voor Zuid: eerst HCP, dan verdeling, langste kleur en pas daarna herwaarderen zodra een fit in beeld komt.",
+      intro: "Deze les is een handpaspoort voor Zuid: eerst punten, dan verdeling, langste kleur en pas daarna herwaarderen zodra een fit in beeld komt.",
       chapters: [
         {
           id: "hcp-tellen",
-          title: "HCP tellen",
+          title: "punten tellen",
           summary: "Aas telt 4, Heer 3, Vrouw 2, Boer 1; de 10 is wel een honneur maar telt niet mee.",
           pageHref: "02-card-valuation.html",
           blocks: [
-            { type: "paragraph", text: "HCP is de eerste snelle krachtmeter voordat je gaat bieden." },
+            { type: "paragraph", text: "Punten zijn de eerste snelle krachtmeter voordat je gaat bieden." },
             { type: "paragraph", text: "De losse lespagina bevat interactieve handen en feedback per antwoord." }
           ]
         },
@@ -276,13 +276,13 @@
           pageHref: "02-card-valuation.html",
           blocks: [
             { type: "paragraph", text: "Een fit is samen minstens acht kaarten in een kleur." },
-            { type: "callout", text: "Tel eerst HCP; herwaardeer pas wanneer een fit waarschijnlijk is." }
+            { type: "callout", text: "Tel eerst punten; herwaardeer pas wanneer een fit waarschijnlijk is." }
           ]
         },
         {
           id: "een-sa-opening-herkennen",
           title: "1SA-hand herkennen",
-          summary: "15-17 HCP met een evenwichtige verdeling maakt 1SA de eerste kandidaat.",
+          summary: "15-17 punten met een evenwichtige verdeling maakt 1SA de eerste kandidaat.",
           handId: "one-nt-opening-001",
           tableTask: {
             type: "bid",
@@ -292,7 +292,7 @@
               seat: "South",
               calls: ["1NT"],
               retryTitle: "Nog niet",
-              retryBody: "Deze hand heeft 15 HCP en is evenwichtig. In deze les zoek je daarom de 1SA-opening.",
+              retryBody: "Deze hand heeft 15 punten en is evenwichtig. In deze les zoek je daarom de 1SA-opening.",
               hint: "Kies 1SA."
             },
             doneTitle: "Bod gedaan",
@@ -304,7 +304,7 @@
             {
               id: "valueThenBid",
               title: "Waardeer eerst Zuid",
-              body: "Tel HCP, kijk of de verdeling evenwichtig is en kies daarna het openingsbod.",
+              body: "Tel punten, kijk of de verdeling evenwichtig is en kies daarna het openingsbod.",
               badge: "Openingskeuze",
               target: "bidControls",
               buttonLabel: "Ik kies mijn bod",
@@ -312,7 +312,7 @@
             }
           ],
           blocks: [
-            { type: "paragraph", text: "Start deze oefenhand en tel voor het eerste bod de HCP van Zuid." }
+            { type: "paragraph", text: "Start deze oefenhand en tel voor het eerste bod de punten van Zuid." }
           ]
         },
         {
@@ -332,7 +332,7 @@
               hint: "Kies Pas."
             },
             doneTitle: "Keuze gemaakt",
-            doneBody: "Zuid heeft gekozen of deze hand genoeg openingskracht heeft. Terug in de les kun je de HCP en verdeling nog eens vergelijken.",
+            doneBody: "Zuid heeft gekozen of deze hand genoeg openingskracht heeft. Terug in de les kun je de punten en verdeling nog eens vergelijken.",
             returnLabel: "Terug naar les",
             retryLabel: "Nog eens proberen"
           },
@@ -348,7 +348,7 @@
             }
           ],
           blocks: [
-            { type: "paragraph", text: "Vergelijk deze hand met de HCP- en verdelingsvragen uit de les." }
+            { type: "paragraph", text: "Vergelijk deze hand met de punten- en verdelingsvragen uit de les." }
           ]
         }
       ]
@@ -361,7 +361,7 @@
       summary: "Je leert de openingsvolgorde in Vijfkaart-Hoog: eerst 1SA herkennen, daarna vijfkaart hoog, daarna lage kleuren, met voorzichtige checks op Regel van 20 en zwakke twee.",
       learningGoals: [
         "Je kent de basisvolgorde voor een Opening in Vijfkaart-Hoog.",
-        "Je opent 1SA met 15-17 HCP en een Evenwichtige verdeling.",
+        "Je opent 1SA met 15-17 punten en een Evenwichtige verdeling.",
         "Je opent 1 harten of 1 schoppen met Openingskracht en minstens een vijfkaart hoog.",
         "Je gebruikt 1 klaveren of 1 ruiten wanneer er geen vijfkaart hoog en geen 1SA-hand is.",
         "Je herkent wanneer pas, Regel van 20 of bonus zwakke twee in beeld komt."
@@ -403,7 +403,7 @@
         {
           id: "een-sa-gaat-voor",
           title: "1SA gaat voor",
-          summary: "15-17 HCP met een Evenwichtige verdeling opent 1SA, zelfs als er een vijfkaart hoog in een 5-3-3-2 hand zit.",
+          summary: "15-17 punten met een Evenwichtige verdeling opent 1SA, zelfs als er een vijfkaart hoog in een 5-3-3-2 hand zit.",
           handId: "lesson-03-one-nt-five-heart-001",
           tableTask: {
             type: "bid",
@@ -413,11 +413,11 @@
               seat: "South",
               calls: ["1NT"],
               retryTitle: "Niet deze keer",
-              retryBody: "Niet 1 harten, want deze 15-17 HCP hand is evenwichtig. In deze oefening gaat 1SA voor.",
+              retryBody: "Niet 1 harten, want deze hand heeft 15-17 punten en is evenwichtig. In deze oefening gaat 1SA voor.",
               hint: "Kies 1SA."
             },
             doneTitle: "1SA gekozen",
-            doneBody: "Zuid heeft 1SA geopend. Terug in de les kun je zien waarom 15-17 HCP en een Evenwichtige verdeling voorgaan.",
+            doneBody: "Zuid heeft 1SA geopend. Terug in de les kun je zien waarom 15-17 punten en een Evenwichtige verdeling voorgaan.",
             returnLabel: "Terug naar les",
             retryLabel: "Nog eens proberen"
           },
@@ -425,7 +425,7 @@
             {
               id: "oneNtPriority",
               title: "Check eerst 1SA",
-              body: "Tel HCP, herken de Evenwichtige verdeling en kies daarna pas het openingsbod.",
+              body: "Tel punten, herken de Evenwichtige verdeling en kies daarna pas het openingsbod.",
               badge: "Openingsvolgorde",
               target: "bidControls",
               buttonLabel: "Ik kies mijn opening",
@@ -502,7 +502,7 @@
         {
           id: "passen-zonder-kracht",
           title: "Passen zonder Openingskracht",
-          summary: "Met te weinig HCP en zonder sterke verdeling is pas vaak de juiste openingstaal.",
+          summary: "Met te weinig punten en zonder sterke verdeling is pas vaak de juiste openingstaal.",
           handId: "lesson-03-pass-low-balanced-001",
           tableTask: {
             type: "bid",
@@ -512,7 +512,7 @@
               seat: "South",
               calls: ["PASS"],
               retryTitle: "Nog geen Opening",
-              retryBody: "Pas, want 6 HCP zonder sterke verdeling is te weinig.",
+              retryBody: "Pas, want 6 punten zonder sterke verdeling is te weinig.",
               hint: "Kies Pas."
             },
             doneTitle: "Pas gekozen",
@@ -535,7 +535,7 @@
         {
           id: "regel-van-20-voorzichtig",
           title: "Regel van 20 voorzichtig gebruiken",
-          summary: "Bij 10-11 HCP tel je HCP plus de twee langste kleuren, maar alleen als de waarden bij die lengte passen.",
+          summary: "Bij 10-11 punten tel je punten plus de twee langste kleuren, maar alleen als de waarden bij die lengte passen.",
           handId: "lesson-03-rule20-one-spade-001",
           tableTask: {
             type: "bid",
@@ -545,7 +545,7 @@
               seat: "South",
               calls: ["1S"],
               retryTitle: "Lichte opening",
-              retryBody: "Wel 1 schoppen, want deze 11 HCP hand haalt de Regel van 20 en de punten zitten in de lange kleuren.",
+              retryBody: "Wel 1 schoppen, want deze hand heeft 11 punten, haalt de Regel van 20 en de punten zitten in de lange kleuren.",
               hint: "Kies 1 schoppen."
             },
             doneTitle: "Lichte opening gekozen",
@@ -556,8 +556,8 @@
           boardGuidance: [
             {
               id: "rule20Check",
-              title: "10-11 HCP?",
-              body: "Controleer bij lichte handen voorzichtig de Regel van 20: HCP plus de twee langste kleuren.",
+              title: "10-11 punten?",
+              body: "Controleer bij lichte handen voorzichtig de Regel van 20: punten plus de twee langste kleuren.",
               badge: "Regel van 20",
               target: "bidControls",
               buttonLabel: "Ik controleer en bied",

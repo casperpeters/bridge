@@ -22,7 +22,7 @@
       case "continuation.responderAfterStaymanNoFitGame":
         return `tweede bijbod na Stayman: er is geen hoge-kleurfit gevonden, maar antwoorder heeft manchekracht. Daarom kiest hij 3SA. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.acceptTransfer":
-        return `openaar accepteert partners transfer naar ${suitName(result.transferSuit || result.suit)}; responder heeft minstens een vijfkaart. Na 1SA kan responder nog passen, inviteren of de manche bieden. Na 2SA is de hand al sterk genoeg dat responder met 4+ HCP meestal de manche kiest. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit })}`;
+        return `openaar accepteert partners transfer naar ${suitName(result.transferSuit || result.suit)}; responder heeft minstens een vijfkaart. Na 1SA kan responder nog passen, inviteren of de manche bieden. Na 2SA is de hand al sterk genoeg dat responder met 4+ punten meestal de manche kiest. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit })}`;
       case "continuation.responderAfterTransferFiveHeartsFourSpades":
         return `tweede bijbod na Jacoby-transfer: antwoorder heeft precies vijf harten en minstens vier schoppen. Vanaf 8 punten biedt hij 2S om ook de schoppen te tonen; met minder punten past hij op 2H. ${handFactsText({ ruleName, result, suit: "H", valueMode: "hcp" })}`;
       case "continuation.responderAfterTransferFiveSpadesFourHeartsInvite":
@@ -34,7 +34,7 @@
       case "continuation.responderAfterTransferSixCardInvite":
         return `tweede bijbod na Jacoby-transfer: met een zeskaart of langer in ${suitName(result.transferSuit || result.suit)} en inviterende kracht biedt antwoorder 3${result.transferSuit || result.suit}. Partner mag passen of met maximum naar de manche. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.responderAfterTransferSixCardGame":
-        return `${transferRebidIntro(result)}: met een zeskaart of langer in ${suitName(result.transferSuit || result.suit)} kiest antwoorder de hoge-kleurmanche. Na 2SA is 4+ HCP al genoeg om de manche te willen spelen; met zes troeven is 4${result.transferSuit || result.suit} praktischer dan 3SA. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
+        return `${transferRebidIntro(result)}: met een zeskaart of langer in ${suitName(result.transferSuit || result.suit)} kiest antwoorder de hoge-kleurmanche. Na 2SA is 4+ punten al genoeg om de manche te willen spelen; met zes troeven is 4${result.transferSuit || result.suit} praktischer dan 3SA. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.responderAfterTransferNotrumpInvite":
         return `tweede bijbod na Jacoby-transfer: met meestal precies een vijfkaart ${suitName(result.transferSuit || result.suit)} en inviterende kracht biedt antwoorder 2SA. Openaar kiest daarna SA of de hoge kleur met steun. ${handFactsText({ ruleName, result, suit: result.transferSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.responderAfterTransferNotrumpGame":

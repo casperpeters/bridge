@@ -32,7 +32,7 @@
       handId: "lesson-03-one-nt-balanced-001",
       hand: "AS QS 8S 3S KH JH 4H AD TD 6D QC 9C 2C",
       answer: "1NT",
-      feedback: "Wel 1SA, want deze hand heeft 16 HCP en een Evenwichtige verdeling.",
+      feedback: "Wel 1SA, want deze hand heeft 16 punten en een Evenwichtige verdeling.",
       wrongByChoice: {
         "1S": "Niet 1 schoppen, want er is geen vijfkaart schoppen.",
         "1H": "Niet 1 harten, want Vijfkaart-Hoog vraagt minimaal vijf harten."
@@ -44,7 +44,7 @@
       handId: "lesson-03-one-nt-balanced-002",
       hand: "KS JS 5S AH QH 6H KD 8D 3D AC 7C 4C 2C",
       answer: "1NT",
-      feedback: "Wel 1SA, want 17 HCP valt precies in de 15-17 range en de verdeling is evenwichtig."
+      feedback: "Wel 1SA, want 17 punten valt precies in de 15-17 range en de verdeling is evenwichtig."
     },
     {
       id: "q-one-nt-five-heart",
@@ -53,9 +53,9 @@
       chapterId: "een-sa-gaat-voor",
       hand: "AS 8S 4S AH KH JH 7H 3H KD 6D 2D QC 5C",
       answer: "1NT",
-      feedback: "Niet 1 harten, want deze 15-17 HCP hand is evenwichtig. Wel 1SA.",
+      feedback: "Niet 1 harten, want deze hand heeft 15-17 punten en is evenwichtig. Wel 1SA.",
       wrongByChoice: {
-        "1H": "Niet 1 harten, want 1SA gaat in dit profiel voor met 15-17 HCP en een Evenwichtige verdeling.",
+        "1H": "Niet 1 harten, want 1SA gaat in dit profiel voor met 15-17 punten en een Evenwichtige verdeling.",
         "1S": "Niet 1 schoppen, want je hebt geen vijfkaart schoppen."
       }
     },
@@ -67,7 +67,7 @@
       answer: "1H",
       feedback: "Wel 1 harten, want je hebt Openingskracht en een vijfkaart harten.",
       wrongByChoice: {
-        "1NT": "Niet 1SA, want deze hand heeft geen 15-17 HCP in de 1SA-range.",
+        "1NT": "Niet 1SA, want deze hand heeft geen 15-17 punten in de 1SA-range.",
         "1S": "Niet 1 schoppen, want Vijfkaart-Hoog vraagt minimaal vijf schoppen."
       }
     },
@@ -79,7 +79,7 @@
       answer: "1H",
       feedback: "Wel 1 harten, want je hebt normale Openingskracht en een zeskaart harten.",
       wrongByChoice: {
-        WEAK_TWO: "Niet zwakke twee, want 12 HCP is normale Openingskracht voor een opening op eenniveau."
+        WEAK_TWO: "Niet zwakke twee, want 12 punten is normale Openingskracht voor een opening op eenniveau."
       }
     },
     {
@@ -101,7 +101,7 @@
       handId: "lesson-03-one-spade-six-card-001",
       hand: "KS QS JS 9S 7S 3S AH 8H QD 6D 2D 9C 5C",
       answer: "1S",
-      feedback: "Wel 1 schoppen, want je hebt 12 HCP en een zeskaart schoppen."
+      feedback: "Wel 1 schoppen, want je hebt 12 punten en een zeskaart schoppen."
     },
     {
       id: "q-two-five-majors",
@@ -125,7 +125,7 @@
       wrongByChoice: {
         "1H": "Niet 1 harten, want Vijfkaart-Hoog vraagt minimaal vijf harten.",
         "1S": "Niet 1 schoppen, want Vijfkaart-Hoog vraagt minimaal vijf schoppen.",
-        "1NT": "Niet 1SA, want deze hand heeft geen 15-17 HCP."
+        "1NT": "Niet 1SA, want deze hand heeft geen 15-17 punten."
       }
     },
     {
@@ -166,14 +166,14 @@
       chapterId: "passen-zonder-kracht",
       hand: "KS 8S 5S QH 7H 4H JD 9D 6D 8C 5C 3C 2C",
       answer: "PASS",
-      feedback: "Pas, want 6 HCP zonder sterke verdeling is te weinig."
+      feedback: "Pas, want 6 punten zonder sterke verdeling is te weinig."
     },
     {
       id: "q-pass-eight-flat",
       category: "pass",
       hand: "KS 8S 5S QH 7H 4H JD 9D 6D QC 5C 3C 2C",
       answer: "PASS",
-      feedback: "Pas, want 8 HCP zonder sterke verdeling is te weinig."
+      feedback: "Pas, want 8 punten zonder sterke verdeling is te weinig."
     },
     {
       id: "q-pass-nine-flat",
@@ -181,7 +181,7 @@
       handId: "lesson-03-pass-nine-flat-001",
       hand: "AS 7S 5S 3S KH 8H 6H 4H QD 7D 2D 9C 5C",
       answer: "PASS",
-      feedback: "Pas, want 9 HCP is nog geen Openingskracht en er is geen sterke verdeling."
+      feedback: "Pas, want 9 punten is nog geen Openingskracht en er is geen sterke verdeling."
     },
     {
       id: "q-pass-poor-six",
@@ -209,7 +209,7 @@
       chapterId: "regel-van-20-voorzichtig",
       hand: "AS KS QS 2S 3S QH 2H 3H 4H 2D 3D 2C 3C",
       answer: "1S",
-      feedback: "Wel 1 schoppen, want 11 HCP plus de twee langste kleuren komt op 20 en de punten zitten in die kleuren."
+      feedback: "Wel 1 schoppen, want 11 punten plus de twee langste kleuren komt op 20 en de punten zitten in die kleuren."
     },
     {
       id: "q-rule20-heart",
@@ -225,7 +225,7 @@
       handId: "lesson-03-rule20-one-club-001",
       hand: "2S 3S 2H 3H QD 2D 3D 4D AC KC QC 2C 3C",
       answer: "1C",
-      feedback: "Wel 1 klaveren, want deze 11 HCP hand haalt de Regel van 20 en heeft geen vijfkaart hoog."
+      feedback: "Wel 1 klaveren, want deze hand heeft 11 punten, haalt de Regel van 20 en heeft geen vijfkaart hoog."
     },
     {
       id: "q-rule20-diamond",
@@ -233,7 +233,7 @@
       handId: "lesson-03-rule20-one-diamond-001",
       hand: "QS 7S 2S 2H 3H AD KD QD 9D 7D 5D 4C 2C",
       answer: "1D",
-      feedback: "Wel 1 ruiten, want 11 HCP plus de lange ruitenkleur en volgende lengte halen de Regel van 20."
+      feedback: "Wel 1 ruiten, want 11 punten plus de lange ruitenkleur en volgende lengte halen de Regel van 20."
     },
     {
       id: "q-weak-two-diamond",

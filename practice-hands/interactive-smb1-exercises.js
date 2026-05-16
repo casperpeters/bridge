@@ -60,7 +60,7 @@
         wrong: "Tel de honneurpunten en kijk naar de verdeling: deze hand past precies in de 1SA-opening.",
         wrongByChoice: {
           "1S": "Ook met vijf schoppen gaat 1SA hier voor: de hand is gebalanceerd en zit in de 15-17-range.",
-          PASS: "Met 15-17 HCP heb je duidelijk genoeg kracht om te openen."
+          PASS: "Met 15-17 punten heb je duidelijk genoeg kracht om te openen."
         }
       },
       engineExpectation: {
@@ -119,9 +119,9 @@
       expectedActionLabel: "Bied 1SA",
       feedback: {
         correct: "Ja. Zonder schoppenfit en zonder beter bod is 1SA het rustige bijbod.",
-        wrong: "Kijk opnieuw naar fit en biedbare eigen kleuren. Met 6-9 HCP heb je hier nog een bijbod.",
+        wrong: "Kijk opnieuw naar fit en biedbare eigen kleuren. Met 6-9 punten heb je hier nog een bijbod.",
         wrongByChoice: {
-          PASS: "Met 6-9 HCP pas je hier niet direct: partner mag nog informatie verwachten.",
+          PASS: "Met 6-9 punten pas je hier niet direct: partner mag nog informatie verwachten.",
           "2S": "Voor 2 schoppen heb je steun nodig. Deze hand heeft geen driekaart schoppen."
         }
       },

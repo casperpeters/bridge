@@ -20,7 +20,7 @@
       case "continuation.blackwoodSmallSlam":
         return `kleinslem na azenvragen: er ontbreken niet twee azen, dus de regel biedt 6${result.trumpSuit || result.suit}. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
       case "continuation.blackwoodGrandSlam":
-        return `grootslem na azenvragen: alle azen zijn bekend aanwezig en de gezamenlijke ondergrens is minstens 37 HCP. Daarom biedt de regel 7${result.trumpSuit || result.suit}. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
+        return `grootslem na azenvragen: alle azen zijn bekend aanwezig en de gezamenlijke ondergrens is minstens 37 punten. Daarom biedt de regel 7${result.trumpSuit || result.suit}. ${handFactsText({ ruleName, result, suit: result.trumpSuit || result.suit, valueMode: "hcp" })}`;
       default:
         return null;
     }

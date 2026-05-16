@@ -8,17 +8,17 @@
   const valuationQuestions = [
     {
       kind: "hcp",
-      prompt: "Hoeveel HCP heeft deze hand?",
+      prompt: "Hoeveel punten heeft deze hand?",
       hand: "AS QS 7S KH 9H 4H QD 8D 3D JC 6C 5C 2C",
-      good: "Goed. Aas, Heer, Vrouw, Vrouw en Boer maken samen 12 HCP.",
+      good: "Goed. Aas, Heer, Vrouw, Vrouw en Boer maken samen 12 punten.",
       wrong: "Tel alleen A, K, Q en J. De kleine kaarten tellen niet mee."
     },
     {
       kind: "hcp",
-      prompt: "Hoeveel HCP heeft deze hand? Let op de tienen.",
+      prompt: "Hoeveel punten heeft deze hand? Let op de tienen.",
       hand: "AS TS 8S KH TH 6H QD JD 4D TC 9C 7C 3C",
-      good: "Precies. De drie tienen zijn honneurs, maar leveren 0 HCP op.",
-      wrong: "De 10 is een Honneur, maar geen HCP. Tel A, K, Q en J."
+      good: "Precies. De drie tienen zijn honneurs, maar leveren 0 punten op.",
+      wrong: "De 10 is een Honneur, maar geen punten. Tel A, K, Q en J."
     },
     {
       kind: "balanced",
@@ -77,10 +77,10 @@
 
   const miniQuiz = [
     {
-      question: "Welke kaarten leveren HCP op?",
+      question: "Welke kaarten leveren punten op?",
       options: ["Aas, Heer, Vrouw en Boer", "Aas tot en met 10", "Alle honneurs evenveel"],
       answer: "Aas, Heer, Vrouw en Boer",
-      feedback: "Juist. De 10 is wel een Honneur, maar telt 0 HCP."
+      feedback: "Juist. De 10 is wel een Honneur, maar telt 0 punten."
     },
     {
       question: "Welke verdeling is evenwichtig?",
@@ -90,15 +90,15 @@
     },
     {
       question: "Wat is een Fit?",
-      options: ["Samen minstens acht kaarten in een kleur", "Zelf precies vijf kaarten in een kleur", "Samen minstens acht HCP"],
+      options: ["Samen minstens acht kaarten in een kleur", "Zelf precies vijf kaarten in een kleur", "Samen minstens acht punten"],
       answer: "Samen minstens acht kaarten in een kleur",
       feedback: "Precies. Fit gaat over gezamenlijke lengte in een kleur."
     },
     {
       question: "Wanneer ga je herwaarderen met Fitpunten?",
-      options: ["Nadat een Fit waarschijnlijk is", "Voordat je HCP telt", "Alleen bij sans-atout"],
+      options: ["Nadat een Fit waarschijnlijk is", "Voordat je punten telt", "Alleen bij sans-atout"],
       answer: "Nadat een Fit waarschijnlijk is",
-      feedback: "Ja. Eerst HCP, daarna pas Fitpunten wanneer de bieding een Fit laat zien."
+      feedback: "Ja. Eerst punten, daarna pas Fitpunten wanneer de bieding een Fit laat zien."
     },
     {
       question: "Hoe heet precies een kaart in een kleur?",
@@ -108,7 +108,7 @@
     },
     {
       question: "Waarom is een Fit waardevol?",
-      options: ["Troef kan controle en aftroevers geven", "Elke kaart wordt automatisch HCP", "Je hoeft geen kleur meer te bekennen"],
+      options: ["Troef kan controle en aftroevers geven", "Elke kaart wordt automatisch punten", "Je hoeft geen kleur meer te bekennen"],
       answer: "Troef kan controle en aftroevers geven",
       feedback: "Klopt. Met een troeffit kunnen korte kleuren en extra troeven meer werk doen."
     },

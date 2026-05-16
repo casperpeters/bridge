@@ -11,27 +11,108 @@ const {
   chooseFiveCardHigh,
   chooseFiveCardHighResult
 } = require("./harness.js");
+const competitiveRules = require("../../rules/bidding/systems/five-card-high/competitive.js");
 
-test("Vijfkaart Hoog overcalls naturally at the one-level with a good five-card suit and 8-16 HCP", () => {
+test("Competitive biedfamilie returns a full bid result for a natural overcall", () => {
+  const auction = [
+    { seat: "North", bid: bid(1, "D") }
+  ];
+
+  const result = competitiveRules.chooseCompetitiveBidResult({
+    hand: hand(
+      "AS", "QS", "JS", "2S", "3S",
+      "KH", "2H", "3H",
+      "2D", "3D",
+      "2C", "3C", "4C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(1, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.simpleOvercall");
+  assert.equal(result.category, "competitive");
+  assert.equal(result.hcp, 10);
+  assert.equal(result.length, 5);
+});
+
+test("Competitive biedfamilie owns the no-action pass explanation", () => {
+  const auction = [
+    { seat: "South", bid: bid(1, "D") },
+    { seat: "West", bid: pass() },
+    { seat: "North", bid: pass() }
+  ];
+
+  const result = competitiveRules.chooseCompetitiveBidResult({
+    hand: hand(
+      "KS", "9S", "8S", "7S", "2S",
+      "QH", "6H", "5H",
+      "JD", "4D",
+      "QC", "3C", "2C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "EW"
+  });
+
+  assert.deepEqual(result.bid, pass());
+  assert.equal(result.ruleId, "fiveCardHigh.pass.competitiveNoAction");
+  assert.equal(result.category, "competitive");
+  assert.equal(result.vulnerable, true);
+});
+
+test("Competitive biedfamilie overcalls 1NT with 15-17 HCP, balanced shape, and a stopper", () => {
+  const auction = [
+    { seat: "North", bid: bid(1, "D") }
+  ];
+
+  const result = competitiveRules.chooseCompetitiveBidResult({
+    hand: hand(
+      "AS", "JS", "7S",
+      "AH", "TH", "9H", "2H",
+      "KD", "QD", "TD",
+      "QC", "JC", "6C"
+    ),
+    auction,
+    seat: "East",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(1, "NT"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.oneNotrumpOvercall");
+  assert.equal(result.hcp, 17);
+  assert.equal(result.opponentSuit, "D");
+});
+
+test("Vijfkaart Hoog profile dispatches direct competitive auctions to the Competitive biedfamilie", () => {
   const auction = [
     { seat: "East", bid: bid(1, "D") }
   ];
 
-  assert.deepEqual(chooseFiveCardHigh([
-    "AS", "QS", "JS", "2S", "3S",
-    "KH", "2H", "3H",
-    "2D", "3D",
-    "2C", "3C", "4C"
-  ], auction), bid(1, "S"));
+  const result = rules.chooseFiveCardHighBidResult({
+    hand: hand(
+      "AS", "QS", "JS", "2S", "3S",
+      "KH", "2H", "3H",
+      "2D", "3D",
+      "2C", "3C", "4C"
+    ),
+    auction,
+    seat: "South",
+    vulnerability: "none"
+  });
+
+  assert.deepEqual(result.bid, bid(1, "S"));
+  assert.equal(result.ruleId, "fiveCardHigh.competitive.simpleOvercall");
 });
 
-test("Vijfkaart Hoog overcalls one spade with row 26 strong-major seed after one diamond", () => {
+test("Competitive biedfamilie overcalls one spade with row 26 strong-major seed after one diamond", () => {
   const hands = rules.dealHands(rules.randomFromSeed("1xe2dl31tb9p7m"));
   const auction = [
     { seat: "North", bid: bid(1, "D") }
   ];
 
-  const result = rules.chooseFiveCardHighBidResult({
+  const result = competitiveRules.chooseCompetitiveBidResult({
     hand: hands.East,
     auction,
     seat: "East",
@@ -46,12 +127,12 @@ test("Vijfkaart Hoog overcalls one spade with row 26 strong-major seed after one
   assert.equal(result.maximumHcp, 19);
 });
 
-test("Vijfkaart Hoog still prefers a takeout double with strong major values and takeout shape", () => {
+test("Competitive biedfamilie still prefers a takeout double with strong major values and takeout shape", () => {
   const auction = [
     { seat: "North", bid: bid(1, "D") }
   ];
 
-  const result = rules.chooseFiveCardHighBidResult({
+  const result = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "KS", "QS", "JS", "2S",
       "AH", "QH", "5H", "4H",
@@ -67,7 +148,7 @@ test("Vijfkaart Hoog still prefers a takeout double with strong major values and
   assert.equal(result.ruleId, "fiveCardHigh.competitive.takeoutDouble");
 });
 
-test("Vijfkaart Hoog protects after a one-minor opening with a good five-card major", () => {
+test("Competitive biedfamilie protects after a one-minor opening with a good five-card major", () => {
   const hands = rules.dealHands(rules.randomFromSeed("13uez8r1c1loyr"));
   const auction = [
     { seat: "East", bid: pass() },
@@ -76,7 +157,7 @@ test("Vijfkaart Hoog protects after a one-minor opening with a good five-card ma
     { seat: "North", bid: pass() }
   ];
 
-  const result = rules.chooseFiveCardHighBidResult({
+  const result = competitiveRules.chooseCompetitiveBidResult({
     hand: hands.East,
     auction,
     seat: "East",
@@ -89,29 +170,6 @@ test("Vijfkaart Hoog protects after a one-minor opening with a good five-card ma
   assert.equal(result.length, 5);
   assert.equal(result.minimumHcp, 8);
   assert.equal(result.protective, true);
-});
-
-test("Vijfkaart Hoog does not protect without a good five-card major", () => {
-  const auction = [
-    { seat: "South", bid: bid(1, "D") },
-    { seat: "West", bid: pass() },
-    { seat: "North", bid: pass() }
-  ];
-
-  const result = rules.chooseFiveCardHighBidResult({
-    hand: hand(
-      "KS", "9S", "8S", "7S", "2S",
-      "QH", "6H", "5H",
-      "JD", "4D",
-      "QC", "3C", "2C"
-    ),
-    auction,
-    seat: "East",
-    vulnerability: "EW"
-  });
-
-  assert.deepEqual(result.bid, pass());
-  assert.equal(result.ruleId, "fiveCardHigh.pass.competitiveNoAction");
 });
 
 test("Vijfkaart Hoog requires 10+ HCP for a simple two-level overcall", () => {
@@ -140,11 +198,11 @@ test("Vijfkaart Hoog requires 10+ HCP for a simple two-level overcall", () => {
       "QC", "2C", "3C"
     ], auction);
   assert.equal(result.minimumHcp, 10);
-  assert.match(result.reason, /10\+ HCP/);
+  assert.match(result.reason, /10\+ points/);
 });
 
-test("Vijfkaart Hoog matches Start met Bridge defense examples after a weak two opening", () => {
-  const overcall = rules.chooseFiveCardHighBidResult({
+test("Competitive biedfamilie matches Start met Bridge defense examples after a weak two opening", () => {
+  const overcall = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "KS", "JS", "9S", "8S", "4S",
       "5H", "4H",
@@ -165,7 +223,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a weak two 
   assert.equal(overcall.maximumHcp, 15);
   assert.equal(overcall.length, 6);
 
-  const tooWeak = rules.chooseFiveCardHighBidResult({
+  const tooWeak = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "KS", "TS", "8S", "6S", "4S", "3S",
       "JH", "9H", "8H",
@@ -183,7 +241,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a weak two 
   assert.equal(tooWeak.ruleId, "fiveCardHigh.pass.competitiveNoAction");
   assert.equal(tooWeak.hcp, 10);
 
-  const notrump = rules.chooseFiveCardHighBidResult({
+  const notrump = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "JS", "7S",
       "AH", "TH", "9H", "2H",
@@ -204,7 +262,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a weak two 
   assert.equal(notrump.maximumHcp, 18);
   assert.equal(notrump.stopperSuit, "D");
 
-  const takeout = rules.chooseFiveCardHighBidResult({
+  const takeout = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "7S",
       "KH", "QH", "8H", "4H",
@@ -225,8 +283,8 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a weak two 
   assert.equal(takeout.opponentSuit, "S");
 });
 
-test("Vijfkaart Hoog bids 3NT with 19+ HCP after a weak two opening and a stopper", () => {
-  const result = rules.chooseFiveCardHighBidResult({
+test("Competitive biedfamilie bids 3NT with 19+ HCP after a weak two opening and a stopper", () => {
+  const result = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "JS", "7S",
       "AH", "KH", "9H", "2H",
@@ -247,8 +305,8 @@ test("Vijfkaart Hoog bids 3NT with 19+ HCP after a weak two opening and a stoppe
   assert.equal(result.stopperSuit, "D");
 });
 
-test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptive opening", () => {
-  const notrumpAfterThreeHearts = rules.chooseFiveCardHighBidResult({
+test("Competitive biedfamilie matches Start met Bridge defense examples after a preemptive opening", () => {
+  const notrumpAfterThreeHearts = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "QS",
       "KH", "TH", "9H",
@@ -268,7 +326,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptiv
   assert.equal(notrumpAfterThreeHearts.minimumHcp, 19);
   assert.equal(notrumpAfterThreeHearts.stopperSuit, "H");
 
-  const takeoutAfterThreeDiamonds = rules.chooseFiveCardHighBidResult({
+  const takeoutAfterThreeDiamonds = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "JS", "7S", "4S",
       "AH", "QH", "TH", "9H",
@@ -288,7 +346,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptiv
   assert.equal(takeoutAfterThreeDiamonds.takeoutShape, true);
   assert.equal(takeoutAfterThreeDiamonds.minimumHcp, 13);
 
-  const tooWeakForThreeNotrump = rules.chooseFiveCardHighBidResult({
+  const tooWeakForThreeNotrump = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "KS", "8S", "5S",
       "KH", "QH", "6H", "4H",
@@ -306,7 +364,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptiv
   assert.equal(tooWeakForThreeNotrump.ruleId, "fiveCardHigh.pass.competitiveNoAction");
   assert.equal(tooWeakForThreeNotrump.hcp, 15);
 
-  const notrumpWithTwenty = rules.chooseFiveCardHighBidResult({
+  const notrumpWithTwenty = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "8S", "5S",
       "KH", "QH", "6H",
@@ -324,7 +382,7 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptiv
   assert.equal(notrumpWithTwenty.ruleId, "fiveCardHigh.competitive.preemptDefenseNotrumpGame");
   assert.equal(notrumpWithTwenty.hcp, 20);
 
-  const spadeOvercall = rules.chooseFiveCardHighBidResult({
+  const spadeOvercall = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "KS", "JS", "8S", "2S",
       "QH", "6H",
@@ -346,12 +404,12 @@ test("Vijfkaart Hoog matches Start met Bridge defense examples after a preemptiv
   assert.equal(spadeOvercall.length, 5);
 });
 
-test("Vijfkaart Hoog raises simple overcall requirements when vulnerable", () => {
+test("Competitive biedfamilie raises simple overcall requirements when vulnerable", () => {
   const oneLevelAuction = [
     { seat: "East", bid: bid(1, "D") }
   ];
 
-  assert.deepEqual(rules.chooseFiveCardHighBidResult({
+  assert.deepEqual(competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "QS", "JS", "2S", "3S",
       "2H", "3H", "4H",
@@ -363,7 +421,7 @@ test("Vijfkaart Hoog raises simple overcall requirements when vulnerable", () =>
     vulnerability: "NS"
   }).bid, pass());
 
-  const vulnerableOneLevel = rules.chooseFiveCardHighBidResult({
+  const vulnerableOneLevel = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "AS", "QS", "JS", "2S", "3S",
       "KH", "2H", "3H",
@@ -382,7 +440,7 @@ test("Vijfkaart Hoog raises simple overcall requirements when vulnerable", () =>
     { seat: "East", bid: bid(1, "S") }
   ];
 
-  assert.deepEqual(rules.chooseFiveCardHighBidResult({
+  assert.deepEqual(competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "2S", "3S",
       "AH", "KH", "JH", "2H", "3H",
@@ -394,7 +452,7 @@ test("Vijfkaart Hoog raises simple overcall requirements when vulnerable", () =>
     vulnerability: "NS"
   }).bid, pass());
 
-  const vulnerableTwoLevel = rules.chooseFiveCardHighBidResult({
+  const vulnerableTwoLevel = competitiveRules.chooseCompetitiveBidResult({
     hand: hand(
       "2S", "3S",
       "AH", "KH", "JH", "2H", "3H",

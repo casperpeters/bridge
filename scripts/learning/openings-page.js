@@ -159,7 +159,7 @@
     if (question.wrongByChoice?.[selected]) return question.wrongByChoice[selected];
     const answer = openingOptions.find((option) => option.value === question.answer)?.label || question.answer;
     if (question.answer === "WEAK_TWO") return `Bijna. Zoek de zeskaart met beperkte kracht: dit is een zwakke twee${question.expectedBid ? ` (${formatCall(question.expectedBid)})` : ""}.`;
-    if (selected === "1NT") return "Niet 1SA, want deze hand past niet bij 15-17 HCP met een Evenwichtige verdeling.";
+    if (selected === "1NT") return "Niet 1SA, want deze hand past niet bij 15-17 punten met een Evenwichtige verdeling.";
     if (selected === "WEAK_TWO") return "Niet zwakke twee, want deze hand hoort bij een normale opening, een lage kleur of pas.";
     return `Bijna. De beste opening is ${answer}. ${question.feedback}`;
   }
@@ -302,7 +302,7 @@
 
   function renderFactChips(root, cards) {
     return lessonRender.renderChips(root, [
-      `${hcp(cards)} HCP`,
+      `${hcp(cards)} punten`,
       distributionPattern(cards),
       `langste: ${lessonHand.longestSuitText(cards)}`,
       `Regel van 20: ${ruleOf20Score(cards)}`

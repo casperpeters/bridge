@@ -22,9 +22,9 @@
       case "response.notrumpGame":
         return `3SA met manchekracht: geen vijfkaart hoog voor transfer en geen vierkaart hoog voor Stayman. Zonder hoge-kleurfit is 3SA meestal praktischer dan 5K/5R, omdat 3SA maar 9 slagen vraagt. ${handFactsText({ ruleName, result })}`;
       case "response.notrumpSmallSlam":
-        return `${notrumpSlamOpeningText(result)} en antwoorder heeft genoeg evenwichtige kracht om samen minstens 33 HCP te garanderen. Zonder vierkaart hoog voor Stayman en zonder vijfkaart hoog voor transfer kiest de regel direct 6SA als eenvoudige kleinslemroute. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `${notrumpSlamOpeningText(result)} en antwoorder heeft genoeg evenwichtige kracht om samen minstens 33 punten te garanderen. Zonder vierkaart hoog voor Stayman en zonder vijfkaart hoog voor transfer kiest de regel direct 6SA als eenvoudige kleinslemroute. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "response.notrumpGrandSlam":
-        return `${notrumpSlamOpeningText(result)} en antwoorder heeft genoeg evenwichtige kracht om samen minstens 37 HCP te garanderen. Zonder vierkaart hoog voor Stayman en zonder vijfkaart hoog voor transfer kiest de regel direct 7SA als eenvoudige grootslemroute. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `${notrumpSlamOpeningText(result)} en antwoorder heeft genoeg evenwichtige kracht om samen minstens 37 punten te garanderen. Zonder vierkaart hoog voor Stayman en zonder vijfkaart hoog voor transfer kiest de regel direct 7SA als eenvoudige grootslemroute. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       default:
         return null;
     }

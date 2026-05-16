@@ -14,17 +14,17 @@
 
     switch (ruleName) {
       case "continuation.strongTwoClubsJumpRebid":
-        return `sprongherbieding na 2K-2R: openaar toont een extra sterke hand met een zeskaart of langer in ${suitName(result.suit)}. Dit is sterker dan de gewone herbieding 2${result.suit}; in deze code gebeurt dit vanaf 24+ HCP of minstens 9 speelslagen. ${handFactsText({ ruleName, result, suit: result.suit, valueMode: "hcp" })}`;
+        return `sprongherbieding na 2K-2R: openaar toont een extra sterke hand met een zeskaart of langer in ${suitName(result.suit)}. Dit is sterker dan de gewone herbieding 2${result.suit}; in deze code gebeurt dit vanaf 24+ punten of minstens 9 speelslagen. ${handFactsText({ ruleName, result, suit: result.suit, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsNotrumpRebid":
-        return `SA-herbieding na 2K-2R: openaar beschrijft een zeer sterke gebalanceerde hand; 2SA toont ongeveer 23-24 HCP en 3SA 25+ HCP. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `SA-herbieding na 2K-2R: openaar beschrijft een zeer sterke gebalanceerde hand; 2SA toont ongeveer 23-24 punten en 3SA 25+ punten. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsSuitRebid":
         return `kleurherbieding na 2K-2R: openaar toont zijn beste lange kleur. Een hoge kleur op tweeniveau is de gewone herbieding; een lage kleur komt door biedruimte op drieniveau. ${handFactsText({ ruleName, result, suit: result.suit, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsPositiveMajorSupport":
         return `steun na positief antwoord op sterke 2K: partner heeft een goede vijfkaart ${suitName(result.responseSuit || result.suit)} getoond. Met minstens drie kaarten steun kiest openaar direct de hoge-kleurmanche. ${handFactsText({ ruleName, result, suit: result.suit, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsPositiveNotrumpRebid":
-        return `2SA na positief antwoord op sterke 2K: openaar toont een sterk evenwichtig spel met ongeveer 23-24 HCP. Daarna mag partner verder bieden alsof tegenover een 2SA-opening: Stayman en Jacoby-transfer blijven dus beschikbaar. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `2SA na positief antwoord op sterke 2K: openaar toont een sterk evenwichtig spel met ongeveer 23-24 punten. Daarna mag partner verder bieden alsof tegenover een 2SA-opening: Stayman en Jacoby-transfer blijven dus beschikbaar. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsPositiveNotrumpGame":
-        return `3SA na positief antwoord op sterke 2K: openaar toont een zeer sterk evenwichtig spel. Dit kan 25+ HCP zijn, of 23-24 HCP wanneer 2SA door het positieve antwoord op drieniveau niet meer legaal is. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
+        return `3SA na positief antwoord op sterke 2K: openaar toont een zeer sterk evenwichtig spel. Dit kan 25+ punten zijn, of 23-24 punten wanneer 2SA door het positieve antwoord op drieniveau niet meer legaal is. ${handFactsText({ ruleName, result, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsPositiveSuitRebid":
         return `kleurherbieding na positief antwoord op sterke 2K: zonder directe hoge-kleursteun en zonder passend SA-bod laat openaar zijn eigen lange kleur horen. ${handFactsText({ ruleName, result, suit: result.suit, valueMode: "hcp" })}`;
       case "continuation.strongTwoClubsTwoNotrumpStayman":

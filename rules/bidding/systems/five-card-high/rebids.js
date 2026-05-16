@@ -577,13 +577,13 @@
           });
         }
         if (bidEquals(chosenBid, 1, "NT")) {
-          return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderOneNotrumpMinimum", "basic", "Keep the auction low with 6-9 HCP while the auction is still at the one-level.", {
+          return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderOneNotrumpMinimum", "basic", "Keep the auction low with 6-9 points while the auction is still at the one-level.", {
             ...extra,
             range: "6-9"
           });
         }
         if (bidEquals(chosenBid, 2, "NT")) {
-          return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderTwoNotrumpInvite", "basic", "Invite with 10-11 HCP after opener has described a limited hand.", {
+          return fiveCardHighBidChoiceResult(chosenBid, "continuation.responderTwoNotrumpInvite", "basic", "Invite with 10-11 points after opener has described a limited hand.", {
             ...extra,
             range: "10-11"
           });

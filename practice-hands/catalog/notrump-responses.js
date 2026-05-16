@@ -96,7 +96,7 @@
       systemId: "fiveCardHigh",
       dealer: "North",
       vulnerability: "none",
-      testGoal: "Noord opent 2SA; Zuid heeft 13 HCP zonder hoge-kleuractie en biedt direct 6SA.",
+      testGoal: "Noord opent 2SA; Zuid heeft 13 punten zonder hoge-kleuractie en biedt direct 6SA.",
       hands: {
         North: ["AS", "KS", "JS", "AH", "JH", "4H", "AD", "2D", "KC", "QC", "TC", "9C", "8C"],
         East: ["TS", "9S", "6S", "TH", "9H", "8H", "JD", "TD", "9D", "AC", "7C", "6C", "5C"],
@@ -110,8 +110,8 @@
       ],
       explanationKeys: ["fiveCardHigh.opening.twoNotrump", "fiveCardHigh.response.notrumpSmallSlam", "score.slamBonus"],
       teachingPoints: [
-        "Na 2SA toont partner 20-22 HCP.",
-        "Met 13 HCP weet Zuid dat de gezamenlijke ondergrens 33 HCP is.",
+        "Na 2SA toont partner 20-22 punten.",
+        "Met 13 punten weet Zuid dat de gezamenlijke ondergrens 33 punten is.",
         "Zonder vierkaart hoog of vijfkaart hoog kiest deze eenvoudige regel direct 6SA."
       ]
     },

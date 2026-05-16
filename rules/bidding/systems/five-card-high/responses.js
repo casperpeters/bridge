@@ -281,10 +281,10 @@
               slamTargetHcp: chosenBid.level === 7 ? 37 : chosenBid.level === 6 ? 33 : null
             };
             if (chosenBid.level === 7) {
-              return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpGrandSlam", "basic", "Bid a direct notrump grand slam when the partnership is guaranteed enough combined HCP and no major-suit convention is needed.", slamExtra);
+              return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpGrandSlam", "basic", "Bid a direct notrump grand slam when the partnership is guaranteed enough combined points and no major-suit convention is needed.", slamExtra);
             }
             if (chosenBid.level === 6) {
-              return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpSmallSlam", "basic", "Bid a direct notrump small slam when the partnership is guaranteed enough combined HCP and no major-suit convention is needed.", slamExtra);
+              return fiveCardHighBidChoiceResult(chosenBid, "response.notrumpSmallSlam", "basic", "Bid a direct notrump small slam when the partnership is guaranteed enough combined points and no major-suit convention is needed.", slamExtra);
             }
             return fiveCardHighBidChoiceResult(chosenBid, invite ? "response.notrumpInvite" : "response.notrumpGame", "basic", "Invite or bid game in notrump with balanced values.", slamExtra);
           }

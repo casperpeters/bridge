@@ -54,7 +54,7 @@ test("interactive SMB1 action validation accepts correct bids and cards and expl
     answer1Nt.feedback
   );
   assert.equal(wrongBid.ok, false);
-  assert.match(wrongBid.feedback.body, /6-9 HCP/);
+  assert.match(wrongBid.feedback.body, /6-9 punten/);
 
   const correctCard = actionValidation.validateExpectedAction(
     unblock.expectedAction,

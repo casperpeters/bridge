@@ -16,7 +16,7 @@
         const supportText = Number.isInteger(result.support) && Number.isInteger(result.supportThreshold)
           ? `; je hebt ${result.support} kaart(en) mee waar ${result.supportThreshold} nodig is voor fit`
           : "";
-        return `redoublet nadat partner${suitText} opende en de tegenpartij doubleerde: 10+ HCP en geen fit${supportText}. Je toont waarschijnlijk puntenmeerderheid; mogelijk kunnen jullie de tegenpartij later gedoubleerd voor straf down spelen. Partner moet geen steun in zijn kleur verwachten. ${ruleReferenceText(ruleName)}`;
+        return `redoublet nadat partner${suitText} opende en de tegenpartij doubleerde: 10+ punten en geen fit${supportText}. Je toont waarschijnlijk puntenmeerderheid; mogelijk kunnen jullie de tegenpartij later gedoubleerd voor straf down spelen. Partner moet geen steun in zijn kleur verwachten. ${ruleReferenceText(ruleName)}`;
       }
       case "competitive.raisePartner":
         return `verhoging van partners kleur. ${handFactsText({ ruleName, result })}`;

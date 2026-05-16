@@ -169,18 +169,12 @@
     describeNaturalContinuationChoice
   } = rebidRules;
   const {
+    chooseCompetitiveBidResult,
     chooseCompetitiveFiveCardHighBid,
-    chooseOvercallFiveCardHigh,
     describeRedoubleBidChoice,
     describeDoubleBidChoice,
     describeCompetitiveFiveCardHighBidChoice,
-    describeTakeoutDoubleRebidChoice,
-    respondAfterPartnerOpenedAndOpponentDoubledFiveCardHigh,
-    respondAfterOvercallFiveCardHigh,
-    shouldMakeInformationDoubleFiveCardHigh,
-    shouldMakeNegativeDoubleFiveCardHigh,
-    didPartnerMakeOvercall,
-    opponentContractBeforePartnerOvercall
+    describeTakeoutDoubleAction
   } = competitiveRules;
 
   function chooseFiveCardHighBid(options = {}) {
@@ -191,9 +185,32 @@
       const auction = options.auction || [];
       const seat = options.seat;
       const context = options.context || auctionContextForFiveCardHigh(auction, seat);
+      const competitiveResult = chooseCompetitiveBidResultForContext({ ...options, auction, seat, context });
+      if (competitiveResult) return legalizeBidResult({ ...options, auction, seat, context }, competitiveResult);
       const target = chooseFiveCardHighBidTarget({ ...options, auction, seat, context });
       const chosenBid = legalizeBidTarget(target, highestBid(auction), seat, auction);
       return describeFiveCardHighBidChoice({ ...options, auction, seat, context, target, bid: chosenBid });
+    }
+
+  function chooseCompetitiveBidResultForContext({ hand = [], auction = [], seat, vulnerability = "none", context } = {}) {
+      if (!seat || context?.uncontested) return null;
+      if (agreementForPartnerBlackwoodAsk(auction, seat)) return null;
+      if (interferenceAwareContinuationContext(context)) return null;
+      return chooseCompetitiveBidResult({ hand, auction, seat, vulnerability });
+    }
+
+  function legalizeBidResult(options, bidResult) {
+      const { auction = [], seat, context } = options;
+      const chosenBid = legalizeBidTarget(bidResult.bid, highestBid(auction), seat, auction);
+      if (sameCall(chosenBid, bidResult.bid)) return bidResult;
+      return describeFiveCardHighBidChoice({
+        ...options,
+        auction,
+        seat,
+        context,
+        target: bidResult.bid,
+        bid: chosenBid
+      });
     }
 
   function fiveCardHighBidChoiceResult(bid, ruleName, confidence, reason, extra = {}) {
@@ -242,8 +259,8 @@
       if (isDouble(chosenBid)) {
         return describeDoubleBidChoice(chosenBid, shape, hand, auction, seat, base);
       }
-      const takeoutDoubleRebidResult = describeTakeoutDoubleRebidChoice?.(chosenBid, shape, hand, auction, seat, base);
-      if (takeoutDoubleRebidResult) return takeoutDoubleRebidResult;
+      const takeoutDoubleResult = describeTakeoutDoubleAction?.({ chosenBid, shape, hand, auction, seat, vulnerability, base });
+      if (takeoutDoubleResult) return takeoutDoubleResult;
       const interferenceContinuationResult = describeInterferenceAwareContinuationChoice(chosenBid, shape, hand, auction, seat, base, bidContext);
       if (interferenceContinuationResult) return interferenceContinuationResult;
       if (isPass(chosenBid)) {
@@ -655,6 +672,9 @@
     describeResponderRebidChoice,
     describeNaturalContinuationChoice,
     describeCompetitiveFiveCardHighBidChoice,
+    describeTakeoutDoubleAction,
+    chooseCompetitiveBidResult,
+    chooseCompetitiveBidResultForContext,
     chooseInterferenceAwareContinuationFiveCardHigh,
     describeInterferenceAwareContinuationChoice,
     chooseUncontestedFiveCardHighBid,
@@ -696,11 +716,6 @@
     chooseFiveCardHighOpenerThirdBid,
     chooseFiveCardHighResponderAfterFourthSuit,
     chooseCompetitiveFiveCardHighBid,
-    chooseOvercallFiveCardHigh,
-    respondAfterPartnerOpenedAndOpponentDoubledFiveCardHigh,
-    respondAfterOvercallFiveCardHigh,
-    shouldMakeInformationDoubleFiveCardHigh,
-    shouldMakeNegativeDoubleFiveCardHigh,
     chooseFiveCardHighNaturalContinuation,
     chooseResponseSuit,
     chooseSuitByLengthThenRank,

@@ -139,7 +139,7 @@
 
   function questionOptions(question, cards) {
     if (question.kind === "hcp") {
-      return hcpOptions(hcp(cards)).map((value) => ({ label: `${value} HCP`, value: String(value) }));
+      return hcpOptions(hcp(cards)).map((value) => ({ label: `${value} punten`, value: String(value) }));
     }
     if (question.kind === "balanced") {
       return [
@@ -273,7 +273,7 @@
     const longest = Object.values(counts).sort((a, b) => b - a).slice(0, 2);
     const short = shortSuits(cards);
     const common = [
-      `HCP: ${points}.`,
+      `punten: ${points}.`,
       `Verdeling: ${distributionPattern(cards)} (${suitLengthsText(cards)}).`,
       `Langste kleur: ${longestSuitText(cards)}.`
     ];
@@ -281,7 +281,7 @@
     if (criterion === "balanced1517") {
       return {
         intro: "Deze hand past bij de 1SA-denkvraag.",
-        items: [...common, "15-17 HCP plus een Evenwichtige verdeling maakt 1SA de eerste kandidaat in dit profiel."]
+        items: [...common, "15-17 punten plus een Evenwichtige verdeling maakt 1SA de eerste kandidaat in dit profiel."]
       };
     }
     if (criterion === "fitSingleton") {
@@ -293,12 +293,12 @@
     if (criterion === "rule20Intro") {
       return {
         intro: "Deze hand kijkt vooruit naar de Regel van 20.",
-        items: [...common, `Voorproefje: ${points} HCP + ${longest[0]} + ${longest[1]} kaarten in de twee langste kleuren = ${points + longest[0] + longest[1]}.`, "In deze les hoef je de volledige regel nog niet toe te passen; herken vooral dat lange kleuren iets kunnen toevoegen."]
+        items: [...common, `Voorproefje: ${points} punten + ${longest[0]} + ${longest[1]} kaarten in de twee langste kleuren = ${points + longest[0] + longest[1]}.`, "In deze les hoef je de volledige regel nog niet toe te passen; herken vooral dat lange kleuren iets kunnen toevoegen."]
       };
     }
     return {
-      intro: "Deze hand is een zuivere HCP-oefening.",
-      items: [...common, "Exact 12 HCP is een eerste signaal van mogelijke Openingskracht."]
+      intro: "Deze hand is een zuivere punten-oefening.",
+      items: [...common, "Exact 12 punten is een eerste signaal van mogelijke Openingskracht."]
     };
   }
 
@@ -394,7 +394,7 @@
       submit.textContent = "Controleer";
       submit.disabled = true;
     }
-    if (feedback) feedback.textContent = "Kies HCP en verdeling voor deze hand.";
+    if (feedback) feedback.textContent = "Kies punten en verdeling voor deze hand.";
     updateRaceStatus();
   }
 
@@ -438,8 +438,8 @@
 
   function raceResultText(correct, correctHcp, correctBalanced) {
     const balanceText = correctBalanced ? "evenwichtig" : "onevenwichtig";
-    if (correct) return `Goed. ${correctHcp} HCP en ${balanceText}.`;
-    return `Bijna. Deze hand heeft ${correctHcp} HCP en is ${balanceText}.`;
+    if (correct) return `Goed. ${correctHcp} punten en ${balanceText}.`;
+    return `Bijna. Deze hand heeft ${correctHcp} punten en is ${balanceText}.`;
   }
 
   function syncRaceSubmit() {
@@ -488,7 +488,7 @@
 
   function renderFactChips(target, cards) {
     return lessonRender.renderChips(target, [
-      `${hcp(cards)} HCP`,
+      `${hcp(cards)} punten`,
       distributionPattern(cards),
       isBalanced(cards) ? "evenwichtig" : "onevenwichtig",
       `langste: ${longestSuitText(cards)}`

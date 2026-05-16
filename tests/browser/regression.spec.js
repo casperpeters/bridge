@@ -1611,7 +1611,7 @@ test("lesson summaries stay compact and lesson 2 starts from one action", async 
   await page.goto("/lessons/index.html?lesson=les-02-punten-en-handtypen&testHooks=1#een-sa-opening-herkennen");
   await expect(page.locator("#lesson-page-title")).toContainText("Kaarten waarderen");
   await expect(page.locator("#lesson-content")).toContainText("Leerdoelen");
-  await expect(page.locator("#lesson-content")).toContainText("Je telt HCP met Aas 4");
+  await expect(page.locator("#lesson-content")).toContainText("Je telt punten met Aas 4");
   await expect(page.locator("#lesson-content .lesson-chapter")).toHaveCount(0);
   await expect(page.locator("#lesson-content")).not.toContainText("1SA-hand herkennen");
   await page.locator(".lesson-finish .lesson-chapter-link", { hasText: "Start les" }).click();
@@ -2330,7 +2330,7 @@ test("glossary opens from the toolbar and linked explanation terms", async ({ pa
     "Doublet",
     "Fitpunten",
     "Forcing",
-    "HCP",
+    "punten",
     "Herbieding",
     "Incasseren",
     "Invite",
@@ -2368,7 +2368,7 @@ test("glossary opens from the toolbar and linked explanation terms", async ({ pa
   await expect(page.locator("#glossary-list")).toContainText("Stayman");
   await expect(page.locator("#glossary-term")).toHaveText("Stayman");
   await page.locator("#glossary-search").fill("honneurpunten");
-  await expect(page.locator("#glossary-term")).toHaveText("HCP");
+  await expect(page.locator("#glossary-term")).toHaveText("punten");
   await page.locator("#glossary-search").fill("mancheforcing");
   await expect(page.locator("#glossary-term")).toHaveText("Forcing");
   await page.locator("#glossary-search").fill("maximumhand");
@@ -2464,7 +2464,7 @@ test("developer bid explanations describe opener rebids after notrump responses"
 
   await expect(page.locator("#bid-explanations")).toContainText("herbieding na partners 1SA");
   await expect(page.locator("#bid-explanations")).toContainText("tweekleurenspel");
-  await expect(page.locator("#bid-explanations")).toContainText("18-19 HCP");
+  await expect(page.locator("#bid-explanations")).toContainText("18-19 punten");
   await expect(page.locator("#bid-explanations")).toContainText("Regel: continuation.openerAfterOneNtTwoSuiterHigh");
 });
 
