@@ -40,7 +40,6 @@
     biddingSystems,
     handShape,
     teamOf,
-    partnerOf,
     isTeamVulnerable
   } = core;
   const {
@@ -51,8 +50,7 @@
     isDouble,
     isRedouble,
     isContractBid,
-    highestBid,
-    lastPartnerContractCall
+    highestBid
   } = auction;
   const {
     fiveCardHighAuctionPhases,
@@ -65,27 +63,23 @@
   const { bidChoiceResult } = resultHelpers;
   const {
     chooseFiveCardHighNaturalContinuation,
-    countAces,
-    isBlackwoodAsk,
-    blackwoodResponseBidForAceCount,
-    auctionAgreementFromAuction,
-    agreedTrumpFromAuction,
-    isWeakTwoOpeningFiveCardHigh
+    countAces
   } = conventionHelpers;
-  const auctionAgreementFromAuctionForFiveCardHigh = auctionAgreementFromAuction || agreedTrumpFromAuction;
   const {
     chooseFiveCardHighOpening,
-    describeOpeningBidChoice
+    describeOpeningBidChoice,
+    describeOpeningPassChoice
   } = openingRules;
   const {
     chooseFiveCardHighResponse,
-    weakTwoResponseContext,
-    preemptResponseContext,
-    describeResponseBidChoice
+    describeResponseBidChoice,
+    describeResponsePassChoice
   } = responseRules;
   const {
     chooseFiveCardHighOpenerRebid,
     chooseFiveCardHighResponderRebid,
+    chooseBlackwoodResponseToPartnerAskTarget,
+    describeBlackwoodResponseToPartnerAskChoice,
     describeNaturalContinuationChoice
   } = rebidRules;
   const {
@@ -94,6 +88,7 @@
     describeRedoubleBidChoice,
     describeDoubleBidChoice,
     describeCompetitiveFiveCardHighBidChoice,
+    describeCompetitivePassBidChoice,
     describeTakeoutDoubleAction
   } = competitiveRules;
   const {
@@ -124,7 +119,7 @@
 
   function chooseCompetitiveBidResultForContext({ hand = [], auction = [], seat, vulnerability = "none", context } = {}) {
       if (!seat || context?.uncontested) return null;
-      if (agreementForPartnerBlackwoodAsk(auction, seat)) return null;
+      if (chooseBlackwoodResponseToPartnerAskTarget({ hand, auction, seat })) return null;
       return chooseCompetitiveBidResult({ hand, auction, seat, vulnerability, context });
     }
 
@@ -169,19 +164,8 @@
           targetBid: target
         });
       }
-      const blackwoodAgreement = agreementForPartnerBlackwoodAsk(auction, seat);
-      if (blackwoodAgreement && chosenBid.level === 5) {
-        return fiveCardHighBidChoiceResult(chosenBid, "continuation.blackwoodResponse", "basic", "Answer partner's four-notrump ace ask.", {
-          ...base,
-          category: "continuation",
-          convention: "blackwood",
-          trumpSuit: blackwoodAgreement.trumpSuit,
-          agreementSource: blackwoodAgreement.source,
-          agreementConfidence: blackwoodAgreement.confidence,
-          suit: chosenBid.strain,
-          aceCount: base.aceCount
-        });
-      }
+      const blackwoodResponseResult = describeBlackwoodResponseToPartnerAskChoice(chosenBid, hand, auction, seat, base);
+      if (blackwoodResponseResult) return blackwoodResponseResult;
       if (isRedouble(chosenBid)) {
         return describeRedoubleBidChoice(chosenBid, shape, auction, seat, base);
       }
@@ -205,44 +189,17 @@
 
   function describePassBidChoice(shape, hand, auction, seat, base, context = auctionContextForFiveCardHigh(auction, seat)) {
         if (!context.uncontested) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.competitiveNoAction", "basic", "Pass because there is no responsible overcall, raise, notrump action, or double in the current competitive auction.", {
-            ...base,
-            category: "competitive"
-          });
+          return describeCompetitivePassBidChoice(shape, auction, seat, base.vulnerability, base);
         }
 
         const partnershipCalls = context.partnershipCalls;
         if (!partnershipCalls.length) {
-          return fiveCardHighBidChoiceResult(Pass(), "pass.openingNoAction", "basic", "Pass because the hand lacks normal opening strength and has no suitable weak two or preempt.", {
-            ...base,
-            category: "opening"
-          });
+          return describeOpeningPassChoice(shape, hand, base);
         }
 
-        const lastPartnerCall = context.lastPartnerCall;
-        if (partnershipCalls.length === 1) {
-          if (isWeakTwoOpeningFiveCardHigh(lastPartnerCall?.bid)) {
-            return fiveCardHighBidChoiceResult(Pass(), "pass.responseWeakTwoNoAction", "basic", "Pass opposite partner's weak two because there is no fit action or safe notrump action.", {
-              ...base,
-              category: "response",
-              partnerSuit: lastPartnerCall.bid.strain,
-              ...weakTwoResponseContext(shape, hand, lastPartnerCall.bid)
-            });
-          }
-          if (lastPartnerCall?.bid?.level >= 3 && lastPartnerCall.bid.strain !== "NT") {
-            return fiveCardHighBidChoiceResult(Pass(), "pass.responsePreemptNoAction", "basic", "Pass opposite partner's preempt because there are not enough own playing tricks, stoppers, support, or communication for game.", {
-              ...base,
-              category: "response",
-              partnerSuit: lastPartnerCall.bid.strain,
-              ...preemptResponseContext(shape, hand, lastPartnerCall.bid)
-            });
-          }
-          return fiveCardHighBidChoiceResult(Pass(), "pass.responseNoAction", "basic", "Pass because there are not enough values or no suitable action opposite partner's opening.", {
-            ...base,
-            category: "response",
-            partnerSuit: lastPartnerCall?.bid?.strain || partnershipCalls[0]?.bid?.strain || null,
-            support: lastPartnerCall?.bid?.strain && lastPartnerCall.bid.strain !== "NT" ? shape.counts[lastPartnerCall.bid.strain] : 0
-          });
+      const lastPartnerCall = context.lastPartnerCall;
+      if (partnershipCalls.length === 1) {
+          return describeResponsePassChoice(shape, hand, lastPartnerCall?.bid || partnershipCalls[0]?.bid, base);
         }
 
         return describeConstructiveContinuationPassChoice(shape, hand, auction, seat, base, context);
@@ -277,23 +234,13 @@
 
   function chooseFiveCardHighBidTarget({ hand = [], auction = [], seat, vulnerability = "none", context } = {}) {
       if (!seat) return Pass();
-      const blackwoodAgreement = agreementForPartnerBlackwoodAsk(auction, seat);
-      if (blackwoodAgreement) return blackwoodResponseBidForAceCount(countAces(hand));
+      const blackwoodTarget = chooseBlackwoodResponseToPartnerAskTarget({ hand, auction, seat });
+      if (blackwoodTarget) return blackwoodTarget;
       const bidContext = context || auctionContextForFiveCardHigh(auction, seat);
       const target = bidContext.uncontested
         ? chooseUncontestedFiveCardHighBid(hand, auction, seat, bidContext, vulnerability)
         : chooseCompetitiveFiveCardHighBid(hand, auction, seat, vulnerability);
       return normalizeBid(target) || Pass();
-    }
-
-  function agreementForPartnerBlackwoodAsk(auction = [], seat) {
-      const lastPartnerCall = lastPartnerContractCall(auction, seat);
-      if (!isBlackwoodAsk(lastPartnerCall?.bid)) return null;
-      return auctionAgreementFromAuctionForFiveCardHigh(auction, seat);
-    }
-
-  function agreedTrumpForPartnerBlackwoodAsk(auction = [], seat) {
-      return agreementForPartnerBlackwoodAsk(auction, seat)?.trumpSuit || null;
     }
 
   function chooseUncontestedFiveCardHighBid(hand, auction, seat, context = auctionContextForFiveCardHigh(auction, seat), vulnerability = "none") {

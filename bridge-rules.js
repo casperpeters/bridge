@@ -9,6 +9,7 @@
         biddingFiveCardHigh: require("./rules/bidding/systems/five-card-high/index.js"),
         bidding: require("./rules/bidding/index.js"),
         deterministicPlayout: require("./rules/deterministic-playout.js"),
+        miniEndPositionSolver: require("./rules/mini-end-position-solver.js"),
         playMechanics: require("./rules/play-mechanics.js"),
         playPlan: require("./rules/play-plan.js"),
         cardPlay: require("./rules/card-play.js")
@@ -28,6 +29,7 @@
     "biddingFiveCardHigh",
     "bidding",
     "deterministicPlayout",
+    "miniEndPositionSolver",
     "playMechanics",
     "playPlan",
     "cardPlay"
@@ -92,6 +94,9 @@
     "getScoreTableData",
     "analyzeVisibleUitspelen",
     "analyzeVisibleNotrumpUitspelen",
+    "analyzeMiniEndPosition",
+    "solveMiniEndPosition",
+    "normalizeMiniHands",
     "legalCards",
     "createPlayPlan",
     "chooseCardPlay",

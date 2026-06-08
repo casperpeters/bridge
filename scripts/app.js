@@ -35,6 +35,7 @@
     ["registerLessonBoardCoach", modules.registerLessonBoardCoach],
     ["registerLessonStart", modules.registerLessonStart],
     ["registerInteractiveExerciseTable", modules.registerInteractiveExerciseTable],
+    ["registerMiniEndPositionExerciseTable", modules.registerMiniEndPositionExerciseTable],
     ["registerFeedback", modules.registerFeedback],
     ["registerAppRenderer", modules.registerAppRenderer],
     ["registerBootstrap", modules.registerBootstrap]

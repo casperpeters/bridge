@@ -159,7 +159,10 @@ function isHumanControlledSeat(seat) {
 }
 
 function isSeatVisible(seat) {
+  const mini = actions.activeMiniEndPositionExercise?.();
+  if (mini?.situation?.visibility === "all") return true;
   if (seat === "South") return true;
+  if (mini && seat === state.dummy) return true;
   if (state.phase !== "playing") return false;
   if (seat === state.dummy) return openingLeadHasBeenMade();
   return isHumanControlledSeat(seat);
@@ -570,6 +573,7 @@ function playCard(seat, cardId) {
     showIllegalCardFeedback(seat, card);
     return;
   }
+  if (actions.handleMiniEndPositionCardSelection?.(seat, card)) return;
   if (!actions.validateInteractiveExerciseAction?.("card", { seat, card })) return;
   if (!actions.validateLessonTableAction?.("card", { seat, card })) return;
   state.illegalActionFeedback = null;

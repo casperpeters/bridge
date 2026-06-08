@@ -6,7 +6,12 @@
 
   const course = practiceHands.getSmb1Course();
   const exercisesByLearningGoal = groupExercisesByLearningGoal(practiceHands.getVisibleInteractiveSmb1Exercises?.() || []);
+  const miniExercises = practiceHands.getVisibleMiniEndPositionExercises?.() || [];
+  const miniExercisesByLearningGoal = groupExercisesByLearningGoal(miniExercises);
   const els = {
+    title: document.querySelector("#practice-title"),
+    intro: document.querySelector("[data-practice-intro]"),
+    routeLinks: [...document.querySelectorAll("[data-practice-route-link]")],
     route: document.querySelector("[data-practice-route]"),
     count: document.querySelector("[data-practice-count]"),
     lessons: document.querySelector("[data-practice-lessons]"),
@@ -16,6 +21,8 @@
     goals: document.querySelector("[data-practice-goals]"),
     back: document.querySelector("[data-practice-back]")
   };
+  const routes = new Set(["smb1", "mini"]);
+  let selectedRoute = "smb1";
   let selectedLessonId = "";
 
   applyRouteParams();
@@ -23,6 +30,7 @@
     selectedLessonId = "";
     render();
   });
+  els.routeLinks.forEach((link) => link.addEventListener("click", onRouteLinkClick));
   root.addEventListener?.("popstate", () => {
     applyRouteParams();
     render({ updateRoute: false });
@@ -32,12 +40,12 @@
 
   function render(options = {}) {
     const lesson = findLesson(selectedLessonId);
+    renderPageHead();
+    renderRouteLinks();
     renderLessonList(Boolean(lesson));
     renderLessonDetail(lesson);
     if (els.count) {
-      els.count.textContent = lesson
-        ? `Les ${lesson.number} van ${course.lessons.length} - ${lesson.learningGoals.length} leerdoelen`
-        : `${course.lessons.length} lessen`;
+      els.count.textContent = routeCountText(lesson);
     }
     if (options.updateRoute !== false) updateRoute();
   }
@@ -45,14 +53,16 @@
   function renderLessonList(isDetailOpen) {
     if (!els.lessons) return;
     els.lessons.hidden = isDetailOpen;
-    els.lessons.replaceChildren(...course.lessons.map(renderLessonCard));
+    const lessons = selectedRoute === "mini" ? miniRouteLessons() : course.lessons;
+    els.lessons.replaceChildren(...lessons.map(renderLessonCard));
   }
 
   function renderLessonCard(lesson) {
     const link = document.createElement("a");
     link.className = "practice-lesson-card";
-    link.href = routeHref(lesson.id);
+    link.href = routeHref(lesson.id, selectedRoute);
     link.dataset.practiceLesson = lesson.id;
+    link.dataset.practiceRouteKind = selectedRoute;
 
     const number = document.createElement("span");
     number.className = "practice-lesson-number";
@@ -64,7 +74,9 @@
 
     const meta = document.createElement("p");
     meta.className = "practice-lesson-meta";
-    meta.textContent = `${lesson.learningGoals.length} leerdoelen`;
+    meta.textContent = selectedRoute === "mini"
+      ? miniExerciseCountText(countMiniExercisesForLesson(lesson))
+      : `${lesson.learningGoals.length} leerdoelen`;
 
     link.append(number, title, meta);
     link.addEventListener("click", (event) => {
@@ -83,9 +95,9 @@
       return;
     }
 
-    if (els.detailKicker) els.detailKicker.textContent = `Les ${lesson.number}`;
+    if (els.detailKicker) els.detailKicker.textContent = selectedRoute === "mini" ? `Kaartcombinaties - Les ${lesson.number}` : `Les ${lesson.number}`;
     if (els.detailTitle) els.detailTitle.textContent = lesson.title;
-    els.goals?.replaceChildren(...lesson.learningGoals.map(renderLearningGoal));
+    els.goals?.replaceChildren(...learningGoalsForRoute(lesson).map(renderLearningGoal));
   }
 
   function renderLearningGoal(learningGoal, index) {
@@ -106,8 +118,8 @@
 
     const status = document.createElement("span");
     status.className = "practice-goal-status";
-    const exercises = exercisesByLearningGoal.get(learningGoal.id) || [];
-    status.textContent = exercises.length ? `${exercises.length} tafeloefening${exercises.length === 1 ? "" : "en"}` : "Nog geen tafeloefening";
+    const exercises = exercisesForLearningGoal(learningGoal.id);
+    status.textContent = exerciseStatusText(exercises.length);
     status.classList.toggle("is-available", exercises.length > 0);
 
     body.append(text, status);
@@ -126,19 +138,20 @@
   function renderExercise(exercise) {
     const item = document.createElement("div");
     item.className = "practice-exercise-item";
-    item.dataset.interactiveExercise = exercise.id;
+    if (selectedRoute === "mini") item.dataset.miniExercise = exercise.id;
+    else item.dataset.interactiveExercise = exercise.id;
 
     const meta = document.createElement("span");
     meta.className = "practice-exercise-meta";
-    meta.textContent = actionTypeLabel(exercise.actionType);
+    meta.textContent = selectedRoute === "mini" ? "Mini-eindpositie" : actionTypeLabel(exercise.actionType);
 
     const question = document.createElement("p");
     question.className = "practice-exercise-question";
-    question.textContent = exercise.question;
+    question.textContent = exercise.question || "Kies de startkaart en voorspel hoeveel slagen Zuid maakt.";
 
     const start = document.createElement("a");
     start.className = "practice-start-link";
-    start.href = tableHrefForExercise(exercise);
+    start.href = selectedRoute === "mini" ? tableHrefForMiniExercise(exercise) : tableHrefForExercise(exercise);
     start.textContent = "Start oefening";
 
     item.append(meta, question, start);
@@ -148,22 +161,26 @@
   function applyRouteParams() {
     try {
       const params = new URL(root.location?.href || "").searchParams;
+      selectedRoute = routeFromText(params.get("route"));
       const lesson = findLesson(params.get("lesson") || "");
       selectedLessonId = lesson?.id || "";
     } catch {
+      selectedRoute = "smb1";
       selectedLessonId = "";
     }
   }
 
   function updateRoute() {
     if (!root.history?.replaceState || !root.location?.href) return;
-    root.history.replaceState(null, "", routeHref(selectedLessonId));
+    root.history.replaceState(null, "", routeHref(selectedLessonId, selectedRoute));
   }
 
-  function routeHref(lessonId) {
+  function routeHref(lessonId, route = selectedRoute) {
     const url = new URL(root.location?.href || "http://localhost/practice/index.html");
     const params = url.searchParams;
-    ["catalog", "exercise", "focus", "level", "q", "query"].forEach((key) => params.delete(key));
+    ["catalog", "exercise", "focus", "level", "miniexercise", "q", "query"].forEach((key) => params.delete(key));
+    if (route === "mini") params.set("route", "mini");
+    else params.delete("route");
     if (lessonId) params.set("lesson", lessonId);
     else params.delete("lesson");
     return `${url.pathname.split("/").pop() || "index.html"}${params.toString() ? `?${params.toString()}` : ""}${url.hash}`;
@@ -178,10 +195,23 @@
     return `../index.html?${params.toString()}`;
   }
 
+  function tableHrefForMiniExercise(exercise) {
+    const params = new URLSearchParams();
+    params.set("miniExercise", exercise.id);
+    params.set("miniexercise", exercise.id);
+    const currentParams = new URLSearchParams(root.location?.search || "");
+    if (currentParams.has("testHooks")) params.set("testHooks", "1");
+    params.set("return", exerciseReturnHref());
+    return `../index.html?${params.toString()}`;
+  }
+
   function exerciseReturnHref() {
     const url = new URL(root.location?.href || "http://localhost/practice/index.html");
     url.searchParams.delete("exercise");
+    url.searchParams.delete("miniexercise");
     ["catalog", "focus", "level", "q", "query"].forEach((key) => url.searchParams.delete(key));
+    if (selectedRoute === "mini") url.searchParams.set("route", "mini");
+    else url.searchParams.delete("route");
     if (selectedLessonId) url.searchParams.set("lesson", selectedLessonId);
     return `practice/${url.pathname.split("/").pop() || "index.html"}${url.search}${url.hash}`;
   }
@@ -190,6 +220,75 @@
     if (actionType === "bid") return "Bieden";
     if (actionType === "card") return "Kaart kiezen";
     return "Oefening";
+  }
+
+  function renderPageHead() {
+    if (els.title) els.title.textContent = selectedRoute === "mini" ? "Kaartcombinaties oefenen" : "Start met Bridge 1 oefenen";
+    if (els.intro) {
+      els.intro.textContent = selectedRoute === "mini"
+        ? "Kies een korte eindpositie per lesdoel."
+        : "Kies een les en bekijk per leerdoel of er al een tafeloefening klaarstaat.";
+    }
+  }
+
+  function renderRouteLinks() {
+    els.routeLinks.forEach((link) => {
+      const route = routeFromText(link.dataset.practiceRouteLink);
+      link.href = routeHref("", route);
+      const isActive = route === selectedRoute;
+      link.classList.toggle("is-active", isActive);
+      link.setAttribute("aria-current", isActive ? "page" : "false");
+    });
+  }
+
+  function onRouteLinkClick(event) {
+    event.preventDefault();
+    selectedRoute = routeFromText(event.currentTarget?.dataset.practiceRouteLink);
+    selectedLessonId = "";
+    render();
+  }
+
+  function routeCountText(lesson) {
+    if (selectedRoute === "mini") {
+      const count = lesson ? countMiniExercisesForLesson(lesson) : miniExercises.length;
+      return lesson ? `Les ${lesson.number} - ${miniExerciseCountText(count)}` : miniExerciseCountText(count);
+    }
+    return lesson
+      ? `Les ${lesson.number} van ${course.lessons.length} - ${lesson.learningGoals.length} leerdoelen`
+      : `${course.lessons.length} lessen`;
+  }
+
+  function learningGoalsForRoute(lesson) {
+    if (selectedRoute !== "mini") return lesson.learningGoals;
+    return lesson.learningGoals.filter((learningGoal) => (miniExercisesByLearningGoal.get(learningGoal.id) || []).length);
+  }
+
+  function exercisesForLearningGoal(learningGoalId) {
+    return selectedRoute === "mini"
+      ? miniExercisesByLearningGoal.get(learningGoalId) || []
+      : exercisesByLearningGoal.get(learningGoalId) || [];
+  }
+
+  function exerciseStatusText(count) {
+    if (selectedRoute === "mini") return miniExerciseCountText(count);
+    return count ? `${count} tafeloefening${count === 1 ? "" : "en"}` : "Nog geen tafeloefening";
+  }
+
+  function miniRouteLessons() {
+    return course.lessons.filter((lesson) => countMiniExercisesForLesson(lesson) > 0);
+  }
+
+  function countMiniExercisesForLesson(lesson) {
+    return lesson.learningGoals.reduce((sum, learningGoal) => sum + (miniExercisesByLearningGoal.get(learningGoal.id) || []).length, 0);
+  }
+
+  function miniExerciseCountText(count) {
+    return `${count} kaartcombinatie${count === 1 ? "" : "s"}`;
+  }
+
+  function routeFromText(value) {
+    const normalized = textValue(value).toLowerCase();
+    return routes.has(normalized) ? normalized : "smb1";
   }
 
   function groupExercisesByLearningGoal(exercises) {

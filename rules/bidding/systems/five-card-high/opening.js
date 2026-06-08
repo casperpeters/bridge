@@ -161,6 +161,14 @@
         return fiveCardHighBidChoiceResult(chosenBid, "opening.natural", "basic", "Open naturally in the selected strain.", extra);
       }
 
+  function describeOpeningPassChoice(shape, hand, base) {
+        return fiveCardHighBidChoiceResult(Pass(), "pass.openingNoAction", "basic", "Pass because the hand lacks normal opening strength and has no suitable weak two or preempt.", {
+          ...base,
+          ...ruleOf20OpeningContext(shape, hand),
+          category: "opening"
+        });
+      }
+
 
   return {
     chooseFiveCardHighOpening,
@@ -170,6 +178,7 @@
     chooseFiveCardHighPreempt,
     isPreemptSuit,
     isExceptionalSixPointPreemptSuit,
-    describeOpeningBidChoice
+    describeOpeningBidChoice,
+    describeOpeningPassChoice
   };
 });

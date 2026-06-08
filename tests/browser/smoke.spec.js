@@ -339,6 +339,8 @@ test("opens oefenhanden from the menu and shows the SMB1 lesson route", async ({
 
   await expect(page).toHaveURL(/\/practice\/index\.html$/);
   await expect(page.locator("#practice-title")).toContainText("Start met Bridge 1 oefenen");
+  await expect(page.locator(".practice-logo")).toHaveAttribute("src", "../assets/branding/logo.png");
+  await expect.poll(() => page.locator(".practice-logo").evaluate((logo) => logo.naturalWidth)).toBeGreaterThan(0);
   await expect(page.locator("[data-practice-count]")).toHaveText("12 lessen");
   await expect(page.locator("[data-practice-search]")).toHaveCount(0);
   await expect(page.locator("[data-practice-catalog]")).toHaveCount(0);
@@ -360,6 +362,49 @@ test("opens oefenhanden from the menu and shows the SMB1 lesson route", async ({
   await page.locator("[data-practice-back]").click();
   await expect(page).toHaveURL(/\/practice\/index\.html\?testHooks=1$/);
   await expect(page.locator("[data-practice-lesson]")).toHaveCount(12);
+
+  await page.locator("[data-practice-lesson='smb1-les02']").evaluate((link) => link.click());
+  await expect(page).toHaveURL(/lesson=smb1-les02/);
+  const directTricksGoal = page.locator("[data-learning-goal-id='smb1-les02-direct-tricks']");
+  await expect(directTricksGoal).toContainText("Directe slagen herkennen");
+  await expect(directTricksGoal.locator(".practice-goal-status")).toHaveText("1 tafeloefening");
+  await expect(directTricksGoal.locator("[data-interactive-exercise='smb1-les02-directe-slagen-hartenboer']")).toBeVisible();
+
+  await page.locator("[data-practice-back]").click();
+  await expect(page).toHaveURL(/\/practice\/index\.html\?testHooks=1$/);
+  await expect(page.locator("[data-practice-lesson]")).toHaveCount(12);
+  expect(pageErrors).toEqual([]);
+});
+
+test("shows mini end-position route and starts the lesson 1 canary", async ({ page }) => {
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto("/practice/index.html?testHooks=1&route=mini");
+  await expect(page.locator("#practice-title")).toContainText("Kaartcombinaties oefenen");
+  await expect(page.locator("[data-practice-route-link='mini']")).toHaveClass(/is-active/);
+  await expect(page.locator("[data-practice-count]")).toHaveText("1 kaartcombinatie");
+  await expect(page.locator("[data-practice-lesson]")).toHaveCount(1);
+  await expect(page.locator("[data-practice-lesson='smb1-les01']")).toContainText("1 kaartcombinatie");
+  await expect(page.locator("[data-interactive-exercise]")).toHaveCount(0);
+
+  await page.locator("[data-practice-lesson='smb1-les01']").evaluate((link) => link.click());
+  await expect(page).toHaveURL(/route=mini/);
+  await expect(page).toHaveURL(/lesson=smb1-les01/);
+  const trickGoal = page.locator("[data-learning-goal-id='smb1-les01-trick-definition-and-winner']");
+  await expect(trickGoal).toContainText("Begrijpen wat een slag is");
+  await expect(trickGoal.locator(".practice-goal-status")).toHaveText("1 kaartcombinatie");
+  await expect(trickGoal.locator("[data-mini-exercise='mini-smb1-les01-schoppen-aas-eerst']")).toBeVisible();
+  await expect(trickGoal.locator("[data-interactive-exercise]")).toHaveCount(0);
+
+  await trickGoal.locator("[data-mini-exercise='mini-smb1-les01-schoppen-aas-eerst'] .practice-start-link").click();
+  await expect(page).toHaveURL(/miniExercise=mini-smb1-les01-schoppen-aas-eerst/);
+  await expect(page).toHaveURL(/miniexercise=mini-smb1-les01-schoppen-aas-eerst/);
+  await expect(page.locator("#app-heading")).toContainText("Vijfkaart Hoog");
+  await expect.poll(() =>
+    page.evaluate(() => window.BridgeAppTestHooks?.getState().miniEndPositionExercise?.id || null)
+  ).toBe("mini-smb1-les01-schoppen-aas-eerst");
+  await expect(page.locator("[data-mini-end-position-exercise='mini-smb1-les01-schoppen-aas-eerst']")).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 
@@ -497,6 +542,140 @@ test("blocks wrong card exercise choices and suppresses card suggestions", async
     lastCard: "KS"
   });
   await expect(page.locator("#lesson-panel")).toContainText("Goed");
+  expect(pageErrors).toEqual([]);
+});
+
+test("runs mini end-position lead-and-predict without revealing the answer early", async ({ page }) => {
+  const pageErrors = await openFreshApp(page);
+
+  await page.evaluate(() => {
+    const app = window.BridgeAppTestHooks;
+    const makeCard = app.makeCard;
+    const hands = {
+      North: [makeCard("KS"), makeCard("AH")],
+      East: [makeCard("QS"), makeCard("4H")],
+      South: [makeCard("AS"), makeCard("2H")],
+      West: [makeCard("2S"), makeCard("3H")]
+    };
+    app.startHand({ seed: "mini-end-position-smoke", skipFlow: true });
+    app.setGuidanceMode(true);
+    app.setState({
+      phase: "playing",
+      contract: app.rules.Bid(1, "NT"),
+      declarer: "South",
+      dummy: "North",
+      leader: "South",
+      turnIndex: 2,
+      hands,
+      originalHands: JSON.parse(JSON.stringify(hands)),
+      currentTrick: [],
+      awaitingTrickAdvance: false,
+      trickHistory: [],
+      tricks: { NS: 0, EW: 0 },
+      showPlayHistory: true,
+      playExplanations: [],
+      playPlan: null,
+      playPlanKey: null,
+      deterministicPlayoutProof: null,
+      miniEndPositionExercise: {
+        id: "mini-smoke-lead-and-predict",
+        title: "Kies de veilige start",
+        mode: "lead-and-predict",
+        question: "Kies de startkaart en voorspel hoeveel persoonlijke slagen Zuid maakt.",
+        situation: { trump: null, allCardsVisible: true },
+        explanation: {
+          correct: "A schoppen neemt de eerste slag voor Zuid.",
+          why: "Daarna blijft er nog een hartenronde over, maar die slag is voor Noord."
+        },
+        solution: {
+          maxSouthTricks: 1,
+          optimalLeadCardIds: ["AS"],
+          leadResults: [
+            {
+              cardId: "AS",
+              southTricks: 1,
+              sequence: [
+                [
+                  { seat: "South", cardId: "AS" },
+                  { seat: "West", cardId: "2S" },
+                  { seat: "North", cardId: "KS" },
+                  { seat: "East", cardId: "QS" }
+                ],
+                [
+                  { seat: "South", cardId: "2H" },
+                  { seat: "West", cardId: "3H" },
+                  { seat: "North", cardId: "AH" },
+                  { seat: "East", cardId: "4H" }
+                ]
+              ]
+            },
+            { cardId: "2H", southTricks: 0, sequence: [] }
+          ]
+        },
+        selectedCardId: "",
+        predictedSouthTricks: "",
+        actionFeedback: null,
+        checked: false,
+        completed: false,
+        status: "active"
+      }
+    });
+    app.renderAll();
+  });
+
+  await expect(page.locator("[data-mini-end-position-exercise='mini-smoke-lead-and-predict']")).toBeVisible();
+  await expect(page.locator("#lesson-panel")).toContainText("Controleer");
+  await expect(page.locator("#lesson-panel")).toContainText("Alle resterende kaarten liggen open");
+  await expect(page.locator("#guidance-panel")).toBeHidden();
+  await expect(page.locator("#south-hand .recommended-card")).toHaveCount(0);
+  await expect(page.locator("#uitspelen-action")).toBeHidden();
+  await expect(page.locator("#history .review-trick-row")).toHaveCount(0);
+
+  await page.locator("#south-hand [data-card-id='2H']").click();
+  await expect(page.locator("#south-hand [data-card-id='2H']")).toHaveClass(/mini-end-position-card-selected/);
+  await expect.poll(() =>
+    page.evaluate(() => {
+      const state = window.BridgeAppTestHooks.getState();
+      return {
+        selected: state.miniEndPositionExercise.selectedCardId,
+        currentTrickLength: state.currentTrick.length,
+        historyLength: state.trickHistory.length
+      };
+    })
+  ).toEqual({ selected: "2H", currentTrickLength: 0, historyLength: 0 });
+
+  await page.locator("[data-mini-end-position-tricks]").fill("2");
+  await page.locator(".mini-end-position-check").click();
+  await expect(page.locator("#lesson-panel")).toContainText("Nog niet");
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().trickHistory.length)).toBe(0);
+
+  await page.locator("[data-mini-end-position-tricks]").fill("0");
+  await page.locator(".mini-end-position-check").click();
+  await expect(page.locator("#lesson-panel")).toContainText("Gedeeltelijk goed");
+  await expect.poll(() => page.evaluate(() => window.BridgeAppTestHooks.getState().trickHistory.length)).toBe(0);
+
+  await page.locator("#south-hand [data-card-id='AS']").click();
+  await page.locator("[data-mini-end-position-tricks]").fill("1");
+  await page.locator(".mini-end-position-check").click();
+  await expect.poll(() =>
+    page.evaluate(() => {
+      const state = window.BridgeAppTestHooks.getState();
+      return {
+        completed: state.miniEndPositionExercise.completed,
+        historyLength: state.trickHistory.length,
+        southCards: state.hands.South.length,
+        nsTricks: state.tricks.NS
+      };
+    })
+  ).toEqual({
+    completed: true,
+    historyLength: 2,
+    southCards: 0,
+    nsTricks: 2
+  });
+  await expect(page.locator("#history .review-trick-row")).toHaveCount(2);
+  await expect(page.locator("#lesson-panel")).toContainText("Uitleg");
+  await expect(page.locator("#lesson-panel")).toContainText("A schoppen neemt de eerste slag");
   expect(pageErrors).toEqual([]);
 });
 

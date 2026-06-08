@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Oefenhanden - Bridgetafel</title>
+    <link rel="icon" type="image/png" href="../assets/branding/logo.png">
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="../styles/practice.css">
   </head>
@@ -11,7 +12,7 @@
     <main class="practice-page-shell">
       <header class="practice-page-topbar">
         <a class="practice-brand" href="../index.html">
-          <img class="practice-logo" src="../assets/logo.png" alt="">
+          <img class="practice-logo" src="../assets/branding/logo.png" alt="" aria-hidden="true">
           <span>
             <span class="practice-eyebrow">Bridgetafel</span>
             <strong>Oefenhanden</strong>
@@ -24,8 +25,13 @@
 
       <section class="practice-page-head" aria-labelledby="practice-title">
         <h1 id="practice-title">Start met Bridge 1 oefenen</h1>
-        <p>Kies een les en bekijk per leerdoel of er al een tafeloefening klaarstaat.</p>
+        <p data-practice-intro>Kies een les en bekijk per leerdoel of er al een tafeloefening klaarstaat.</p>
       </section>
+
+      <nav class="practice-route-switch" aria-label="Oefenroutes">
+        <a class="practice-route-link is-active" href="index.html" data-practice-route-link="smb1" aria-current="page">SMB1 lessen</a>
+        <a class="practice-route-link" href="index.html?route=mini" data-practice-route-link="mini">Kaartcombinaties</a>
+      </nav>
 
       <section class="practice-browser" aria-label="Start met Bridge 1 oefenroute">
         <section class="practice-route-panel" data-practice-route>
@@ -73,6 +79,7 @@
     <script src="../rules/bidding/index.js"></script>
     <script src="../rules/deterministic-playout.js"></script>
     <script src="../rules/play-mechanics.js"></script>
+    <script src="../rules/mini-end-position-solver.js"></script>
     <script src="../rules/play-plan/common.js"></script>
     <script src="../rules/play-plan/endgame-runout.js"></script>
     <script src="../rules/play-plan/notrump.js"></script>
@@ -97,6 +104,7 @@
     <script src="../bridge-rules.js"></script>
     <script src="../practice-hands/smb1-course.js"></script>
     <script src="../practice-hands/interactive-smb1-exercises.js"></script>
+    <script src="../practice-hands/mini-end-position-exercises.js"></script>
     <script src="../practice-hands/catalog/five-card-high-openings.js"></script>
     <script src="../practice-hands/catalog/notrump-responses.js"></script>
     <script src="../practice-hands/catalog/bidding-basic.js"></script>

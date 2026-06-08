@@ -10,6 +10,68 @@
 
   const exercises = [
     {
+      id: "smb1-les02-directe-slagen-hartenboer",
+      title: "Directe slagen herkennen",
+      lessonId: "smb1-les02",
+      learningGoalId: "smb1-les02-direct-tricks",
+      order: 10,
+      sourceHandId: "smb1-les02-directe-slagen-sa",
+      startSeed: "situatieseed:eyJ2IjoxLCJzIjoic21iMS1sZXMwMi1kaXJlY3RlLXNsYWdlbi1zYSIsImIiOjEsImQiOiJTIiwidSI6Im5vbmUiLCJwIjoicGxheWluZyIsInQiOiJTIiwieCI6IjFOVCIsInIiOiJTIiwibSI6Ik4iLCJsIjoiVyIsImEiOltdLCJrIjpbXSwiYyI6W1siVyIsIktIIl0sWyJOIiwiMkgiXSxbIkUiLCI4SCJdXSwidyI6MH0",
+      question: "West heeft harten heer voorgespeeld en iedereen heeft bekend. Welke kaart speel je als Zuid?",
+      expectedAction: {
+        type: "card",
+        seat: "South",
+        cardIds: ["AH"],
+        ruleId: "cheapestWinner"
+      },
+      expectedActionLabel: "Speel A harten",
+      feedback: {
+        correct: "Ja. Harten aas is de enige kaart van Zuid die hoger is dan harten heer. Daarmee maak je nu direct een slag.",
+        wrong: "Kijk alleen naar de hartenkaarten in deze slag. Wests heer ligt voor; een lagere hartenkaart van Zuid kan die slag niet winnen.",
+        wrongByChoice: {
+          "4H": "Harten 4 bekent wel kleur, maar wint niet van harten heer.",
+          "3H": "Harten 3 bekent wel kleur, maar wint niet van harten heer."
+        }
+      },
+      engineExpectation: {
+        kind: "expectedCardPlay",
+        scenarioId: "smb1-les02-directe-slagen-sa",
+        ruleId: "cheapestWinner",
+        cardId: "AH"
+      }
+    },
+    {
+      id: "smb1-les02-hoge-kaart-wegspelen-klaveren",
+      title: "Klaverenkeuze in dummy",
+      lessonId: "smb1-les02",
+      learningGoalId: "smb1-les02-drive-out-high-cards",
+      order: 20,
+      sourceHandId: "smb1-les02-hoge-kaart-wegspelen-sa",
+      startSeed: "situatieseed:eyJ2IjoxLCJzIjoic21iMS1sZXMwMi1ob2dlLWthYXJ0LXdlZ3NwZWxlbi1zYSIsImIiOjEsImQiOiJTIiwidSI6Im5vbmUiLCJwIjoicGxheWluZyIsInQiOiJOIiwieCI6IjNOVCIsInIiOiJTIiwibSI6Ik4iLCJsIjoiVyIsImEiOltdLCJrIjpbW1siVyIsIjJIIl0sWyJOIiwiM0giXSxbIkUiLCI5SCJdLFsiUyIsIkFIIl1dXSwiYyI6W1siUyIsIjdDIl0sWyJXIiwiMkMiXV0sInciOjB9",
+      question: "Zuid heeft laag klaveren naar dummy gespeeld en West bekende laag. Welke klaverenkaart speel je in dummy?",
+      expectedAction: {
+        type: "card",
+        seat: "North",
+        cardIds: ["KC", "QC"],
+        ruleId: "playPlan.forceOutAce"
+      },
+      expectedActionLabel: "Speel een hoge klaverenhonneur",
+      feedback: {
+        correct: "Ja. Met een hoge klaverenhonneur dwing je de aas eruit of maak je later de overgebleven honneur.",
+        wrong: "Een lage klaverenkaart werkt de hoge kaart van de tegenpartij niet weg. Speel een honneur uit de reeks.",
+        wrongByChoice: {
+          "4C": "Klaveren 4 houdt heer en vrouw vast, maar ontwikkelt nu nog geen slag."
+        }
+      },
+      engineExpectation: {
+        kind: "playPlanCard",
+        scenarioId: "smb1-les02-hoge-kaart-wegspelen-sa",
+        ruleId: "playPlan.forceOutAce",
+        cardId: "KC",
+        seat: "North"
+      }
+    },
+    {
       id: "smb1-les06-deblokkeren-derde-hand-ks",
       title: "Deblokkeren in de derde hand",
       lessonId: "smb1-les06",

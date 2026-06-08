@@ -50,5 +50,5 @@ test("PracticeHands exposes SMB1 course data without replacing the technical han
   assert.equal(practiceHands.getSmb1Lessons().length, 12);
   assert.equal(practiceHands.findSmb1Lesson("smb1-les04").title, "Speelplan");
   assert.equal(practiceHands.findPracticeHand("smb1-les04-kleurcontract-plan").sourceHandId, "draw-trumps-001");
-  assert.equal(practiceHands.validatePracticeHands(), 80);
+  assert.equal(practiceHands.validatePracticeHands(), 82);
 });

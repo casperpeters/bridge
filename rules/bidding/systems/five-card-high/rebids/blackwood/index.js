@@ -21,10 +21,12 @@
   "use strict";
 
   const { biddingSystems } = core;
-  const { Pass, bid, bidEquals, gameLevel } = auction;
+  const { Pass, bid, bidEquals, gameLevel, lastPartnerContractCall } = auction;
   const { bidChoiceResult } = resultHelpers;
   const {
     agreedTrumpAfterAcceptedNotrumpTransfer,
+    agreedTrumpFromAuction,
+    auctionAgreementFromAuction,
     blackwoodResponseBidForAceCount,
     blackwoodShownAceCount,
     chooseBlackwoodFollowup,
@@ -32,6 +34,7 @@
     isBlackwoodAsk,
     supportLengthForOpening
   } = conventionHelpers;
+  const auctionAgreementFromAuctionForFiveCardHigh = auctionAgreementFromAuction || agreedTrumpFromAuction;
 
   function fiveCardHighBidChoiceResult(bid, ruleName, confidence, reason, extra = {}) {
     return bidChoiceResult(biddingSystems.fiveCardHigh, bid, ruleName, confidence, reason, extra);
@@ -46,6 +49,12 @@
     const blackwoodTrump = agreedTrumpAfterAcceptedNotrumpTransfer(openingBid, responseBid, openerRebid);
     if (openerThirdBid || !blackwoodTrump || !isBlackwoodAsk(responderRebid)) return null;
     return blackwoodResponseBidForAceCount(countAces(hand)) || Pass();
+  }
+
+  function chooseBlackwoodResponseToPartnerAskTarget({ hand = [], auction = [], seat } = {}) {
+    return blackwoodAgreementForPartnerAsk(auction, seat)
+      ? blackwoodResponseBidForAceCount(countAces(hand)) || Pass()
+      : null;
   }
 
   function chooseBlackwoodResponderAfterOpenerThirdBidTarget({ shape, hand, openingBid, responseBid, openerRebid, responderRebid, openerThirdBid, openerThirdBidResult } = {}) {
@@ -118,6 +127,21 @@
     });
   }
 
+  function describeBlackwoodResponseToPartnerAskChoice(chosenBid, hand, auction, seat, base) {
+    const blackwoodAgreement = blackwoodAgreementForPartnerAsk(auction, seat);
+    if (!blackwoodAgreement || chosenBid?.level !== 5) return null;
+    return fiveCardHighBidChoiceResult(chosenBid, "continuation.blackwoodResponse", "basic", "Answer partner's four-notrump ace ask.", {
+      ...base,
+      category: "continuation",
+      convention: "blackwood",
+      trumpSuit: blackwoodAgreement.trumpSuit,
+      agreementSource: blackwoodAgreement.source,
+      agreementConfidence: blackwoodAgreement.confidence,
+      suit: chosenBid.strain,
+      aceCount: countAces(hand)
+    });
+  }
+
   function describeBlackwoodResponderAfterOpenerThirdBidChoice(chosenBid, shape, partnershipCalls, base) {
     const openingBid = partnershipCalls[0]?.bid;
     const responseBid = partnershipCalls[1]?.bid;
@@ -181,6 +205,12 @@
     return 0;
   }
 
+  function blackwoodAgreementForPartnerAsk(auction = [], seat) {
+    const lastPartnerCall = lastPartnerContractCall(auction, seat);
+    if (!isBlackwoodAsk(lastPartnerCall?.bid)) return null;
+    return auctionAgreementFromAuctionForFiveCardHigh(auction, seat);
+  }
+
   const blackwoodRebidFamily = {
     id: "rebids.blackwood",
     order: 31,
@@ -189,7 +219,9 @@
     chooseResponderAfterOpenerThirdBidTarget: chooseBlackwoodResponderAfterOpenerThirdBidTarget,
     describeResponderRebidChoice: describeBlackwoodResponderRebidChoice,
     describeOpenerThirdBidChoice: describeBlackwoodOpenerThirdBidChoice,
-    describeResponderAfterOpenerThirdBidChoice: describeBlackwoodResponderAfterOpenerThirdBidChoice
+    describeResponderAfterOpenerThirdBidChoice: describeBlackwoodResponderAfterOpenerThirdBidChoice,
+    chooseResponseToPartnerAskTarget: chooseBlackwoodResponseToPartnerAskTarget,
+    describeResponseToPartnerAskChoice: describeBlackwoodResponseToPartnerAskChoice
   };
 
   return {
@@ -197,12 +229,14 @@
     chooseBlackwoodResponderRebidTarget: blackwoodRebidFamily.chooseResponderRebidTarget,
     chooseBlackwoodOpenerThirdBidTarget: blackwoodRebidFamily.chooseOpenerThirdBidTarget,
     chooseBlackwoodResponderAfterOpenerThirdBidTarget: blackwoodRebidFamily.chooseResponderAfterOpenerThirdBidTarget,
+    chooseBlackwoodResponseToPartnerAskTarget: blackwoodRebidFamily.chooseResponseToPartnerAskTarget,
     isSingleMajorRaiseGameFiveCardHigh,
     rebidResponderAfterSingleMajorRaiseGameFiveCardHigh,
     shouldResponderAskBlackwoodAfterSingleMajorRaiseGame,
     describeBlackwoodResponderRebidChoice: blackwoodRebidFamily.describeResponderRebidChoice,
     describeBlackwoodOpenerThirdBidChoice: blackwoodRebidFamily.describeOpenerThirdBidChoice,
     describeBlackwoodResponderAfterOpenerThirdBidChoice: blackwoodRebidFamily.describeResponderAfterOpenerThirdBidChoice,
+    describeBlackwoodResponseToPartnerAskChoice: blackwoodRebidFamily.describeResponseToPartnerAskChoice,
     notrumpOpeningMinimumHcp
   };
 });

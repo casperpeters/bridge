@@ -13,11 +13,13 @@ function callText(call) {
 test("interactive SMB1 exercises are visible and reference stable course data", () => {
   const exercises = practiceHands.getVisibleInteractiveSmb1Exercises();
 
-  assert.equal(practiceHands.validateInteractiveSmb1Exercises(), 4);
+  assert.equal(practiceHands.validateInteractiveSmb1Exercises(), 6);
   assert.deepEqual(exercises.map((exercise) => exercise.id), [
+    "smb1-les02-directe-slagen-hartenboer",
     "smb1-les06-deblokkeren-derde-hand-ks",
     "smb1-les07-openen-1sa-gebalanceerd",
     "smb1-les09-zonder-fit-1sa-antwoord-1nt",
+    "smb1-les02-hoge-kaart-wegspelen-klaveren",
     "smb1-les07-passen-zonder-opening-pass"
   ]);
 
@@ -39,6 +41,47 @@ test("interactive SMB1 exercises are visible and reference stable course data", 
 test("interactive SMB1 action validation accepts correct bids and cards and explains retries", () => {
   const answer1Nt = practiceHands.findVisibleInteractiveSmb1Exercise("smb1-les09-zonder-fit-1sa-antwoord-1nt");
   const unblock = practiceHands.findVisibleInteractiveSmb1Exercise("smb1-les06-deblokkeren-derde-hand-ks");
+  const directTrick = practiceHands.findVisibleInteractiveSmb1Exercise("smb1-les02-directe-slagen-hartenboer");
+  const forceHighCard = practiceHands.findVisibleInteractiveSmb1Exercise("smb1-les02-hoge-kaart-wegspelen-klaveren");
+
+  const correctDirectTrick = actionValidation.validateExpectedAction(
+    directTrick.expectedAction,
+    { type: "card", seat: "South", card: practiceHands.cardFromId("AH") },
+    directTrick.feedback
+  );
+  assert.equal(correctDirectTrick.ok, true);
+  assert.match(correctDirectTrick.feedback.body, /enige kaart/);
+
+  const wrongDirectTrick = actionValidation.validateExpectedAction(
+    directTrick.expectedAction,
+    { type: "card", seat: "South", card: practiceHands.cardFromId("4H") },
+    directTrick.feedback
+  );
+  assert.equal(wrongDirectTrick.ok, false);
+  assert.match(wrongDirectTrick.feedback.body, /wint niet/);
+
+  const correctForceHighCard = actionValidation.validateExpectedAction(
+    forceHighCard.expectedAction,
+    { type: "card", seat: "North", card: practiceHands.cardFromId("KC") },
+    forceHighCard.feedback
+  );
+  assert.equal(correctForceHighCard.ok, true);
+  assert.match(correctForceHighCard.feedback.body, /hoge klaverenhonneur/);
+
+  const alsoCorrectForceHighCard = actionValidation.validateExpectedAction(
+    forceHighCard.expectedAction,
+    { type: "card", seat: "North", card: practiceHands.cardFromId("QC") },
+    forceHighCard.feedback
+  );
+  assert.equal(alsoCorrectForceHighCard.ok, true);
+
+  const wrongForceHighCard = actionValidation.validateExpectedAction(
+    forceHighCard.expectedAction,
+    { type: "card", seat: "North", card: practiceHands.cardFromId("4C") },
+    forceHighCard.feedback
+  );
+  assert.equal(wrongForceHighCard.ok, false);
+  assert.match(wrongForceHighCard.feedback.body, /ontwikkelt/);
 
   const correctBid = actionValidation.validateExpectedAction(
     answer1Nt.expectedAction,
@@ -83,6 +126,8 @@ test("interactive SMB1 exercises stay aligned with current engine expectations",
       assertInteractiveAuctionExpectation(exercise, scenario);
     } else if (exercise.engineExpectation.kind === "expectedCardPlay") {
       assertInteractiveCardExpectation(exercise, scenario);
+    } else if (exercise.engineExpectation.kind === "playPlanCard") {
+      assertInteractivePlayPlanCardExpectation(exercise, scenario);
     } else {
       assert.fail(`Unknown engine expectation kind: ${exercise.engineExpectation.kind}`);
     }
@@ -113,6 +158,42 @@ function assertInteractiveAuctionExpectation(exercise, scenario) {
       bidResult: result
     });
   }
+}
+
+function assertInteractivePlayPlanCardExpectation(exercise, scenario) {
+  const expected = scenario.expectedPlayPlan;
+  const contract = practiceHands.contractFromText(scenario.expectedContract.contract);
+  const declarer = scenario.expectedContract.declarer;
+  const dummy = rules.partnerOf(declarer);
+  const currentTrick = playsFromSpecs(expected.currentTrick);
+  const trickHistory = tricksFromSpecs(expected.trickHistory);
+  const playPlan = rules.createPlayPlan({
+    declarerHand: scenario.hands[declarer],
+    dummyHand: scenario.hands[dummy],
+    contract,
+    declarer,
+    dummy,
+    currentTrick,
+    trickHistory
+  });
+  const seat = exercise.engineExpectation.seat;
+  const partner = rules.partnerOf(seat);
+  const result = rules.chooseCardPlay({
+    hand: scenario.hands[seat],
+    partnerHand: scenario.hands[partner],
+    currentTrick,
+    trickHistory,
+    seat,
+    declarer,
+    dummy,
+    contract,
+    trump: contract.strain === "NT" ? null : contract.strain,
+    playPlan
+  });
+
+  assert.equal(result.card.id, exercise.engineExpectation.cardId, exercise.id);
+  assert.equal(result.ruleId, exercise.engineExpectation.ruleId, exercise.id);
+  assert.equal(result.planPriority.kind, expected.priorityKind, exercise.id);
 }
 
 function assertInteractiveCardExpectation(exercise, scenario) {

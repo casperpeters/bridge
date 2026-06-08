@@ -9,8 +9,8 @@ function callText(call) {
 }
 
 test("practice hand catalog contains beginner deals plus regression deals", () => {
-  assert.equal(practiceHands.beginnerHands.length, 79);
-  assert.equal(practiceHands.validatePracticeHands(), 80);
+  assert.equal(practiceHands.beginnerHands.length, 81);
+  assert.equal(practiceHands.validatePracticeHands(), 82);
   assert.ok(practiceHands.findPracticeHand("situation-2s-west-trick-8-001"));
 
   const ids = new Set();
@@ -26,7 +26,7 @@ test("practice hand catalog contains beginner deals plus regression deals", () =
     for (const seat of rules.seats) assert.equal(prepared.hands[seat].length, 13);
   }
 
-  assert.equal(ids.size, 79);
+  assert.equal(ids.size, 81);
 });
 
 test("practice hand catalog metadata exposes all existing technical collections as flat lists", () => {
@@ -71,7 +71,7 @@ test("Start met Bridge 1 catalog has stable course metadata and complete app-foc
   const coveredAppFocus = new Set();
 
   assert.equal(catalog.key, "startMetBridge1");
-  assert.equal(smb1Hands.length, 23);
+  assert.equal(smb1Hands.length, 25);
 
   for (const scenario of smb1Hands) {
     assert.match(scenario.id, /^smb1-les\d{2}-[a-z0-9-]+$/, scenario.id);
@@ -101,6 +101,44 @@ test("Start met Bridge 1 catalog has stable course metadata and complete app-foc
 
   assert.deepEqual([...lessonNumbers].sort((a, b) => a - b), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
   assert.deepEqual([...SMB1_APP_FOCUS_GOALS].sort(), [...coveredAppFocus].sort());
+});
+
+test("mini end-position exercises expose only solver-valid SMB1 lesson canaries", () => {
+  assert.equal(practiceHands.validateMiniEndPositionExercises(), 1);
+
+  const exercises = practiceHands.getVisibleMiniEndPositionExercises();
+  assert.deepEqual(exercises.map((exercise) => exercise.id), ["mini-smb1-les01-schoppen-aas-eerst"]);
+
+  const exercise = exercises[0];
+  assert.equal(exercise.lessonId, "smb1-les01");
+  assert.equal(exercise.learningGoalId, "smb1-les01-trick-definition-and-winner");
+  assert.equal(exercise.mode, "lead-and-predict");
+  assert.equal(exercise.exerciseType, "mini-end-position");
+  assert.match(exercise.startSeed, /^situatieseed:/);
+  assert.equal(exercise.situation.trump, null);
+  assert.equal(exercise.situation.declarer, "East");
+  assert.equal(exercise.situation.dummy, "West");
+  assert.equal(exercise.solution.maxSouthTricks, 1);
+  assert.deepEqual(exercise.solution.optimalCardIds, ["AS", "2S"]);
+  assert.equal(practiceHands.findVisibleMiniEndPositionExercise(exercise.id).id, exercise.id);
+  assert.equal(practiceHands.getVisibleMiniEndPositionExercisesForLearningGoal(exercise.learningGoalId).length, 1);
+
+  assert.equal(practiceHands.isVisibleMiniEndPositionExercise({
+    ...exercise,
+    id: "bad-mini-missing-card",
+    situation: {
+      ...exercise.situation,
+      hands: {
+        ...exercise.situation.hands,
+        South: []
+      }
+    }
+  }), false);
+  assert.equal(practiceHands.isVisibleMiniEndPositionExercise({
+    ...exercise,
+    id: "bad-mini-learning-goal",
+    learningGoalId: "smb1-les01-missing-goal"
+  }), false);
 });
 
 test("practice hand expected auction prefixes match the current five-card-high rules", () => {

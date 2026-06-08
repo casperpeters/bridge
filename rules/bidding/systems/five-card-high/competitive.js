@@ -373,6 +373,7 @@
     describeRedoubleBidChoice,
     describeDoubleBidChoice,
     describeCompetitiveFiveCardHighBidChoice,
+    describeCompetitivePassBidChoice,
     describeTakeoutDoubleAction
   };
 });

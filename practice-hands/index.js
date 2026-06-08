@@ -3,6 +3,7 @@
   const bridgeRules = isCommonJs ? require("../bridge-rules.js") : root.BridgeRules;
   const smb1Course = isCommonJs ? require("./smb1-course.js") : root.BridgeSmb1Course;
   const interactiveSmb1Exercises = isCommonJs ? require("./interactive-smb1-exercises.js") : root.BridgeInteractiveSmb1Exercises;
+  const miniEndPositionExercises = isCommonJs ? require("./mini-end-position-exercises.js") : root.BridgeMiniEndPositionExercises;
   const catalogModel = isCommonJs ? require("./catalog-model.js") : root.PracticeCatalogModel;
   const collections = isCommonJs
     ? {
@@ -15,15 +16,16 @@
         startMetBridge1: require("./catalog/start-met-bridge-1.js")
       }
     : root.PracticeHandCollections || {};
-  const api = factory(bridgeRules, collections, catalogModel, smb1Course, interactiveSmb1Exercises);
+  const api = factory(bridgeRules, collections, catalogModel, smb1Course, interactiveSmb1Exercises, miniEndPositionExercises);
   if (isCommonJs) module.exports = api;
   root.PracticeHands = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createPracticeHands(bridgeRules, collections, catalogModel, smb1Course, interactiveSmb1Exercises) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createPracticeHands(bridgeRules, collections, catalogModel, smb1Course, interactiveSmb1Exercises, miniEndPositionExercises) {
   "use strict";
 
   if (!catalogModel) throw new Error("practice-hands/catalog-model.js must load before practice-hands/index.js");
   if (!smb1Course) throw new Error("practice-hands/smb1-course.js must load before practice-hands/index.js");
   if (!interactiveSmb1Exercises) throw new Error("practice-hands/interactive-smb1-exercises.js must load before practice-hands/index.js");
+  if (!miniEndPositionExercises) throw new Error("practice-hands/mini-end-position-exercises.js must load before practice-hands/index.js");
 
   const seats = ["North", "East", "South", "West"];
   const seatAliases = {
@@ -102,6 +104,7 @@
 
   validatePracticeHands();
   validateInteractiveSmb1Exercises();
+  validateMiniEndPositionExercises();
 
   function findPracticeHand(id) {
     return handsById.get(String(id || "").trim()) || null;
@@ -264,6 +267,78 @@
     return interactiveSmb1Exercises.exercisesForLearningGoal(learningGoalId);
   }
 
+  function getMiniEndPositionExercises() {
+    return miniEndPositionExercises?.cloneExercises
+      ? miniEndPositionExercises.cloneExercises().map(prepareMiniEndPositionExercise)
+      : [];
+  }
+
+  function getVisibleMiniEndPositionExercises() {
+    if (!miniEndPositionExercises?.visibleExercises) return [];
+    const visible = [];
+    for (const exercise of miniEndPositionExercises.visibleExercises()) {
+      try {
+        const prepared = prepareMiniEndPositionExercise(exercise);
+        if (miniEndPositionExerciseReferencesKnown(prepared) && hasValidMiniEndPositionSolution(prepared.solution)) {
+          visible.push(prepared);
+        }
+      } catch {
+        // Invalid mini exercises stay out of the player-facing route; tests call validation explicitly.
+      }
+    }
+    return visible;
+  }
+
+  function findMiniEndPositionExercise(id) {
+    const found = miniEndPositionExercises?.findExercise ? miniEndPositionExercises.findExercise(id) : null;
+    return found ? prepareMiniEndPositionExercise(found) : null;
+  }
+
+  function findVisibleMiniEndPositionExercise(id) {
+    const normalized = textValue(id);
+    return getVisibleMiniEndPositionExercises().find((exercise) => exercise.id === normalized) || null;
+  }
+
+  function getMiniEndPositionExercisesForLearningGoal(learningGoalId) {
+    return miniEndPositionExercises?.exercisesForLearningGoal
+      ? miniEndPositionExercises.exercisesForLearningGoal(learningGoalId)
+      : [];
+  }
+
+  function getVisibleMiniEndPositionExercisesForLearningGoal(learningGoalId) {
+    const normalized = textValue(learningGoalId);
+    return getVisibleMiniEndPositionExercises().filter((exercise) => exercise.learningGoalId === normalized);
+  }
+
+  function isVisibleMiniEndPositionExercise(exercise) {
+    if (!miniEndPositionExercises?.isVisibleExercise || !miniEndPositionExercises.isVisibleExercise(exercise)) return false;
+    try {
+      const prepared = prepareMiniEndPositionExercise(exercise);
+      return miniEndPositionExerciseReferencesKnown(prepared) && hasValidMiniEndPositionSolution(prepared.solution);
+    } catch {
+      return false;
+    }
+  }
+
+  function prepareMiniEndPositionExercise(exerciseOrId) {
+    if (!miniEndPositionExercises?.normalizeMiniEndPositionExercise) {
+      throw new Error("practice-hands/mini-end-position-exercises.js must load before mini end-position exercises can be used");
+    }
+    const exercise = typeof exerciseOrId === "string" ? miniEndPositionExercises.findExercise(exerciseOrId) : exerciseOrId;
+    if (!exercise) throw new Error(`Unknown mini end-position exercise: ${exerciseOrId}`);
+    const normalized = miniEndPositionExercises.normalizeMiniEndPositionExercise(exercise);
+    const solution = bridgeRules.analyzeMiniEndPosition({
+      hands: normalized.situation.hands,
+      trump: normalized.situation.trump,
+      leader: normalized.situation.leader,
+      playerSeat: "South"
+    });
+    return {
+      ...normalized,
+      solution
+    };
+  }
+
   function validateInteractiveSmb1Exercises() {
     const lessonById = new Map(getSmb1Course().lessons.map((lesson) => [lesson.id, lesson]));
     const ids = new Set();
@@ -288,6 +363,31 @@
     }
 
     return ids.size;
+  }
+
+  function validateMiniEndPositionExercises() {
+    if (!miniEndPositionExercises?.validateMiniEndPositionExercises) return 0;
+    const count = miniEndPositionExercises.validateMiniEndPositionExercises(miniEndPositionExercises.exercises, {
+      course: getSmb1Course()
+    });
+    miniEndPositionExercises.cloneExercises().forEach(prepareMiniEndPositionExercise);
+    return count;
+  }
+
+  function miniEndPositionExerciseReferencesKnown(exercise) {
+    const lesson = findSmb1Lesson(exercise?.lessonId);
+    return Boolean(lesson?.learningGoals?.some((learningGoal) => learningGoal.id === textValue(exercise?.learningGoalId)));
+  }
+
+  function hasValidMiniEndPositionSolution(solution) {
+    return Boolean(
+      Number.isInteger(solution?.maxSouthTricks) &&
+      solution.maxSouthTricks >= 0 &&
+      Array.isArray(solution.optimalCardIds) &&
+      solution.optimalCardIds.length > 0 &&
+      Array.isArray(solution.line) &&
+      solution.line.length > 0
+    );
   }
 
   function textValue(value) {
@@ -320,6 +420,15 @@
     findVisibleInteractiveSmb1Exercise,
     getInteractiveSmb1ExercisesForLearningGoal,
     validateInteractiveSmb1Exercises,
+    getMiniEndPositionExercises,
+    getVisibleMiniEndPositionExercises,
+    findMiniEndPositionExercise,
+    findVisibleMiniEndPositionExercise,
+    getMiniEndPositionExercisesForLearningGoal,
+    getVisibleMiniEndPositionExercisesForLearningGoal,
+    isVisibleMiniEndPositionExercise,
+    prepareMiniEndPositionExercise,
+    validateMiniEndPositionExercises,
     labelFromToken: catalogModel.labelFromToken,
     normalizeSearch: catalogModel.normalizeSearch,
     smb1CatalogId: catalogModel.smb1CatalogId,

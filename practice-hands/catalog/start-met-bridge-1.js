@@ -186,6 +186,109 @@
 
   const newHands = [
     {
+      id: "smb1-les02-directe-slagen-sa",
+      title: "SMB1 les 2 - Directe slagen tellen",
+      level: "beginner",
+      course,
+      lesson: lessonMeta(2),
+      topic: "Directe slagen",
+      goal: "Herken welke hoge kaarten meteen slagen kunnen maken.",
+      expectedFocus: ["play-plan", "notrump", "direct-tricks"],
+      expectedActions: ["Tel de vaste slagen per kleur", "Kies een rustige start in het speelplan"],
+      reviewFocus: ["directe slagen", "vaste slagen", "hoge kaarten"],
+      appFocus: ["direct-tricks"],
+      focus: ["smb1", "lesson-02", "play", "play-plan", "notrump", "direct-tricks"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "In les 2 leerdoel 1 moet Zuid directe slagen herkennen; het speelplan moet schoppen als eerste zekere cashkleur aanwijzen en Zuid moet harten aas als directe winnaar kunnen kiezen.",
+      hands: {
+        North: ["9S", "8S", "7S", "2H", "7D", "6D", "5D", "4D", "TC", "9C", "8C", "7C", "4C"],
+        East: ["JS", "TS", "6S", "TH", "9H", "8H", "QD", "JD", "TD", "9D", "QC", "JC", "6C"],
+        South: ["AS", "KS", "QS", "AH", "4H", "3H", "AD", "KD", "8D", "AC", "KC", "3C", "2C"],
+        West: ["5S", "4S", "3S", "2S", "KH", "QH", "JH", "7H", "6H", "5H", "3D", "2D", "5C"]
+      },
+      expectedContract: { contract: "1NT", declarer: "South" },
+      expectedPlayPlan: {
+        priorityKind: "cashWinners",
+        suit: "S",
+        timing: "cashNow",
+        firstPriorityKind: "cashWinners"
+      },
+      expectedCardPlay: {
+        seat: "South",
+        ruleId: "cheapestWinner",
+        card: "AH",
+        currentTrick: [
+          { seat: "West", card: "KH" },
+          { seat: "North", card: "2H" },
+          { seat: "East", card: "8H" }
+        ]
+      },
+      explanationKeys: ["playPlan.cashWinners"],
+      teachingPoints: [
+        "Een directe slag is een slag die je meteen kunt maken omdat niemand nog een hogere kaart in die kleur heeft.",
+        "In de hartenkleur is alleen het aas hoger dan de heer die West heeft voorgespeeld.",
+        "Zuid heeft ook lage harten, maar die winnen deze slag niet; harten aas is de directe slag.",
+        "Onthoud: tel in SA eerst je vaste slagen per kleur voordat je naar ontwikkelkansen zoekt."
+      ]
+    },
+    {
+      id: "smb1-les02-hoge-kaart-wegspelen-sa",
+      title: "SMB1 les 2 - Hoge kaart wegspelen",
+      level: "beginner",
+      course,
+      lesson: lessonMeta(2),
+      topic: "Slagen ontwikkelen",
+      goal: "Speel een werkkleur zo dat een hoge kaart van de tegenpartij wordt weggewerkt.",
+      expectedFocus: ["play-plan", "notrump", "force-out-high-card"],
+      expectedActions: ["Speel de werkkleur aan", "Kies in dummy een hoge honneur"],
+      reviewFocus: ["hoge kaart wegspelen", "ontwikkelslag", "werkkleur"],
+      appFocus: ["develop-tricks"],
+      focus: ["smb1", "lesson-02", "play", "play-plan", "notrump", "drive-out-high-cards", "develop-tricks"],
+      systemId: "fiveCardHigh",
+      dealer: "South",
+      vulnerability: "none",
+      testGoal: "In SMB1 les 2 leerdoel 2 moet Zuid in 3SA zien dat dummy's klaverenheer-vrouw een slag ontwikkelen door de ontbrekende aas eruit te werken.",
+      hands: {
+        North: ["KC", "QC", "4C", "3H", "4H", "2S", "3S", "4S", "5S", "2D", "3D", "4D", "5D"],
+        East: ["AC", "JC", "9C", "8C", "5C", "KH", "QH", "JH", "TH", "9H", "KS", "QS", "JS"],
+        South: ["AS", "AD", "AH", "TC", "7C", "6C", "6H", "7H", "8H", "6D", "7D", "8D", "9D"],
+        West: ["2C", "3C", "2H", "5H", "6S", "7S", "8S", "9S", "TS", "TD", "JD", "QD", "KD"]
+      },
+      expectedContract: { contract: "3NT", declarer: "South" },
+      expectedPlayPlan: {
+        trickHistory: [{
+          number: 1,
+          winner: "South",
+          cards: [
+            { seat: "West", card: "2H" },
+            { seat: "North", card: "3H" },
+            { seat: "East", card: "9H" },
+            { seat: "South", card: "AH" }
+          ]
+        }],
+        currentTrick: [
+          { seat: "South", card: "7C" },
+          { seat: "West", card: "2C" }
+        ],
+        priorityKind: "forceOutAce",
+        suit: "C",
+        sourceSeat: "North",
+        missingStopper: "A",
+        entrySuit: "C",
+        entryRank: "Q",
+        firstPriorityKind: "forceOutAce"
+      },
+      explanationKeys: ["playPlan.forceOutAce"],
+      teachingPoints: [
+        "Dummy heeft klaveren heer-vrouw; de aas ontbreekt nog bij de tegenpartij.",
+        "Door nu een hoge klaverenhonneur te spelen, moet de tegenpartij de aas maken of later de vrouw laten winnen.",
+        "Een lage klaverenkaart werkt de aas niet weg en ontwikkelt nog geen extra slag.",
+        "Onthoud: soms moet je eerst een hoge kaart verliezen om daarna een slag te maken."
+      ]
+    },
+    {
       id: "smb1-les06-tweede-hand-laag",
       title: "SMB1 les 6 - Tweede hand laag",
       level: "beginner",

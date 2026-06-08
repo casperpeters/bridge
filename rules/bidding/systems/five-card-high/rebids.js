@@ -74,7 +74,9 @@
     chooseResponderAfterOpenerThirdBidTarget: blackwoodRules.chooseBlackwoodResponderAfterOpenerThirdBidTarget,
     describeResponderRebidChoice: blackwoodRules.describeBlackwoodResponderRebidChoice,
     describeOpenerThirdBidChoice: blackwoodRules.describeBlackwoodOpenerThirdBidChoice,
-    describeResponderAfterOpenerThirdBidChoice: blackwoodRules.describeBlackwoodResponderAfterOpenerThirdBidChoice
+    describeResponderAfterOpenerThirdBidChoice: blackwoodRules.describeBlackwoodResponderAfterOpenerThirdBidChoice,
+    chooseResponseToPartnerAskTarget: blackwoodRules.chooseBlackwoodResponseToPartnerAskTarget,
+    describeResponseToPartnerAskChoice: blackwoodRules.describeBlackwoodResponseToPartnerAskChoice
   };
   const {
     chooseResponderRebidTarget: chooseBlackwoodResponderRebidTarget,
@@ -82,7 +84,9 @@
     chooseResponderAfterOpenerThirdBidTarget: chooseBlackwoodResponderAfterOpenerThirdBidTarget,
     describeResponderRebidChoice: describeBlackwoodResponderRebidChoice,
     describeOpenerThirdBidChoice: describeBlackwoodOpenerThirdBidChoice,
-    describeResponderAfterOpenerThirdBidChoice: describeBlackwoodResponderAfterOpenerThirdBidChoice
+    describeResponderAfterOpenerThirdBidChoice: describeBlackwoodResponderAfterOpenerThirdBidChoice,
+    chooseResponseToPartnerAskTarget: chooseBlackwoodResponseToPartnerAskTarget,
+    describeResponseToPartnerAskChoice: describeBlackwoodResponseToPartnerAskChoice
   } = blackwoodRebidFamily;
   const strongTwoClubsRebidFamily = strongTwoClubsRules.strongTwoClubsRebidFamily || {
     chooseOpenerRebidTarget: strongTwoClubsRules.chooseStrongTwoClubsOpenerRebidTarget,
@@ -728,10 +732,12 @@
     rebidResponderAfterOneNotrumpFiveCardHigh,
     rebidResponderAfterTwoNotrumpFiveCardHigh,
     rebidOpenerAfterFourthSuitFiveCardHigh,
+    chooseBlackwoodResponseToPartnerAskTarget,
     describeOpenerRebidChoice,
     describeResponderRebidChoice,
     describeOpenerThirdBidChoice,
     describeResponderAfterFourthSuitChoice,
+    describeBlackwoodResponseToPartnerAskChoice,
     describeNaturalContinuationChoice
   };
 });

@@ -133,6 +133,7 @@ function restoreStateFromSeedSnapshot(snapshot) {
 }
 
 function createSituationSeed() {
+  if (hasMiniOriginalHands()) return createMiniSituationSeed();
   if (!state.dealSeed) return "";
   const payload = {
     v: 1,
@@ -155,8 +156,47 @@ function createSituationSeed() {
   return situationCodec.encodeSituationPayload(payload);
 }
 
+function createMiniSituationSeed() {
+  if (!state.contract || !state.declarer || !state.leader) return "";
+  const trump = state.contract.strain === "NT" ? null : state.contract.strain;
+  const payload = {
+    v: 2,
+    h: situationCodec.compactHandsFromCards(state.originalHands),
+    g: trump,
+    p: state.phase,
+    r: seatCode(state.declarer),
+    m: seatCode(state.dummy),
+    l: seatCode(state.leader),
+    t: seatCode(seatAt(state.turnIndex))
+  };
+  if (state.dealNumber > 0) payload.b = state.dealNumber;
+  const dealer = seatCode(seatAt(state.dealerIndex));
+  if (dealer && dealer !== "N") payload.d = dealer;
+  if (state.vulnerability && state.vulnerability !== "none") payload.u = state.vulnerability;
+  const contractText = contractToSituationText(state.contract);
+  const derivedContractText = situationCodec.technicalContractFromTrump(trump);
+  if (contractText && contractText !== derivedContractText) payload.x = contractText;
+  if (state.auction.length) payload.a = state.auction.map(encodeSituationCall);
+  if (state.trickHistory.length) payload.k = state.trickHistory.map((trick) => trick.cards.map(encodeSituationPlay));
+  if (state.currentTrick.length) payload.c = state.currentTrick.map(encodeSituationPlay);
+  if (state.awaitingTrickAdvance) payload.w = 1;
+  if (state.practice?.lessonId) payload.e = state.practice.lessonId;
+  return situationCodec.encodeSituationPayload(payload);
+}
+
+function hasMiniOriginalHands() {
+  if (!state.originalHands) return false;
+  const lengths = seats.map((seat) => Array.isArray(state.originalHands[seat]) ? state.originalHands[seat].length : -1);
+  const [length] = lengths;
+  return length > 0 && length < 13 && lengths.every((item) => item === length);
+}
+
 function startSituationSeed(seed) {
   const situation = parseSituationSeed(seed);
+  if (situation?.v === 2 && situation.h) {
+    startEmbeddedMiniSituation(situation);
+    return;
+  }
   if (!situation?.s) throw new Error("Situation seed is missing the base seed");
 
   state.dealNumber = positiveBoardNumber(situation.b);
@@ -185,6 +225,34 @@ function startSituationSeed(seed) {
   restoreSituationContractContext(situation);
   restoreSituationPlay(situation);
   setSituationStatus(situation.p);
+  renderRestoredSituation();
+}
+
+function startEmbeddedMiniSituation(situation) {
+  const prepared = situationCodec.preparedMiniSituationFromPayload(situation);
+  state.dealNumber = positiveBoardNumber(prepared.board, 1);
+  state.dealSeed = situation.s ? String(situation.s) : "";
+
+  startPreparedHand({
+    dealerIndex: seats.indexOf(prepared.dealer),
+    vulnerability: prepared.vulnerability,
+    hands: prepared.hands,
+    practice: null,
+    skipFlow: true
+  });
+  state.animateDeal = false;
+  state.seedMessage = t("situationSeedLoaded");
+
+  state.phase = prepared.phase === "contract-reveal" ? "contract-reveal" : "playing";
+  state.contract = contractFromSituationText(prepared.contractText);
+  state.declarer = prepared.declarer;
+  state.dummy = prepared.dummy;
+  state.leader = prepared.leader;
+  state.turnIndex = seats.indexOf(prepared.leader);
+
+  restoreSituationPlay(situation);
+  if (prepared.turn) state.turnIndex = seats.indexOf(prepared.turn);
+  setSituationStatus(situation.p || "playing");
   renderRestoredSituation();
 }
 

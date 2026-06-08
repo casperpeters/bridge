@@ -33,6 +33,7 @@
     "rules/bidding/index.js",
     "rules/deterministic-playout.js",
     "rules/play-mechanics.js",
+    "rules/mini-end-position-solver.js",
     "rules/play-plan/common.js",
     "rules/play-plan/endgame-runout.js",
     "rules/play-plan/notrump.js",
@@ -60,6 +61,7 @@
   const practiceHands = [
     "practice-hands/smb1-course.js",
     "practice-hands/interactive-smb1-exercises.js",
+    "practice-hands/mini-end-position-exercises.js",
     "practice-hands/catalog/five-card-high-openings.js",
     "practice-hands/catalog/notrump-responses.js",
     "practice-hands/catalog/bidding-basic.js",
@@ -112,6 +114,7 @@
     "scripts/learning/lesson-board-coach.js",
     "scripts/learning/lesson-start.js",
     "scripts/learning/interactive/exercise-table.js",
+    "scripts/learning/interactive/mini-end-position-table.js",
     "scripts/feedback/controller.js",
     "scripts/render/score-table.js",
     "scripts/render/play-plan.js",

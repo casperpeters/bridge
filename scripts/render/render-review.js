@@ -27,11 +27,13 @@
 function renderHistory() {
   syncHistoryPanelState();
   if (els.lessonPanel) {
-    els.lessonPanel.hidden = !(actions.isLessonModeActive?.() || actions.activeInteractiveExercise?.()) || state.phase === "complete";
+    els.lessonPanel.hidden = !(actions.isLessonModeActive?.() || actions.activeInteractiveExercise?.() || actions.activeMiniEndPositionExercise?.()) || state.phase === "complete";
   }
   els.history.innerHTML = "";
   if (actions.isLessonModeActive?.() && state.phase !== "complete") return;
-  if (!state.showPlayHistory) return;
+  if (actions.miniEndPositionSuppressesLiveHistory?.()) return;
+  const forceHistory = actions.miniEndPositionShowsHistory?.();
+  if (!state.showPlayHistory && !forceHistory) return;
   if (!shouldShowLiveHistory()) {
     const inactive = document.createElement("div");
     inactive.className = "history-item";
@@ -110,7 +112,8 @@ function renderReview() {
 
 function syncHistoryPanelState(complete = state.phase === "complete") {
   const hasVisiblePlayPlan = !els.playPlan.hidden;
-  const hasLessonPanel = Boolean((actions.isLessonModeActive?.() || actions.activeInteractiveExercise?.()) && !complete);
+  const hasMiniPanelOnly = Boolean(actions.activeMiniEndPositionExercise?.() && !actions.miniEndPositionShowsHistory?.());
+  const hasLessonPanel = Boolean((actions.isLessonModeActive?.() || actions.activeInteractiveExercise?.() || hasMiniPanelOnly) && !complete);
   const visible = !complete && (hasLessonPanel || shouldShowLiveHistory() || shouldReserveHistorySlot() || hasVisiblePlayPlan);
   els.historyPanel.hidden = !visible;
   els.historyPanel.classList.toggle("is-lesson-mode", Boolean(hasLessonPanel));
@@ -119,6 +122,8 @@ function syncHistoryPanelState(complete = state.phase === "complete") {
 }
 
 function shouldShowLiveHistory() {
+  if (actions.miniEndPositionSuppressesLiveHistory?.()) return false;
+  if (actions.miniEndPositionShowsHistory?.()) return true;
   return state.phase === "playing" && state.showPlayHistory;
 }
 

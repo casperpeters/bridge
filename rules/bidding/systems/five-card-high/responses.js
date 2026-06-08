@@ -352,6 +352,31 @@
         return fiveCardHighBidChoiceResult(chosenBid, "response.newSuit", "basic", "Bid the cheapest suitable new suit with responding values.", extra);
       }
 
+  function describeResponsePassChoice(shape, hand, partnerBid, base) {
+        if (isWeakTwoOpeningFiveCardHigh(partnerBid)) {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.responseWeakTwoNoAction", "basic", "Pass opposite partner's weak two because there is no fit action or safe notrump action.", {
+            ...base,
+            category: "response",
+            partnerSuit: partnerBid.strain,
+            ...weakTwoResponseContext(shape, hand, partnerBid)
+          });
+        }
+        if (partnerBid?.level >= 3 && partnerBid.strain !== "NT") {
+          return fiveCardHighBidChoiceResult(Pass(), "pass.responsePreemptNoAction", "basic", "Pass opposite partner's preempt because there are not enough own playing tricks, stoppers, support, or communication for game.", {
+            ...base,
+            category: "response",
+            partnerSuit: partnerBid.strain,
+            ...preemptResponseContext(shape, hand, partnerBid)
+          });
+        }
+        return fiveCardHighBidChoiceResult(Pass(), "pass.responseNoAction", "basic", "Pass because there are not enough values or no suitable action opposite partner's opening.", {
+          ...base,
+          category: "response",
+          partnerSuit: partnerBid?.strain || null,
+          support: partnerBid?.strain && partnerBid.strain !== "NT" ? shape.counts[partnerBid.strain] : 0
+        });
+      }
+
   function raiseExplanationContext(chosenBid, partnerBid, support, fitExtra = {}) {
         const partnerSuit = partnerBid?.strain || null;
         const combinedTrumpLength = Number.isInteger(fitExtra.partnerMinTrumpLength)
@@ -408,6 +433,7 @@
     respondToOneClubFiveCardHigh,
     respondToOneDiamondFiveCardHigh,
     respondToOneMajorFiveCardHigh,
-    describeResponseBidChoice
+    describeResponseBidChoice,
+    describeResponsePassChoice
   };
 });

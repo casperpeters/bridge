@@ -61,6 +61,7 @@
       if (!exercise?.startSeed) throw new Error(`Unknown interactive SMB1 exercise: ${exerciseOrId}`);
 
       actions.startSituationSeed(exercise.startSeed);
+      state.miniEndPositionExercise = null;
       state.interactiveExercise = interactiveExerciseState(exercise, { returnHref });
       render.renderAll();
       return exercise;
@@ -69,8 +70,10 @@
     function startInteractiveExerciseFromUrl() {
       const params = new URLSearchParams(globalThis.location?.search || "");
       const exerciseId = params.get("exercise");
-      if (!exerciseId) return false;
-      if (!globalThis.PracticeHands?.findVisibleInteractiveSmb1Exercise?.(exerciseId)) return false;
+      if (!exerciseId) return actions.startMiniEndPositionExerciseFromUrl?.() || false;
+      if (!globalThis.PracticeHands?.findVisibleInteractiveSmb1Exercise?.(exerciseId)) {
+        return actions.startMiniEndPositionExerciseFromUrl?.() || false;
+      }
       startInteractiveExercise(exerciseId, { returnHref: params.get("return") || "" });
       return true;
     }
@@ -111,6 +114,7 @@
       state.lessonTableTaskDone = false;
       state.lessonActionFeedback = null;
       state.interactiveExercise = null;
+      state.miniEndPositionExercise = null;
       if (timers.illegalActionFeedbackTimer) {
         window.clearTimeout(timers.illegalActionFeedbackTimer);
         timers.illegalActionFeedbackTimer = null;

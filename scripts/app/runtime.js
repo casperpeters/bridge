@@ -105,6 +105,7 @@
       seedMessage: null,
       practice: null,
       interactiveExercise: null,
+      miniEndPositionExercise: null,
       feedbackStatus: null,
       illegalActionFeedback: null,
       lessonActionFeedback: null,

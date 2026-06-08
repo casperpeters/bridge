@@ -142,6 +142,7 @@
       render.renderHistory();
       render.renderLessonPanel?.();
       render.renderInteractiveExercisePanel?.();
+      render.renderMiniEndPositionExercisePanel?.();
       render.renderPlayExplanations();
       render.renderReview();
       renderContract();
@@ -378,6 +379,7 @@
       if (!state.guidanceMode || state.awaitingTrickAdvance) return;
       if (actions.blockingLessonBoardStep()) return;
       if (actions.interactiveExerciseSuppressesGuidance?.()) return;
+      if (actions.miniEndPositionSuppressesGuidance?.()) return;
 
       const guidance = currentGuidance();
       if (!guidance) return;

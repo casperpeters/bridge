@@ -9,7 +9,7 @@
     const { seatEls } = dom;
 
 function renderHands() {
-  const recommended = state.guidanceMode && !actions.interactiveExerciseSuppressesGuidance?.("card")
+  const recommended = state.guidanceMode && !actions.interactiveExerciseSuppressesGuidance?.("card") && !actions.miniEndPositionSuppressesGuidance?.()
     ? actions.currentRecommendedCard()
     : null;
   const playback = actions.currentReviewPlayback();
@@ -82,6 +82,10 @@ function createHandCardEl(seat, card, visible, index, recommended) {
   if (!state.awaitingTrickAdvance && state.currentTrick.length < 4 && recommended?.seat === seat && recommended.card.id === card.id) {
     cardEl.classList.add("recommended-card");
   }
+  if (actions.miniEndPositionCardIsSelected?.(seat, card)) {
+    cardEl.classList.add("mini-end-position-card-selected");
+    cardEl.setAttribute("aria-pressed", "true");
+  }
   if (visible && actions.isHumanControlledSeat(seat) && state.phase === "playing" && !state.awaitingTrickAdvance) {
     const legal = helpers.isLegalCard(seat, card);
     const lessonBlocked = actions.lessonBoardBlocksHumanPlay(seat);
@@ -92,6 +96,7 @@ function createHandCardEl(seat, card, visible, index, recommended) {
       cardEl.addEventListener("click", (event) => {
         event.stopPropagation();
         if (lessonBlocked) return;
+        if (legal && actions.selectMiniEndPositionLeadCard?.(seat, card)) return;
         if (shouldFocusSuitBeforePlay(seat, card)) return actions.focusHandSuit(seat, card.suit);
         if (legal) actions.playCard(seat, card.id);
         else actions.showIllegalCardFeedback(seat, card);
@@ -100,6 +105,7 @@ function createHandCardEl(seat, card, visible, index, recommended) {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
         if (lessonBlocked) return;
+        if (legal && actions.selectMiniEndPositionLeadCard?.(seat, card)) return;
         if (shouldFocusSuitBeforePlay(seat, card)) return actions.focusHandSuit(seat, card.suit);
         if (legal) actions.playCard(seat, card.id);
         else actions.showIllegalCardFeedback(seat, card);

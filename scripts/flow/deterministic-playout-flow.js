@@ -25,6 +25,9 @@
       if (actions.lessonBoardSuppressesUitspelen?.()) {
         return { available: false, reason: "lessonBoardStepSuppressesUitspelen" };
       }
+      if (actions.miniEndPositionSuppressesUitspelen?.()) {
+        return { available: false, reason: "miniEndPositionExerciseSuppressesUitspelen" };
+      }
       if (storedAnalysis?.available) return storedAnalysis;
 
       const currentTurn = helpers.seatAt(state.turnIndex);
